@@ -1,51 +1,32 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import { useAuth } from './useAuth';
-import { getCharacter } from '../firebase/character';
-import type { Character } from '../types/character';
+import { onAuthStateChanged, type User } from 'firebase/auth';
+import { auth } from '../firebase/config';
 
-interface CharacterContextValue {
-  character: Character | null;
-  loading: boolean;
-  refetch: () => Promise<void>;
+interface AuthContextValue {
+  user: User | null;
+  loading: boolean; // true until Firebase has reported the initial auth state
 }
 
-const CharacterContext = createContext<CharacterContextValue>({
-  character: null,
-  loading: true,
-  refetch: async () => {},
-});
+const AuthContext = createContext<AuthContextValue>({ user: null, loading: true });
 
-export function CharacterProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth();
-  const [character, setCharacter] = useState<Character | null>(null);
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  async function load() {
-    if (!user) {
-      setCharacter(null);
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    const loaded = await getCharacter(user.uid);
-    setCharacter(loaded);
-    setLoading(false);
-  }
-
   useEffect(() => {
-    load();
-    // Deliberately only re-runs when the signed-in user changes — refetch()
-    // is exposed separately for the moment right after character creation.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+    // onAuthStateChanged fires once immediately with the current state (or
+    // null), then again on every sign-in/sign-out. This is the single source
+    // of truth for "is someone logged in" throughout the app.
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      setUser(firebaseUser);
+      setLoading(false);
+    });
+    return unsubscribe;
+  }, []);
 
-  return (
-    <CharacterContext.Provider value={{ character, loading, refetch: load }}>
-      {children}
-    </CharacterContext.Provider>
-  );
+  return <AuthContext.Provider value={{ user, loading }}>{children}</AuthContext.Provider>;
 }
 
-export function useCharacter(): CharacterContextValue {
-  return useContext(CharacterContext);
+export function useAuth(): AuthContextValue {
+  return useContext(AuthContext);
 }
