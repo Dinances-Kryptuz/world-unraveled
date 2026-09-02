@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp, Timestamp, increment } from 'firebase/firestore';
 import { db } from './config';
 import type { Character } from '../types/character';
 import type { ProfessionId } from '../gameData/types';
@@ -75,4 +75,33 @@ export async function startActivity(
       startedAt: serverTimestamp(),
     },
   });
+}
+
+export async function stopActivity(uid: string): Promise<void> {
+  await updateDoc(doc(db, 'characters', uid), {
+    currentActivity: { type: null, targetId: null, zoneId: null, startedAt: null },
+  });
+}
+
+export async function applyCombatResult(
+  uid: string,
+  result: { xpGained: number; goldGained: number; loot: { itemId: string; quantity: number }[] }
+): Promise<void> {
+  await updateDoc(doc(db, 'characters', uid), {
+    xp: increment(result.xpGained),
+    gold: increment(result.goldGained),
+    'currentActivity.startedAt': serverTimestamp(), // reset the clock now that this chunk is saved
+  });
+
+  if (result.loot.length > 0) {
+    const inventoryUpdates: Record<string, unknown> = {};
+    for (const drop of result.loot) {
+      inventoryUpdates[`items.${drop.itemId}`] = increment(drop.quantity);
+    }
+    await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), inventoryUpdates);
+  }
+}
+
+export async function setCharacterLevel(uid: string, level: number): Promise<void> {
+  await updateDoc(doc(db, 'characters', uid), { level });
 }
