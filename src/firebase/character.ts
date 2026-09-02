@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { db } from './config';
 import type { Character } from '../types/character';
 import type { ProfessionId } from '../gameData/types';
@@ -61,4 +61,18 @@ export async function createCharacter(uid: string, name: string): Promise<void> 
 
   await setDoc(doc(db, 'characters', uid), character);
   await setDoc(doc(db, 'characters', uid, 'inventory', 'main'), { items: {} });
+}
+
+export async function startActivity(
+  uid: string,
+  activity: { type: 'combat' | 'gathering' | 'crafting'; targetId: string; zoneId: string }
+): Promise<void> {
+  await updateDoc(doc(db, 'characters', uid), {
+    currentActivity: {
+      type: activity.type,
+      targetId: activity.targetId,
+      zoneId: activity.zoneId,
+      startedAt: serverTimestamp(),
+    },
+  });
 }
