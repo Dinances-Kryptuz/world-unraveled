@@ -1,0 +1,24 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // A user can only read/create/update their own account doc, and can
+    // never delete it or write another uid's doc.
+    match /users/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow create: if request.auth != null && request.auth.uid == uid;
+      allow update: if request.auth != null && request.auth.uid == uid;
+      allow delete: if false;
+    }
+
+    // characters/{uid} and characters/{uid}/inventory/main rules land in
+    // Step 3 (character creation) once those documents' write patterns
+    // are implemented — deliberately not stubbed here to avoid rules that
+    // look permissive/complete before the fields they'd validate exist.
+
+    // Default deny for anything not explicitly matched above.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
