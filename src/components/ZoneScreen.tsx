@@ -3,8 +3,9 @@ import { useCharacter } from '../hooks/useCharacter';
 import { startActivity } from '../firebase/character';
 import { ZONES } from '../gameData/zones';
 import { MONSTERS } from '../gameData/monsters';
+import { CombatScreen } from './CombatScreen';
 
-const CURRENT_ZONE_ID = 'greenhollow_fields'; // V1 only has one zone
+const CURRENT_ZONE_ID = 'greenhollow_fields';
 
 export function ZoneScreen() {
   const { user } = useAuth();
@@ -19,16 +20,14 @@ export function ZoneScreen() {
 
   if (!character) return null;
 
-  const activity = character.currentActivity;
-  const currentlyFightingName =
-    activity.type === 'combat' && activity.targetId ? MONSTERS[activity.targetId]?.name : null;
+  if (character.currentActivity.type === 'combat' && character.currentActivity.targetId) {
+    return <CombatScreen monsterId={character.currentActivity.targetId} />;
+  }
 
   return (
     <div className="zone-screen">
       <h1>{zone.name}</h1>
       <p>{zone.description}</p>
-
-      {currentlyFightingName && <p>Currently fighting: {currentlyFightingName}</p>}
 
       <h2>Monsters</h2>
       <ul>
