@@ -2,6 +2,7 @@ import { AuthProvider, useAuth } from './hooks/useAuth';
 import { CharacterProvider, useCharacter } from './hooks/useCharacter';
 import { LoginScreen } from './components/LoginScreen';
 import { CharacterCreationScreen } from './components/CharacterCreationScreen';
+import { ZoneScreen } from './components/ZoneScreen';
 import { signOut } from './firebase/auth';
 
 function AppContent() {
@@ -24,15 +25,13 @@ function AppContent() {
     return <CharacterCreationScreen />;
   }
 
-  // Step 4+ (activity engine wiring, combat, gathering, crafting, equipment,
-  // and the real UI) replaces this placeholder.
   return (
     <div>
       <p>
         Welcome back, {character.name}! Level {character.level}.
       </p>
       <button onClick={() => signOut()}>Sign out</button>
-      <p>[Main game screen goes here — Step 4+]</p>
+      <ZoneScreen />
     </div>
   );
 }
