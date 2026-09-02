@@ -1,32 +1,51 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import { onAuthStateChanged, type User } from 'firebase/auth';
-import { auth } from '../firebase/config';
+import { useAuth } from './useAuth';
+import { getCharacter } from '../firebase/character';
+import type { Character } from '../types/character';
 
-interface AuthContextValue {
-  user: User | null;
-  loading: boolean; // true until Firebase has reported the initial auth state
+interface CharacterContextValue {
+  character: Character | null;
+  loading: boolean;
+  refetch: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextValue>({ user: null, loading: true });
+const CharacterContext = createContext<CharacterContextValue>({
+  character: null,
+  loading: true,
+  refetch: async () => {},
+});
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+export function CharacterProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
+  const [character, setCharacter] = useState<Character | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    // onAuthStateChanged fires once immediately with the current state (or
-    // null), then again on every sign-in/sign-out. This is the single source
-    // of truth for "is someone logged in" throughout the app.
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser);
+  async function load() {
+    if (!user) {
+      setCharacter(null);
       setLoading(false);
-    });
-    return unsubscribe;
-  }, []);
+      return;
+    }
+    setLoading(true);
+    const loaded = await getCharacter(user.uid);
+    setCharacter(loaded);
+    setLoading(false);
+  }
 
-  return <AuthContext.Provider value={{ user, loading }}>{children}</AuthContext.Provider>;
+  useEffect(() => {
+    load();
+    // Deliberately only re-runs when the signed-in user changes — refetch()
+    // is exposed separately for the moment right after character creation.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
+  return (
+    <CharacterContext.Provider value={{ character, loading, refetch: load }}>
+      {children}
+    </CharacterContext.Provider>
+  );
 }
 
-export function useAuth(): AuthContextValue {
-  return useContext(AuthContext);
+export function useCharacter(): CharacterContextValue {
+  return useContext(CharacterContext);
 }
