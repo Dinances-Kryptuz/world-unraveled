@@ -1,13 +1,14 @@
 import { AuthProvider, useAuth } from './hooks/useAuth';
+import { CharacterProvider, useCharacter } from './hooks/useCharacter';
 import { LoginScreen } from './components/LoginScreen';
+import { CharacterCreationScreen } from './components/CharacterCreationScreen';
 import { signOut } from './firebase/auth';
 
 function AppContent() {
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const { character, loading: characterLoading } = useCharacter();
 
-  if (loading) {
-    // Firebase hasn't reported initial auth state yet — avoid flashing the
-    // login screen for a logged-in user on refresh.
+  if (authLoading) {
     return <div className="loading-screen">Loading…</div>;
   }
 
@@ -15,14 +16,23 @@ function AppContent() {
     return <LoginScreen />;
   }
 
-  // Step 3 (character creation) replaces this placeholder: it will check
-  // whether characters/{uid} exists and route to either character creation
-  // or the main game accordingly.
+  if (characterLoading) {
+    return <div className="loading-screen">Loading your character…</div>;
+  }
+
+  if (!character) {
+    return <CharacterCreationScreen />;
+  }
+
+  // Step 4+ (activity engine wiring, combat, gathering, crafting, equipment,
+  // and the real UI) replaces this placeholder.
   return (
     <div>
-      <p>Signed in as {user.displayName ?? user.email}</p>
+      <p>
+        Welcome back, {character.name}! Level {character.level}.
+      </p>
       <button onClick={() => signOut()}>Sign out</button>
-      <p>[Character creation goes here — Step 3]</p>
+      <p>[Main game screen goes here — Step 4+]</p>
     </div>
   );
 }
@@ -30,7 +40,9 @@ function AppContent() {
 export default function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <CharacterProvider>
+        <AppContent />
+      </CharacterProvider>
     </AuthProvider>
   );
 }
