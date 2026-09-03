@@ -27,6 +27,12 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
 
   const [bankedTotals, setBankedTotals] = useState<SessionTotals>(EMPTY_TOTALS);
 
+  // Owned entirely locally once combat starts — the display never waits on
+  // a Firestore round-trip to know when to reset. That round-trip delay was
+  // the cause of the flash: bankedTotals updated instantly but the reset
+  // startedAt took a moment longer to come back from the server.
+  const anchorRef = useRef<Date | null>(character.currentActivity.startedAt);
+
   const characterRef = useRef<Character | null>(character);
   const userRef = useRef<User | null>(user);
   useEffect(() => {
@@ -40,6 +46,8 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
 
   useEffect(() => {
     setBankedTotals(EMPTY_TOTALS);
+    anchorRef.current = character.currentActivity.startedAt;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [monsterId]);
 
   useEffect(() => {
@@ -59,30 +67,32 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
   async function autosave() {
     const currentUser = userRef.current;
     const currentCharacter = characterRef.current;
-    if (!currentUser || !currentCharacter || !currentCharacter.currentActivity.startedAt) return;
+    const anchor = anchorRef.current;
+    if (!currentUser || !currentCharacter || !anchor) return;
 
+    const now = new Date();
     const { attackPower, attackIntervalSeconds } = derivePlayerCombatStats(currentCharacter);
-    const result = resolveCombat(
-      currentCharacter.currentActivity.startedAt,
-      new Date(),
-      monster,
-      attackPower,
-      attackIntervalSeconds
-    );
+    const result = resolveCombat(anchor, now, monster, attackPower, attackIntervalSeconds);
 
     if (result.monstersDefeated === 0) return;
 
-    await applyCombatResult(currentUser.uid, {
-      xpGained: result.xpGained,
-      goldGained: result.goldGained,
-      loot: result.loot,
-    });
-
+    // Update the display immediately and synchronously — both changes land
+    // in the same render, so there's never a moment where one has updated
+    // and the other hasn't.
+    anchorRef.current = now;
     setBankedTotals((prev) => ({
       monstersDefeated: prev.monstersDefeated + result.monstersDefeated,
       xpGained: prev.xpGained + result.xpGained,
       goldGained: prev.goldGained + result.goldGained,
     }));
+
+    // Persist in the background — the display already reflects this chunk,
+    // so network latency here no longer causes any visible flicker.
+    await applyCombatResult(currentUser.uid, {
+      xpGained: result.xpGained,
+      goldGained: result.goldGained,
+      loot: result.loot,
+    });
 
     const fresh = await getCharacter(currentUser.uid);
     if (fresh) {
@@ -107,13 +117,9 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
   if (!character || !character.currentActivity.startedAt) return null;
 
   const { attackPower, attackIntervalSeconds } = derivePlayerCombatStats(character);
-  const sinceLastSave = resolveCombat(
-    character.currentActivity.startedAt,
-    new Date(),
-    monster,
-    attackPower,
-    attackIntervalSeconds
-  );
+  const sinceLastSave = anchorRef.current
+    ? resolveCombat(anchorRef.current, new Date(), monster, attackPower, attackIntervalSeconds)
+    : { monstersDefeated: 0, xpGained: 0, goldGained: 0 };
 
   const displayTotals: SessionTotals = {
     monstersDefeated: bankedTotals.monstersDefeated + sinceLastSave.monstersDefeated,
