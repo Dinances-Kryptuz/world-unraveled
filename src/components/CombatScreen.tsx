@@ -113,51 +113,6 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
     monster,
     attackPower,
     attackIntervalSeconds
-    );
-
-    if (result.monstersDefeated === 0) return;
-
-    await applyCombatResult(currentUser.uid, {
-      xpGained: result.xpGained,
-      goldGained: result.goldGained,
-      loot: result.loot,
-    });
-
-    setBankedTotals((prev) => ({
-      monstersDefeated: prev.monstersDefeated + result.monstersDefeated,
-      xpGained: prev.xpGained + result.xpGained,
-      goldGained: prev.goldGained + result.goldGained,
-    }));
-
-    const fresh = await getCharacter(currentUser.uid);
-    if (fresh) {
-      let newLevel = fresh.level;
-      while (fresh.xp >= characterXpForLevel(newLevel + 1)) {
-        newLevel++;
-      }
-      if (newLevel !== fresh.level) {
-        await setCharacterLevel(currentUser.uid, newLevel);
-      }
-    }
-
-    await refetch();
-  }
-
-  async function handleStop() {
-    await autosave();
-    if (userRef.current) await stopActivity(userRef.current.uid);
-    await refetch();
-  }
-
-  if (!character || !character.currentActivity.startedAt) return null;
-
-  const { attackPower, attackIntervalSeconds } = derivePlayerCombatStats(character);
-  const sinceLastSave = resolveCombat(
-    character.currentActivity.startedAt,
-    new Date(),
-    monster,
-    attackPower,
-    attackIntervalSeconds
   );
 
   const displayTotals: SessionTotals = {
