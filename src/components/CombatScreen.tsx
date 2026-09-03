@@ -25,8 +25,6 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
   const [, setTick] = useState(0);
   const secondsSinceSaveRef = useRef(0);
 
-  // Running total across autosaves — each autosave "banks" its chunk in
-  // here rather than the display resetting to zero when startedAt resets.
   const [bankedTotals, setBankedTotals] = useState<SessionTotals>(EMPTY_TOTALS);
 
   const characterRef = useRef<Character | null>(character);
@@ -40,7 +38,6 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
 
   const monster = MONSTERS[monsterId];
 
-  // Reset the running total whenever you start fighting a different monster.
   useEffect(() => {
     setBankedTotals(EMPTY_TOTALS);
   }, [monsterId]);
@@ -64,4 +61,119 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
     const currentCharacter = characterRef.current;
     if (!currentUser || !currentCharacter || !currentCharacter.currentActivity.startedAt) return;
 
-    const { attackPower, attackIntervalSeconds } =
+    const { attackPower, attackIntervalSeconds } = derivePlayerCombatStats(currentCharacter);
+    const result = resolveCombat(
+      currentCharacter.currentActivity.startedAt,
+      new Date(),
+      monster,
+      attackPower,
+      attackIntervalSeconds
+    );
+
+    if (result.monstersDefeated === 0) return;
+
+    await applyCombatResult(currentUser.uid, {
+      xpGained: result.xpGained,
+      goldGained: result.goldGained,
+      loot: result.loot,
+    });
+
+    setBankedTotals((prev) => ({
+      monstersDefeated: prev.monstersDefeated + result.monstersDefeated,
+      xpGained: prev.xpGained + result.xpGained,
+      goldGained: prev.goldGained + result.goldGained,
+    }));
+
+    const fresh = await getCharacter(currentUser.uid);
+    if (fresh) {
+      let newLevel = fresh.level;
+      while (fresh.xp >= characterXpForLevel(newLevel + 1)) {
+        newLevel++;
+      }
+      if (newLevel !== fresh.level) {
+        await setCharacterLevel(currentUser.uid, newLevel);
+      }
+    }
+
+    await refetch();
+  }
+
+  async function handleStop() {
+    await autosave();
+    if (userRef.current) await stopActivity(userRef.current.uid);
+    await refetch();
+  }
+
+  if (!character || !character.currentActivity.startedAt) return null;
+
+  const { attackPower, attackIntervalSeconds } = derivePlayerCombatStats(character);
+  const sinceLastSave = resolveCombat(
+    character.currentActivity.startedAt,
+    new Date(),
+    monster,
+    attackPower,
+    attackIntervalSeconds
+    );
+
+    if (result.monstersDefeated === 0) return;
+
+    await applyCombatResult(currentUser.uid, {
+      xpGained: result.xpGained,
+      goldGained: result.goldGained,
+      loot: result.loot,
+    });
+
+    setBankedTotals((prev) => ({
+      monstersDefeated: prev.monstersDefeated + result.monstersDefeated,
+      xpGained: prev.xpGained + result.xpGained,
+      goldGained: prev.goldGained + result.goldGained,
+    }));
+
+    const fresh = await getCharacter(currentUser.uid);
+    if (fresh) {
+      let newLevel = fresh.level;
+      while (fresh.xp >= characterXpForLevel(newLevel + 1)) {
+        newLevel++;
+      }
+      if (newLevel !== fresh.level) {
+        await setCharacterLevel(currentUser.uid, newLevel);
+      }
+    }
+
+    await refetch();
+  }
+
+  async function handleStop() {
+    await autosave();
+    if (userRef.current) await stopActivity(userRef.current.uid);
+    await refetch();
+  }
+
+  if (!character || !character.currentActivity.startedAt) return null;
+
+  const { attackPower, attackIntervalSeconds } = derivePlayerCombatStats(character);
+  const sinceLastSave = resolveCombat(
+    character.currentActivity.startedAt,
+    new Date(),
+    monster,
+    attackPower,
+    attackIntervalSeconds
+  );
+
+  const displayTotals: SessionTotals = {
+    monstersDefeated: bankedTotals.monstersDefeated + sinceLastSave.monstersDefeated,
+    xpGained: bankedTotals.xpGained + sinceLastSave.xpGained,
+    goldGained: bankedTotals.goldGained + sinceLastSave.goldGained,
+  };
+
+  return (
+    <div className="combat-screen">
+      <h2>Fighting {monster.name}</h2>
+      <p>
+        This session: {displayTotals.monstersDefeated} defeated, +{displayTotals.xpGained} XP, +
+        {displayTotals.goldGained} gold
+      </p>
+      <button onClick={handleStop}>Stop</button>
+    </div>
+  );
+}
