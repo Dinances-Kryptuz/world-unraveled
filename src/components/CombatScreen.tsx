@@ -26,11 +26,6 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
   const secondsSinceSaveRef = useRef(0);
 
   const [bankedTotals, setBankedTotals] = useState<SessionTotals>(EMPTY_TOTALS);
-
-  // Owned entirely locally once combat starts — the display never waits on
-  // a Firestore round-trip to know when to reset. That round-trip delay was
-  // the cause of the flash: bankedTotals updated instantly but the reset
-  // startedAt took a moment longer to come back from the server.
   const anchorRef = useRef<Date | null>(character.currentActivity.startedAt);
 
   const characterRef = useRef<Character | null>(character);
@@ -76,9 +71,9 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
 
     if (result.monstersDefeated === 0) return;
 
-    // Update the display immediately and synchronously — both changes land
-    // in the same render, so there's never a moment where one has updated
-    // and the other hasn't.
+    // Update the display immediately (no flicker) — but remember the
+    // previous anchor so we can undo this if the save below fails.
+    const previousAnchor = anchor;
     anchorRef.current = now;
     setBankedTotals((prev) => ({
       monstersDefeated: prev.monstersDefeated + result.monstersDefeated,
@@ -86,26 +81,37 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
       goldGained: prev.goldGained + result.goldGained,
     }));
 
-    // Persist in the background — the display already reflects this chunk,
-    // so network latency here no longer causes any visible flicker.
-    await applyCombatResult(currentUser.uid, {
-      xpGained: result.xpGained,
-      goldGained: result.goldGained,
-      loot: result.loot,
-    });
+    try {
+      await applyCombatResult(currentUser.uid, {
+        xpGained: result.xpGained,
+        goldGained: result.goldGained,
+        loot: result.loot,
+      });
 
-    const fresh = await getCharacter(currentUser.uid);
-    if (fresh) {
-      let newLevel = fresh.level;
-      while (fresh.xp >= characterXpForLevel(newLevel + 1)) {
-        newLevel++;
+      const fresh = await getCharacter(currentUser.uid);
+      if (fresh) {
+        let newLevel = fresh.level;
+        while (fresh.xp >= characterXpForLevel(newLevel + 1)) {
+          newLevel++;
+        }
+        if (newLevel !== fresh.level) {
+          await setCharacterLevel(currentUser.uid, newLevel);
+        }
       }
-      if (newLevel !== fresh.level) {
-        await setCharacterLevel(currentUser.uid, newLevel);
-      }
+
+      await refetch();
+    } catch (err) {
+      // The save failed (network blip, etc.) — undo the optimistic display
+      // update and rewind the anchor so the NEXT autosave recalculates and
+      // retries this same time window instead of silently losing progress.
+      console.error('Autosave failed, will retry next cycle:', err);
+      anchorRef.current = previousAnchor;
+      setBankedTotals((prev) => ({
+        monstersDefeated: prev.monstersDefeated - result.monstersDefeated,
+        xpGained: prev.xpGained - result.xpGained,
+        goldGained: prev.goldGained - result.goldGained,
+      }));
     }
-
-    await refetch();
   }
 
   async function handleStop() {
