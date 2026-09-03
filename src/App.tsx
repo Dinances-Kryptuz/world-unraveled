@@ -27,8 +27,8 @@ function AppContent() {
 
   return (
     <div>
-      <p>
-        Welcome back, {character.name}! Level {character.level}.
+           <p>
+        Welcome back, {character.name}! Level {character.level} — {character.gold} gold, {character.xp} XP.
       </p>
       <button onClick={() => signOut()}>Sign out</button>
       <ZoneScreen />
