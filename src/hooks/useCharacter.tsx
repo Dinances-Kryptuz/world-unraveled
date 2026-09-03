@@ -20,27 +20,28 @@ export function CharacterProvider({ children }: { children: ReactNode }) {
   const [character, setCharacter] = useState<Character | null>(null);
   const [loading, setLoading] = useState(true);
 
-  async function load() {
+  // showLoading=true only for the very first load (so the user sees a
+  // loading screen once). Background refetches (autosave, etc.) update the
+  // data silently without hiding the UI in between.
+  async function load(showLoading: boolean) {
     if (!user) {
       setCharacter(null);
       setLoading(false);
       return;
     }
-    setLoading(true);
+    if (showLoading) setLoading(true);
     const loaded = await getCharacter(user.uid);
     setCharacter(loaded);
     setLoading(false);
   }
 
   useEffect(() => {
-    load();
-    // Deliberately only re-runs when the signed-in user changes — refetch()
-    // is exposed separately for the moment right after character creation.
+    load(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   return (
-    <CharacterContext.Provider value={{ character, loading, refetch: load }}>
+    <CharacterContext.Provider value={{ character, loading, refetch: () => load(false) }}>
       {children}
     </CharacterContext.Provider>
   );
