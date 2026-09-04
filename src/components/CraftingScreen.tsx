@@ -80,9 +80,10 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
         (m) => (materialsRef.current[m.itemId] ?? 0) >= m.quantity
       );
       if (!hasEnoughMaterials) {
+        // Just show the message and stop trying — don't end the activity
+        // automatically, or the screen unmounts before it can be read.
+        // The player stops manually with the Stop button whenever they want.
         setOutOfMaterials(true);
-        await stopActivity(currentUser.uid);
-        await refetch();
       }
       return;
     }
