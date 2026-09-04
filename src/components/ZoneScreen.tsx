@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useCharacter } from '../hooks/useCharacter';
 import { startActivity } from '../firebase/character';
@@ -7,6 +8,7 @@ import { RECIPES } from '../gameData/recipes';
 import { CombatScreen } from './CombatScreen';
 import { GatheringScreen } from './GatheringScreen';
 import { CraftingScreen } from './CraftingScreen';
+import { WelcomeBackScreen, isLongAbsence } from './WelcomeBackScreen';
 
 const CURRENT_ZONE_ID = 'greenhollow_fields';
 
@@ -14,6 +16,7 @@ export function ZoneScreen() {
   const { user } = useAuth();
   const { character, refetch } = useCharacter();
   const zone = ZONES[CURRENT_ZONE_ID];
+  const [dismissedWelcomeBack, setDismissedWelcomeBack] = useState(false);
 
   async function handleFight(monsterId: string) {
     if (!user) return;
@@ -35,17 +38,26 @@ export function ZoneScreen() {
 
   if (!character) return null;
 
-  if (character.currentActivity.type === 'combat' && character.currentActivity.targetId) {
-    return <CombatScreen monsterId={character.currentActivity.targetId} />;
+  const activity = character.currentActivity;
+  const showWelcomeBack = !dismissedWelcomeBack && activity.type !== null && isLongAbsence(activity);
+
+  if (showWelcomeBack) {
+    return (
+      <WelcomeBackScreen character={character} onContinue={() => setDismissedWelcomeBack(true)} />
+    );
   }
 
-  if (character.currentActivity.type === 'gathering' && character.currentActivity.targetId) {
-    const node = GATHER_NODES[character.currentActivity.targetId];
+  if (activity.type === 'combat' && activity.targetId) {
+    return <CombatScreen monsterId={activity.targetId} />;
+  }
+
+  if (activity.type === 'gathering' && activity.targetId) {
+    const node = GATHER_NODES[activity.targetId];
     if (node) return <GatheringScreen node={node} />;
   }
 
-  if (character.currentActivity.type === 'crafting' && character.currentActivity.targetId) {
-    const recipe = RECIPES[character.currentActivity.targetId];
+  if (activity.type === 'crafting' && activity.targetId) {
+    const recipe = RECIPES[activity.targetId];
     if (recipe) return <CraftingScreen recipe={recipe} />;
   }
 
