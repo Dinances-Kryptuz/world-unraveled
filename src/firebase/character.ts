@@ -106,3 +106,34 @@ export async function applyCombatResult(
 export async function setCharacterLevel(uid: string, level: number): Promise<void> {
   await updateDoc(doc(db, 'characters', uid), { level });
 }
+
+export async function applyGatheringResult(
+  uid: string,
+  profession: ProfessionId,
+  result: { xpGained: number; itemId: string; quantity: number }
+): Promise<void> {
+  await updateDoc(doc(db, 'characters', uid), {
+    [`professions.${profession}.xp`]: increment(result.xpGained),
+  });
+
+  if (result.quantity > 0) {
+    await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), {
+      [`items.${result.itemId}`]: increment(result.quantity),
+    });
+  }
+}
+
+export async function checkAndApplyProfessionLevelUp(uid: string, profession: ProfessionId): Promise<void> {
+  const character = await getCharacter(uid);
+  if (!character) return;
+  const state = character.professions[profession];
+  let newLevel = state.level;
+  while (state.xp >= professionXpForLevel(newLevel + 1)) {
+    newLevel++;
+  }
+  if (newLevel !== state.level) {
+    await updateDoc(doc(db, 'characters', uid), {
+      [`professions.${profession}.level`]: newLevel,
+    });
+  }
+}
