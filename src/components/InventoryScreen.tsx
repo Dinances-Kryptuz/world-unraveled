@@ -25,7 +25,13 @@ export function InventoryScreen() {
 
   if (!inventory) return null;
 
-  const entries = Object.entries(inventory.items).filter(([, quantity]) => quantity > 0);
+  const entries = Object.entries(inventory.items)
+    .filter(([, quantity]) => quantity > 0)
+    .sort(([a], [b]) => {
+      const nameA = ITEMS[a]?.name ?? a;
+      const nameB = ITEMS[b]?.name ?? b;
+      return nameA.localeCompare(nameB);
+    });
 
   return (
     <div className="inventory-screen">
