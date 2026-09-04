@@ -5,6 +5,7 @@ import { CharacterCreationScreen } from './components/CharacterCreationScreen';
 import { ZoneScreen } from './components/ZoneScreen';
 import { signOut } from './firebase/auth';
 import { InventoryScreen } from './components/InventoryScreen';
+import { EquipmentScreen } from './components/EquipmentScreen';
 
 function AppContent() {
   const { user, loading: authLoading } = useAuth();
@@ -33,6 +34,7 @@ function AppContent() {
       </p>
       <button onClick={() => signOut()}>Sign out</button>
       <ZoneScreen />
+      <EquipmentScreen />
       <InventoryScreen />
     </div>
   );
