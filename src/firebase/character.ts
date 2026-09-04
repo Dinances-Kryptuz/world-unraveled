@@ -160,3 +160,35 @@ export async function applyCraftingResult(
   }
   await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), inventoryUpdates);
 }
+
+export async function equipItem(uid: string, slot: EquipmentSlot, itemId: string): Promise<void> {
+  const character = await getCharacter(uid);
+  if (!character) return;
+  const previouslyEquipped = character.equipment[slot];
+
+  const inventoryUpdates: Record<string, unknown> = {
+    [`items.${itemId}`]: increment(-1),
+  };
+  if (previouslyEquipped) {
+    inventoryUpdates[`items.${previouslyEquipped}`] = increment(1);
+  }
+  await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), inventoryUpdates);
+
+  await updateDoc(doc(db, 'characters', uid), {
+    [`equipment.${slot}`]: itemId,
+  });
+}
+
+export async function unequipItem(uid: string, slot: EquipmentSlot): Promise<void> {
+  const character = await getCharacter(uid);
+  if (!character) return;
+  const currentlyEquipped = character.equipment[slot];
+  if (!currentlyEquipped) return;
+
+  await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), {
+    [`items.${currentlyEquipped}`]: increment(1),
+  });
+  await updateDoc(doc(db, 'characters', uid), {
+    [`equipment.${slot}`]: null,
+  });
+}
