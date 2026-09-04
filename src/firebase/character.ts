@@ -137,3 +137,26 @@ export async function checkAndApplyProfessionLevelUp(uid: string, profession: Pr
     });
   }
 }
+
+export async function applyCraftingResult(
+  uid: string,
+  profession: ProfessionId,
+  result: {
+    xpGained: number;
+    resultItemId: string;
+    resultQuantity: number;
+    materialsConsumed: { itemId: string; quantity: number }[];
+  }
+): Promise<void> {
+  await updateDoc(doc(db, 'characters', uid), {
+    [`professions.${profession}.xp`]: increment(result.xpGained),
+  });
+
+  const inventoryUpdates: Record<string, unknown> = {
+    [`items.${result.resultItemId}`]: increment(result.resultQuantity),
+  };
+  for (const m of result.materialsConsumed) {
+    inventoryUpdates[`items.${m.itemId}`] = increment(-m.quantity);
+  }
+  await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), inventoryUpdates);
+}
