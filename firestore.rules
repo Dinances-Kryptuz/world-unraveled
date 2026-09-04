@@ -2,8 +2,6 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // A user can only read/create/update their own account doc, and can
-    // never delete it or write another uid's doc.
     match /users/{uid} {
       allow read: if request.auth != null && request.auth.uid == uid;
       allow create: if request.auth != null && request.auth.uid == uid;
@@ -11,14 +9,111 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // characters/{uid} and characters/{uid}/inventory/main rules land in
-    // Step 3 (character creation) once those documents' write patterns
-    // are implemented — deliberately not stubbed here to avoid rules that
-    // look permissive/complete before the fields they'd validate exist.
+    match /characters/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
 
-    // Default deny for anything not explicitly matched above.
+      allow create: if request.auth != null
+        && request.auth.uid == uid
+        && isValidNewCharacter(request.resource.data);
+
+      allow update: if request.auth != null
+        && request.auth.uid == uid
+        && isValidCharacterUpdate(resource.data, request.resource.data);
+
+      allow delete: if false;
+
+      // Per-item quantity validation (e.g. blocking negative counts) isn't
+      // practically expressible here without hardcoding every itemId from
+      // gameData, which would break every time new content is added. This
+      // stays ownership-only — a known, deliberate gap for V1.
+      match /inventory/{docId} {
+        allow read: if request.auth != null && request.auth.uid == uid;
+        allow create: if request.auth != null && request.auth.uid == uid && request.resource.data.keys().hasOnly(['items']);
+        allow update: if request.auth != null && request.auth.uid == uid && request.resource.data.keys().hasOnly(['items']);
+        allow delete: if false;
+      }
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }
+  }
+
+  function isValidNewCharacter(data) {
+    return data.name is string && data.name.size() >= 2 && data.name.size() <= 20
+      && data.level == 1
+      && data.xp == 0
+      && data.gold == 0
+      && data.voidShards == 0
+      && isValidNewEquipment(data.equipment)
+      && isValidNewProfessions(data.professions)
+      && data.currentActivity.type == null;
+  }
+
+  function isValidCharacterUpdate(before, after) {
+    return after.name == before.name
+      && after.createdAt == before.createdAt
+      && after.level is number && after.level >= before.level
+      && after.xp is number && after.xp >= before.xp
+      && after.gold is number && after.gold >= before.gold
+      && after.voidShards == 0
+      && isValidEquipment(after.equipment)
+      && isValidProfessions(after.professions)
+      && professionsNeverDecrease(before.professions, after.professions)
+      && isValidActivity(after.currentActivity);
+  }
+
+  function isValidEquipment(e) {
+    return e.keys().hasOnly(['weapon','chest','helmet','gloves','legs','boots','ring'])
+      && (e.weapon == null || e.weapon is string)
+      && (e.chest == null || e.chest is string)
+      && (e.helmet == null || e.helmet is string)
+      && (e.gloves == null || e.gloves is string)
+      && (e.legs == null || e.legs is string)
+      && (e.boots == null || e.boots is string)
+      && (e.ring == null || e.ring is string);
+  }
+
+  function isValidNewEquipment(e) {
+    return isValidEquipment(e)
+      && e.weapon == null && e.chest == null && e.helmet == null
+      && e.gloves == null && e.legs == null && e.boots == null && e.ring == null;
+  }
+
+  function isValidProfessionState(p) {
+    return p.keys().hasOnly(['level','xp','unlockedTier'])
+      && p.level is number && p.level >= 1
+      && p.xp is number && p.xp >= 0
+      && p.unlockedTier in ['apprentice','journeyman','expert','artisan','master'];
+  }
+
+  function isValidProfessions(profs) {
+    return profs.keys().hasOnly(['skinning','mining','herbalism','leatherworking'])
+      && isValidProfessionState(profs.skinning)
+      && isValidProfessionState(profs.mining)
+      && isValidProfessionState(profs.herbalism)
+      && isValidProfessionState(profs.leatherworking);
+  }
+
+  function isValidNewProfessions(profs) {
+    return isValidProfessions(profs)
+      && profs.skinning.level == 1 && profs.skinning.xp == 0 && profs.skinning.unlockedTier == 'apprentice'
+      && profs.mining.level == 1 && profs.mining.xp == 0 && profs.mining.unlockedTier == 'apprentice'
+      && profs.herbalism.level == 1 && profs.herbalism.xp == 0 && profs.herbalism.unlockedTier == 'apprentice'
+      && profs.leatherworking.level == 1 && profs.leatherworking.xp == 0 && profs.leatherworking.unlockedTier == 'apprentice';
+  }
+
+  function professionsNeverDecrease(before, after) {
+    return after.skinning.level >= before.skinning.level && after.skinning.xp >= before.skinning.xp
+      && after.mining.level >= before.mining.level && after.mining.xp >= before.mining.xp
+      && after.herbalism.level >= before.herbalism.level && after.herbalism.xp >= before.herbalism.xp
+      && after.leatherworking.level >= before.leatherworking.level && after.leatherworking.xp >= before.leatherworking.xp;
+  }
+
+  function isValidActivity(a) {
+    return a.type in [null, 'combat', 'gathering', 'crafting']
+      && (a.targetId == null || a.targetId is string)
+      && (a.zoneId == null || a.zoneId is string)
+      && (a.startedAt == null || a.startedAt is timestamp);
   }
 }
