@@ -1,26 +1,17 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { getInventory } from '../firebase/inventory';
+import { subscribeToInventory } from '../firebase/inventory';
 import { ITEMS } from '../gameData/items';
 import type { Inventory } from '../types/character';
-
-const REFRESH_INTERVAL_SECONDS = 10;
 
 export function InventoryScreen() {
   const { user } = useAuth();
   const [inventory, setInventory] = useState<Inventory | null>(null);
 
-  async function load() {
-    if (!user) return;
-    const loaded = await getInventory(user.uid);
-    setInventory(loaded);
-  }
-
   useEffect(() => {
-    load();
-    const interval = setInterval(load, REFRESH_INTERVAL_SECONDS * 1000);
-    return () => clearInterval(interval);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (!user) return;
+    const unsubscribe = subscribeToInventory(user.uid, setInventory);
+    return unsubscribe;
   }, [user]);
 
   if (!inventory) return null;
