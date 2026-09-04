@@ -27,12 +27,14 @@ function AppContent() {
     return <CharacterCreationScreen />;
   }
 
-  return (
+   return (
     <div>
-           <p>
-        Welcome back, {character.name}! Level {character.level} — {character.gold} gold, {character.xp} XP.
-      </p>
-      <button onClick={() => signOut()}>Sign out</button>
+      <div className="app-header">
+        <p>
+          <strong>{character.name}</strong> — Level {character.level} — {character.gold} gold, {character.xp} XP
+        </p>
+        <button onClick={() => signOut()}>Sign out</button>
+      </div>
       <ZoneScreen />
       <EquipmentScreen />
       <InventoryScreen />
