@@ -134,7 +134,11 @@ export function resolveGathering(
 
   const actionsAttempted = Math.floor(effectiveSeconds / secondsPerAction);
   const successChance = gatheringSuccessChance(currentSkill, node.requiredLevel);
-  const successfulActions = Math.round(actionsAttempted * successChance);
+    // Deliberately NOT rounded — with roughly one action per autosave chunk,
+  // rounding here would make the fail chance resolve the same way every
+  // single time instead of behaving probabilistically. The caller carries
+  // the fractional remainder across chunks (see GatheringScreen.tsx).
+  const successfulActions = actionsAttempted * successChance;
 
   return {
     itemId: node.itemId,
