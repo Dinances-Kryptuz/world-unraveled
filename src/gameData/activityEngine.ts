@@ -212,7 +212,11 @@ export function resolveCombat(
 
   const loot = monster.lootTable.map((drop) => {
     const avgQty = (drop.minQty + drop.maxQty) / 2;
-    const expectedQuantity = Math.round(monstersDefeated * drop.chance * avgQty);
+    // Deliberately NOT rounded here — a low-probability drop needs several
+    // small fractional chunks to add up to a whole item. The caller
+    // accumulates these fractions across autosaves and only rounds down
+    // once enough has built up (see CombatScreen.tsx).
+    const expectedQuantity = monstersDefeated * drop.chance * avgQty;
     return { itemId: drop.itemId, quantity: expectedQuantity };
   });
 
