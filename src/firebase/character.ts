@@ -1,9 +1,8 @@
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp, Timestamp, increment } from 'firebase/firestore';
 import { db } from './config';
 import type { Character } from '../types/character';
-import type { ProfessionId } from '../gameData/types';
+import type { ProfessionId, EquipmentSlot } from '../gameData/types';
 import { professionXpForLevel } from '../gameData/xpTables';
-
 const STARTING_GATHERING_PROFESSIONS: ProfessionId[] = ['skinning', 'mining', 'herbalism'];
 const STARTING_PRODUCTION_PROFESSIONS: ProfessionId[] = ['leatherworking'];
 const ALL_V1_PROFESSIONS = [...STARTING_GATHERING_PROFESSIONS, ...STARTING_PRODUCTION_PROFESSIONS];
