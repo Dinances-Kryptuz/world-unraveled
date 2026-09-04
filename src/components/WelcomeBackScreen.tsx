@@ -39,9 +39,9 @@ export function WelcomeBackScreen({
         const { attackPower, attackIntervalSeconds } = derivePlayerCombatStats(character);
         const result = resolveCombat(activity.startedAt, now, monster, attackPower, attackIntervalSeconds);
         setSummary(
-          `While you were away, you defeated ${result.monstersDefeated} ${monster.name}${
-            result.monstersDefeated === 1 ? '' : 's'
-          }, earning ${result.xpGained} XP and ${result.goldGained} gold.`
+          `While you were away, you gathered ${Math.floor(result.quantityGained)} ${itemName}, earning ${Math.round(
+            result.xpGained
+          )} XP.`
         );
       } else if (activity.type === 'gathering') {
         const node = GATHER_NODES[activity.targetId];
