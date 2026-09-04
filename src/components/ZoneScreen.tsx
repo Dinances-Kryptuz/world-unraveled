@@ -3,8 +3,10 @@ import { useCharacter } from '../hooks/useCharacter';
 import { startActivity } from '../firebase/character';
 import { ZONES, GATHER_NODES } from '../gameData/zones';
 import { MONSTERS } from '../gameData/monsters';
+import { RECIPES } from '../gameData/recipes';
 import { CombatScreen } from './CombatScreen';
 import { GatheringScreen } from './GatheringScreen';
+import { CraftingScreen } from './CraftingScreen';
 
 const CURRENT_ZONE_ID = 'greenhollow_fields';
 
@@ -25,6 +27,12 @@ export function ZoneScreen() {
     await refetch();
   }
 
+  async function handleCraft(recipeId: string) {
+    if (!user) return;
+    await startActivity(user.uid, { type: 'crafting', targetId: recipeId, zoneId: CURRENT_ZONE_ID });
+    await refetch();
+  }
+
   if (!character) return null;
 
   if (character.currentActivity.type === 'combat' && character.currentActivity.targetId) {
@@ -35,6 +43,13 @@ export function ZoneScreen() {
     const node = GATHER_NODES[character.currentActivity.targetId];
     if (node) return <GatheringScreen node={node} />;
   }
+
+  if (character.currentActivity.type === 'crafting' && character.currentActivity.targetId) {
+    const recipe = RECIPES[character.currentActivity.targetId];
+    if (recipe) return <CraftingScreen recipe={recipe} />;
+  }
+
+  const leatherworkingLevel = character.professions.leatherworking.level;
 
   return (
     <div className="zone-screen">
@@ -62,6 +77,22 @@ export function ZoneScreen() {
             <li key={nodeId}>
               {node.name} ({node.profession}, Lv {node.requiredLevel}+)
               <button onClick={() => handleGather(nodeId)}>Gather</button>
+            </li>
+          );
+        })}
+      </ul>
+
+      <h2>Crafting (Leatherworking)</h2>
+      <ul>
+        {Object.values(RECIPES).map((recipe) => {
+          const meetsLevel = leatherworkingLevel >= recipe.requiredSkill;
+          return (
+            <li key={recipe.id}>
+              {recipe.name} (requires Lv {recipe.requiredSkill}) — materials:{' '}
+              {recipe.materials.map((m) => `${m.quantity}x ${m.itemId}`).join(', ')}
+              <button onClick={() => handleCraft(recipe.id)} disabled={!meetsLevel}>
+                {meetsLevel ? 'Craft' : `Need Lv ${recipe.requiredSkill}`}
+              </button>
             </li>
           );
         })}
