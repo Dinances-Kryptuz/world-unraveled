@@ -27,6 +27,7 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
 
   const [bankedTotals, setBankedTotals] = useState<SessionTotals>(EMPTY_TOTALS);
   const anchorRef = useRef<Date | null>(character.currentActivity.startedAt);
+  const lootCarryRef = useRef<Record<string, number>>({});
 
   const characterRef = useRef<Character | null>(character);
   const userRef = useRef<User | null>(user);
@@ -42,6 +43,7 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
   useEffect(() => {
     setBankedTotals(EMPTY_TOTALS);
     anchorRef.current = character.currentActivity.startedAt;
+    lootCarryRef.current = {};
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [monsterId]);
 
@@ -71,8 +73,19 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
 
     if (result.monstersDefeated === 0) return;
 
-    // Update the display immediately (no flicker) — but remember the
-    // previous anchor so we can undo this if the save below fails.
+    // Turn this chunk's fractional expected loot into whole items to save,
+    // carrying leftover fractions forward so low-probability drops still
+    // add up correctly over many chunks instead of rounding to zero every time.
+    const previousCarry = { ...lootCarryRef.current };
+    const lootToSave: { itemId: string; quantity: number }[] = [];
+    for (const drop of result.loot) {
+      const carry = lootCarryRef.current[drop.itemId] ?? 0;
+      const total = carry + drop.quantity;
+      const whole = Math.floor(total);
+      lootCarryRef.current[drop.itemId] = total - whole;
+      if (whole > 0) lootToSave.push({ itemId: drop.itemId, quantity: whole });
+    }
+
     const previousAnchor = anchor;
     anchorRef.current = now;
     setBankedTotals((prev) => ({
@@ -85,7 +98,7 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
       await applyCombatResult(currentUser.uid, {
         xpGained: result.xpGained,
         goldGained: result.goldGained,
-        loot: result.loot,
+        loot: lootToSave,
       });
 
       const fresh = await getCharacter(currentUser.uid);
@@ -101,11 +114,9 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
 
       await refetch();
     } catch (err) {
-      // The save failed (network blip, etc.) — undo the optimistic display
-      // update and rewind the anchor so the NEXT autosave recalculates and
-      // retries this same time window instead of silently losing progress.
       console.error('Autosave failed, will retry next cycle:', err);
       anchorRef.current = previousAnchor;
+      lootCarryRef.current = previousCarry;
       setBankedTotals((prev) => ({
         monstersDefeated: prev.monstersDefeated - result.monstersDefeated,
         xpGained: prev.xpGained - result.xpGained,
@@ -129,8 +140,8 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
 
   const displayTotals: SessionTotals = {
     monstersDefeated: bankedTotals.monstersDefeated + sinceLastSave.monstersDefeated,
-    xpGained: bankedTotals.xpGained + sinceLastSave.xpGained,
-    goldGained: bankedTotals.goldGained + sinceLastSave.goldGained,
+    xpGained: bankedTotals.xpGained + Math.round(sinceLastSave.xpGained),
+    goldGained: bankedTotals.goldGained + Math.round(sinceLastSave.goldGained),
   };
 
   return (
