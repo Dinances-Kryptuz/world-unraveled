@@ -1,4 +1,5 @@
 import type { EquipmentSlot, ProfessionId, ActivityType, ProfessionTierName } from '../gameData/types';
+import type { ClassId, SpecId } from '../gameData/classStats';
 
 export interface ProfessionState {
   level: number;
@@ -8,7 +9,7 @@ export interface ProfessionState {
 
 export interface CurrentActivity {
   type: ActivityType | null;
-  targetId: string | null; // monsterId, resourceNodeId (or skinning target), or recipeId
+  targetId: string | null;
   zoneId: string | null;
   startedAt: Date | null;
   recipeQueue?: { recipeId: string; quantity: number }[];
@@ -20,12 +21,14 @@ export interface Character {
   level: number;
   xp: number;
   gold: number;
-  voidShards: number; // always 0 in V1, reserved for later
+  voidShards: number;
+  class: ClassId;
+  spec: SpecId | null;
   equipment: Record<EquipmentSlot, string | null>;
   professions: Record<ProfessionId, ProfessionState>;
   currentActivity: CurrentActivity;
 }
 
 export interface Inventory {
-  items: Record<string, number>; // itemDefId -> quantity
+  items: Record<string, number>;
 }
