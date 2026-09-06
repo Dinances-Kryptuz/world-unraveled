@@ -1,8 +1,9 @@
-import { doc, getDoc, setDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp, Timestamp, increment } from 'firebase/firestore';
 import { db } from './config';
 import type { Character } from '../types/character';
-import type { ProfessionId } from '../gameData/types';
+import type { ProfessionId, EquipmentSlot } from '../gameData/types';
 import type { ClassId } from '../gameData/classStats';
+import { professionXpForLevel } from '../gameData/xpTables';
 
 const STARTING_GATHERING_PROFESSIONS: ProfessionId[] = ['skinning', 'mining', 'herbalism'];
 const STARTING_PRODUCTION_PROFESSIONS: ProfessionId[] = ['leatherworking'];
@@ -55,3 +56,103 @@ export async function createCharacter(uid: string, name: string, characterClass:
   await setDoc(doc(db, 'characters', uid), character);
   await setDoc(doc(db, 'characters', uid, 'inventory', 'main'), { items: {} });
 }
+
+export async function startActivity(
+  uid: string,
+  activity: { type: 'combat' | 'gathering' | 'crafting'; targetId: string; zoneId: string }
+): Promise<void> {
+  await updateDoc(doc(db, 'characters', uid), {
+    currentActivity: {
+      type: activity.type,
+      targetId: activity.targetId,
+      zoneId: activity.zoneId,
+      startedAt: serverTimestamp(),
+    },
+  });
+}
+
+export async function stopActivity(uid: string): Promise<void> {
+  await updateDoc(doc(db, 'characters', uid), {
+    currentActivity: { type: null, targetId: null, zoneId: null, startedAt: null },
+  });
+}
+
+export async function applyCombatResult(
+  uid: string,
+  result: { xpGained: number; goldGained: number; loot: { itemId: string; quantity: number }[] }
+): Promise<void> {
+  await updateDoc(doc(db, 'characters', uid), {
+    xp: increment(result.xpGained),
+    gold: increment(result.goldGained),
+    'currentActivity.startedAt': serverTimestamp(),
+  });
+
+  if (result.loot.length > 0) {
+    const inventoryUpdates: Record<string, unknown> = {};
+    for (const drop of result.loot) {
+      inventoryUpdates[`items.${drop.itemId}`] = increment(drop.quantity);
+    }
+    await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), inventoryUpdates);
+  }
+}
+
+export async function setCharacterLevel(uid: string, level: number): Promise<void> {
+  await updateDoc(doc(db, 'characters', uid), { level });
+}
+
+export async function applyGatheringResult(
+  uid: string,
+  profession: ProfessionId,
+  result: { xpGained: number; itemId: string; quantity: number }
+): Promise<void> {
+  await updateDoc(doc(db, 'characters', uid), {
+    [`professions.${profession}.xp`]: increment(result.xpGained),
+  });
+
+  if (result.quantity > 0) {
+    await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), {
+      [`items.${result.itemId}`]: increment(result.quantity),
+    });
+  }
+}
+
+export async function checkAndApplyProfessionLevelUp(uid: string, profession: ProfessionId): Promise<void> {
+  const character = await getCharacter(uid);
+  if (!character) return;
+  const state = character.professions[profession];
+  let newLevel = state.level;
+  while (state.xp >= professionXpForLevel(newLevel + 1)) {
+    newLevel++;
+  }
+  if (newLevel !== state.level) {
+    await updateDoc(doc(db, 'characters', uid), {
+      [`professions.${profession}.level`]: newLevel,
+    });
+  }
+}
+
+export async function applyCraftingResult(
+  uid: string,
+  profession: ProfessionId,
+  result: {
+    xpGained: number;
+    resultItemId: string;
+    resultQuantity: number;
+    materialsConsumed: { itemId: string; quantity: number }[];
+  }
+): Promise<void> {
+  await updateDoc(doc(db, 'characters', uid), {
+    [`professions.${profession}.xp`]: increment(result.xpGained),
+  });
+
+  const inventoryUpdates: Record<string, unknown> = {
+    [`items.${result.resultItemId}`]: increment(result.resultQuantity),
+  };
+  for (const m of result.materialsConsumed) {
+    inventoryUpdates[`items.${m.itemId}`] = increment(-m.quantity);
+  }
+  await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), inventoryUpdates);
+}
+
+export async function equipItem(uid: string, slot: EquipmentSlot, itemId: string): Promise<void> {
+  const character =
