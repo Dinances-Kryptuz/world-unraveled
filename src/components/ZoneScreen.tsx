@@ -9,6 +9,7 @@ import { CombatScreen } from './CombatScreen';
 import { GatheringScreen } from './GatheringScreen';
 import { CraftingScreen } from './CraftingScreen';
 import { WelcomeBackScreen, isLongAbsence } from './WelcomeBackScreen';
+import { SpecSelectionScreen } from './SpecSelectionScreen';
 
 const CURRENT_ZONE_ID = 'greenhollow_fields';
 
@@ -37,6 +38,10 @@ export function ZoneScreen() {
   }
 
   if (!character) return null;
+
+  if (character.level >= 5 && character.spec === null) {
+    return <SpecSelectionScreen />;
+  }
 
   const activity = character.currentActivity;
   const showWelcomeBack = !dismissedWelcomeBack && activity.type !== null && isLongAbsence(activity);
