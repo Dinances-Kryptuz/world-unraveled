@@ -70,7 +70,10 @@ export function WelcomeBackScreen({
         setSummary('Welcome back!');
       }
     }
-    compute();
+    compute().catch((err) => {
+      console.error('Welcome back calculation failed:', err);
+      setSummary("Welcome back! (Couldn't calculate exact offline progress, but everything already saved is safe.)");
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
