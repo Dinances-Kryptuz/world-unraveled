@@ -48,3 +48,18 @@ export const SPECS: Record<SpecId, SpecDef> = {
 export function statAtLevel(cls: ClassId, stat: BaseStat, level: number): number {
   return 5 + (level - 1) * CLASS_GROWTH[cls][stat];
 }
+
+export const CLASS_LABELS: Record<ClassId, string> = {
+  warrior: 'Warrior',
+  priest: 'Priest',
+  paladin: 'Paladin',
+};
+
+export const SPEC_LABELS: Record<SpecId, string> = {
+  warrior_dps: 'Melee DPS',
+  warrior_tank: 'Tank',
+  shadow_priest: 'Shadow',
+  holy_priest: 'Holy',
+  prot_paladin: 'Protection',
+  holy_paladin: 'Holy',
+};
