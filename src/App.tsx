@@ -31,7 +31,9 @@ function AppContent() {
     <div>
       <div className="app-header">
         <p>
-          <strong>{character.name}</strong> — Level {character.level} — {character.gold} gold, {character.xp} XP
+          <strong>{character.name}</strong> — {CLASS_LABELS[character.class]}
+          {character.spec ? ` (${SPEC_LABELS[character.spec]})` : ''} — Level {character.level} —{' '}
+          {character.gold} gold, {character.xp} XP
         </p>
         <button onClick={() => signOut()}>Sign out</button>
       </div>
