@@ -6,6 +6,7 @@ import { ZoneScreen } from './components/ZoneScreen';
 import { signOut } from './firebase/auth';
 import { InventoryScreen } from './components/InventoryScreen';
 import { EquipmentScreen } from './components/EquipmentScreen';
+import { CLASS_LABELS, SPEC_LABELS } from './gameData/classStats';
 
 function AppContent() {
   const { user, loading: authLoading } = useAuth();
