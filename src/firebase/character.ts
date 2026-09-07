@@ -2,7 +2,7 @@ import { doc, getDoc, setDoc, updateDoc, serverTimestamp, Timestamp, increment }
 import { db } from './config';
 import type { Character } from '../types/character';
 import type { ProfessionId, EquipmentSlot } from '../gameData/types';
-import type { ClassId } from '../gameData/classStats';
+import type { ClassId, SpecId } from '../gameData/classStats';
 import { professionXpForLevel } from '../gameData/xpTables';
 
 const STARTING_GATHERING_PROFESSIONS: ProfessionId[] = ['skinning', 'mining', 'herbalism'];
@@ -184,4 +184,8 @@ export async function unequipItem(uid: string, slot: EquipmentSlot): Promise<voi
   await updateDoc(doc(db, 'characters', uid), {
     [`equipment.${slot}`]: null,
   });
+}
+
+export async function chooseSpec(uid: string, spec: SpecId): Promise<void> {
+  await updateDoc(doc(db, 'characters', uid), { spec });
 }
