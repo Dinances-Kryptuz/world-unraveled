@@ -44,4 +44,4 @@ export interface TalentRow {
 export type TalentTree = TalentRow[];
 
 export type TalentPicks = Partial<Record<number, TalentColumn>>;
-</br>
+
