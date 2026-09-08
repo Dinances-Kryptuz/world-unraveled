@@ -3,7 +3,9 @@ import { db } from './config';
 import type { Character } from '../types/character';
 import type { ProfessionId, EquipmentSlot } from '../gameData/types';
 import type { ClassId, SpecId } from '../gameData/classStats';
+import type { TalentColumn } from '../gameData/talents';
 import { professionXpForLevel } from '../gameData/xpTables';
+import { maxHp } from '../gameData/combatFormulas';
 
 const STARTING_GATHERING_PROFESSIONS: ProfessionId[] = ['skinning', 'mining', 'herbalism'];
 const STARTING_PRODUCTION_PROFESSIONS: ProfessionId[] = ['leatherworking'];
@@ -17,6 +19,7 @@ export async function getCharacter(uid: string): Promise<Character | null> {
   return {
     ...data,
     createdAt: (data.createdAt as Timestamp)?.toDate() ?? new Date(),
+    hpCheckpointAt: (data.hpCheckpointAt as Timestamp)?.toDate() ?? new Date(),
     currentActivity: {
       ...data.currentActivity,
       startedAt: data.currentActivity?.startedAt
@@ -40,6 +43,9 @@ export async function createCharacter(uid: string, name: string, characterClass:
     voidShards: 0,
     class: characterClass,
     spec: null,
+    talentPicks: {},
+    currentHp: maxHp(characterClass, 1),
+    hpCheckpointAt: serverTimestamp(),
     equipment: {
       weapon: null,
       chest: null,
@@ -96,8 +102,12 @@ export async function applyCombatResult(
   }
 }
 
-export async function setCharacterLevel(uid: string, level: number): Promise<void> {
-  await updateDoc(doc(db, 'characters', uid), { level });
+export async function setCharacterLevel(uid: string, level: number, restoredHp: number): Promise<void> {
+  await updateDoc(doc(db, 'characters', uid), {
+    level,
+    currentHp: restoredHp,
+    hpCheckpointAt: serverTimestamp(),
+  });
 }
 
 export async function applyGatheringResult(
@@ -188,4 +198,25 @@ export async function unequipItem(uid: string, slot: EquipmentSlot): Promise<voi
 
 export async function chooseSpec(uid: string, spec: SpecId): Promise<void> {
   await updateDoc(doc(db, 'characters', uid), { spec });
+}
+
+export async function pickTalent(uid: string, rowLevel: number, column: TalentColumn): Promise<void> {
+  await updateDoc(doc(db, 'characters', uid), {
+    [`talentPicks.${rowLevel}`]: column,
+  });
+}
+
+const RESPEC_COST_GOLD = 100;
+
+export async function respecTalents(uid: string): Promise<{ success: boolean; reason?: string }> {
+  const character = await getCharacter(uid);
+  if (!character) return { success: false, reason: 'Character not found.' };
+  if (character.gold < RESPEC_COST_GOLD) {
+    return { success: false, reason: `Not enough gold (need ${RESPEC_COST_GOLD}).` };
+  }
+  await updateDoc(doc(db, 'characters', uid), {
+    gold: increment(-RESPEC_COST_GOLD),
+    talentPicks: {},
+  });
+  return { success: true };
 }
