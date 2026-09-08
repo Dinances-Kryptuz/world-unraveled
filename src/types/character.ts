@@ -1,5 +1,6 @@
 import type { EquipmentSlot, ProfessionId, ActivityType, ProfessionTierName } from '../gameData/types';
 import type { ClassId, SpecId } from '../gameData/classStats';
+import type { TalentPicks } from '../gameData/talents';
 
 export interface ProfessionState {
   level: number;
@@ -24,6 +25,9 @@ export interface Character {
   voidShards: number;
   class: ClassId;
   spec: SpecId | null;
+  talentPicks: TalentPicks;
+  currentHp: number;
+  hpCheckpointAt: Date;
   equipment: Record<EquipmentSlot, string | null>;
   professions: Record<ProfessionId, ProfessionState>;
   currentActivity: CurrentActivity;
