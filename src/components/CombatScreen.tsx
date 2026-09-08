@@ -6,6 +6,7 @@ import { resolveCombat } from '../gameData/activityEngine';
 import { characterXpForLevel } from '../gameData/xpTables';
 import { MONSTERS } from '../gameData/monsters';
 import { derivePlayerCombatStats } from '../utils/playerStats';
+import { maxHp } from '../gameData/combatFormulas';
 import type { Character } from '../types/character';
 import type { User } from 'firebase/auth';
 
@@ -73,9 +74,6 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
 
     if (result.monstersDefeated === 0) return;
 
-    // Turn this chunk's fractional expected loot into whole items to save,
-    // carrying leftover fractions forward so low-probability drops still
-    // add up correctly over many chunks instead of rounding to zero every time.
     const previousCarry = { ...lootCarryRef.current };
     const lootToSave: { itemId: string; quantity: number }[] = [];
     for (const drop of result.loot) {
@@ -108,7 +106,8 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
           newLevel++;
         }
         if (newLevel !== fresh.level) {
-          await setCharacterLevel(currentUser.uid, newLevel);
+          const restoredHp = maxHp(fresh.class, newLevel);
+          await setCharacterLevel(currentUser.uid, newLevel, restoredHp);
         }
       }
 
