@@ -114,6 +114,25 @@ export function monsterHp(level: number): number {
   return hp;
 }
 
+// ── HP regeneration (out of combat only — no regen during an active combat
+// session, per the design decision; each kill within a session compounds
+// exposure, and regen only resumes once you stop or are forced to retreat) ──
+
+export const HP_REGEN_PCT_PER_MINUTE = 0.20; // full recovery from near-zero in ~5 minutes
+
+/**
+ * Computes current HP right now, given the last known HP/checkpoint and the
+ * elapsed time since — same "resolve elapsed time" pattern used everywhere
+ * else in this project (gathering, crafting, offline catch-up). Read-only;
+ * doesn't write anything, callers decide when to persist the result.
+ */
+export function resolveCurrentHp(storedHp: number, maxHpValue: number, checkpointAt: Date, now: Date): number {
+  const elapsedMinutes = Math.max(0, (now.getTime() - checkpointAt.getTime()) / 60000);
+  const regenAmount = maxHpValue * HP_REGEN_PCT_PER_MINUTE * elapsedMinutes;
+  return Math.min(maxHpValue, storedHp + regenAmount);
+}
+
+
 export interface CombatProfileInput {
   cls: ClassId;
   spec: SpecId;
