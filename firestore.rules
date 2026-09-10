@@ -22,10 +22,6 @@ service cloud.firestore {
 
       allow delete: if false;
 
-      // Per-item quantity validation (e.g. blocking negative counts) isn't
-      // practically expressible here without hardcoding every itemId from
-      // gameData, which would break every time new content is added. This
-      // stays ownership-only — a known, deliberate gap for V1.
       match /inventory/{docId} {
         allow read: if request.auth != null && request.auth.uid == uid;
         allow create: if request.auth != null && request.auth.uid == uid && request.resource.data.keys().hasOnly(['items']);
@@ -55,7 +51,7 @@ service cloud.firestore {
       && after.createdAt == before.createdAt
       && after.level is number && after.level >= before.level
       && after.xp is number && after.xp >= before.xp
-      && after.gold is number && after.gold >= before.gold
+      && after.gold is number && after.gold >= 0
       && after.voidShards == 0
       && isValidEquipment(after.equipment)
       && isValidProfessions(after.professions)
