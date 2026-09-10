@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useCharacter } from '../hooks/useCharacter';
-import { pickTalent, respecTalents } from '../firebase/character';
+import { pickTalent, respecTalents, getRespecCost } from '../firebase/character';
 import { unlockedRows } from '../utils/talentEvaluator';
 import type { TalentColumn } from '../gameData/talents';
 
@@ -45,7 +45,7 @@ export function TalentScreen() {
       <h2>Talents</h2>
       <p>One pick per row. Locked rows unlock as you level.</p>
       <button onClick={handleRespec} disabled={respeccing}>
-        {respeccing ? 'Respeccing…' : 'Respec (100 gold)'}
+        {respeccing ? 'Respeccing…' : `Respec (${getRespecCost(character.respecCount)} gold)`}
       </button>
       {respecError && <p className="error">{respecError}</p>}
 

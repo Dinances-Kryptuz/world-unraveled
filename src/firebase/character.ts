@@ -40,6 +40,7 @@ export async function createCharacter(uid: string, name: string, characterClass:
     level: 1,
     xp: 0,
     gold: 0,
+    respecCount: 0,
     voidShards: 0,
     class: characterClass,
     spec: null,
@@ -206,17 +207,21 @@ export async function pickTalent(uid: string, rowLevel: number, column: TalentCo
   });
 }
 
-const RESPEC_COST_GOLD = 100;
+export function getRespecCost(respecCount: number): number {
+  return Math.min(5000, 100 * Math.pow(2, respecCount));
+}
 
 export async function respecTalents(uid: string): Promise<{ success: boolean; reason?: string }> {
   const character = await getCharacter(uid);
   if (!character) return { success: false, reason: 'Character not found.' };
-  if (character.gold < RESPEC_COST_GOLD) {
-    return { success: false, reason: `Not enough gold (need ${RESPEC_COST_GOLD}).` };
+  const cost = getRespecCost(character.respecCount);
+  if (character.gold < cost) {
+    return { success: false, reason: `Not enough gold (need ${cost}).` };
   }
   await updateDoc(doc(db, 'characters', uid), {
-    gold: increment(-RESPEC_COST_GOLD),
+    gold: increment(-cost),
     talentPicks: {},
+    respecCount: increment(1),
   });
   return { success: true };
 }

@@ -22,6 +22,7 @@ export interface Character {
   level: number;
   xp: number;
   gold: number;
+  respecCount: number; // increments each respec; drives the scaling cost
   voidShards: number;
   class: ClassId;
   spec: SpecId | null;
