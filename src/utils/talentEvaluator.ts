@@ -19,7 +19,7 @@ export interface QualitativeNote {
   note: string;
 }
 
-const EMPTY_TOTALS: TalentBonusTotals = {
+export const EMPTY_TALENT_TOTALS: TalentBonusTotals = {
   flatDmgPct: 0,
   flatDmgTakenPct: 0,
   armorMultPct: 0,
@@ -93,7 +93,7 @@ export function evaluateTalents(
   picks: TalentPicks
 ): { totals: TalentBonusTotals; notes: QualitativeNote[] } {
   const tree = TALENT_TREES[spec];
-  const totals: TalentBonusTotals = { ...EMPTY_TOTALS };
+  const totals: TalentBonusTotals = { ...EMPTY_TALENT_TOTALS };
   const notes: QualitativeNote[] = [];
 
   for (const row of tree) {
