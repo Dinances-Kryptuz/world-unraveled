@@ -5,10 +5,27 @@
 /**
  * Total cumulative XP required to REACH a given character level.
  * Level 1 = 0 XP. Roughly matches a classic-MMO-feeling early curve.
+ * NOTE: this is the V1 flat-combat-era curve. It is superseded by
+ * characterXpForLevelV2 below for anything using the new class/spec combat
+ * system (Step 7 onward) — the new per-kill XP values are much larger, and
+ * pairing them with this old curve reproduces the "level 60 in under an
+ * hour" bug found and fixed when the real XP curve was calibrated. Kept
+ * here only in case anything still references it during the migration.
  */
 export function characterXpForLevel(level: number): number {
   if (level <= 1) return 0;
   return Math.round(50 * Math.pow(level - 1, 1.8));
+}
+
+/**
+ * The real, calibrated 1-60 character XP curve (simulation-verified against
+ * all six specs — see the combat-sim work: ~509 hours of 24/7 play to reach
+ * level 60, a smooth ramp rather than a flat/spike shape). This is what the
+ * new combat resolver (Step 7+) checks level-ups against.
+ */
+export function characterXpForLevelV2(level: number): number {
+  if (level <= 1) return 0;
+  return 4000 * Math.pow(level, 2.6);
 }
 
 /**
