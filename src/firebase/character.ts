@@ -40,13 +40,13 @@ export async function createCharacter(uid: string, name: string, characterClass:
     level: 1,
     xp: 0,
     gold: 0,
-    respecCount: 0,
     voidShards: 0,
     class: characterClass,
     spec: null,
     talentPicks: {},
     currentHp: maxHp(characterClass, 1),
     hpCheckpointAt: serverTimestamp(),
+    respecCount: 0,
     equipment: {
       weapon: null,
       chest: null,
@@ -86,13 +86,23 @@ export async function stopActivity(uid: string): Promise<void> {
 
 export async function applyCombatResult(
   uid: string,
-  result: { xpGained: number; goldGained: number; loot: { itemId: string; quantity: number }[] }
+  result: {
+    xpGained: number;
+    goldGained: number;
+    loot: { itemId: string; quantity: number }[];
+    hpAfter?: number;
+  }
 ): Promise<void> {
-  await updateDoc(doc(db, 'characters', uid), {
+  const characterUpdate: Record<string, unknown> = {
     xp: increment(result.xpGained),
     gold: increment(result.goldGained),
     'currentActivity.startedAt': serverTimestamp(),
-  });
+  };
+  if (result.hpAfter !== undefined) {
+    characterUpdate.currentHp = result.hpAfter;
+    characterUpdate.hpCheckpointAt = serverTimestamp();
+  }
+  await updateDoc(doc(db, 'characters', uid), characterUpdate);
 
   if (result.loot.length > 0) {
     const inventoryUpdates: Record<string, unknown> = {};
