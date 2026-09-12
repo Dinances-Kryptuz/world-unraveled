@@ -6,6 +6,7 @@ export const MONSTERS: Record<string, Monster> = {
     name: 'Greenhorn Boar',
     zoneIds: ['greenhollow_fields'],
     levelRange: [1, 5],
+    level: 2, // placeholder — real tuning against the new formulas happens at Step 10
     hp: 28,
     attackPower: 3,
     defense: 1,
@@ -37,8 +38,9 @@ export const MONSTERS: Record<string, Monster> = {
   forest_wolf: {
     id: 'forest_wolf',
     name: 'Forest Wolf',
-    zoneIds: ['greenhollow_fields'], // also appears in Whispering Woods later (not built yet)
+    zoneIds: ['greenhollow_fields'],
     levelRange: [3, 8],
+    level: 5, // placeholder — real tuning against the new formulas happens at Step 10
     hp: 32,
     attackPower: 5,
     defense: 2,
@@ -72,6 +74,7 @@ export const MONSTERS: Record<string, Monster> = {
     name: 'Wild Kobold',
     zoneIds: ['greenhollow_fields'],
     levelRange: [5, 10],
+    level: 7, // placeholder — real tuning against the new formulas happens at Step 10
     hp: 40,
     attackPower: 6,
     defense: 3,
@@ -84,7 +87,7 @@ export const MONSTERS: Record<string, Monster> = {
       { itemId: 'copper_scrap', chance: 0.25, minQty: 1, maxQty: 1 },
       { itemId: 'small_coin_pouch', chance: 0.1, minQty: 1, maxQty: 1 },
     ],
-    skinnable: false, // humanoid — feeds Tailoring's cloth loop instead, per the profession ecosystem
+    skinnable: false,
     specialAbility: {
       name: 'Dirty Strike',
       description: 'Has a chance to briefly reduce player defense.',
@@ -97,10 +100,11 @@ export const MONSTERS: Record<string, Monster> = {
     name: 'Thornback Hare',
     zoneIds: ['greenhollow_fields'],
     levelRange: [2, 6],
+    level: 3, // placeholder — real tuning against the new formulas happens at Step 10
     hp: 20,
     attackPower: 2,
     defense: 1,
-    attackIntervalSeconds: 1.8, // fast attacker, low damage
+    attackIntervalSeconds: 1.8,
     xpReward: 6,
     goldMin: 1,
     goldMax: 2,
