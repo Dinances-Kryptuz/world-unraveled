@@ -113,8 +113,8 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
     hpRef.current = result.hpAfter;
     setBankedTotals((prev) => ({
       monstersDefeated: prev.monstersDefeated + result.monstersDefeated,
-      xpGained: prev.xpGained + result.xpGained,
-      goldGained: prev.goldGained + result.goldGained,
+      xpGained: prev.xpGained + Math.round(result.xpGained),
+      goldGained: prev.goldGained + Math.round(result.goldGained),
     }));
 
     try {
@@ -151,8 +151,8 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
       lootCarryRef.current = previousCarry;
       setBankedTotals((prev) => ({
         monstersDefeated: prev.monstersDefeated - result.monstersDefeated,
-        xpGained: prev.xpGained - result.xpGained,
-        goldGained: prev.goldGained - result.goldGained,
+        xpGained: prev.xpGained - Math.round(result.xpGained),
+        goldGained: prev.goldGained - Math.round(result.goldGained),
       }));
     }
   }
