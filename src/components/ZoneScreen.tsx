@@ -10,8 +10,29 @@ import { GatheringScreen } from './GatheringScreen';
 import { CraftingScreen } from './CraftingScreen';
 import { WelcomeBackScreen, isLongAbsence } from './WelcomeBackScreen';
 import { SpecSelectionScreen } from './SpecSelectionScreen';
+import { mobColorTier, type MobColorTier } from '../gameData/combatFormulas';
 
 const CURRENT_ZONE_ID = 'greenhollow_fields';
+
+const TIER_COLORS: Record<MobColorTier, string> = {
+  grey: '#8c8c8c',
+  green: '#2e9e4f',
+  yellow: '#b8960c',
+  orange: '#d2691e',
+  red: '#c0392b',
+  unknown: '#7d2ae8',
+};
+
+function MonsterLevelBadge({ monsterLevel, playerLevel }: { monsterLevel: number; playerLevel: number }) {
+  const diff = monsterLevel - playerLevel;
+  const tier = mobColorTier(diff);
+  const label = tier === 'unknown' ? '??' : `Lv ${monsterLevel}`;
+  return (
+    <span style={{ color: TIER_COLORS[tier], fontWeight: 700 }} title={`${tier} — ${diff >= 0 ? '+' : ''}${diff} levels vs you`}>
+      {label}
+    </span>
+  );
+}
 
 export function ZoneScreen() {
   const { user } = useAuth();
@@ -47,9 +68,7 @@ export function ZoneScreen() {
   const showWelcomeBack = !dismissedWelcomeBack && activity.type !== null && isLongAbsence(activity);
 
   if (showWelcomeBack) {
-    return (
-      <WelcomeBackScreen character={character} onContinue={() => setDismissedWelcomeBack(true)} />
-    );
+    return <WelcomeBackScreen character={character} onContinue={() => setDismissedWelcomeBack(true)} />;
   }
 
   if (activity.type === 'combat' && activity.targetId) {
@@ -79,7 +98,7 @@ export function ZoneScreen() {
           const monster = MONSTERS[monsterId];
           return (
             <li key={monsterId}>
-              {monster.name} (Lv {monster.levelRange[0]}-{monster.levelRange[1]})
+              {monster.name} (<MonsterLevelBadge monsterLevel={monster.level} playerLevel={character.level} />)
               <button onClick={() => handleFight(monsterId)}>Fight</button>
             </li>
           );
