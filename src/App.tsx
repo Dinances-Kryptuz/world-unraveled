@@ -39,7 +39,7 @@ function AppContent() {
         <p>
           <strong>{character.name}</strong> — {CLASS_LABELS[character.class]}
           {character.spec ? ` (${SPEC_LABELS[character.spec]})` : ''} — Level {character.level} —{' '}
-          {character.gold} gold, {character.xp} XP
+          {Math.round(character.gold)} gold, {Math.round(character.xp)} XP
         </p>
         <p>
           HP: {Math.round(currentHp)} / {Math.round(characterMaxHp)}
