@@ -119,8 +119,8 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
 
     try {
       await applyCombatResult(currentUser.uid, {
-        xpGained: result.xpGained,
-        goldGained: result.goldGained,
+        xpGained: Math.round(result.xpGained),
+        goldGained: Math.round(result.goldGained),
         loot: lootToSave,
         hpAfter: result.hpAfter,
       });
