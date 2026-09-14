@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { resolveCombat, resolveGathering, resolveCrafting, LIVE_SESSION_THRESHOLD_SECONDS } from '../gameData/activityEngine';
+import { resolveGathering, resolveCrafting, LIVE_SESSION_THRESHOLD_SECONDS } from '../gameData/activityEngine';
 import { MONSTERS } from '../gameData/monsters';
 import { GATHER_NODES } from '../gameData/zones';
 import { RECIPES } from '../gameData/recipes';
 import { ITEMS } from '../gameData/items';
-import { derivePlayerCombatStats } from '../utils/playerStats';
+import { resolveSpecDef, computeFullCombatProfile, getExtraDamageTakenPct } from '../gameData/combatProfileWithTalents';
+import { resolveCombatEncounter } from '../gameData/combatResolver';
+import { evaluateTalents, EMPTY_TALENT_TOTALS } from '../utils/talentEvaluator';
+import { maxHp, resolveCurrentHp } from '../gameData/combatFormulas';
 import { getInventory } from '../firebase/inventory';
 import type { Character, CurrentActivity } from '../types/character';
 
@@ -36,12 +39,27 @@ export function WelcomeBackScreen({
 
       if (activity.type === 'combat') {
         const monster = MONSTERS[activity.targetId];
-        const { attackPower, attackIntervalSeconds } = derivePlayerCombatStats(character);
-        const result = resolveCombat(activity.startedAt, now, monster, attackPower, attackIntervalSeconds);
+        const specDef = resolveSpecDef(character.class, character.spec);
+        const talentTotals = character.spec
+          ? evaluateTalents(character.spec, character.talentPicks).totals
+          : EMPTY_TALENT_TOTALS;
+        const extraDmgTaken = getExtraDamageTakenPct(character.spec, character.talentPicks);
+        const profile = computeFullCombatProfile(
+          character.class,
+          specDef,
+          character.level,
+          monster.level,
+          talentTotals,
+          extraDmgTaken
+        );
+        const charMaxHp = maxHp(character.class, character.level);
+        const startingHp = resolveCurrentHp(character.currentHp, charMaxHp, character.hpCheckpointAt, activity.startedAt);
+        const result = resolveCombatEncounter(activity.startedAt, now, startingHp, profile, monster);
+        const retreatNote = result.forcedRetreat ? ' You were forced to retreat before your time was up.' : '';
         setSummary(
           `While you were away, you defeated ${result.monstersDefeated} ${monster.name}${
             result.monstersDefeated === 1 ? '' : 's'
-          }, earning ${result.xpGained} XP and ${result.goldGained} gold.`
+          }, earning ${Math.round(result.xpGained)} XP and ${Math.round(result.goldGained)} gold.${retreatNote}`
         );
       } else if (activity.type === 'gathering') {
         const node = GATHER_NODES[activity.targetId];
