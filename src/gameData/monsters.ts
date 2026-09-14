@@ -6,7 +6,7 @@ export const MONSTERS: Record<string, Monster> = {
     name: 'Greenhorn Boar',
     zoneIds: ['greenhollow_fields'],
     levelRange: [1, 5],
-    level: 2, // placeholder — real tuning against the new formulas happens at Step 10
+    level: 3, // placeholder — real tuning against the new formulas happens at Step 10
     hp: 28,
     attackPower: 3,
     defense: 1,
@@ -40,7 +40,7 @@ export const MONSTERS: Record<string, Monster> = {
     name: 'Forest Wolf',
     zoneIds: ['greenhollow_fields'],
     levelRange: [3, 8],
-    level: 5, // placeholder — real tuning against the new formulas happens at Step 10
+    level: 6, // placeholder — real tuning against the new formulas happens at Step 10
     hp: 32,
     attackPower: 5,
     defense: 2,
@@ -74,7 +74,7 @@ export const MONSTERS: Record<string, Monster> = {
     name: 'Wild Kobold',
     zoneIds: ['greenhollow_fields'],
     levelRange: [5, 10],
-    level: 7, // placeholder — real tuning against the new formulas happens at Step 10
+    level: 9, // placeholder — real tuning against the new formulas happens at Step 10
     hp: 40,
     attackPower: 6,
     defense: 3,
@@ -100,7 +100,7 @@ export const MONSTERS: Record<string, Monster> = {
     name: 'Thornback Hare',
     zoneIds: ['greenhollow_fields'],
     levelRange: [2, 6],
-    level: 3, // placeholder — real tuning against the new formulas happens at Step 10
+    level: 1, // placeholder — real tuning against the new formulas happens at Step 10
     hp: 20,
     attackPower: 2,
     defense: 1,
