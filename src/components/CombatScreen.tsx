@@ -7,6 +7,7 @@ import { resolveSpecDef, computeFullCombatProfile, getExtraDamageTakenPct } from
 import { resolveCombatEncounter } from '../gameData/combatResolver';
 import { evaluateTalents, EMPTY_TALENT_TOTALS } from '../utils/talentEvaluator';
 import { maxHp, resolveCurrentHp } from '../gameData/combatFormulas';
+import { getEquipmentStatBonuses } from '../gameData/equipmentStats';
 import { characterXpForLevelV2 } from '../gameData/xpTables';
 import type { Character } from '../types/character';
 import type { User } from 'firebase/auth';
@@ -53,7 +54,8 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
     anchorRef.current = character.currentActivity.startedAt;
     lootCarryRef.current = {};
     if (character.currentActivity.startedAt) {
-      const charMaxHp = maxHp(character.class, character.level);
+      const equipBonuses = getEquipmentStatBonuses(character.equipment);
+      const charMaxHp = maxHp(character.class, character.level, equipBonuses);
       hpRef.current = resolveCurrentHp(
         character.currentHp,
         charMaxHp,
@@ -82,7 +84,8 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
     const specDef = resolveSpecDef(c.class, c.spec);
     const talentTotals = c.spec ? evaluateTalents(c.spec, c.talentPicks).totals : EMPTY_TALENT_TOTALS;
     const extraDmgTaken = getExtraDamageTakenPct(c.spec, c.talentPicks);
-    return computeFullCombatProfile(c.class, specDef, c.level, monster.level, talentTotals, extraDmgTaken);
+    const equipBonuses = getEquipmentStatBonuses(c.equipment);
+    return computeFullCombatProfile(c.class, specDef, c.level, monster.level, talentTotals, extraDmgTaken, equipBonuses);
   }
 
   async function autosave() {
@@ -132,7 +135,8 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
           newLevel++;
         }
         if (newLevel !== fresh.level) {
-          const restoredHp = maxHp(fresh.class, newLevel);
+          const equipBonuses = getEquipmentStatBonuses(fresh.equipment);
+          const restoredHp = maxHp(fresh.class, newLevel, equipBonuses);
           await setCharacterLevel(currentUser.uid, newLevel, restoredHp);
           hpRef.current = restoredHp;
         }
