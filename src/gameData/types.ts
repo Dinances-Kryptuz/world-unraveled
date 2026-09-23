@@ -102,11 +102,9 @@ export interface ItemDef {
   description: string;
   stackable: boolean;
   equipSlot?: EquipmentSlot; // only present when type === 'equipment'
-  statBonuses?: Partial<{
-    attack: number;
-    defense: number;
-    maxHp: number;
-  }>;
+  // Equipment stat bonuses are raw STR/STA/INT/SPI points — the same
+  // currency the class-growth system already uses (see classStats.ts).
+  statBonuses?: Partial<Record<import('./classStats').BaseStat, number>>;
   sellValue: number;
 }
 
