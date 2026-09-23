@@ -1,4 +1,4 @@
-import { CLASS_GROWTH, PRIMARY_STAT, SPECS, statAtLevel, type ClassId, type SpecId } from './classStats';
+import { CLASS_GROWTH, PRIMARY_STAT, SPECS, statAtLevel, type BaseStat, type ClassId, type SpecId } from './classStats';
 
 export const ATTACK_INTERVAL_SECONDS = 2.0; // universal baseline, both player and monster
 export const MONSTER_DAMAGE_SCALE = 0.75; // global tuning knob found during Pass 1 calibration
@@ -74,13 +74,14 @@ export function armorReduction(armor: number): number {
   return armor / (armor + 100);
 }
 
-export function maxHp(cls: ClassId, level: number): number {
-  const sta = statAtLevel(cls, 'STA', level);
+export function maxHp(cls: ClassId, level: number, equipmentBonuses: Partial<Record<BaseStat, number>> = {}): number {
+  const sta = statAtLevel(cls, 'STA', level) + (equipmentBonuses.STA ?? 0);
   return 50 + sta * 12 + level * 10;
 }
 
-export function baseDamage(cls: ClassId, level: number): number {
-  const primary = statAtLevel(cls, PRIMARY_STAT[cls], level);
+export function baseDamage(cls: ClassId, level: number, equipmentBonuses: Partial<Record<BaseStat, number>> = {}): number {
+  const primaryStat = PRIMARY_STAT[cls];
+  const primary = statAtLevel(cls, primaryStat, level) + (equipmentBonuses[primaryStat] ?? 0);
   return 10 + primary * 2 + level;
 }
 
