@@ -107,7 +107,7 @@ export const ITEMS: Record<string, ItemDef> = {
     description: 'Simple boots stitched from Light Leather.',
     stackable: true,
     equipSlot: 'boots',
-    statBonuses: { defense: 2 },
+    statBonuses: { STA: 2 },
     sellValue: 6,
   },
   leather_gloves: {
@@ -117,7 +117,7 @@ export const ITEMS: Record<string, ItemDef> = {
     description: 'Flexible gloves that improve your grip in combat.',
     stackable: true,
     equipSlot: 'gloves',
-    statBonuses: { attack: 2 },
+    statBonuses: { STR: 2 },
     sellValue: 8,
   },
   leather_cap: {
@@ -127,7 +127,7 @@ export const ITEMS: Record<string, ItemDef> = {
     description: 'A hardened leather cap offering solid protection.',
     stackable: true,
     equipSlot: 'helmet',
-    statBonuses: { defense: 3, maxHp: 5 },
+    statBonuses: { STA: 3 },
     sellValue: 10,
   },
 };
