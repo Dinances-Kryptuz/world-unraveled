@@ -9,6 +9,7 @@ import { TalentScreen } from './components/TalentScreen';
 import { signOut } from './firebase/auth';
 import { CLASS_LABELS, SPEC_LABELS } from './gameData/classStats';
 import { maxHp, resolveCurrentHp } from './gameData/combatFormulas';
+import { getEquipmentStatBonuses } from './gameData/equipmentStats';
 import { characterXpForLevelV2 } from './gameData/xpTables';
 
 function AppContent() {
@@ -31,7 +32,8 @@ function AppContent() {
     return <CharacterCreationScreen />;
   }
 
-  const characterMaxHp = maxHp(character.class, character.level);
+  const equipBonuses = getEquipmentStatBonuses(character.equipment);
+  const characterMaxHp = maxHp(character.class, character.level, equipBonuses);
   const currentHp = resolveCurrentHp(character.currentHp, characterMaxHp, character.hpCheckpointAt, new Date());
 
   const currentLevelXp = characterXpForLevelV2(character.level);
