@@ -1,4 +1,4 @@
-import type { ClassId, SpecId, SpecDef } from './classStats';
+import type { ClassId, SpecId, SpecDef, BaseStat } from './classStats';
 import { SPECS, statAtLevel } from './classStats';
 import {
   ATTACK_INTERVAL_SECONDS,
@@ -52,12 +52,13 @@ export function computeFullCombatProfile(
   playerLevel: number,
   monsterLevel: number,
   talentTotals: TalentBonusTotals,
-  extraDamageTakenPct: number = 0
+  extraDamageTakenPct: number = 0,
+  equipmentBonuses: Partial<Record<BaseStat, number>> = {}
 ): FullCombatProfile {
   const diff = monsterLevel - playerLevel;
 
-  const hp = maxHp(cls, playerLevel) * (1 + talentTotals.hpMultPct / 100);
-  const dmg = baseDamage(cls, playerLevel);
+  const hp = maxHp(cls, playerLevel, equipmentBonuses) * (1 + talentTotals.hpMultPct / 100);
+  const dmg = baseDamage(cls, playerLevel, equipmentBonuses);
   const dps = dmg / ATTACK_INTERVAL_SECONDS;
 
   const lvlMod = playerDamageModifier(diff);
@@ -75,7 +76,8 @@ export function computeFullCombatProfile(
   const enemyLvlMod = enemyDamageModifier(diff);
 
   const survCoefFinal = specDef.survivabilityCoef * (1 + talentTotals.survCoefMultPct / 100);
-  const pArmor = statAtLevel(cls, 'STA', playerLevel) * 2 * survCoefFinal * (1 + talentTotals.armorMultPct / 100);
+  const effectiveSta = statAtLevel(cls, 'STA', playerLevel) + (equipmentBonuses.STA ?? 0);
+  const pArmor = effectiveSta * 2 * survCoefFinal * (1 + talentTotals.armorMultPct / 100);
   const pArmorMod = 1 - armorReduction(pArmor);
 
   const avoidanceFinal = Math.min(0.75, specDef.avoidance + talentTotals.avoidanceAddPct / 100);
