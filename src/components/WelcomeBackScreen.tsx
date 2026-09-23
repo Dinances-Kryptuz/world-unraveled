@@ -9,6 +9,7 @@ import { resolveSpecDef, computeFullCombatProfile, getExtraDamageTakenPct } from
 import { resolveCombatEncounter } from '../gameData/combatResolver';
 import { evaluateTalents, EMPTY_TALENT_TOTALS } from '../utils/talentEvaluator';
 import { maxHp, resolveCurrentHp } from '../gameData/combatFormulas';
+import { getEquipmentStatBonuses } from '../gameData/equipmentStats';
 import { getInventory } from '../firebase/inventory';
 import type { Character, CurrentActivity } from '../types/character';
 
@@ -44,15 +45,17 @@ export function WelcomeBackScreen({
           ? evaluateTalents(character.spec, character.talentPicks).totals
           : EMPTY_TALENT_TOTALS;
         const extraDmgTaken = getExtraDamageTakenPct(character.spec, character.talentPicks);
+        const equipBonuses = getEquipmentStatBonuses(character.equipment);
         const profile = computeFullCombatProfile(
           character.class,
           specDef,
           character.level,
           monster.level,
           talentTotals,
-          extraDmgTaken
+          extraDmgTaken,
+          equipBonuses
         );
-        const charMaxHp = maxHp(character.class, character.level);
+        const charMaxHp = maxHp(character.class, character.level, equipBonuses);
         const startingHp = resolveCurrentHp(character.currentHp, charMaxHp, character.hpCheckpointAt, activity.startedAt);
         const result = resolveCombatEncounter(activity.startedAt, now, startingHp, profile, monster);
         const retreatNote = result.forcedRetreat ? ' You were forced to retreat before your time was up.' : '';
