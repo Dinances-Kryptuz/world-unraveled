@@ -5,9 +5,15 @@ import { equipItem, unequipItem } from '../firebase/character';
 import { subscribeToInventory } from '../firebase/inventory';
 import { ITEMS } from '../gameData/items';
 import type { Inventory } from '../types/character';
-import type { EquipmentSlot } from '../gameData/types';
+import type { EquipmentSlot, ItemDef } from '../gameData/types';
 
 const SLOT_ORDER: EquipmentSlot[] = ['weapon', 'chest', 'helmet', 'gloves', 'legs', 'boots', 'ring'];
+
+function formatStatBonuses(item: ItemDef): string {
+  if (!item.statBonuses) return '';
+  const parts = Object.entries(item.statBonuses).map(([stat, val]) => `+${val} ${stat}`);
+  return parts.length > 0 ? ` (${parts.join(', ')})` : '';
+}
 
 export function EquipmentScreen() {
   const { user } = useAuth();
@@ -48,7 +54,7 @@ export function EquipmentScreen() {
           const equippedItem = equippedId ? ITEMS[equippedId] : null;
           return (
             <li key={slot}>
-              {slot}: {equippedItem ? equippedItem.name : '(empty)'}
+              {slot}: {equippedItem ? `${equippedItem.name}${formatStatBonuses(equippedItem)}` : '(empty)'}
               {equippedItem && <button onClick={() => handleUnequip(slot)}>Unequip</button>}
             </li>
           );
@@ -65,7 +71,8 @@ export function EquipmentScreen() {
             if (!item?.equipSlot) return null;
             return (
               <li key={itemId}>
-                {item.name} x{quantity}
+                {item.name}
+                {formatStatBonuses(item)} x{quantity}
                 <button onClick={() => handleEquip(item.equipSlot!, itemId)}>Equip</button>
               </li>
             );
