@@ -90,7 +90,17 @@ export function computeFullCombatProfile(
   const healFracFinal = (specDef.healFrac + talentTotals.healFracAddPct / 100) * (1 + talentTotals.healMultPct / 100);
   const passiveFinal =
     (specDef.passiveHealPct + talentTotals.passiveHealAddPct / 100) * (1 + talentTotals.healMultPct / 100);
-  const healingPerSec = playerDps * healFracFinal + hp * passiveFinal;
+
+  // SPI scales healing as a ratio to the class's natural (naked) SPI at this
+  // level — with no SPI-granting gear, effectiveSpi === baseSpi, so this is
+  // always exactly 1.0 and every already-validated Pass 1/Pass 2 result is
+  // untouched. Only equipment (or future talents) that actually grant SPI
+  // ever move this number.
+  const baseSpi = statAtLevel(cls, 'SPI', playerLevel);
+  const effectiveSpi = baseSpi + (equipmentBonuses.SPI ?? 0);
+  const spiHealMultiplier = baseSpi > 0 ? effectiveSpi / baseSpi : 1;
+
+  const healingPerSec = (playerDps * healFracFinal + hp * passiveFinal) * spiHealMultiplier;
 
   const netHpChangePerSec = incomingDps - healingPerSec;
   const xpPerKill = 50 * monsterLevel * xpModifier(diff);
