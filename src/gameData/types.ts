@@ -30,15 +30,6 @@ export interface LootDrop {
   maxQty: number;
 }
 
-export interface SkinningYield {
-  requiredSkinningLevel: number;
-  itemId: string;
-  chance: number; // 0–1
-  minQty: number;
-  maxQty: number;
-  actionSeconds: number; // time spent skinning the corpse, post-kill
-}
-
 export interface SpecialAbility {
   name: string;
   description: string;
@@ -61,8 +52,6 @@ export interface Monster {
   goldMin: number;
   goldMax: number;
   lootTable: LootDrop[];
-  skinnable: boolean;
-  skinningYield?: SkinningYield;
   specialAbility?: SpecialAbility;
 }
 

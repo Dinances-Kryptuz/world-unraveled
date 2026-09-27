@@ -15,19 +15,10 @@ export const MONSTERS: Record<string, Monster> = {
     goldMin: 1,
     goldMax: 3,
     lootTable: [
-      { itemId: 'light_leather', chance: 0.45, minQty: 1, maxQty: 2 },
+      { itemId: 'leather_scraps', chance: 0.15, minQty: 1, maxQty: 2 },
       { itemId: 'boar_meat', chance: 0.6, minQty: 1, maxQty: 2 },
       { itemId: 'small_tusk', chance: 0.1, minQty: 1, maxQty: 1 },
     ],
-    skinnable: true,
-    skinningYield: {
-      requiredSkinningLevel: 1,
-      itemId: 'light_leather',
-      chance: 0.9,
-      minQty: 1,
-      maxQty: 2,
-      actionSeconds: 6,
-    },
     specialAbility: {
       name: 'Charge',
       description: 'Briefly increases movement speed and attack damage.',
@@ -49,19 +40,10 @@ export const MONSTERS: Record<string, Monster> = {
     goldMin: 2,
     goldMax: 5,
     lootTable: [
-      { itemId: 'light_leather', chance: 0.55, minQty: 1, maxQty: 2 },
+      { itemId: 'leather_scraps', chance: 0.2, minQty: 1, maxQty: 2 },
       { itemId: 'wolf_fang', chance: 0.2, minQty: 1, maxQty: 1 },
       { itemId: 'raw_meat', chance: 0.5, minQty: 1, maxQty: 2 },
     ],
-    skinnable: true,
-    skinningYield: {
-      requiredSkinningLevel: 1,
-      itemId: 'light_leather',
-      chance: 0.9,
-      minQty: 1,
-      maxQty: 2,
-      actionSeconds: 6,
-    },
     specialAbility: {
       name: 'Pack Howl',
       description: 'Nearby wolves gain increased attack speed.',
@@ -88,7 +70,6 @@ export const MONSTERS: Record<string, Monster> = {
       { itemId: 'small_coin_pouch', chance: 0.1, minQty: 1, maxQty: 1 },
       { itemId: 'rusty_dagger', chance: 0.08, minQty: 1, maxQty: 1 },
     ],
-    skinnable: false,
     specialAbility: {
       name: 'Dirty Strike',
       description: 'Has a chance to briefly reduce player defense.',
@@ -110,19 +91,10 @@ export const MONSTERS: Record<string, Monster> = {
     goldMin: 1,
     goldMax: 2,
     lootTable: [
-      { itemId: 'light_leather', chance: 0.2, minQty: 1, maxQty: 1 },
+      { itemId: 'leather_scraps', chance: 0.08, minQty: 1, maxQty: 1 },
       { itemId: 'lucky_foot', chance: 0.05, minQty: 1, maxQty: 1 },
       { itemId: 'raw_meat', chance: 0.35, minQty: 1, maxQty: 1 },
     ],
-    skinnable: true,
-    skinningYield: {
-      requiredSkinningLevel: 1,
-      itemId: 'light_leather',
-      chance: 0.7,
-      minQty: 1,
-      maxQty: 1,
-      actionSeconds: 6,
-    },
     specialAbility: {
       name: 'Flee',
       description: 'Occasionally attempts to escape combat.',
@@ -149,15 +121,6 @@ export const MONSTERS: Record<string, Monster> = {
       { itemId: 'raw_meat', chance: 0.45, minQty: 1, maxQty: 2 },
       { itemId: 'stone_shard', chance: 0.08, minQty: 1, maxQty: 1 },
     ],
-    skinnable: true,
-    skinningYield: {
-      requiredSkinningLevel: 8,
-      itemId: 'coarse_hide',
-      chance: 0.85,
-      minQty: 1,
-      maxQty: 2,
-      actionSeconds: 6,
-    },
     specialAbility: {
       name: 'Snarl',
       description: 'Briefly lowers player accuracy.',
@@ -183,15 +146,6 @@ export const MONSTERS: Record<string, Monster> = {
       { itemId: 'raw_meat', chance: 0.4, minQty: 1, maxQty: 2 },
       { itemId: 'goat_horn', chance: 0.15, minQty: 1, maxQty: 1 },
     ],
-    skinnable: true,
-    skinningYield: {
-      requiredSkinningLevel: 12,
-      itemId: 'thick_hide',
-      chance: 0.85,
-      minQty: 1,
-      maxQty: 2,
-      actionSeconds: 7,
-    },
     specialAbility: {
       name: 'Headbutt',
       description: 'A hard-hitting charge attack.',
@@ -217,7 +171,6 @@ export const MONSTERS: Record<string, Monster> = {
       { itemId: 'tin_ore', chance: 0.3, minQty: 1, maxQty: 2 },
       { itemId: 'flawed_gem', chance: 0.05, minQty: 1, maxQty: 1 },
     ],
-    skinnable: false,
     specialAbility: {
       name: 'Rock Slide',
       description: 'Hurls debris for a burst of extra damage.',
@@ -243,7 +196,6 @@ export const MONSTERS: Record<string, Monster> = {
       { itemId: 'worn_shiv', chance: 0.2, minQty: 1, maxQty: 1 },
       { itemId: 'bandit_coin_pouch', chance: 0.12, minQty: 1, maxQty: 1 },
     ],
-    skinnable: false,
     specialAbility: {
       name: 'Backstab',
       description: 'A chance for a large burst of extra damage.',
@@ -267,16 +219,8 @@ export const MONSTERS: Record<string, Monster> = {
     lootTable: [
       { itemId: 'sharp_fang', chance: 0.55, minQty: 1, maxQty: 2 },
       { itemId: 'coarse_hide', chance: 0.25, minQty: 1, maxQty: 1 },
+      { itemId: 'alpha_pelt', chance: 0.06, minQty: 1, maxQty: 1 },
     ],
-    skinnable: true,
-    skinningYield: {
-      requiredSkinningLevel: 18,
-      itemId: 'alpha_pelt',
-      chance: 0.3,
-      minQty: 1,
-      maxQty: 1,
-      actionSeconds: 10,
-    },
     specialAbility: {
       name: 'Pack Leader',
       description: 'Hits harder the longer the fight goes on.',

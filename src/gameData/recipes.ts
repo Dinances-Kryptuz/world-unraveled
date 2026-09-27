@@ -1,6 +1,18 @@
 import type { Recipe } from './types';
 
 export const RECIPES: Record<string, Recipe> = {
+  light_leather: {
+    id: 'light_leather',
+    name: 'Light Leather',
+    profession: 'leatherworking',
+    requiredSkill: 1,
+    resultItemId: 'light_leather',
+    resultQuantity: 1,
+    materials: [{ itemId: 'leather_scraps', quantity: 5 }],
+    craftSeconds: 5,
+    xpAward: 4,
+    colorBreakpoints: { orangeUntil: 4, yellowUntil: 8, greenUntil: 16 },
+  },
   leather_boots: {
     id: 'leather_boots',
     name: 'Leather Boots',

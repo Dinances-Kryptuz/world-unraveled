@@ -6,11 +6,19 @@ import type { ItemDef } from './types';
 
 export const ITEMS: Record<string, ItemDef> = {
   // ── Skinning materials ──────────────────────────────────────────────
+  leather_scraps: {
+    id: 'leather_scraps',
+    name: 'Leather Scraps',
+    type: 'material',
+    description: 'Small offcuts of hide. Not much use on their own, but Leatherworking can piece several together into Light Leather.',
+    stackable: true,
+    sellValue: 1,
+  },
   light_leather: {
     id: 'light_leather',
     name: 'Light Leather',
     type: 'material',
-    description: 'Supple hide taken from small beasts. The backbone of early Leatherworking.',
+    description: 'Supple hide pieced together from Leather Scraps. The backbone of early Leatherworking.',
     stackable: true,
     sellValue: 1,
   },

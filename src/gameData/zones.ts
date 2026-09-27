@@ -21,10 +21,16 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     xpPerAction: 5,
     secondsPerAction: 8,
   },
-  // Note: Skinning has no standalone "node" — it's a post-combat action performed
-  // on skinnable monster corpses (see monsters.ts skinningYield). It doesn't need
-  // an entry here, but the profession still shows up in the zone's activity list
-  // in the UI by checking which zone monsters have skinnable: true.
+  greenhollow_hunting_grounds: {
+    id: 'greenhollow_hunting_grounds',
+    name: 'Hunting Grounds',
+    profession: 'skinning',
+    zoneId: 'greenhollow_fields',
+    requiredLevel: 1,
+    itemId: 'leather_scraps',
+    xpPerAction: 5,
+    secondsPerAction: 8,
+  },
 
   stonecrag_tin_vein: {
     id: 'stonecrag_tin_vein',
@@ -46,6 +52,16 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     xpPerAction: 9,
     secondsPerAction: 9,
   },
+  stonecrag_foothill_game: {
+    id: 'stonecrag_foothill_game',
+    name: 'Foothill Game',
+    profession: 'skinning',
+    zoneId: 'stonecrag_foothills',
+    requiredLevel: 10,
+    itemId: 'coarse_hide',
+    xpPerAction: 9,
+    secondsPerAction: 9,
+  },
 };
 
 export const ZONES: Record<string, Zone> = {
@@ -57,7 +73,7 @@ export const ZONES: Record<string, Zone> = {
     levelRange: [1, 15],
     unlockRequirement: { type: 'none' },
     monsterIds: ['greenhorn_boar', 'forest_wolf', 'wild_kobold', 'thornback_hare'],
-    gatherNodeIds: ['greenhollow_copper_vein', 'greenhollow_peacebloom_patch'],
+    gatherNodeIds: ['greenhollow_copper_vein', 'greenhollow_peacebloom_patch', 'greenhollow_hunting_grounds'],
   },
 
   stonecrag_foothills: {
@@ -68,6 +84,6 @@ export const ZONES: Record<string, Zone> = {
     levelRange: [8, 25],
     unlockRequirement: { type: 'characterLevel', level: 8 },
     monsterIds: ['ridge_jackal', 'craggy_goat', 'rubble_crawler', 'highland_bandit', 'crag_wolf_alpha'],
-    gatherNodeIds: ['stonecrag_tin_vein', 'stonecrag_sage_patch'],
+    gatherNodeIds: ['stonecrag_tin_vein', 'stonecrag_sage_patch', 'stonecrag_foothill_game'],
   },
 };

@@ -31,17 +31,6 @@ export function MonsterLootPanel({ monster }: { monster: Monster }) {
         ))}
         <li>Gold — {qtyLabel(monster.goldMin, monster.goldMax)}</li>
       </ul>
-      {monster.skinnable && monster.skinningYield && (
-        <>
-          <strong>Skinning (after defeat, requires Skinning Lv {monster.skinningYield.requiredSkinningLevel}+)</strong>
-          <ul style={{ margin: '4px 0' }}>
-            <li>
-              {itemName(monster.skinningYield.itemId)} — {(monster.skinningYield.chance * 100).toFixed(0)}% (
-              {qtyLabel(monster.skinningYield.minQty, monster.skinningYield.maxQty)})
-            </li>
-          </ul>
-        </>
-      )}
     </div>
   );
 }

@@ -14,6 +14,7 @@ import { mobColorTier, type MobColorTier } from '../gameData/combatFormulas';
 import { professionXpForLevel } from '../gameData/xpTables';
 import { XpBar } from './XpBar';
 import { MonsterLootPanel } from './MonsterLootPanel';
+import { ITEMS } from '../gameData/items';
 import type { ProfessionId, Zone } from '../gameData/types';
 
 const DEFAULT_ZONE_ID = 'greenhollow_fields';
@@ -153,13 +154,14 @@ export function ZoneScreen() {
         })}
       </ul>
 
-      <h2>Gathering</h2>
+      <h2>Gathering (Mining, Herbalism, Skinning)</h2>
       <ul>
         {zone.gatherNodeIds.map((nodeId) => {
           const node = GATHER_NODES[nodeId];
+          const professionLabel = node.profession.charAt(0).toUpperCase() + node.profession.slice(1);
           return (
             <li key={nodeId}>
-              {node.name} ({node.profession}, Lv {node.requiredLevel}+)
+              {node.name} ({professionLabel}, Lv {node.requiredLevel}+) — yields {ITEMS[node.itemId]?.name ?? node.itemId}
               <button onClick={() => handleGather(nodeId)}>Gather</button>
             </li>
           );
