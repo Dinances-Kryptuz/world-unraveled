@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { CharacterProvider, useCharacter } from './hooks/useCharacter';
 import { LoginScreen } from './components/LoginScreen';
@@ -11,11 +12,13 @@ import { CLASS_LABELS, SPEC_LABELS } from './gameData/classStats';
 import { maxHp, resolveCurrentHp } from './gameData/combatFormulas';
 import { getEquipmentStatBonuses } from './gameData/equipmentStats';
 import { characterXpForLevelV2 } from './gameData/xpTables';
+import { DEFAULT_ZONE_ID } from './gameData/zones';
 import { VendorScreen } from './components/VendorScreen';
 
 function AppContent() {
   const { user, loading: authLoading } = useAuth();
   const { character, loading: characterLoading } = useCharacter();
+  const [selectedZoneId, setSelectedZoneId] = useState(DEFAULT_ZONE_ID);
 
   if (authLoading) {
     return <div className="loading-screen">Loading…</div>;
@@ -72,10 +75,10 @@ function AppContent() {
         </div>
         <button onClick={() => signOut()}>Sign out</button>
       </div>
-      <ZoneScreen />
+      <ZoneScreen selectedZoneId={selectedZoneId} onSelectZone={setSelectedZoneId} />
       <EquipmentScreen />
       <InventoryScreen />
-      <VendorScreen />
+      <VendorScreen zoneId={selectedZoneId} />
       {character.spec && <TalentScreen />}
     </div>
   );

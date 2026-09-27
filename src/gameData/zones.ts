@@ -1,5 +1,7 @@
 import type { Zone, GatherNode } from './types';
 
+export const DEFAULT_ZONE_ID = 'greenhollow_fields';
+
 export const GATHER_NODES: Record<string, GatherNode> = {
   greenhollow_copper_vein: {
     id: 'greenhollow_copper_vein',

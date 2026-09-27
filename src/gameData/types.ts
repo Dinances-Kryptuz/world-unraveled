@@ -113,8 +113,9 @@ export interface Recipe {
   materials: { itemId: string; quantity: number }[];
   craftSeconds: number;
   xpAward: number;
-  // Skill at/below orangeUntil = 100% XP, up to yellowUntil = 75%,
-  // up to greenUntil = 35%, above that = 0% (gray).
+  // Skill at/below orangeUntil = 100% XP, up to yellowUntil = 80%,
+  // up to greenUntil = 30%, above that = 10% (gray). See
+  // activityEngine.ts's craftingColorTier/CRAFT_XP_MULTIPLIER_BY_TIER.
   colorBreakpoints: {
     orangeUntil: number;
     yellowUntil: number;

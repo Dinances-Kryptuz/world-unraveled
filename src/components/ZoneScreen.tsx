@@ -11,18 +11,19 @@ import { CraftingScreen } from './CraftingScreen';
 import { WelcomeBackScreen, isLongAbsence } from './WelcomeBackScreen';
 import { SpecSelectionScreen } from './SpecSelectionScreen';
 import { mobColorTier, type MobColorTier } from '../gameData/combatFormulas';
+import { craftingColorTier } from '../gameData/activityEngine';
 import { professionXpForLevel } from '../gameData/xpTables';
 import { XpBar } from './XpBar';
 import { MonsterLootPanel } from './MonsterLootPanel';
 import { ITEMS } from '../gameData/items';
 import type { ProfessionId, Recipe, Zone } from '../gameData/types';
 
-const DEFAULT_ZONE_ID = 'greenhollow_fields';
-
 function isZoneUnlocked(zone: Zone, characterLevel: number): boolean {
   return zone.unlockRequirement.type === 'none' || characterLevel >= zone.unlockRequirement.level;
 }
 
+// Shared by the monster level badge and the crafting recipe color-tier text —
+// both use the same classic-WoW grey/green/yellow/orange/red palette.
 const TIER_COLORS: Record<MobColorTier, string> = {
   grey: '#8c8c8c',
   green: '#2e9e4f',
@@ -43,12 +44,17 @@ function MonsterLevelBadge({ monsterLevel, playerLevel }: { monsterLevel: number
   );
 }
 
-export function ZoneScreen() {
+export function ZoneScreen({
+  selectedZoneId,
+  onSelectZone,
+}: {
+  selectedZoneId: string;
+  onSelectZone: (zoneId: string) => void;
+}) {
   const { user } = useAuth();
   const { character, refetch } = useCharacter();
   const [dismissedWelcomeBack, setDismissedWelcomeBack] = useState(false);
   const [expandedMonsterId, setExpandedMonsterId] = useState<string | null>(null);
-  const [selectedZoneId, setSelectedZoneId] = useState(DEFAULT_ZONE_ID);
   const zone = ZONES[selectedZoneId];
 
   async function handleFight(monsterId: string) {
@@ -113,7 +119,7 @@ export function ZoneScreen() {
           return (
             <button
               key={z.id}
-              onClick={() => unlocked && setSelectedZoneId(z.id)}
+              onClick={() => unlocked && onSelectZone(z.id)}
               disabled={!unlocked}
               title={unlocked ? undefined : `Unlocks at level ${z.unlockRequirement.type === 'characterLevel' ? z.unlockRequirement.level : '?'}`}
               style={{ fontWeight: z.id === zone.id ? 700 : 400 }}
@@ -128,17 +134,6 @@ export function ZoneScreen() {
       <h1>{zone.name}</h1>
       <p>{zone.description}</p>
 
-      <h2>Professions</h2>
-      {professionEntries.map(([professionId, state]) => (
-        <XpBar
-          key={professionId}
-          level={state.level}
-          xp={state.xp}
-          curve={professionXpForLevel}
-          label={professionId.charAt(0).toUpperCase() + professionId.slice(1)}
-        />
-      ))}
-
       <h2>Monsters</h2>
       <ul>
         {zone.monsterIds.map((monsterId) => {
@@ -146,14 +141,9 @@ export function ZoneScreen() {
           const isExpanded = expandedMonsterId === monsterId;
           return (
             <li key={monsterId}>
-              <button
-                onClick={() => setExpandedMonsterId(isExpanded ? null : monsterId)}
-                style={{ background: 'none', border: 'none', padding: 0, font: 'inherit', cursor: 'pointer', textDecoration: 'underline' }}
-              >
-                {monster.name}
-              </button>{' '}
-              (<MonsterLevelBadge monsterLevel={monster.level} playerLevel={character.level} />)
+              {monster.name} (<MonsterLevelBadge monsterLevel={monster.level} playerLevel={character.level} />)
               <button onClick={() => handleFight(monsterId)}>Fight</button>
+              <button onClick={() => setExpandedMonsterId(isExpanded ? null : monsterId)}>Drops</button>
               {isExpanded && <MonsterLootPanel monster={monster} />}
             </li>
           );
@@ -183,9 +173,11 @@ export function ZoneScreen() {
             <ul>
               {recipes.map((recipe) => {
                 const meetsLevel = professionLevel >= recipe.requiredSkill;
+                const tier = craftingColorTier(professionLevel, recipe.requiredSkill, recipe.colorBreakpoints);
                 return (
                   <li key={recipe.id}>
-                    {recipe.name} (requires Lv {recipe.requiredSkill}) — materials:{' '}
+                    <span style={{ color: TIER_COLORS[tier], fontWeight: 700 }}>{recipe.name}</span> (requires Lv{' '}
+                    {recipe.requiredSkill}) — materials:{' '}
                     {recipe.materials
                       .map((m) => `${m.quantity}x ${ITEMS[m.itemId]?.name ?? m.itemId}`)
                       .join(', ')}
@@ -199,6 +191,17 @@ export function ZoneScreen() {
           </div>
         );
       })}
+
+      <h2>Professions</h2>
+      {professionEntries.map(([professionId, state]) => (
+        <XpBar
+          key={professionId}
+          level={state.level}
+          xp={state.xp}
+          curve={professionXpForLevel}
+          label={professionId.charAt(0).toUpperCase() + professionId.slice(1)}
+        />
+      ))}
     </div>
   );
 }

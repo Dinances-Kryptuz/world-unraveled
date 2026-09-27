@@ -201,6 +201,32 @@ export function resolveCombat(
 // self-limiting by materials on hand, so there's no "thousands of items"
 // runaway case the way unbounded combat/gathering had.
 
+// Classic-WoW-style recipe color, driven by current skill vs. the recipe's
+// requiredSkill and colorBreakpoints. "red" only shows up in UI contexts
+// that list recipes below your skill requirement — resolveCrafting itself
+// is never reached below requiredSkill (the UI gates starting the activity).
+export type CraftColorTier = 'red' | 'orange' | 'yellow' | 'green' | 'grey';
+
+export function craftingColorTier(
+  currentSkill: number,
+  requiredSkill: number,
+  colorBreakpoints: { orangeUntil: number; yellowUntil: number; greenUntil: number }
+): CraftColorTier {
+  if (currentSkill < requiredSkill) return 'red';
+  if (currentSkill <= colorBreakpoints.orangeUntil) return 'orange';
+  if (currentSkill <= colorBreakpoints.yellowUntil) return 'yellow';
+  if (currentSkill <= colorBreakpoints.greenUntil) return 'green';
+  return 'grey';
+}
+
+export const CRAFT_XP_MULTIPLIER_BY_TIER: Record<CraftColorTier, number> = {
+  red: 0, // can't happen in practice — not reachable below requiredSkill
+  orange: 1.0,
+  yellow: 0.8,
+  green: 0.3,
+  grey: 0.1,
+};
+
 export interface CraftingResult {
   itemsCrafted: number;
   xpGained: number;
@@ -211,6 +237,7 @@ export function resolveCrafting(
   startedAt: Date,
   now: Date,
   recipe: {
+    requiredSkill: number;
     craftSeconds: number;
     xpAward: number;
     materials: { itemId: string; quantity: number }[];
@@ -232,14 +259,8 @@ export function resolveCrafting(
 
   const itemsCrafted = Math.max(0, Math.min(timeLimitedCrafts, materialLimitedCrafts));
 
-  const xpMultiplier =
-    currentSkill <= colorBreakpoints.orangeUntil
-      ? 1.0
-      : currentSkill <= colorBreakpoints.yellowUntil
-      ? 0.75
-      : currentSkill <= colorBreakpoints.greenUntil
-      ? 0.35
-      : 0; // gray
+  const tier = craftingColorTier(currentSkill, recipe.requiredSkill, colorBreakpoints);
+  const xpMultiplier = CRAFT_XP_MULTIPLIER_BY_TIER[tier];
 
   return {
     itemsCrafted,
