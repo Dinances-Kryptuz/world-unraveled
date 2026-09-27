@@ -146,6 +146,11 @@ export const ITEMS: Record<string, ItemDef> = {
     description: 'A crude blade, scavenged from a fallen kobold. Better than fists.', stackable: true,
     equipSlot: 'weapon', statBonuses: { STR: 3 }, sellValue: 12,
   },
+  apprentice_staff: {
+    id: 'apprentice_staff', name: 'Apprentice Staff', type: 'equipment',
+    description: 'A gnarled staff taken from a kobold shaman, still humming with residual magic.', stackable: true,
+    equipSlot: 'weapon', statBonuses: { INT: 3 }, sellValue: 12,
+  },
 
   // ── Stonecrag Foothills materials ────────────────────────────────────
   coarse_hide: {

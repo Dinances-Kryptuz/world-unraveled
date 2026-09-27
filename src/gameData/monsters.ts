@@ -54,6 +54,7 @@ export const MONSTERS: Record<string, Monster> = {
       { itemId: 'copper_scrap', chance: 0.25, minQty: 1, maxQty: 1 },
       { itemId: 'small_coin_pouch', chance: 0.1, minQty: 1, maxQty: 1 },
       { itemId: 'rusty_dagger', chance: 0.08, minQty: 1, maxQty: 1 },
+      { itemId: 'apprentice_staff', chance: 0.08, minQty: 1, maxQty: 1 },
     ],
     specialAbility: {
       name: 'Dirty Strike',
