@@ -4,6 +4,8 @@ import { useCharacter } from '../hooks/useCharacter';
 import { applyCraftingResult, checkAndApplyProfessionLevelUp, stopActivity } from '../firebase/character';
 import { getInventory } from '../firebase/inventory';
 import { resolveCrafting } from '../gameData/activityEngine';
+import { professionXpForLevel } from '../gameData/xpTables';
+import { XpBar } from './XpBar';
 import type { Character } from '../types/character';
 import type { User } from 'firebase/auth';
 import type { Recipe } from '../gameData/types';
@@ -125,12 +127,20 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
 
   if (!character || !character.currentActivity.startedAt) return null;
 
+  const profession = character.professions[recipe.profession];
+
   return (
     <div className="crafting-screen">
       <h2>Crafting: {recipe.name}</h2>
       <p>
         This session: {bankedCrafted} crafted, +{bankedXp} XP
       </p>
+      <XpBar
+        level={profession.level}
+        xp={profession.xp}
+        curve={professionXpForLevel}
+        label={recipe.profession.charAt(0).toUpperCase() + recipe.profession.slice(1)}
+      />
       {outOfMaterials && <p>Out of materials — stopped.</p>}
       <button onClick={handleStop}>Stop</button>
     </div>

@@ -3,6 +3,8 @@ import { useAuth } from '../hooks/useAuth';
 import { useCharacter } from '../hooks/useCharacter';
 import { applyGatheringResult, checkAndApplyProfessionLevelUp, stopActivity } from '../firebase/character';
 import { resolveGathering } from '../gameData/activityEngine';
+import { professionXpForLevel } from '../gameData/xpTables';
+import { XpBar } from './XpBar';
 import type { Character } from '../types/character';
 import type { User } from 'firebase/auth';
 import type { GatherNode } from '../gameData/types';
@@ -113,6 +115,8 @@ export function GatheringScreen({ node }: { node: GatherNode }) {
   const previewWhole = Math.floor(carryRef.current + sinceLastSave.quantityGained);
   const displayQuantity = bankedQuantity + previewWhole;
   const displayXp = bankedXp + previewWhole * node.xpPerAction;
+  const profession = character.professions[node.profession];
+  const liveXp = profession.xp + previewWhole * node.xpPerAction;
 
   return (
     <div className="gathering-screen">
@@ -121,6 +125,12 @@ export function GatheringScreen({ node }: { node: GatherNode }) {
       <p>
         This session: {displayQuantity} gathered, +{displayXp} XP
       </p>
+      <XpBar
+        level={profession.level}
+        xp={liveXp}
+        curve={professionXpForLevel}
+        label={node.profession.charAt(0).toUpperCase() + node.profession.slice(1)}
+      />
       <button onClick={handleStop}>Stop</button>
     </div>
   );

@@ -11,6 +11,9 @@ import { CraftingScreen } from './CraftingScreen';
 import { WelcomeBackScreen, isLongAbsence } from './WelcomeBackScreen';
 import { SpecSelectionScreen } from './SpecSelectionScreen';
 import { mobColorTier, type MobColorTier } from '../gameData/combatFormulas';
+import { professionXpForLevel } from '../gameData/xpTables';
+import { XpBar } from './XpBar';
+import type { ProfessionId } from '../gameData/types';
 
 const CURRENT_ZONE_ID = 'greenhollow_fields';
 
@@ -86,11 +89,23 @@ export function ZoneScreen() {
   }
 
   const leatherworkingLevel = character.professions.leatherworking.level;
+  const professionEntries = Object.entries(character.professions) as [ProfessionId, { level: number; xp: number }][];
 
   return (
     <div className="zone-screen">
       <h1>{zone.name}</h1>
       <p>{zone.description}</p>
+
+      <h2>Professions</h2>
+      {professionEntries.map(([professionId, state]) => (
+        <XpBar
+          key={professionId}
+          level={state.level}
+          xp={state.xp}
+          curve={professionXpForLevel}
+          label={professionId.charAt(0).toUpperCase() + professionId.slice(1)}
+        />
+      ))}
 
       <h2>Monsters</h2>
       <ul>
