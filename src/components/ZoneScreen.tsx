@@ -15,7 +15,7 @@ import { professionXpForLevel } from '../gameData/xpTables';
 import { XpBar } from './XpBar';
 import { MonsterLootPanel } from './MonsterLootPanel';
 import { ITEMS } from '../gameData/items';
-import type { ProfessionId, Zone } from '../gameData/types';
+import type { ProfessionId, Recipe, Zone } from '../gameData/types';
 
 const DEFAULT_ZONE_ID = 'greenhollow_fields';
 
@@ -96,8 +96,14 @@ export function ZoneScreen() {
     if (recipe) return <CraftingScreen recipe={recipe} />;
   }
 
-  const leatherworkingLevel = character.professions.leatherworking.level;
   const professionEntries = Object.entries(character.professions) as [ProfessionId, { level: number; xp: number }][];
+
+  const recipesByProfession = new Map<ProfessionId, Recipe[]>();
+  for (const recipe of Object.values(RECIPES)) {
+    const list = recipesByProfession.get(recipe.profession) ?? [];
+    list.push(recipe);
+    recipesByProfession.set(recipe.profession, list);
+  }
 
   return (
     <div className="zone-screen">
@@ -168,21 +174,31 @@ export function ZoneScreen() {
         })}
       </ul>
 
-      <h2>Crafting (Leatherworking)</h2>
-      <ul>
-        {Object.values(RECIPES).map((recipe) => {
-          const meetsLevel = leatherworkingLevel >= recipe.requiredSkill;
-          return (
-            <li key={recipe.id}>
-              {recipe.name} (requires Lv {recipe.requiredSkill}) — materials:{' '}
-              {recipe.materials.map((m) => `${m.quantity}x ${m.itemId}`).join(', ')}
-              <button onClick={() => handleCraft(recipe.id)} disabled={!meetsLevel}>
-                {meetsLevel ? 'Craft' : `Need Lv ${recipe.requiredSkill}`}
-              </button>
-            </li>
-          );
-        })}
-      </ul>
+      {[...recipesByProfession.entries()].map(([professionId, recipes]) => {
+        const professionLevel = character.professions[professionId].level;
+        const professionLabel = professionId.charAt(0).toUpperCase() + professionId.slice(1);
+        return (
+          <div key={professionId}>
+            <h2>Crafting ({professionLabel})</h2>
+            <ul>
+              {recipes.map((recipe) => {
+                const meetsLevel = professionLevel >= recipe.requiredSkill;
+                return (
+                  <li key={recipe.id}>
+                    {recipe.name} (requires Lv {recipe.requiredSkill}) — materials:{' '}
+                    {recipe.materials
+                      .map((m) => `${m.quantity}x ${ITEMS[m.itemId]?.name ?? m.itemId}`)
+                      .join(', ')}
+                    <button onClick={() => handleCraft(recipe.id)} disabled={!meetsLevel}>
+                      {meetsLevel ? 'Craft' : `Need Lv ${recipe.requiredSkill}`}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        );
+      })}
     </div>
   );
 }

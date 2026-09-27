@@ -241,4 +241,54 @@ export const ITEMS: Record<string, ItemDef> = {
     stackable: true,
     sellValue: 2,
   },
+
+  // ── Smithing materials ───────────────────────────────────────────────
+  copper_bar: {
+    id: 'copper_bar',
+    name: 'Copper Bar',
+    type: 'material',
+    description: 'Copper ore smelted down into a workable bar.',
+    stackable: true,
+    sellValue: 3,
+  },
+  bronze_bar: {
+    id: 'bronze_bar',
+    name: 'Bronze Bar',
+    type: 'material',
+    description: 'Copper alloyed with tin — sturdier than copper alone.',
+    stackable: true,
+    sellValue: 6,
+  },
+
+  // ── Smithing equipment ───────────────────────────────────────────────
+  copper_chestguard: {
+    id: 'copper_chestguard',
+    name: 'Copper Chestguard',
+    type: 'equipment',
+    description: 'A simple chestpiece hammered from copper bars.',
+    stackable: true,
+    equipSlot: 'chest',
+    statBonuses: { STA: 3 },
+    sellValue: 10,
+  },
+  copper_legguards: {
+    id: 'copper_legguards',
+    name: 'Copper Legguards',
+    type: 'equipment',
+    description: 'Banded copper plating that protects the legs without slowing you down.',
+    stackable: true,
+    equipSlot: 'legs',
+    statBonuses: { STR: 2, STA: 2 },
+    sellValue: 12,
+  },
+  bronze_sword: {
+    id: 'bronze_sword',
+    name: 'Bronze Sword',
+    type: 'equipment',
+    description: 'A proper forged blade — a clear step up from a scavenged dagger.',
+    stackable: true,
+    equipSlot: 'weapon',
+    statBonuses: { STR: 5 },
+    sellValue: 20,
+  },
 };
