@@ -136,8 +136,21 @@ export async function applyGatheringResult(
   profession: ProfessionId,
   result: { xpGained: number; itemId: string; quantity: number }
 ): Promise<void> {
+  // Written as a full { level, xp, unlockedTier } replace rather than an
+  // increment() on the .xp sub-path — a profession added after a character
+  // was created (Smithing, Tailoring) may have no professions.<id> key at
+  // all yet in Firestore, and increment() on a missing sub-path creates
+  // only that one field, leaving level/unlockedTier missing and failing
+  // firestore.rules' isValidProfessionState on every write from then on.
+  // getCharacter() always returns a complete default shape for a profession
+  // that isn't in the document yet, so reading through it first guarantees
+  // this write is always a valid, complete profession state.
+  const character = await getCharacter(uid);
+  if (!character) return;
+  const current = character.professions[profession];
+
   await updateDoc(doc(db, 'characters', uid), {
-    [`professions.${profession}.xp`]: increment(result.xpGained),
+    [`professions.${profession}`]: { ...current, xp: current.xp + result.xpGained },
   });
 
   if (result.quantity > 0) {
@@ -172,8 +185,13 @@ export async function applyCraftingResult(
     materialsConsumed: { itemId: string; quantity: number }[];
   }
 ): Promise<void> {
+  // See the matching comment in applyGatheringResult — same fix, same reason.
+  const character = await getCharacter(uid);
+  if (!character) return;
+  const current = character.professions[profession];
+
   await updateDoc(doc(db, 'characters', uid), {
-    [`professions.${profession}.xp`]: increment(result.xpGained),
+    [`professions.${profession}`]: { ...current, xp: current.xp + result.xpGained },
   });
 
   const inventoryUpdates: Record<string, unknown> = {
