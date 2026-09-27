@@ -1,7 +1,8 @@
 import type { ProfessionTierDef } from './types';
 
-// Applies uniformly to all four V1 professions (Skinning, Mining, Herbalism,
-// Leatherworking) per the "apply the gate consistently" decision. Doesn't
+// Applies uniformly to all V1 professions (Skinning, Mining, Herbalism,
+// Leatherworking, Smithing, Tailoring) per the "apply the gate consistently"
+// decision. Doesn't
 // affect V1 content directly (Greenhollow Fields tops out around level 15,
 // nowhere near the 75 Apprentice ceiling) but the gate logic is real, not stubbed,
 // so it's already correct when future zones raise the level ceiling.

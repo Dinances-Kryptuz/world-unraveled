@@ -4,6 +4,7 @@ import { useCharacter } from '../hooks/useCharacter';
 import { equipItem, unequipItem } from '../firebase/character';
 import { subscribeToInventory } from '../firebase/inventory';
 import { ITEMS } from '../gameData/items';
+import { canClassEquip } from '../gameData/classStats';
 import type { Inventory } from '../types/character';
 import type { EquipmentSlot, ItemDef } from '../gameData/types';
 
@@ -69,11 +70,14 @@ export function EquipmentScreen() {
           {equippableInInventory.map(([itemId, quantity]) => {
             const item = ITEMS[itemId];
             if (!item?.equipSlot) return null;
+            const allowed = canClassEquip(character.class, item);
             return (
               <li key={itemId}>
                 {item.name}
                 {formatStatBonuses(item)} x{quantity}
-                <button onClick={() => handleEquip(item.equipSlot!, itemId)}>Equip</button>
+                <button onClick={() => handleEquip(item.equipSlot!, itemId)} disabled={!allowed}>
+                  {allowed ? 'Equip' : `${item.armorType} — not usable`}
+                </button>
               </li>
             );
           })}

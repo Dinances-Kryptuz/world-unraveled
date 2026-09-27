@@ -1,7 +1,7 @@
 // Shared types for all static game data (zones, monsters, items, recipes, etc.)
 // This file has no dependencies — everything else imports from here.
 
-export type ProfessionId = 'skinning' | 'mining' | 'herbalism' | 'leatherworking' | 'smithing';
+export type ProfessionId = 'skinning' | 'mining' | 'herbalism' | 'leatherworking' | 'smithing' | 'tailoring';
 
 export type ActivityType = 'combat' | 'gathering' | 'crafting';
 
@@ -15,6 +15,11 @@ export type EquipmentSlot =
   | 'ring';
 
 export type ItemType = 'material' | 'equipment';
+
+// Which classes can equip a given piece of armor — see classStats.ts's
+// ALLOWED_ARMOR_TYPES. Only relevant for armor (chest/helmet/gloves/legs/
+// boots); weapons and rings have no armorType and are unrestricted.
+export type ArmorType = 'cloth' | 'leather' | 'mail' | 'plate';
 
 export type ProfessionTierName =
   | 'apprentice'
@@ -91,6 +96,7 @@ export interface ItemDef {
   description: string;
   stackable: boolean;
   equipSlot?: EquipmentSlot; // only present when type === 'equipment'
+  armorType?: ArmorType; // only present on armor (not weapons/rings) — gates which classes can equip it
   // Equipment stat bonuses are raw STR/STA/INT/SPI points — the same
   // currency the class-growth system already uses (see classStats.ts).
   statBonuses?: Partial<Record<import('./classStats').BaseStat, number>>;

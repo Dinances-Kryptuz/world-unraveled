@@ -1,3 +1,5 @@
+import type { ArmorType, ItemDef } from './types';
+
 export type ClassId = 'warrior' | 'priest' | 'paladin';
 export type SpecId =
   | 'warrior_dps'
@@ -54,6 +56,21 @@ export const CLASS_LABELS: Record<ClassId, string> = {
   priest: 'Priest',
   paladin: 'Paladin',
 };
+
+// Which armor types each class can equip. Priest is cloth-only; the two
+// physical classes can wear anything (cloth included, just off-stat for
+// them) — matches the classic "plate/mail wearer can always drop down to
+// lighter armor" convention. Weapons and rings have no armorType and are
+// unrestricted for everyone.
+export const ALLOWED_ARMOR_TYPES: Record<ClassId, ArmorType[]> = {
+  warrior: ['cloth', 'leather', 'mail', 'plate'],
+  paladin: ['cloth', 'leather', 'mail', 'plate'],
+  priest: ['cloth'],
+};
+
+export function canClassEquip(cls: ClassId, item: Pick<ItemDef, 'armorType'>): boolean {
+  return !item.armorType || ALLOWED_ARMOR_TYPES[cls].includes(item.armorType);
+}
 
 export const SPEC_LABELS: Record<SpecId, string> = {
   warrior_dps: 'Melee DPS',
