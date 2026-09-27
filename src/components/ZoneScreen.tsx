@@ -13,9 +13,15 @@ import { SpecSelectionScreen } from './SpecSelectionScreen';
 import { mobColorTier, type MobColorTier } from '../gameData/combatFormulas';
 import { professionXpForLevel } from '../gameData/xpTables';
 import { XpBar } from './XpBar';
-import type { ProfessionId } from '../gameData/types';
+import { MonsterLootPanel } from './MonsterLootPanel';
+import { ITEMS } from '../gameData/items';
+import type { ProfessionId, Recipe, Zone } from '../gameData/types';
 
-const CURRENT_ZONE_ID = 'greenhollow_fields';
+const DEFAULT_ZONE_ID = 'greenhollow_fields';
+
+function isZoneUnlocked(zone: Zone, characterLevel: number): boolean {
+  return zone.unlockRequirement.type === 'none' || characterLevel >= zone.unlockRequirement.level;
+}
 
 const TIER_COLORS: Record<MobColorTier, string> = {
   grey: '#8c8c8c',
@@ -40,24 +46,26 @@ function MonsterLevelBadge({ monsterLevel, playerLevel }: { monsterLevel: number
 export function ZoneScreen() {
   const { user } = useAuth();
   const { character, refetch } = useCharacter();
-  const zone = ZONES[CURRENT_ZONE_ID];
   const [dismissedWelcomeBack, setDismissedWelcomeBack] = useState(false);
+  const [expandedMonsterId, setExpandedMonsterId] = useState<string | null>(null);
+  const [selectedZoneId, setSelectedZoneId] = useState(DEFAULT_ZONE_ID);
+  const zone = ZONES[selectedZoneId];
 
   async function handleFight(monsterId: string) {
     if (!user) return;
-    await startActivity(user.uid, { type: 'combat', targetId: monsterId, zoneId: CURRENT_ZONE_ID });
+    await startActivity(user.uid, { type: 'combat', targetId: monsterId, zoneId: zone.id });
     await refetch();
   }
 
   async function handleGather(nodeId: string) {
     if (!user) return;
-    await startActivity(user.uid, { type: 'gathering', targetId: nodeId, zoneId: CURRENT_ZONE_ID });
+    await startActivity(user.uid, { type: 'gathering', targetId: nodeId, zoneId: zone.id });
     await refetch();
   }
 
   async function handleCraft(recipeId: string) {
     if (!user) return;
-    await startActivity(user.uid, { type: 'crafting', targetId: recipeId, zoneId: CURRENT_ZONE_ID });
+    await startActivity(user.uid, { type: 'crafting', targetId: recipeId, zoneId: zone.id });
     await refetch();
   }
 
@@ -88,11 +96,35 @@ export function ZoneScreen() {
     if (recipe) return <CraftingScreen recipe={recipe} />;
   }
 
-  const leatherworkingLevel = character.professions.leatherworking.level;
   const professionEntries = Object.entries(character.professions) as [ProfessionId, { level: number; xp: number }][];
+
+  const recipesByProfession = new Map<ProfessionId, Recipe[]>();
+  for (const recipe of Object.values(RECIPES)) {
+    const list = recipesByProfession.get(recipe.profession) ?? [];
+    list.push(recipe);
+    recipesByProfession.set(recipe.profession, list);
+  }
 
   return (
     <div className="zone-screen">
+      <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+        {Object.values(ZONES).map((z) => {
+          const unlocked = isZoneUnlocked(z, character.level);
+          return (
+            <button
+              key={z.id}
+              onClick={() => unlocked && setSelectedZoneId(z.id)}
+              disabled={!unlocked}
+              title={unlocked ? undefined : `Unlocks at level ${z.unlockRequirement.type === 'characterLevel' ? z.unlockRequirement.level : '?'}`}
+              style={{ fontWeight: z.id === zone.id ? 700 : 400 }}
+            >
+              {z.name}
+              {!unlocked && z.unlockRequirement.type === 'characterLevel' ? ` (Lv ${z.unlockRequirement.level})` : ''}
+            </button>
+          );
+        })}
+      </div>
+
       <h1>{zone.name}</h1>
       <p>{zone.description}</p>
 
@@ -111,43 +143,62 @@ export function ZoneScreen() {
       <ul>
         {zone.monsterIds.map((monsterId) => {
           const monster = MONSTERS[monsterId];
+          const isExpanded = expandedMonsterId === monsterId;
           return (
             <li key={monsterId}>
-              {monster.name} (<MonsterLevelBadge monsterLevel={monster.level} playerLevel={character.level} />)
+              <button
+                onClick={() => setExpandedMonsterId(isExpanded ? null : monsterId)}
+                style={{ background: 'none', border: 'none', padding: 0, font: 'inherit', cursor: 'pointer', textDecoration: 'underline' }}
+              >
+                {monster.name}
+              </button>{' '}
+              (<MonsterLevelBadge monsterLevel={monster.level} playerLevel={character.level} />)
               <button onClick={() => handleFight(monsterId)}>Fight</button>
+              {isExpanded && <MonsterLootPanel monster={monster} />}
             </li>
           );
         })}
       </ul>
 
-      <h2>Gathering</h2>
+      <h2>Gathering (Mining, Herbalism, Skinning)</h2>
       <ul>
         {zone.gatherNodeIds.map((nodeId) => {
           const node = GATHER_NODES[nodeId];
+          const professionLabel = node.profession.charAt(0).toUpperCase() + node.profession.slice(1);
           return (
             <li key={nodeId}>
-              {node.name} ({node.profession}, Lv {node.requiredLevel}+)
+              {node.name} ({professionLabel}, Lv {node.requiredLevel}+) — yields {ITEMS[node.itemId]?.name ?? node.itemId}
               <button onClick={() => handleGather(nodeId)}>Gather</button>
             </li>
           );
         })}
       </ul>
 
-      <h2>Crafting (Leatherworking)</h2>
-      <ul>
-        {Object.values(RECIPES).map((recipe) => {
-          const meetsLevel = leatherworkingLevel >= recipe.requiredSkill;
-          return (
-            <li key={recipe.id}>
-              {recipe.name} (requires Lv {recipe.requiredSkill}) — materials:{' '}
-              {recipe.materials.map((m) => `${m.quantity}x ${m.itemId}`).join(', ')}
-              <button onClick={() => handleCraft(recipe.id)} disabled={!meetsLevel}>
-                {meetsLevel ? 'Craft' : `Need Lv ${recipe.requiredSkill}`}
-              </button>
-            </li>
-          );
-        })}
-      </ul>
+      {[...recipesByProfession.entries()].map(([professionId, recipes]) => {
+        const professionLevel = character.professions[professionId].level;
+        const professionLabel = professionId.charAt(0).toUpperCase() + professionId.slice(1);
+        return (
+          <div key={professionId}>
+            <h2>Crafting ({professionLabel})</h2>
+            <ul>
+              {recipes.map((recipe) => {
+                const meetsLevel = professionLevel >= recipe.requiredSkill;
+                return (
+                  <li key={recipe.id}>
+                    {recipe.name} (requires Lv {recipe.requiredSkill}) — materials:{' '}
+                    {recipe.materials
+                      .map((m) => `${m.quantity}x ${ITEMS[m.itemId]?.name ?? m.itemId}`)
+                      .join(', ')}
+                    <button onClick={() => handleCraft(recipe.id)} disabled={!meetsLevel}>
+                      {meetsLevel ? 'Craft' : `Need Lv ${recipe.requiredSkill}`}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        );
+      })}
     </div>
   );
 }

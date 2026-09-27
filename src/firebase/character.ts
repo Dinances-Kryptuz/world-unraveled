@@ -6,10 +6,18 @@ import type { ClassId, SpecId } from '../gameData/classStats';
 import type { TalentColumn } from '../gameData/talents';
 import { professionXpForLevel } from '../gameData/xpTables';
 import { maxHp } from '../gameData/combatFormulas';
+import { canClassEquip } from '../gameData/classStats';
+import { ITEMS } from '../gameData/items';
 
 const STARTING_GATHERING_PROFESSIONS: ProfessionId[] = ['skinning', 'mining', 'herbalism'];
-const STARTING_PRODUCTION_PROFESSIONS: ProfessionId[] = ['leatherworking'];
+const STARTING_PRODUCTION_PROFESSIONS: ProfessionId[] = ['leatherworking', 'smithing', 'tailoring'];
 const ALL_V1_PROFESSIONS = [...STARTING_GATHERING_PROFESSIONS, ...STARTING_PRODUCTION_PROFESSIONS];
+
+function defaultProfessions(): Record<ProfessionId, { level: number; xp: number; unlockedTier: 'apprentice' }> {
+  return Object.fromEntries(
+    ALL_V1_PROFESSIONS.map((id) => [id, { level: 1, xp: 0, unlockedTier: 'apprentice' as const }])
+  ) as Record<ProfessionId, { level: number; xp: number; unlockedTier: 'apprentice' }>;
+}
 
 export async function getCharacter(uid: string): Promise<Character | null> {
   const snap = await getDoc(doc(db, 'characters', uid));
@@ -18,6 +26,10 @@ export async function getCharacter(uid: string): Promise<Character | null> {
   const data = snap.data();
   return {
     ...data,
+    // Backfills professions added after this character was created (e.g.
+    // Smithing) so existing characters don't crash on a missing key —
+    // real saved progress always wins over the level-1 default.
+    professions: { ...defaultProfessions(), ...data.professions },
     createdAt: (data.createdAt as Timestamp)?.toDate() ?? new Date(),
     hpCheckpointAt: (data.hpCheckpointAt as Timestamp)?.toDate() ?? new Date(),
     currentActivity: {
@@ -30,9 +42,7 @@ export async function getCharacter(uid: string): Promise<Character | null> {
 }
 
 export async function createCharacter(uid: string, name: string, characterClass: ClassId): Promise<void> {
-  const professions = Object.fromEntries(
-    ALL_V1_PROFESSIONS.map((id) => [id, { level: 1, xp: 0, unlockedTier: 'apprentice' as const }])
-  );
+  const professions = defaultProfessions();
 
   const character = {
     name,
@@ -178,6 +188,12 @@ export async function applyCraftingResult(
 export async function equipItem(uid: string, slot: EquipmentSlot, itemId: string): Promise<void> {
   const character = await getCharacter(uid);
   if (!character) return;
+
+  const item = ITEMS[itemId];
+  if (!item || !canClassEquip(character.class, item)) {
+    throw new Error(`${character.class} cannot equip ${item?.name ?? itemId} (${item?.armorType} armor)`);
+  }
+
   const previouslyEquipped = character.equipment[slot];
 
   const inventoryUpdates: Record<string, unknown> = {

@@ -34,17 +34,13 @@ export const LIVE_SESSION_THRESHOLD_SECONDS = 300; // 5 minutes
 // Tuned against V1's 4 monsters/2 nodes to land near 100-200 kills and
 // 100-300 gathered resources per 24h (see /gameData sanity checks).
 export const COMBAT_OFFLINE_THROTTLE = 38;
-export const GATHERING_OFFLINE_THROTTLE = 45; // Mining, Herbalism — flat per-action nodes
-export const SKINNING_OFFLINE_THROTTLE = 55; // Skinning — separate so its chance-weighted
-// variable yield (0.9 chance x ~1.5 avg qty per action) still lands near Mining/Herbalism's
-// output instead of running hot just because it has richer per-action variance.
+export const GATHERING_OFFLINE_THROTTLE = 45; // Mining, Herbalism, Skinning — flat per-action nodes
 
 // Gathering-node failure chance: at exactly the node's required skill level,
 // there's a real chance of coming away empty-handed on a given action. That
 // chance shrinks as skill rises above the requirement, down to a floor that
 // never quite hits zero (V1 default: 40% fail at the requirement, decaying
-// to a 5% floor by 20 levels above it). This does NOT apply to Skinning,
-// whose variable yield is its own distinct mechanic (locked in separately).
+// to a 5% floor by 20 levels above it).
 export const GATHER_FAIL_CHANCE_AT_REQUIRED_LEVEL = 0.4;
 export const GATHER_FAIL_CHANCE_FLOOR = 0.05;
 export const GATHER_FAIL_CHANCE_LEVELS_TO_FLOOR = 20;
@@ -102,14 +98,7 @@ export function resolveElapsedProgress(startedAt: Date, now: Date): ResolvedProg
   };
 }
 
-// ── Gathering resolution (Mining, Herbalism — node-based) ────────────────
-
-export interface GatheringResult {
-  itemId: string;
-  quantityGained: number;
-  xpGained: number;
-  actionsCompleted: number;
-}
+// ── Gathering resolution (Mining, Herbalism, Skinning — node-based) ──────
 
 export interface GatherNodeResult {
   itemId: string;
@@ -147,32 +136,6 @@ export function resolveGathering(
     actionsAttempted,
     successfulActions,
     successChance,
-  };
-}
-
-// ── Skinning resolution (post-combat action, same rate mechanics as gathering) ──
-
-export function resolveSkinning(
-  startedAt: Date,
-  now: Date,
-  skinningYield: { itemId: string; chance: number; minQty: number; maxQty: number; actionSeconds: number },
-  skinningXpPerAction: number
-): GatheringResult {
-  const progress = resolveElapsedProgress(startedAt, now);
-  const effectiveSeconds = progress.effectiveHours * 3600;
-  const secondsPerAction = progress.isLiveSession
-    ? skinningYield.actionSeconds
-    : skinningYield.actionSeconds * SKINNING_OFFLINE_THROTTLE;
-
-  const actionsCompleted = Math.floor(effectiveSeconds / secondsPerAction);
-  const avgQty = (skinningYield.minQty + skinningYield.maxQty) / 2;
-  const quantityGained = Math.round(actionsCompleted * skinningYield.chance * avgQty);
-
-  return {
-    itemId: skinningYield.itemId,
-    quantityGained,
-    xpGained: actionsCompleted * skinningXpPerAction,
-    actionsCompleted,
   };
 }
 
