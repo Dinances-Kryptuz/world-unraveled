@@ -130,4 +130,9 @@ export const ITEMS: Record<string, ItemDef> = {
     statBonuses: { STA: 3 },
     sellValue: 10,
   },
+    rusty_dagger: {
+    id: 'rusty_dagger', name: 'Rusty Dagger', type: 'equipment',
+    description: 'A crude blade, scavenged from a fallen kobold. Better than fists.', stackable: true,
+    equipSlot: 'weapon', statBonuses: { STR: 3 }, sellValue: 12,
+  },
 };
