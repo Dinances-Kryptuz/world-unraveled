@@ -297,12 +297,22 @@ export const ITEMS: Record<string, ItemDef> = {
     sellValue: 20,
   },
 
+  // ── Tailoring materials ──────────────────────────────────────────────
+  simple_thread: {
+    id: 'simple_thread',
+    name: 'Simple Thread',
+    type: 'material',
+    description: 'Plain thread for stitching cloth together. Sold by vendors, not gathered.',
+    stackable: true,
+    sellValue: 1,
+  },
+
   // ── Tailoring equipment ──────────────────────────────────────────────
   linen_robe: {
     id: 'linen_robe',
     name: 'Linen Robe',
     type: 'equipment',
-    description: 'A simple robe woven from linen and pressed with peacebloom.',
+    description: 'A simple robe stitched together from linen cloth.',
     stackable: true,
     equipSlot: 'chest',
     armorType: 'cloth',
@@ -324,7 +334,7 @@ export const ITEMS: Record<string, ItemDef> = {
     id: 'linen_cap',
     name: 'Linen Cap',
     type: 'equipment',
-    description: 'A soft cap, dyed with crushed peacebloom.',
+    description: 'A soft cap sewn from stitched linen.',
     stackable: true,
     equipSlot: 'helmet',
     armorType: 'cloth',

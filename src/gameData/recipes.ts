@@ -129,7 +129,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultQuantity: 1,
     materials: [
       { itemId: 'linen_cloth', quantity: 5 },
-      { itemId: 'peacebloom', quantity: 2 },
+      { itemId: 'simple_thread', quantity: 2 },
     ],
     craftSeconds: 9,
     xpAward: 13,
@@ -144,7 +144,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultQuantity: 1,
     materials: [
       { itemId: 'linen_cloth', quantity: 4 },
-      { itemId: 'peacebloom', quantity: 1 },
+      { itemId: 'simple_thread', quantity: 1 },
     ],
     craftSeconds: 8,
     xpAward: 14,
@@ -159,7 +159,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultQuantity: 1,
     materials: [
       { itemId: 'linen_cloth', quantity: 5 },
-      { itemId: 'peacebloom', quantity: 2 },
+      { itemId: 'simple_thread', quantity: 2 },
     ],
     craftSeconds: 10,
     xpAward: 17,

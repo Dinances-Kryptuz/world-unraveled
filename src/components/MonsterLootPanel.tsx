@@ -26,7 +26,7 @@ export function MonsterLootPanel({ monster }: { monster: Monster }) {
       <ul style={{ margin: '4px 0' }}>
         {sortedLoot.map((drop) => (
           <li key={drop.itemId}>
-            {itemName(drop.itemId)} — {(drop.chance * 100).toFixed(0)}% ({qtyLabel(drop.minQty, drop.maxQty)})
+            {itemName(drop.itemId)} ({qtyLabel(drop.minQty, drop.maxQty)})
           </li>
         ))}
         <li>Gold — {qtyLabel(monster.goldMin, monster.goldMax)}</li>
