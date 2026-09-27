@@ -86,6 +86,7 @@ export const MONSTERS: Record<string, Monster> = {
       { itemId: 'linen_cloth', chance: 0.45, minQty: 1, maxQty: 2 },
       { itemId: 'copper_scrap', chance: 0.25, minQty: 1, maxQty: 1 },
       { itemId: 'small_coin_pouch', chance: 0.1, minQty: 1, maxQty: 1 },
+      { itemId: 'rusty_dagger', chance: 0.08, minQty: 1, maxQty: 1 },
     ],
     skinnable: false,
     specialAbility: {
