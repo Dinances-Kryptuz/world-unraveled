@@ -1,5 +1,3 @@
-import type { SpecId } from '../classStats';
-
 export type TalentEffectKind =
   | 'flat_dmg'
   | 'flat_dmg_taken'

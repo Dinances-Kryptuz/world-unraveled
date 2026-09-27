@@ -6,9 +6,10 @@ import { MONSTERS } from '../gameData/monsters';
 import { resolveSpecDef, computeFullCombatProfile, getExtraDamageTakenPct } from '../gameData/combatProfileWithTalents';
 import { resolveCombatEncounter } from '../gameData/combatResolver';
 import { evaluateTalents, EMPTY_TALENT_TOTALS } from '../utils/talentEvaluator';
-import { maxHp, resolveCurrentHp } from '../gameData/combatFormulas';
+import { maxHp, resolveCurrentHp, ATTACK_INTERVAL_SECONDS } from '../gameData/combatFormulas';
 import { getEquipmentStatBonuses } from '../gameData/equipmentStats';
 import { characterXpForLevelV2 } from '../gameData/xpTables';
+import { TickBar } from './TickBar';
 import type { Character } from '../types/character';
 import type { User } from 'firebase/auth';
 
@@ -24,7 +25,12 @@ const EMPTY_TOTALS: SessionTotals = { monstersDefeated: 0, xpGained: 0, goldGain
 
 export function CombatScreen({ monsterId }: { monsterId: string }) {
   const { user } = useAuth();
-  const { character, refetch } = useCharacter();
+  // ZoneScreen never renders CombatScreen until it has confirmed a loaded
+  // character, so this is always non-null in practice — but useCharacter()'s
+  // type is nullable (it also serves the loading/logged-out states), and
+  // this component's hooks (below) can't have an early return before them.
+  const { character: characterOrNull, refetch, applyOptimisticUpdate } = useCharacter();
+  const character = characterOrNull!;
   const [, setTick] = useState(0);
   const secondsSinceSaveRef = useRef(0);
 
@@ -119,6 +125,15 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
       xpGained: prev.xpGained + Math.round(result.xpGained),
       goldGained: prev.goldGained + Math.round(result.goldGained),
     }));
+    // Bump the shared character xp/gold now, in the same tick as the banked
+    // session totals above, so the header bar and this screen's "session"
+    // line move together instead of the header lagging behind the Firestore
+    // round-trip below.
+    applyOptimisticUpdate((c) => ({
+      ...c,
+      xp: c.xp + Math.round(result.xpGained),
+      gold: c.gold + Math.round(result.goldGained),
+    }));
 
     try {
       await applyCombatResult(currentUser.uid, {
@@ -158,6 +173,11 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
         xpGained: prev.xpGained - Math.round(result.xpGained),
         goldGained: prev.goldGained - Math.round(result.goldGained),
       }));
+      applyOptimisticUpdate((c) => ({
+        ...c,
+        xp: c.xp - Math.round(result.xpGained),
+        gold: c.gold - Math.round(result.goldGained),
+      }));
     }
   }
 
@@ -167,7 +187,7 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
     await refetch();
   }
 
-  if (!character || !character.currentActivity.startedAt || hpRef.current === null) return null;
+  if (!character.currentActivity.startedAt || hpRef.current === null) return null;
 
   const profile = buildProfile(character);
   const sinceLastSave =
@@ -184,6 +204,12 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
   return (
     <div className="combat-screen">
       <h2>Fighting {monster.name}</h2>
+      {!retreated && (
+        <>
+          <TickBar seconds={ATTACK_INTERVAL_SECONDS} color="#2e9e4f" label="Your attack" />
+          <TickBar seconds={ATTACK_INTERVAL_SECONDS} color="#c0392b" label={`${monster.name}'s attack`} />
+        </>
+      )}
       {retreated ? (
         <p>
           You were forced to retreat! This session: {displayTotals.monstersDefeated} defeated, +

@@ -7,11 +7,6 @@ export const MONSTERS: Record<string, Monster> = {
     zoneIds: ['greenhollow_fields'],
     levelRange: [1, 5],
     level: 3, // placeholder — real tuning against the new formulas happens at Step 10
-    hp: 28,
-    attackPower: 3,
-    defense: 1,
-    attackIntervalSeconds: 2.5,
-    xpReward: 8,
     goldMin: 1,
     goldMax: 3,
     lootTable: [
@@ -32,11 +27,6 @@ export const MONSTERS: Record<string, Monster> = {
     zoneIds: ['greenhollow_fields'],
     levelRange: [3, 8],
     level: 6, // placeholder — real tuning against the new formulas happens at Step 10
-    hp: 32,
-    attackPower: 5,
-    defense: 2,
-    attackIntervalSeconds: 2.0,
-    xpReward: 14,
     goldMin: 2,
     goldMax: 5,
     lootTable: [
@@ -57,11 +47,6 @@ export const MONSTERS: Record<string, Monster> = {
     zoneIds: ['greenhollow_fields'],
     levelRange: [5, 10],
     level: 9, // placeholder — real tuning against the new formulas happens at Step 10
-    hp: 40,
-    attackPower: 6,
-    defense: 3,
-    attackIntervalSeconds: 2.2,
-    xpReward: 20,
     goldMin: 3,
     goldMax: 7,
     lootTable: [
@@ -83,11 +68,6 @@ export const MONSTERS: Record<string, Monster> = {
     zoneIds: ['greenhollow_fields'],
     levelRange: [2, 6],
     level: 1, // placeholder — real tuning against the new formulas happens at Step 10
-    hp: 20,
-    attackPower: 2,
-    defense: 1,
-    attackIntervalSeconds: 1.8,
-    xpReward: 6,
     goldMin: 1,
     goldMax: 2,
     lootTable: [
@@ -109,11 +89,6 @@ export const MONSTERS: Record<string, Monster> = {
     zoneIds: ['stonecrag_foothills'],
     levelRange: [8, 12],
     level: 10,
-    hp: 42,
-    attackPower: 7,
-    defense: 3,
-    attackIntervalSeconds: 2.0,
-    xpReward: 500,
     goldMin: 4,
     goldMax: 9,
     lootTable: [
@@ -134,11 +109,6 @@ export const MONSTERS: Record<string, Monster> = {
     zoneIds: ['stonecrag_foothills'],
     levelRange: [11, 16],
     level: 13,
-    hp: 48,
-    attackPower: 9,
-    defense: 4,
-    attackIntervalSeconds: 2.2,
-    xpReward: 650,
     goldMin: 5,
     goldMax: 11,
     lootTable: [
@@ -159,11 +129,6 @@ export const MONSTERS: Record<string, Monster> = {
     zoneIds: ['stonecrag_foothills'],
     levelRange: [14, 19],
     level: 16,
-    hp: 55,
-    attackPower: 11,
-    defense: 6,
-    attackIntervalSeconds: 2.4,
-    xpReward: 800,
     goldMin: 6,
     goldMax: 13,
     lootTable: [
@@ -184,11 +149,6 @@ export const MONSTERS: Record<string, Monster> = {
     zoneIds: ['stonecrag_foothills'],
     levelRange: [16, 22],
     level: 19,
-    hp: 62,
-    attackPower: 13,
-    defense: 7,
-    attackIntervalSeconds: 2.0,
-    xpReward: 950,
     goldMin: 9,
     goldMax: 18,
     lootTable: [
@@ -209,11 +169,6 @@ export const MONSTERS: Record<string, Monster> = {
     zoneIds: ['stonecrag_foothills'],
     levelRange: [19, 25],
     level: 22,
-    hp: 70,
-    attackPower: 16,
-    defense: 8,
-    attackIntervalSeconds: 1.8,
-    xpReward: 1100,
     goldMin: 11,
     goldMax: 22,
     lootTable: [

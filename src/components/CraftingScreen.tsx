@@ -6,6 +6,7 @@ import { getInventory } from '../firebase/inventory';
 import { resolveCrafting } from '../gameData/activityEngine';
 import { professionXpForLevel } from '../gameData/xpTables';
 import { XpBar } from './XpBar';
+import { TickBar } from './TickBar';
 import type { Character } from '../types/character';
 import type { User } from 'firebase/auth';
 import type { Recipe } from '../gameData/types';
@@ -14,7 +15,12 @@ const AUTOSAVE_INTERVAL_SECONDS = 10;
 
 export function CraftingScreen({ recipe }: { recipe: Recipe }) {
   const { user } = useAuth();
-  const { character, refetch } = useCharacter();
+  // ZoneScreen never renders CraftingScreen until it has confirmed a loaded
+  // character, so this is always non-null in practice — but useCharacter()'s
+  // type is nullable (it also serves the loading/logged-out states), and
+  // this component's hooks (below) can't have an early return before them.
+  const { character: characterOrNull, refetch, applyOptimisticUpdate } = useCharacter();
+  const character = characterOrNull!;
   const [, setTick] = useState(0);
   const secondsSinceSaveRef = useRef(0);
 
@@ -100,6 +106,19 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
     }
     setBankedCrafted((prev) => prev + result.itemsCrafted);
     setBankedXp((prev) => prev + result.xpGained);
+    // Bump the shared profession xp now, in the same tick as the banked
+    // session totals above, so the XpBar right below doesn't visibly lag
+    // behind the "This session" line on this same screen.
+    applyOptimisticUpdate((c) => ({
+      ...c,
+      professions: {
+        ...c.professions,
+        [recipe.profession]: {
+          ...c.professions[recipe.profession],
+          xp: c.professions[recipe.profession].xp + result.xpGained,
+        },
+      },
+    }));
 
     try {
       await applyCraftingResult(currentUser.uid, recipe.profession, {
@@ -116,6 +135,16 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
       materialsRef.current = previousMaterials;
       setBankedCrafted((prev) => prev - result.itemsCrafted);
       setBankedXp((prev) => prev - result.xpGained);
+      applyOptimisticUpdate((c) => ({
+        ...c,
+        professions: {
+          ...c.professions,
+          [recipe.profession]: {
+            ...c.professions[recipe.profession],
+            xp: c.professions[recipe.profession].xp - result.xpGained,
+          },
+        },
+      }));
     }
   }
 
@@ -125,13 +154,14 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
     await refetch();
   }
 
-  if (!character || !character.currentActivity.startedAt) return null;
+  if (!character.currentActivity.startedAt) return null;
 
   const profession = character.professions[recipe.profession];
 
   return (
     <div className="crafting-screen">
       <h2>Crafting: {recipe.name}</h2>
+      {!outOfMaterials && <TickBar seconds={recipe.craftSeconds} color="#6b4f2a" label="Crafting" />}
       <p>
         This session: {bankedCrafted} crafted, +{bankedXp} XP
       </p>

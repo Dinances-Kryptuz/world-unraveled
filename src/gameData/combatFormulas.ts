@@ -1,4 +1,4 @@
-import { CLASS_GROWTH, PRIMARY_STAT, SPECS, statAtLevel, type BaseStat, type ClassId, type SpecId } from './classStats';
+import { PRIMARY_STAT, SPECS, statAtLevel, type BaseStat, type ClassId, type SpecId } from './classStats';
 
 export const ATTACK_INTERVAL_SECONDS = 2.0; // universal baseline, both player and monster
 export const MONSTER_DAMAGE_SCALE = 0.75; // global tuning knob found during Pass 1 calibration

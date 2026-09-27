@@ -83,27 +83,51 @@ service cloud.firestore {
       && p.unlockedTier in ['apprentice','journeyman','expert','artisan','master'];
   }
 
+  // Smithing/Tailoring were added after this app's first characters existed,
+  // so an old character's professions map may genuinely be missing those
+  // keys in Firestore until the first action that touches them creates it
+  // (see defaultProfessions()/getCharacter() in firebase/character.ts,
+  // which backfill it client-side but don't write it back proactively).
+  // hasOnly bounds what keys CAN exist; each profession is only required to
+  // be a valid state IF it's present, so an old document without them still
+  // passes every other check.
   function isValidProfessions(profs) {
-    return profs.keys().hasOnly(['skinning','mining','herbalism','leatherworking'])
+    return profs.keys().hasOnly(['skinning','mining','herbalism','leatherworking','smithing','tailoring'])
       && isValidProfessionState(profs.skinning)
       && isValidProfessionState(profs.mining)
       && isValidProfessionState(profs.herbalism)
-      && isValidProfessionState(profs.leatherworking);
+      && isValidProfessionState(profs.leatherworking)
+      && (!('smithing' in profs) || isValidProfessionState(profs.smithing))
+      && (!('tailoring' in profs) || isValidProfessionState(profs.tailoring));
   }
 
+  // Unlike isValidProfessions, new-character creation always writes the
+  // full defaultProfessions() map, so all six are required unconditionally.
   function isValidNewProfessions(profs) {
     return isValidProfessions(profs)
       && profs.skinning.level == 1 && profs.skinning.xp == 0 && profs.skinning.unlockedTier == 'apprentice'
       && profs.mining.level == 1 && profs.mining.xp == 0 && profs.mining.unlockedTier == 'apprentice'
       && profs.herbalism.level == 1 && profs.herbalism.xp == 0 && profs.herbalism.unlockedTier == 'apprentice'
-      && profs.leatherworking.level == 1 && profs.leatherworking.xp == 0 && profs.leatherworking.unlockedTier == 'apprentice';
+      && profs.leatherworking.level == 1 && profs.leatherworking.xp == 0 && profs.leatherworking.unlockedTier == 'apprentice'
+      && profs.smithing.level == 1 && profs.smithing.xp == 0 && profs.smithing.unlockedTier == 'apprentice'
+      && profs.tailoring.level == 1 && profs.tailoring.xp == 0 && profs.tailoring.unlockedTier == 'apprentice';
   }
 
   function professionsNeverDecrease(before, after) {
-    return after.skinning.level >= before.skinning.level && after.skinning.xp >= before.skinning.xp
-      && after.mining.level >= before.mining.level && after.mining.xp >= before.mining.xp
-      && after.herbalism.level >= before.herbalism.level && after.herbalism.xp >= before.herbalism.xp
-      && after.leatherworking.level >= before.leatherworking.level && after.leatherworking.xp >= before.leatherworking.xp;
+    return professionNeverDecreased(before, after, 'skinning')
+      && professionNeverDecreased(before, after, 'mining')
+      && professionNeverDecreased(before, after, 'herbalism')
+      && professionNeverDecreased(before, after, 'leatherworking')
+      && professionNeverDecreased(before, after, 'smithing')
+      && professionNeverDecreased(before, after, 'tailoring');
+  }
+
+  // A profession that doesn't exist yet in "before" (an old character that
+  // hasn't touched it) trivially can't have decreased. One that exists in
+  // "before" must still exist in "after" and never drop in level/xp.
+  function professionNeverDecreased(before, after, key) {
+    return !(key in before)
+      || (key in after && after[key].level >= before[key].level && after[key].xp >= before[key].xp);
   }
 
   function isValidActivity(a) {

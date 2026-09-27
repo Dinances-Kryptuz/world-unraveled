@@ -75,7 +75,8 @@ button:disabled {
   cursor: not-allowed;
 }
 
-input[type="text"] {
+input[type="text"],
+input[type="number"] {
   padding: 8px 10px;
   border: 1px solid #cfc3ac;
   border-radius: 5px;
@@ -83,9 +84,44 @@ input[type="text"] {
   margin-right: 8px;
 }
 
+input[type="number"] {
+  width: 64px;
+}
+
 .error {
   color: #a3312a;
   font-weight: 500;
+}
+
+.tick-bar {
+  margin: 6px 0;
+}
+
+.tick-bar-track {
+  background: #e2d9c8;
+  border-radius: 4px;
+  height: 8px;
+  width: 100%;
+  overflow: hidden;
+}
+
+.tick-bar-fill {
+  height: 100%;
+  width: 100%;
+  transform: scaleX(0);
+  transform-origin: left;
+  animation-name: tick-bar-fill;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+@keyframes tick-bar-fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
 }
 
 .loading-screen {
