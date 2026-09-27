@@ -13,6 +13,7 @@ import { SpecSelectionScreen } from './SpecSelectionScreen';
 import { mobColorTier, type MobColorTier } from '../gameData/combatFormulas';
 import { professionXpForLevel } from '../gameData/xpTables';
 import { XpBar } from './XpBar';
+import { MonsterLootPanel } from './MonsterLootPanel';
 import type { ProfessionId } from '../gameData/types';
 
 const CURRENT_ZONE_ID = 'greenhollow_fields';
@@ -42,6 +43,7 @@ export function ZoneScreen() {
   const { character, refetch } = useCharacter();
   const zone = ZONES[CURRENT_ZONE_ID];
   const [dismissedWelcomeBack, setDismissedWelcomeBack] = useState(false);
+  const [expandedMonsterId, setExpandedMonsterId] = useState<string | null>(null);
 
   async function handleFight(monsterId: string) {
     if (!user) return;
@@ -111,10 +113,18 @@ export function ZoneScreen() {
       <ul>
         {zone.monsterIds.map((monsterId) => {
           const monster = MONSTERS[monsterId];
+          const isExpanded = expandedMonsterId === monsterId;
           return (
             <li key={monsterId}>
-              {monster.name} (<MonsterLevelBadge monsterLevel={monster.level} playerLevel={character.level} />)
+              <button
+                onClick={() => setExpandedMonsterId(isExpanded ? null : monsterId)}
+                style={{ background: 'none', border: 'none', padding: 0, font: 'inherit', cursor: 'pointer', textDecoration: 'underline' }}
+              >
+                {monster.name}
+              </button>{' '}
+              (<MonsterLevelBadge monsterLevel={monster.level} playerLevel={character.level} />)
               <button onClick={() => handleFight(monsterId)}>Fight</button>
+              {isExpanded && <MonsterLootPanel monster={monster} />}
             </li>
           );
         })}
