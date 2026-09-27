@@ -14,9 +14,13 @@ import { mobColorTier, type MobColorTier } from '../gameData/combatFormulas';
 import { professionXpForLevel } from '../gameData/xpTables';
 import { XpBar } from './XpBar';
 import { MonsterLootPanel } from './MonsterLootPanel';
-import type { ProfessionId } from '../gameData/types';
+import type { ProfessionId, Zone } from '../gameData/types';
 
-const CURRENT_ZONE_ID = 'greenhollow_fields';
+const DEFAULT_ZONE_ID = 'greenhollow_fields';
+
+function isZoneUnlocked(zone: Zone, characterLevel: number): boolean {
+  return zone.unlockRequirement.type === 'none' || characterLevel >= zone.unlockRequirement.level;
+}
 
 const TIER_COLORS: Record<MobColorTier, string> = {
   grey: '#8c8c8c',
@@ -41,25 +45,26 @@ function MonsterLevelBadge({ monsterLevel, playerLevel }: { monsterLevel: number
 export function ZoneScreen() {
   const { user } = useAuth();
   const { character, refetch } = useCharacter();
-  const zone = ZONES[CURRENT_ZONE_ID];
   const [dismissedWelcomeBack, setDismissedWelcomeBack] = useState(false);
   const [expandedMonsterId, setExpandedMonsterId] = useState<string | null>(null);
+  const [selectedZoneId, setSelectedZoneId] = useState(DEFAULT_ZONE_ID);
+  const zone = ZONES[selectedZoneId];
 
   async function handleFight(monsterId: string) {
     if (!user) return;
-    await startActivity(user.uid, { type: 'combat', targetId: monsterId, zoneId: CURRENT_ZONE_ID });
+    await startActivity(user.uid, { type: 'combat', targetId: monsterId, zoneId: zone.id });
     await refetch();
   }
 
   async function handleGather(nodeId: string) {
     if (!user) return;
-    await startActivity(user.uid, { type: 'gathering', targetId: nodeId, zoneId: CURRENT_ZONE_ID });
+    await startActivity(user.uid, { type: 'gathering', targetId: nodeId, zoneId: zone.id });
     await refetch();
   }
 
   async function handleCraft(recipeId: string) {
     if (!user) return;
-    await startActivity(user.uid, { type: 'crafting', targetId: recipeId, zoneId: CURRENT_ZONE_ID });
+    await startActivity(user.uid, { type: 'crafting', targetId: recipeId, zoneId: zone.id });
     await refetch();
   }
 
@@ -95,6 +100,24 @@ export function ZoneScreen() {
 
   return (
     <div className="zone-screen">
+      <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+        {Object.values(ZONES).map((z) => {
+          const unlocked = isZoneUnlocked(z, character.level);
+          return (
+            <button
+              key={z.id}
+              onClick={() => unlocked && setSelectedZoneId(z.id)}
+              disabled={!unlocked}
+              title={unlocked ? undefined : `Unlocks at level ${z.unlockRequirement.type === 'characterLevel' ? z.unlockRequirement.level : '?'}`}
+              style={{ fontWeight: z.id === zone.id ? 700 : 400 }}
+            >
+              {z.name}
+              {!unlocked && z.unlockRequirement.type === 'characterLevel' ? ` (Lv ${z.unlockRequirement.level})` : ''}
+            </button>
+          );
+        })}
+      </div>
+
       <h1>{zone.name}</h1>
       <p>{zone.description}</p>
 

@@ -25,6 +25,27 @@ export const GATHER_NODES: Record<string, GatherNode> = {
   // on skinnable monster corpses (see monsters.ts skinningYield). It doesn't need
   // an entry here, but the profession still shows up in the zone's activity list
   // in the UI by checking which zone monsters have skinnable: true.
+
+  stonecrag_tin_vein: {
+    id: 'stonecrag_tin_vein',
+    name: 'Tin Vein',
+    profession: 'mining',
+    zoneId: 'stonecrag_foothills',
+    requiredLevel: 10,
+    itemId: 'tin_ore',
+    xpPerAction: 9,
+    secondsPerAction: 9,
+  },
+  stonecrag_sage_patch: {
+    id: 'stonecrag_sage_patch',
+    name: 'Mountain Sage Patch',
+    profession: 'herbalism',
+    zoneId: 'stonecrag_foothills',
+    requiredLevel: 10,
+    itemId: 'mountain_sage',
+    xpPerAction: 9,
+    secondsPerAction: 9,
+  },
 };
 
 export const ZONES: Record<string, Zone> = {
@@ -37,5 +58,16 @@ export const ZONES: Record<string, Zone> = {
     unlockRequirement: { type: 'none' },
     monsterIds: ['greenhorn_boar', 'forest_wolf', 'wild_kobold', 'thornback_hare'],
     gatherNodeIds: ['greenhollow_copper_vein', 'greenhollow_peacebloom_patch'],
+  },
+
+  stonecrag_foothills: {
+    id: 'stonecrag_foothills',
+    name: 'Stonecrag Foothills',
+    description:
+      'Windswept slopes and broken rock rising above Greenhollow Fields. Jackals and goats roam the lower trails; bandits and worse hold the higher ground.',
+    levelRange: [8, 25],
+    unlockRequirement: { type: 'characterLevel', level: 8 },
+    monsterIds: ['ridge_jackal', 'craggy_goat', 'rubble_crawler', 'highland_bandit', 'crag_wolf_alpha'],
+    gatherNodeIds: ['stonecrag_tin_vein', 'stonecrag_sage_patch'],
   },
 };
