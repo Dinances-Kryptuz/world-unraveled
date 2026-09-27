@@ -11,6 +11,7 @@ import { CLASS_LABELS, SPEC_LABELS } from './gameData/classStats';
 import { maxHp, resolveCurrentHp } from './gameData/combatFormulas';
 import { getEquipmentStatBonuses } from './gameData/equipmentStats';
 import { characterXpForLevelV2 } from './gameData/xpTables';
+import { VendorScreen } from './components/VendorScreen';
 
 function AppContent() {
   const { user, loading: authLoading } = useAuth();
@@ -74,6 +75,7 @@ function AppContent() {
       <ZoneScreen />
       <EquipmentScreen />
       <InventoryScreen />
+      <VendorScreen />
       {character.spec && <TalentScreen />}
     </div>
   );
