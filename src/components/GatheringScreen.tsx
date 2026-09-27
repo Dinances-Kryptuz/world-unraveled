@@ -5,6 +5,7 @@ import { applyGatheringResult, checkAndApplyProfessionLevelUp, stopActivity } fr
 import { resolveGathering } from '../gameData/activityEngine';
 import { professionXpForLevel } from '../gameData/xpTables';
 import { XpBar } from './XpBar';
+import { TickBar } from './TickBar';
 import type { Character } from '../types/character';
 import type { User } from 'firebase/auth';
 import type { GatherNode } from '../gameData/types';
@@ -13,7 +14,7 @@ const AUTOSAVE_INTERVAL_SECONDS = 10;
 
 export function GatheringScreen({ node }: { node: GatherNode }) {
   const { user } = useAuth();
-  const { character, refetch } = useCharacter();
+  const { character, refetch, applyOptimisticUpdate } = useCharacter();
   const [, setTick] = useState(0);
   const secondsSinceSaveRef = useRef(0);
 
@@ -82,6 +83,17 @@ export function GatheringScreen({ node }: { node: GatherNode }) {
 
     if (wholeItems === 0) return; // nothing crossed a whole item yet, nothing to save
 
+    // Bump the shared profession xp now, in the same tick as the banked
+    // session totals above, so the Professions bar doesn't lag behind the
+    // Firestore round-trip below.
+    applyOptimisticUpdate((c) => ({
+      ...c,
+      professions: {
+        ...c.professions,
+        [node.profession]: { ...c.professions[node.profession], xp: c.professions[node.profession].xp + xpGained },
+      },
+    }));
+
     try {
       await applyGatheringResult(currentUser.uid, node.profession, {
         xpGained,
@@ -96,6 +108,13 @@ export function GatheringScreen({ node }: { node: GatherNode }) {
       carryRef.current = previousCarry;
       setBankedQuantity((prev) => prev - wholeItems);
       setBankedXp((prev) => prev - xpGained);
+      applyOptimisticUpdate((c) => ({
+        ...c,
+        professions: {
+          ...c.professions,
+          [node.profession]: { ...c.professions[node.profession], xp: c.professions[node.profession].xp - xpGained },
+        },
+      }));
     }
   }
 
@@ -121,6 +140,7 @@ export function GatheringScreen({ node }: { node: GatherNode }) {
   return (
     <div className="gathering-screen">
       <h2>Gathering: {node.name}</h2>
+      <TickBar seconds={node.secondsPerAction} color="#6b4f2a" label="Gathering" />
       <p>Success chance at your skill: {(sinceLastSave.successChance * 100).toFixed(0)}%</p>
       <p>
         This session: {displayQuantity} gathered, +{displayXp} XP
