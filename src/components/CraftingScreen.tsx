@@ -15,7 +15,12 @@ const AUTOSAVE_INTERVAL_SECONDS = 10;
 
 export function CraftingScreen({ recipe }: { recipe: Recipe }) {
   const { user } = useAuth();
-  const { character, refetch, applyOptimisticUpdate } = useCharacter();
+  // ZoneScreen never renders CraftingScreen until it has confirmed a loaded
+  // character, so this is always non-null in practice — but useCharacter()'s
+  // type is nullable (it also serves the loading/logged-out states), and
+  // this component's hooks (below) can't have an early return before them.
+  const { character: characterOrNull, refetch, applyOptimisticUpdate } = useCharacter();
+  const character = characterOrNull!;
   const [, setTick] = useState(0);
   const secondsSinceSaveRef = useRef(0);
 
@@ -149,7 +154,7 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
     await refetch();
   }
 
-  if (!character || !character.currentActivity.startedAt) return null;
+  if (!character.currentActivity.startedAt) return null;
 
   const profession = character.professions[recipe.profession];
 

@@ -14,7 +14,12 @@ const AUTOSAVE_INTERVAL_SECONDS = 10;
 
 export function GatheringScreen({ node }: { node: GatherNode }) {
   const { user } = useAuth();
-  const { character, refetch, applyOptimisticUpdate } = useCharacter();
+  // ZoneScreen never renders GatheringScreen until it has confirmed a loaded
+  // character, so this is always non-null in practice — but useCharacter()'s
+  // type is nullable (it also serves the loading/logged-out states), and
+  // this component's hooks (below) can't have an early return before them.
+  const { character: characterOrNull, refetch, applyOptimisticUpdate } = useCharacter();
+  const character = characterOrNull!;
   const [, setTick] = useState(0);
   const secondsSinceSaveRef = useRef(0);
 
@@ -124,7 +129,7 @@ export function GatheringScreen({ node }: { node: GatherNode }) {
     await refetch();
   }
 
-  if (!character || !character.currentActivity.startedAt) return null;
+  if (!character.currentActivity.startedAt) return null;
 
   const currentSkill = character.professions[node.profession].level;
   const sinceLastSave = anchorRef.current

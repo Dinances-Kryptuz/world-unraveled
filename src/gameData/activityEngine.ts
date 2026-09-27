@@ -139,63 +139,6 @@ export function resolveGathering(
   };
 }
 
-// ── Combat resolution ───────────────────────────────────────────────────
-
-export interface CombatResult {
-  monstersDefeated: number;
-  xpGained: number;
-  goldGained: number;
-  loot: { itemId: string; quantity: number }[];
-  liveSecondsPerKill: number; // for UI reference / debugging balance
-}
-
-export function resolveCombat(
-  startedAt: Date,
-  now: Date,
-  monster: {
-    hp: number;
-    xpReward: number;
-    goldMin: number;
-    goldMax: number;
-    lootTable: { itemId: string; chance: number; minQty: number; maxQty: number }[];
-  },
-  playerAttackPower: number,
-  playerAttackIntervalSeconds: number
-): CombatResult {
-  const progress = resolveElapsedProgress(startedAt, now);
-  const effectiveSeconds = progress.effectiveHours * 3600;
-
-  const attacksToKill = Math.max(1, Math.ceil(monster.hp / Math.max(1, playerAttackPower)));
-  const liveSecondsPerKill = attacksToKill * playerAttackIntervalSeconds;
-  const secondsPerKill = progress.isLiveSession
-    ? liveSecondsPerKill
-    : liveSecondsPerKill * COMBAT_OFFLINE_THROTTLE;
-
-  const monstersDefeated = Math.floor(effectiveSeconds / secondsPerKill);
-
-  const avgGoldPerKill = (monster.goldMin + monster.goldMax) / 2;
-  const goldGained = Math.round(monstersDefeated * avgGoldPerKill);
-  const xpGained = monstersDefeated * monster.xpReward;
-
-  const loot = monster.lootTable.map((drop) => {
-    const avgQty = (drop.minQty + drop.maxQty) / 2;
-    // Deliberately NOT rounded here — a low-probability drop needs several
-    // small fractional chunks to add up to a whole item. The caller
-    // accumulates these fractions across autosaves and only rounds down
-    // once enough has built up (see CombatScreen.tsx).
-    const expectedQuantity = monstersDefeated * drop.chance * avgQty;
-    return { itemId: drop.itemId, quantity: expectedQuantity };
-  });
-
-  return {
-    monstersDefeated,
-    xpGained,
-    goldGained,
-    loot: loot.filter((l) => l.quantity > 0),
-    liveSecondsPerKill,
-  };
-}
-
 // ── Crafting resolution ─────────────────────────────────────────────────
 // Crafting is unaffected by the live/offline throttle: it's already
 // self-limiting by materials on hand, so there's no "thousands of items"

@@ -49,11 +49,6 @@ export interface Monster {
   zoneIds: string[];
   levelRange: [number, number];
   level: number; // canonical single level used by the new formula-driven combat system
-  hp: number;
-  attackPower: number;
-  defense: number;
-  attackIntervalSeconds: number;
-  xpReward: number;
   goldMin: number;
   goldMax: number;
   lootTable: LootDrop[];

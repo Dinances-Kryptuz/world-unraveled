@@ -25,7 +25,12 @@ const EMPTY_TOTALS: SessionTotals = { monstersDefeated: 0, xpGained: 0, goldGain
 
 export function CombatScreen({ monsterId }: { monsterId: string }) {
   const { user } = useAuth();
-  const { character, refetch, applyOptimisticUpdate } = useCharacter();
+  // ZoneScreen never renders CombatScreen until it has confirmed a loaded
+  // character, so this is always non-null in practice — but useCharacter()'s
+  // type is nullable (it also serves the loading/logged-out states), and
+  // this component's hooks (below) can't have an early return before them.
+  const { character: characterOrNull, refetch, applyOptimisticUpdate } = useCharacter();
+  const character = characterOrNull!;
   const [, setTick] = useState(0);
   const secondsSinceSaveRef = useRef(0);
 
@@ -182,7 +187,7 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
     await refetch();
   }
 
-  if (!character || !character.currentActivity.startedAt || hpRef.current === null) return null;
+  if (!character.currentActivity.startedAt || hpRef.current === null) return null;
 
   const profile = buildProfile(character);
   const sinceLastSave =
