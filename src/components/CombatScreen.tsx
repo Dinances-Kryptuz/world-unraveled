@@ -73,6 +73,7 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
     return {
       cls: c.class,
       level: c.level,
+      specId: c.spec,
       specDef,
       talentTotals,
       extraDamageTakenPct,

@@ -2,7 +2,7 @@
 // Firebase — this folder is called BY the UI and BY the Firestore-writing
 // code, but never imports either. See src/combatEngine/README.md for the
 // shape of the whole system.
-import type { ClassId } from '../gameData/classStats';
+import type { ClassId, SpecId } from '../gameData/classStats';
 
 export type ResourceType = 'rage' | 'mana' | 'holyPower';
 
@@ -49,6 +49,10 @@ export interface Ability {
   id: string;
   name: string;
   class: ClassId;
+  // Absent = shared across every spec of this class (Phase 1/2's whole
+  // roster). Present = only unlocked for that one spec — see
+  // progression.ts's unlockedAbilities(), which now filters on spec too.
+  spec?: SpecId;
   description: string;
   unlockLevel: number;
   resourceType?: ResourceType;

@@ -307,7 +307,7 @@ export async function saveCombatSetup(
   const character = await getCharacter(uid);
   if (!character) return;
 
-  const unlockedIds = new Set(unlockedAbilities(character.class, character.level).map((a) => a.id));
+  const unlockedIds = new Set(unlockedAbilities(character.class, character.spec, character.level).map((a) => a.id));
   const slots = maxEquippedSlots(character.level);
   const validatedIds = abilityIds.filter((id) => unlockedIds.has(id)).slice(0, slots);
   const equippedSet = new Set(validatedIds);

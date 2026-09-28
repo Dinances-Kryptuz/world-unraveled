@@ -130,15 +130,16 @@ export function CombatSetupScreen() {
 
   const level = character?.level ?? 1;
   const cls = character?.class;
+  const spec = character?.spec ?? null;
   const slots = maxEquippedSlots(level);
-  const unlocked = cls ? unlockedAbilities(cls, level) : [];
+  const unlocked = cls ? unlockedAbilities(cls, spec, level) : [];
   const basic = cls ? basicAttackFor(cls) : null;
 
   const abilityConditionsKey = JSON.stringify(character?.abilityConditions ?? {});
 
   useEffect(() => {
     if (!character || !character.class) return;
-    const loadout = effectiveLoadout(character.class, character.level, character.equippedAbilityIds);
+    const loadout = effectiveLoadout(character.class, character.spec, character.level, character.equippedAbilityIds);
     setPending(loadout);
     const conditions: Record<string, ConditionGroup> = {};
     for (const id of loadout) {
@@ -242,7 +243,7 @@ export function CombatSetupScreen() {
     );
   }
 
-  const savedLoadout = effectiveLoadout(cls, level, character.equippedAbilityIds);
+  const savedLoadout = effectiveLoadout(cls, spec, level, character.equippedAbilityIds);
   const savedConditions: Record<string, ConditionGroup> = {};
   for (const id of savedLoadout) {
     if (character.abilityConditions[id]) savedConditions[id] = character.abilityConditions[id];

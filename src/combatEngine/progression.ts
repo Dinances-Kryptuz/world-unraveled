@@ -2,7 +2,7 @@
 // unlock tables exactly: slots increase at 1/10/20/30/40 and cap at 5;
 // ability count comes straight from each Ability's own unlockLevel field,
 // so this file has no separate count table to keep in sync with abilities.ts.
-import type { ClassId } from '../gameData/classStats';
+import type { ClassId, SpecId } from '../gameData/classStats';
 import { ABILITIES, BASIC_ATTACK_BY_CLASS } from './abilities';
 import type { Ability } from './types';
 
@@ -14,11 +14,16 @@ export function maxEquippedSlots(level: number): number {
   return 5;
 }
 
-// All abilities this class has unlocked at this level, excluding the basic
-// attack (it's always available and never occupies a slot).
-export function unlockedAbilities(cls: ClassId, level: number): Ability[] {
+// All abilities this class/spec has unlocked at this level, excluding the
+// basic attack (it's always available and never occupies a slot). An
+// ability with no `spec` is shared across every spec of its class; one with
+// a `spec` only shows up once the character has actually chosen it — a
+// character who hasn't specced yet (spec === null) only sees shared
+// abilities, which is correct since spec content unlocks well after the
+// level-5 spec choice anyway.
+export function unlockedAbilities(cls: ClassId, spec: SpecId | null, level: number): Ability[] {
   return Object.values(ABILITIES)
-    .filter((a) => a.class === cls && !a.isBasicAttack && a.unlockLevel <= level)
+    .filter((a) => a.class === cls && !a.isBasicAttack && a.unlockLevel <= level && (!a.spec || a.spec === spec))
     .sort((a, b) => a.unlockLevel - b.unlockLevel);
 }
 
@@ -29,14 +34,14 @@ export function unlockedAbilities(cls: ClassId, level: number): Ability[] {
 // default so a character who's never touched the setup screen still fights
 // effectively. This is what "casual player can just press a recommended
 // setup" (from the design doc) means in practice for now.
-export function effectiveLoadout(cls: ClassId, level: number, savedChoice: string[]): string[] {
-  const unlockedIds = new Set(unlockedAbilities(cls, level).map((a) => a.id));
+export function effectiveLoadout(cls: ClassId, spec: SpecId | null, level: number, savedChoice: string[]): string[] {
+  const unlockedIds = new Set(unlockedAbilities(cls, spec, level).map((a) => a.id));
   const slots = maxEquippedSlots(level);
 
   const filtered = savedChoice.filter((id) => unlockedIds.has(id)).slice(0, slots);
   if (filtered.length > 0) return filtered;
 
-  return unlockedAbilities(cls, level)
+  return unlockedAbilities(cls, spec, level)
     .slice(0, slots)
     .map((a) => a.id);
 }

@@ -1,7 +1,7 @@
 // The tick loop. Pure TypeScript — no React, no Firestore. CombatScreen.tsx
 // calls advanceCombat() once per second and renders whatever comes back;
 // it never computes damage or evaluates an ability itself.
-import type { ClassId, SpecDef, BaseStat } from '../gameData/classStats';
+import type { ClassId, SpecDef, SpecId, BaseStat } from '../gameData/classStats';
 import { statAtLevel } from '../gameData/classStats';
 import {
   ATTACK_INTERVAL_SECONDS,
@@ -28,6 +28,11 @@ import type { Ability, CasterProfile, Combatant, CombatState, CombatEvent, Condi
 export interface EncounterSetupInput {
   cls: ClassId;
   level: number;
+  // Which spec is chosen (null before the level-5 spec choice) — separate
+  // from specDef because specDef only carries the numeric coefficients,
+  // not an id, and effectiveLoadout() needs the id to filter spec-locked
+  // abilities (see progression.ts's unlockedAbilities()).
+  specId: SpecId | null;
   specDef: SpecDef;
   talentTotals: TalentBonusTotals;
   extraDamageTakenPct: number;
@@ -119,7 +124,7 @@ const MONSTER_BASIC_ATTACK: Ability = {
 };
 
 export function createPlayerCombatant(input: EncounterSetupInput): Combatant {
-  const loadout = effectiveLoadout(input.cls, input.level, input.savedEquippedAbilityIds);
+  const loadout = effectiveLoadout(input.cls, input.specId, input.level, input.savedEquippedAbilityIds);
   const intStat = statAtLevel(input.cls, 'INT', input.level) + (input.equipmentBonuses.INT ?? 0);
   const playerMaxHp = computeMaxHp(input.cls, input.level, input.equipmentBonuses);
 
@@ -218,6 +223,15 @@ export function advanceCombat(state: CombatState, ctx: TickContext, deltaSeconds
     tickDots(c, deltaSeconds, ctx, events, kills);
     c.buffs = c.buffs.filter((b) => (b.remainingSeconds -= deltaSeconds) > 0);
     if (c.stunnedSeconds > 0) c.stunnedSeconds = Math.max(0, c.stunnedSeconds - deltaSeconds);
+    // passiveHealPct (Holy Priest/Paladin's out-of-the-box sustain, plus a
+    // small amount baked into every healing spec) was computed onto every
+    // profile since Phase 1 but never actually applied here — a real gap,
+    // since it's the mechanic those specs' own descriptions promise. A dot
+    // tick above can still kill c in this same iteration, so check isAlive
+    // again rather than trusting the outer loop's guard.
+    if (c.isAlive && c.profile.passiveHealPct > 0) {
+      c.hp = Math.min(c.maxHp, c.hp + c.maxHp * c.profile.passiveHealPct * deltaSeconds);
+    }
   }
 
   // 2. Let anyone whose action timer has elapsed act — a stunned combatant's
@@ -297,6 +311,16 @@ export function useAbility(
           break;
         }
         target.hp = Math.max(0, target.hp - amount);
+        // healFrac (Shadow Priest's "sustain from the damage you deal," per
+        // its own spec blurb) was computed onto the profile since Phase 1
+        // but never actually paid out here — same gap as passiveHealPct
+        // above. Only direct damage feeds it; a dot's damage is spread out
+        // and already snapshots the source's damageCoef below, so folding
+        // healFrac into every tick too would double-count the same "damage
+        // dealt" against a single self-heal budget for no real benefit.
+        if (source.profile.healFrac > 0 && source.isAlive) {
+          source.hp = Math.min(source.maxHp, source.hp + amount * source.profile.healFrac);
+        }
         events.push({ message: `${source.name} uses ${ability.name} on ${target.name} for ${amount} damage.` });
         if (target.hp <= 0 && target.isAlive) {
           target.isAlive = false;
@@ -311,7 +335,11 @@ export function useAbility(
           remainingSeconds: effect.durationSeconds ?? 0,
           tickSeconds: effect.tickSeconds ?? 1,
           timeSinceLastTick: 0,
-          hitPerTick: source.profile.normalizedHit * (effect.power ?? 0.3) * source.profile.damageCoef,
+          // Snapshots the source's current damage buffs at cast time, same
+          // as a direct hit — matches how a temporary buff like Battle Cry
+          // is expected to affect a dot cast while it's active, without
+          // needing to re-evaluate the source's buffs on every future tick.
+          hitPerTick: source.profile.normalizedHit * (effect.power ?? 0.3) * source.profile.damageCoef * buffDamageDealtMult(source),
         });
         events.push({ message: `${source.name} afflicts ${target.name} with ${ability.name}.` });
         break;
@@ -320,7 +348,13 @@ export function useAbility(
         gain(source.resources, effect.resource, effect.amount);
         break;
       case 'heal': {
-        const healAmount = Math.round(source.profile.normalizedHit * (effect.power ?? 1) * source.profile.damageCoef);
+        // buffDamageDealtMult is deliberately reused here rather than adding
+        // a separate "healing done" buff field — a buff that boosts
+        // "damage dealt" (Divine Favor) reads naturally as boosting outgoing
+        // effect power in general, healing included.
+        const healAmount = Math.round(
+          source.profile.normalizedHit * (effect.power ?? 1) * source.profile.damageCoef * buffDamageDealtMult(source)
+        );
         target.hp = Math.min(target.maxHp, target.hp + healAmount);
         events.push({ message: `${source.name} uses ${ability.name} on ${target.name}, healing for ${healAmount}.` });
         break;
