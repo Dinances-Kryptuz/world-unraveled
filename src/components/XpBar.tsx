@@ -17,6 +17,10 @@ export function XpBar({
 
   return (
     <div>
+      <small>
+        {label} Lv {level}: {Math.round(xpIntoLevel).toLocaleString()} / {Math.round(xpNeededForLevel).toLocaleString()} XP to level{' '}
+        {level + 1} ({progressPct.toFixed(1)}%)
+      </small>
       <div style={{ background: '#e2d9c8', borderRadius: 4, height: 10, width: '100%', overflow: 'hidden' }}>
         <div
           style={{
@@ -27,10 +31,6 @@ export function XpBar({
           }}
         />
       </div>
-      <small>
-        {label} Lv {level}: {Math.round(xpIntoLevel).toLocaleString()} / {Math.round(xpNeededForLevel).toLocaleString()} XP to level{' '}
-        {level + 1} ({progressPct.toFixed(1)}%)
-      </small>
     </div>
   );
 }

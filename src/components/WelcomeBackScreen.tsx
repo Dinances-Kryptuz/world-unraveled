@@ -1,16 +1,18 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import { useCharacter } from '../hooks/useCharacter';
 import { resolveGathering, resolveCrafting, LIVE_SESSION_THRESHOLD_SECONDS } from '../gameData/activityEngine';
 import { MONSTERS } from '../gameData/monsters';
 import { GATHER_NODES } from '../gameData/zones';
 import { RECIPES } from '../gameData/recipes';
 import { ITEMS } from '../gameData/items';
-import { resolveSpecDef, computeFullCombatProfile, getExtraDamageTakenPct } from '../gameData/combatProfileWithTalents';
-import { resolveCombatEncounter } from '../gameData/combatResolver';
+import { resolveSpecDef, getExtraDamageTakenPct } from '../gameData/combatProfileWithTalents';
+import { simulateOfflineCombat } from '../combatEngine/offlineCombat';
 import { evaluateTalents, EMPTY_TALENT_TOTALS } from '../utils/talentEvaluator';
 import { maxHp, resolveCurrentHp } from '../gameData/combatFormulas';
 import { getEquipmentStatBonuses } from '../gameData/equipmentStats';
 import { getInventory } from '../firebase/inventory';
+import { applyCombatResult, setCharacterLevel } from '../firebase/character';
 import type { Character, CurrentActivity } from '../types/character';
 
 export function isLongAbsence(activity: CurrentActivity): boolean {
@@ -27,6 +29,7 @@ export function WelcomeBackScreen({
   onContinue: () => void;
 }) {
   const { user } = useAuth();
+  const { refetch } = useCharacter();
   const [summary, setSummary] = useState<string | null>(null);
 
   useEffect(() => {
@@ -46,23 +49,49 @@ export function WelcomeBackScreen({
           : EMPTY_TALENT_TOTALS;
         const extraDmgTaken = getExtraDamageTakenPct(character.spec, character.talentPicks);
         const equipBonuses = getEquipmentStatBonuses(character.equipment);
-        const profile = computeFullCombatProfile(
-          character.class,
-          specDef,
-          character.level,
-          monster.level,
-          talentTotals,
-          extraDmgTaken,
-          equipBonuses
-        );
         const charMaxHp = maxHp(character.class, character.level, equipBonuses);
         const startingHp = resolveCurrentHp(character.currentHp, charMaxHp, character.hpCheckpointAt, activity.startedAt);
-        const result = resolveCombatEncounter(activity.startedAt, now, startingHp, profile, monster);
+
+        const result = simulateOfflineCombat({
+          startedAt: activity.startedAt,
+          now,
+          cls: character.class,
+          specId: character.spec,
+          specDef,
+          talentTotals,
+          extraDamageTakenPct: extraDmgTaken,
+          equipmentBonuses: equipBonuses,
+          startingLevel: character.level,
+          startingXp: character.xp,
+          startingHp,
+          savedEquippedAbilityIds: character.equippedAbilityIds,
+          savedAbilityConditions: character.abilityConditions,
+          monster,
+        });
+
+        if (user) {
+          await applyCombatResult(user.uid, {
+            xpGained: result.xpGained,
+            goldGained: result.goldGained,
+            loot: result.loot,
+            hpAfter: result.hpAfter,
+          });
+          if (result.finalLevel !== character.level) {
+            await setCharacterLevel(user.uid, result.finalLevel, result.hpAfter);
+          }
+          // Deliberately NOT refetching here — the persisted write resets
+          // currentActivity.startedAt to now, which would make
+          // isLongAbsence() go false and cause ZoneScreen to swap this
+          // screen out from under the player before they've even read the
+          // summary. handleContinue() below refetches once they dismiss it.
+        }
+
         const retreatNote = result.forcedRetreat ? ' You were forced to retreat before your time was up.' : '';
+        const levelUpNote = result.finalLevel !== character.level ? ` You reached level ${result.finalLevel}!` : '';
         setSummary(
           `While you were away, you defeated ${result.monstersDefeated} ${monster.name}${
             result.monstersDefeated === 1 ? '' : 's'
-          }, earning ${Math.round(result.xpGained)} XP and ${Math.round(result.goldGained)} gold.${retreatNote}`
+          }, earning ${result.xpGained} XP and ${result.goldGained} gold.${retreatNote}${levelUpNote}`
         );
       } else if (activity.type === 'gathering') {
         const node = GATHER_NODES[activity.targetId];
@@ -100,11 +129,16 @@ export function WelcomeBackScreen({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  async function handleContinue() {
+    await refetch();
+    onContinue();
+  }
+
   return (
     <div className="welcome-back-screen">
       <h2>Welcome Back</h2>
       <p>{summary ?? 'Calculating what happened while you were away…'}</p>
-      <button onClick={onContinue} disabled={summary === null}>
+      <button onClick={handleContinue} disabled={summary === null}>
         Continue
       </button>
     </div>

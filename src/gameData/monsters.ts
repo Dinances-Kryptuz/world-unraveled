@@ -54,6 +54,7 @@ export const MONSTERS: Record<string, Monster> = {
       { itemId: 'copper_scrap', chance: 0.25, minQty: 1, maxQty: 1 },
       { itemId: 'small_coin_pouch', chance: 0.1, minQty: 1, maxQty: 1 },
       { itemId: 'rusty_dagger', chance: 0.08, minQty: 1, maxQty: 1 },
+      { itemId: 'apprentice_staff', chance: 0.08, minQty: 1, maxQty: 1 },
     ],
     specialAbility: {
       name: 'Dirty Strike',
@@ -155,6 +156,7 @@ export const MONSTERS: Record<string, Monster> = {
       { itemId: 'coarse_cloth', chance: 0.45, minQty: 1, maxQty: 2 },
       { itemId: 'worn_shiv', chance: 0.2, minQty: 1, maxQty: 1 },
       { itemId: 'bandit_coin_pouch', chance: 0.12, minQty: 1, maxQty: 1 },
+      { itemId: 'focusing_wand', chance: 0.07, minQty: 1, maxQty: 1 },
     ],
     specialAbility: {
       name: 'Backstab',
@@ -175,10 +177,56 @@ export const MONSTERS: Record<string, Monster> = {
       { itemId: 'sharp_fang', chance: 0.55, minQty: 1, maxQty: 2 },
       { itemId: 'coarse_hide', chance: 0.25, minQty: 1, maxQty: 1 },
       { itemId: 'alpha_pelt', chance: 0.06, minQty: 1, maxQty: 1 },
+      { itemId: 'alpha_fang_blade', chance: 0.05, minQty: 1, maxQty: 1 },
     ],
     specialAbility: {
       name: 'Pack Leader',
       description: 'Hits harder the longer the fight goes on.',
+      implemented: false,
+    },
+  },
+
+  // ── Dungeon bosses (Phase 8) — real ability rotations via
+  // combatEngine/monsterAbilities.ts instead of auto-attack only. ───────
+  kobold_chieftain: {
+    id: 'kobold_chieftain',
+    name: 'Kobold Chieftain',
+    zoneIds: ['greenhollow_fields'],
+    levelRange: [10, 10],
+    level: 10,
+    goldMin: 8,
+    goldMax: 15,
+    isBoss: true,
+    equippedAbilityIds: ['kobold_chieftain_warcry', 'kobold_chieftain_bash', 'kobold_chieftain_slam'],
+    lootTable: [
+      { itemId: 'linen_cloth', chance: 0.5, minQty: 2, maxQty: 3 },
+      { itemId: 'small_coin_pouch', chance: 0.25, minQty: 1, maxQty: 1 },
+      { itemId: 'chieftains_warhammer', chance: 0.15, minQty: 1, maxQty: 1 },
+    ],
+    specialAbility: {
+      name: 'Warlord’s Command',
+      description: 'Buffs itself, stuns, and hits far harder than a common kobold.',
+      implemented: false,
+    },
+  },
+  alpha_warlord: {
+    id: 'alpha_warlord',
+    name: 'Alpha Warlord',
+    zoneIds: ['stonecrag_foothills'],
+    levelRange: [24, 24],
+    level: 24,
+    goldMin: 18,
+    goldMax: 30,
+    isBoss: true,
+    equippedAbilityIds: ['alpha_warlord_howl', 'alpha_warlord_rend', 'alpha_warlord_pounce'],
+    lootTable: [
+      { itemId: 'sharp_fang', chance: 0.5, minQty: 2, maxQty: 3 },
+      { itemId: 'alpha_pelt', chance: 0.2, minQty: 1, maxQty: 1 },
+      { itemId: 'warlords_signet', chance: 0.15, minQty: 1, maxQty: 1 },
+    ],
+    specialAbility: {
+      name: 'Warlord of the Depths',
+      description: 'A savage pack leader with a real ability rotation — rend, a leaping strike, and a self-buffing howl.',
       implemented: false,
     },
   },

@@ -43,7 +43,10 @@ service cloud.firestore {
       && data.voidShards == 0
       && isValidNewEquipment(data.equipment)
       && isValidNewProfessions(data.professions)
-      && data.currentActivity.type == null;
+      && data.currentActivity.type == null
+      && data.equippedAbilityIds == []
+      && data.abilityConditions == {}
+      && data.combatPresets == [];
   }
 
   function isValidCharacterUpdate(before, after) {
@@ -56,7 +59,43 @@ service cloud.firestore {
       && isValidEquipment(after.equipment)
       && isValidProfessions(after.professions)
       && professionsNeverDecrease(before.professions, after.professions)
-      && isValidActivity(after.currentActivity);
+      && isValidActivity(after.currentActivity)
+      && isValidEquippedAbilityIds(after)
+      && isValidAbilityConditions(after)
+      && isValidCombatPresets(after);
+  }
+
+  // Same "may not exist yet on an old character" treatment as Smithing/
+  // Tailoring above — this field was added after some characters already
+  // existed. Value-scoped only up to size (max 5 slots) — full validation
+  // of "is this ability actually unlocked for this class/level" happens in
+  // firebase/character.ts's setEquippedAbilities before the write is even
+  // sent, matching this project's existing "ownership-scoped, not fully
+  // value-scoped" security posture.
+  function isValidEquippedAbilityIds(after) {
+    return !('equippedAbilityIds' in after)
+      || (after.equippedAbilityIds is list && after.equippedAbilityIds.size() <= 5);
+  }
+
+  // Same "may not exist yet on an old character" treatment, and the same
+  // ownership-scoped (not fully value-scoped) posture as
+  // isValidEquippedAbilityIds — full validation of condition shape/values/
+  // "only for an equipped ability" happens in firebase/character.ts's
+  // saveCombatSetup before the write is even sent.
+  function isValidAbilityConditions(after) {
+    return !('abilityConditions' in after)
+      || (after.abilityConditions is map && after.abilityConditions.size() <= 5);
+  }
+
+  // Same "may not exist yet on an old character" treatment and the same
+  // ownership-scoped posture as isValidEquippedAbilityIds/
+  // isValidAbilityConditions above — full validation of each preset's shape
+  // happens in firebase/character.ts's saveCombatPreset (the only path that
+  // ever adds an entry), so this just bounds how many can exist. Keep this
+  // 3 in sync with combatEngine/progression.ts's MAX_COMBAT_PRESETS.
+  function isValidCombatPresets(after) {
+    return !('combatPresets' in after)
+      || (after.combatPresets is list && after.combatPresets.size() <= 3);
   }
 
   function isValidEquipment(e) {

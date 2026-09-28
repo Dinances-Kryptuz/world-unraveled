@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useCharacter } from '../hooks/useCharacter';
-import { applyCombatResult, setCharacterLevel, stopActivity, getCharacter } from '../firebase/character';
+import { applyCombatResult, setCharacterLevel, getCharacter } from '../firebase/character';
+import { DUNGEONS } from '../gameData/dungeons';
 import { MONSTERS } from '../gameData/monsters';
 import { resolveSpecDef, getExtraDamageTakenPct } from '../gameData/combatProfileWithTalents';
 import { evaluateTalents, EMPTY_TALENT_TOTALS } from '../utils/talentEvaluator';
@@ -17,6 +18,7 @@ import {
   type TickContext,
 } from '../combatEngine/engine';
 import type { CombatState, CombatEvent } from '../combatEngine/types';
+import type { Monster } from '../gameData/types';
 import type { Character } from '../types/character';
 import type { User } from 'firebase/auth';
 import { TickBar } from './TickBar';
@@ -38,20 +40,30 @@ interface SessionTotals {
 
 const EMPTY_TOTALS: SessionTotals = { monstersDefeated: 0, xpGained: 0, goldGained: 0 };
 
-export function CombatScreen({ monsterId }: { monsterId: string }) {
+// A dungeon run: the same discrete engine as CombatScreen, just fed a fixed
+// sequence of monster stages via TickContext.nextMonster instead of one
+// monster respawning as itself. Deliberately NOT written to
+// Character.currentActivity — a run is live-session-only for this first
+// pass (no offline catch-up simulation for dungeons yet), so closing the
+// tab mid-run just loses the current stage, not anything already earned
+// (kills are autosaved via applyCombatResult the same as regular combat).
+export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit: () => void }) {
   const { user } = useAuth();
-  // ZoneScreen never renders CombatScreen until it has confirmed a loaded
-  // character, so this is always non-null in practice — but useCharacter()'s
-  // type is nullable (it also serves the loading/logged-out states), and
-  // this component's hooks (below) can't have an early return before them.
   const { character: characterOrNull, refetch, applyOptimisticUpdate } = useCharacter();
   const character = characterOrNull!;
   const [, setTick] = useState(0);
   const secondsSinceSaveRef = useRef(0);
 
   const [bankedTotals, setBankedTotals] = useState<SessionTotals>(EMPTY_TOTALS);
+  const [fullClears, setFullClears] = useState(0);
   const [log, setLog] = useState<CombatEvent[]>([]);
   const [retreated, setRetreated] = useState(false);
+
+  const dungeon = DUNGEONS[dungeonId];
+  const stageIndexRef = useRef(0);
+  const currentMonsterRef = useRef<Monster>(MONSTERS[dungeon.stages[0]]);
+  const fullClearsRef = useRef(0);
+  const pendingLogRef = useRef<CombatEvent[]>([]);
 
   const combatStateRef = useRef<CombatState | null>(null);
   const pendingKillsRef = useRef<KillReward[]>([]);
@@ -66,7 +78,23 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
     userRef.current = user;
   }, [user]);
 
-  const monster = MONSTERS[monsterId];
+  // Advances to the next stage (looping back to the first after the boss),
+  // and drops a banner line in the log when a full clear happens — called
+  // by the engine itself, from inside advanceCombat's respawn step.
+  function nextMonster(justDefeated: Monster): Monster {
+    if (justDefeated.isBoss) {
+      fullClearsRef.current++;
+      setFullClears(fullClearsRef.current);
+      pendingLogRef.current.push({
+        message: `You cleared ${dungeon.name}! Looping back to the first stage.`,
+        kind: 'status',
+      });
+    }
+    stageIndexRef.current = (stageIndexRef.current + 1) % dungeon.stages.length;
+    const next = MONSTERS[dungeon.stages[stageIndexRef.current]];
+    currentMonsterRef.current = next;
+    return next;
+  }
 
   function buildEncounterInput(c: Character): EncounterSetupInput {
     const specDef = resolveSpecDef(c.class, c.spec);
@@ -74,8 +102,7 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
     const extraDamageTakenPct = getExtraDamageTakenPct(c.spec, c.talentPicks);
     const equipmentBonuses = getEquipmentStatBonuses(c.equipment);
     const charMaxHp = maxHp(c.class, c.level, equipmentBonuses);
-    const startedAt = c.currentActivity.startedAt ?? new Date();
-    const currentHp = resolveCurrentHp(c.currentHp, charMaxHp, c.hpCheckpointAt, startedAt);
+    const currentHp = resolveCurrentHp(c.currentHp, charMaxHp, c.hpCheckpointAt, new Date());
     return {
       cls: c.class,
       level: c.level,
@@ -85,7 +112,7 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
       extraDamageTakenPct,
       equipmentBonuses,
       currentHp,
-      monster,
+      monster: currentMonsterRef.current,
       savedEquippedAbilityIds: c.equippedAbilityIds,
       savedAbilityConditions: c.abilityConditions,
     };
@@ -93,27 +120,34 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
 
   useEffect(() => {
     setBankedTotals(EMPTY_TOTALS);
+    setFullClears(0);
     setLog([]);
     setRetreated(false);
     retreatedRef.current = false;
     pendingKillsRef.current = [];
+    stageIndexRef.current = 0;
+    fullClearsRef.current = 0;
+    currentMonsterRef.current = MONSTERS[dungeon.stages[0]];
     combatStateRef.current = createEncounterState(buildEncounterInput(character));
-    // Refs don't trigger a re-render on their own — without this, the
-    // screen would render nothing for up to a second, until the first
-    // interval tick happens to call setTick/setLog itself.
     setTick((t) => t + 1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [monsterId]);
+  }, [dungeonId]);
 
   useEffect(() => {
     const interval = setInterval(() => {
       if (retreatedRef.current || !combatStateRef.current) return;
 
-      const ctx: TickContext = { monster, playerLevel: characterRef.current?.level ?? character.level };
+      const ctx: TickContext = {
+        monster: currentMonsterRef.current,
+        playerLevel: characterRef.current?.level ?? character.level,
+        nextMonster,
+      };
       const result = advanceCombat(combatStateRef.current, ctx, 1);
       pendingKillsRef.current.push(...result.kills);
-      if (result.events.length > 0) {
-        setLog((prev) => [...result.events, ...prev].slice(0, MAX_LOG_LINES));
+      const extra = pendingLogRef.current;
+      pendingLogRef.current = [];
+      if (result.events.length > 0 || extra.length > 0) {
+        setLog((prev) => [...extra, ...result.events, ...prev].slice(0, MAX_LOG_LINES));
       }
       if (result.playerDied) {
         retreatedRef.current = true;
@@ -131,7 +165,7 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
     }, 1000);
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [monsterId]);
+  }, [dungeonId]);
 
   async function autosave() {
     const currentUser = userRef.current;
@@ -158,10 +192,6 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
       xpGained: prev.xpGained + xpGained,
       goldGained: prev.goldGained + goldGained,
     }));
-    // Bump the shared character xp/gold now, in the same tick as the banked
-    // session totals above, so the header bar and this screen's "session"
-    // line move together instead of the header lagging behind the Firestore
-    // round-trip below.
     applyOptimisticUpdate((c) => ({ ...c, xp: c.xp + xpGained, gold: c.gold + goldGained }));
 
     try {
@@ -189,7 +219,7 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
 
       await refetch();
     } catch (err) {
-      console.error('Combat autosave failed, will retry next cycle:', err);
+      console.error('Dungeon autosave failed, will retry next cycle:', err);
       pendingKillsRef.current.push(...kills);
       setBankedTotals((prev) => ({
         monstersDefeated: prev.monstersDefeated - kills.length,
@@ -200,16 +230,20 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
     }
   }
 
-  async function handleStop() {
+  async function handleExit() {
     if (!retreatedRef.current) await autosave();
-    if (userRef.current) await stopActivity(userRef.current.uid);
     await refetch();
+    onExit();
   }
 
   function handleManualUse(abilityId: string) {
     const state = combatStateRef.current;
     if (!state || retreatedRef.current) return;
-    const ctx: TickContext = { monster, playerLevel: characterRef.current?.level ?? character.level };
+    const ctx: TickContext = {
+      monster: currentMonsterRef.current,
+      playerLevel: characterRef.current?.level ?? character.level,
+      nextMonster,
+    };
     const result = tryManualUseAbility(state, 'player', abilityId, ctx);
     if (!result) return;
     pendingKillsRef.current.push(...result.kills);
@@ -219,17 +253,24 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
     setTick((t) => t + 1);
   }
 
-  if (!character.currentActivity.startedAt || !combatStateRef.current) return null;
+  if (!combatStateRef.current) return null;
 
   const state = combatStateRef.current;
   const player = state.party.find((p) => p.isPlayer)!;
   const enemy = state.enemies[0];
+  const monster = currentMonsterRef.current;
+  const stageLabel = `Stage ${stageIndexRef.current + 1} / ${dungeon.stages.length}${monster.isBoss ? ' — Boss' : ''}`;
 
   return (
     <div className="combat-screen">
-      <h2>
-        Fighting {monster.name} — <MonsterLevelBadge monsterLevel={monster.level} playerLevel={character.level} />
-      </h2>
+      <h2>{dungeon.name}</h2>
+      <p>
+        <small>{stageLabel}</small>
+      </p>
+      <h3>
+        {monster.isBoss ? '☠ ' : ''}
+        {monster.name} — <MonsterLevelBadge monsterLevel={monster.level} playerLevel={character.level} />
+      </h3>
 
       {!retreated && (
         <>
@@ -248,17 +289,18 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
 
       {retreated ? (
         <p>
-          You were forced to retreat! This session: {bankedTotals.monstersDefeated} defeated, +
-          {bankedTotals.xpGained} XP, +{bankedTotals.goldGained} gold. Your HP will recover over time.
+          You were forced to retreat! This run: {bankedTotals.monstersDefeated} defeated, +{bankedTotals.xpGained} XP,
+          +{bankedTotals.goldGained} gold, {fullClears} full clear{fullClears === 1 ? '' : 's'}. Your HP will recover
+          over time.
         </p>
       ) : (
         <p>
-          This session: {bankedTotals.monstersDefeated} defeated, +{bankedTotals.xpGained} XP, +
-          {bankedTotals.goldGained} gold
+          This run: {bankedTotals.monstersDefeated} defeated, +{bankedTotals.xpGained} XP, +{bankedTotals.goldGained}{' '}
+          gold, {fullClears} full clear{fullClears === 1 ? '' : 's'}
         </p>
       )}
 
-      <button onClick={handleStop}>Stop</button>
+      <button onClick={handleExit}>Exit Dungeon</button>
 
       <CombatLog events={log} />
     </div>

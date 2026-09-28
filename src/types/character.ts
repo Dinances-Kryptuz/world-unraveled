@@ -1,6 +1,7 @@
 import type { EquipmentSlot, ProfessionId, ActivityType, ProfessionTierName } from '../gameData/types';
 import type { ClassId, SpecId } from '../gameData/classStats';
 import type { TalentPicks } from '../gameData/talents';
+import type { ConditionGroup } from '../combatEngine/types';
 
 export interface ProfessionState {
   level: number;
@@ -14,6 +15,19 @@ export interface CurrentActivity {
   zoneId: string | null;
   startedAt: Date | null;
   recipeQueue?: { recipeId: string; quantity: number }[];
+}
+
+// A named snapshot of an equipped-ability loadout + its conditions (Phase 7)
+// — lets a player save more than one build ("Grinding", "Boss") and switch
+// the active one with a click instead of re-picking abilities/conditions
+// every time. Always a full, already-valid snapshot of what
+// equippedAbilityIds/abilityConditions looked like when saved — see
+// firebase/character.ts's saveCombatPreset/activateCombatPreset.
+export interface CombatPreset {
+  id: string;
+  name: string;
+  equippedAbilityIds: string[];
+  abilityConditions: Record<string, ConditionGroup>;
 }
 
 export interface Character {
@@ -32,6 +46,17 @@ export interface Character {
   equipment: Record<EquipmentSlot, string | null>;
   professions: Record<ProfessionId, ProfessionState>;
   currentActivity: CurrentActivity;
+  // The player's saved priority list (highest priority first). See
+  // combatEngine/progression.ts's effectiveLoadout() — an empty array is a
+  // valid, expected state (no choice made yet) and falls back to a
+  // recommended default rather than an empty combat bar.
+  equippedAbilityIds: string[];
+  // Per-ability condition groups, keyed by ability id — see
+  // combatEngine/conditions.ts. An ability with no entry here has no
+  // conditions and is always usable, same as before this field existed.
+  abilityConditions: Record<string, ConditionGroup>;
+  // Saved combat loadout/condition snapshots — see CombatPreset above.
+  combatPresets: CombatPreset[];
 }
 
 export interface Inventory {

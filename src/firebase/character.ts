@@ -1,6 +1,6 @@
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp, Timestamp, increment } from 'firebase/firestore';
 import { db } from './config';
-import type { Character } from '../types/character';
+import type { Character, CombatPreset } from '../types/character';
 import type { ProfessionId, EquipmentSlot } from '../gameData/types';
 import type { ClassId, SpecId } from '../gameData/classStats';
 import type { TalentColumn } from '../gameData/talents';
@@ -8,6 +8,8 @@ import { professionXpForLevel } from '../gameData/xpTables';
 import { maxHp } from '../gameData/combatFormulas';
 import { canClassEquip } from '../gameData/classStats';
 import { ITEMS } from '../gameData/items';
+import { maxEquippedSlots, unlockedAbilities, effectiveLoadout, MAX_COMBAT_PRESETS } from '../combatEngine/progression';
+import type { Condition, ConditionGroup, ConditionType, ResourceType } from '../combatEngine/types';
 
 const STARTING_GATHERING_PROFESSIONS: ProfessionId[] = ['skinning', 'mining', 'herbalism'];
 const STARTING_PRODUCTION_PROFESSIONS: ProfessionId[] = ['leatherworking', 'smithing', 'tailoring'];
@@ -30,6 +32,14 @@ export async function getCharacter(uid: string): Promise<Character | null> {
     // Smithing) so existing characters don't crash on a missing key —
     // real saved progress always wins over the level-1 default.
     professions: { ...defaultProfessions(), ...data.professions },
+    // Same backfill idea for equippedAbilityIds, added after some characters
+    // already existed — an empty list is itself a valid "no choice made
+    // yet" state, so this only matters for a genuinely missing field.
+    equippedAbilityIds: data.equippedAbilityIds ?? [],
+    // Same backfill idea again, for the Phase 3 conditions system.
+    abilityConditions: data.abilityConditions ?? {},
+    // Same backfill idea again, for the Phase 7 presets system.
+    combatPresets: data.combatPresets ?? [],
     createdAt: (data.createdAt as Timestamp)?.toDate() ?? new Date(),
     hpCheckpointAt: (data.hpCheckpointAt as Timestamp)?.toDate() ?? new Date(),
     currentActivity: {
@@ -68,6 +78,9 @@ export async function createCharacter(uid: string, name: string, characterClass:
     },
     professions,
     currentActivity: { type: null, targetId: null, zoneId: null, startedAt: null },
+    equippedAbilityIds: [],
+    abilityConditions: {},
+    combatPresets: [],
   };
 
   await setDoc(doc(db, 'characters', uid), character);
@@ -243,6 +256,139 @@ export async function unequipItem(uid: string, slot: EquipmentSlot): Promise<voi
 
 export async function chooseSpec(uid: string, spec: SpecId): Promise<void> {
   await updateDoc(doc(db, 'characters', uid), { spec });
+}
+
+const ALLOWED_CONDITION_TYPES: ConditionType[] = [
+  'self_hp_below', 'self_hp_above', 'target_hp_below', 'target_hp_above', 'resource_below', 'resource_above',
+];
+const ALLOWED_RESOURCE_TYPES: ResourceType[] = ['rage', 'mana', 'holyPower'];
+const MAX_CONDITIONS_PER_ABILITY = 3;
+
+// Best-effort sanitization, not a source of truth — a group that comes back
+// malformed (bad shape, out-of-range value, wrong resource) is dropped
+// entirely rather than partially trusted, which just means that ability
+// falls back to "always usable," never a crash or an unintended lockout.
+function sanitizeConditionGroup(group: unknown): ConditionGroup | null {
+  if (!group || typeof group !== 'object') return null;
+  const g = group as { logic?: unknown; conditions?: unknown };
+  if (g.logic !== 'AND' && g.logic !== 'OR') return null;
+  if (!Array.isArray(g.conditions)) return null;
+
+  const conditions: Condition[] = [];
+  for (const raw of g.conditions.slice(0, MAX_CONDITIONS_PER_ABILITY)) {
+    if (!raw || typeof raw !== 'object') continue;
+    const c = raw as { type?: unknown; value?: unknown; resource?: unknown };
+    if (typeof c.type !== 'string' || !ALLOWED_CONDITION_TYPES.includes(c.type as ConditionType)) continue;
+    const value = Math.max(0, Math.min(100, Number(c.value)));
+    if (!Number.isFinite(value)) continue;
+
+    const condition: Condition = { type: c.type as ConditionType, value };
+    if (condition.type === 'resource_below' || condition.type === 'resource_above') {
+      if (typeof c.resource !== 'string' || !ALLOWED_RESOURCE_TYPES.includes(c.resource as ResourceType)) continue;
+      condition.resource = c.resource as ResourceType;
+    }
+    conditions.push(condition);
+  }
+  if (conditions.length === 0) return null;
+  return { logic: g.logic, conditions };
+}
+
+// Saves the player's priority list (highest priority first) and the
+// per-ability condition groups from the Combat Setup screen, in one write.
+// Both are validated against their CURRENT level/loadout here (not just
+// trusted from the caller) so a stale UI state or a direct client call
+// can't save more slots, an ability the character hasn't unlocked, or a
+// condition group attached to an ability that isn't even equipped — the
+// real gameplay gate is still client-trusted overall (matches this
+// project's existing security posture), but this keeps an honest client
+// from saving nonsense.
+export async function saveCombatSetup(
+  uid: string,
+  abilityIds: string[],
+  abilityConditionsInput: Record<string, unknown>
+): Promise<void> {
+  const character = await getCharacter(uid);
+  if (!character) return;
+
+  const unlockedIds = new Set(unlockedAbilities(character.class, character.spec, character.level).map((a) => a.id));
+  const slots = maxEquippedSlots(character.level);
+  const validatedIds = abilityIds.filter((id) => unlockedIds.has(id)).slice(0, slots);
+  const equippedSet = new Set(validatedIds);
+
+  const abilityConditions: Record<string, ConditionGroup> = {};
+  for (const [abilityId, group] of Object.entries(abilityConditionsInput)) {
+    if (!equippedSet.has(abilityId)) continue;
+    const sanitized = sanitizeConditionGroup(group);
+    if (sanitized) abilityConditions[abilityId] = sanitized;
+  }
+
+  await updateDoc(doc(db, 'characters', uid), { equippedAbilityIds: validatedIds, abilityConditions });
+}
+
+function generatePresetId(): string {
+  return `preset_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+// Snapshots the character's CURRENTLY ACTIVE loadout/conditions (i.e.
+// whatever the last successful saveCombatSetup() call wrote) into a new
+// named preset. Deliberately doesn't accept a loadout from the caller —
+// the active config already passed saveCombatSetup's validation, so
+// there's nothing left to sanitize, and a preset can never end up holding
+// an ability the character never actually had equipped.
+export async function saveCombatPreset(uid: string, name: string): Promise<{ success: boolean; reason?: string }> {
+  const character = await getCharacter(uid);
+  if (!character) return { success: false, reason: 'Character not found.' };
+
+  const trimmedName = name.trim().slice(0, 24);
+  if (trimmedName.length === 0) return { success: false, reason: 'Give the preset a name.' };
+  if (character.combatPresets.length >= MAX_COMBAT_PRESETS) {
+    return { success: false, reason: `You can only save ${MAX_COMBAT_PRESETS} presets — delete one first.` };
+  }
+
+  // A character who's never opened Combat Setup can have an empty
+  // equippedAbilityIds in storage while still fighting with
+  // effectiveLoadout()'s recommended default (see progression.ts) — that
+  // default, not the possibly-empty raw field, is what's actually "active"
+  // from the player's point of view, so it's what a preset should capture.
+  const activeAbilityIds = effectiveLoadout(character.class, character.spec, character.level, character.equippedAbilityIds);
+  const activeConditions: Record<string, ConditionGroup> = {};
+  for (const id of activeAbilityIds) {
+    if (character.abilityConditions[id]) activeConditions[id] = character.abilityConditions[id];
+  }
+
+  const preset: CombatPreset = {
+    id: generatePresetId(),
+    name: trimmedName,
+    equippedAbilityIds: activeAbilityIds,
+    abilityConditions: activeConditions,
+  };
+
+  await updateDoc(doc(db, 'characters', uid), {
+    combatPresets: [...character.combatPresets, preset],
+  });
+  return { success: true };
+}
+
+export async function deleteCombatPreset(uid: string, presetId: string): Promise<void> {
+  const character = await getCharacter(uid);
+  if (!character) return;
+  await updateDoc(doc(db, 'characters', uid), {
+    combatPresets: character.combatPresets.filter((p) => p.id !== presetId),
+  });
+}
+
+// Makes a saved preset the active loadout. Routed through saveCombatSetup
+// rather than writing equippedAbilityIds/abilityConditions directly — a
+// preset saved at a lower level or a different spec might reference
+// abilities the character can no longer (or couldn't yet) use, and
+// saveCombatSetup already knows how to filter that down safely.
+export async function activateCombatPreset(uid: string, presetId: string): Promise<{ success: boolean; reason?: string }> {
+  const character = await getCharacter(uid);
+  if (!character) return { success: false, reason: 'Character not found.' };
+  const preset = character.combatPresets.find((p) => p.id === presetId);
+  if (!preset) return { success: false, reason: 'Preset not found.' };
+  await saveCombatSetup(uid, preset.equippedAbilityIds, preset.abilityConditions);
+  return { success: true };
 }
 
 export async function pickTalent(uid: string, rowLevel: number, column: TalentColumn): Promise<void> {

@@ -146,6 +146,11 @@ export const ITEMS: Record<string, ItemDef> = {
     description: 'A crude blade, scavenged from a fallen kobold. Better than fists.', stackable: true,
     equipSlot: 'weapon', statBonuses: { STR: 3 }, sellValue: 12,
   },
+  apprentice_staff: {
+    id: 'apprentice_staff', name: 'Apprentice Staff', type: 'equipment',
+    description: 'A gnarled staff taken from a kobold shaman, still humming with residual magic.', stackable: true,
+    equipSlot: 'weapon', statBonuses: { INT: 3 }, sellValue: 12,
+  },
 
   // ── Stonecrag Foothills materials ────────────────────────────────────
   coarse_hide: {
@@ -232,7 +237,7 @@ export const ITEMS: Record<string, ItemDef> = {
     id: 'alpha_pelt',
     name: 'Alpha Pelt',
     type: 'material',
-    description: 'A pristine pelt from a pack alpha — rare, and worth a great deal.',
+    description: 'A pristine pelt from a pack alpha — rare, and prized by leatherworkers for a reason.',
     stackable: true,
     sellValue: 20,
   },
@@ -243,6 +248,36 @@ export const ITEMS: Record<string, ItemDef> = {
     description: 'A hardy herb that grows in thin, rocky soil.',
     stackable: true,
     sellValue: 2,
+  },
+  coarse_leather: {
+    id: 'coarse_leather',
+    name: 'Coarse Leather',
+    type: 'material',
+    description: 'Several coarse hides worked together into a tougher leather than the Greenhollow kind.',
+    stackable: true,
+    sellValue: 3,
+  },
+
+  // ── Stonecrag Foothills equipment ────────────────────────────────────
+  reinforced_leather_vest: {
+    id: 'reinforced_leather_vest', name: 'Reinforced Leather Vest', type: 'equipment',
+    description: 'A sturdy leather vest built for the rocky foothills — a real step up from apprentice work.',
+    stackable: true, equipSlot: 'chest', armorType: 'leather', statBonuses: { STA: 5, STR: 2 }, sellValue: 18,
+  },
+  alphahide_gloves: {
+    id: 'alphahide_gloves', name: 'Alphahide Gloves', type: 'equipment',
+    description: "Gloves cut from a pack alpha's pelt. Only the strongest wolf in the foothills carries hide like this.",
+    stackable: true, equipSlot: 'gloves', armorType: 'leather', statBonuses: { STA: 4, STR: 4 }, sellValue: 25,
+  },
+  alpha_fang_blade: {
+    id: 'alpha_fang_blade', name: 'Alpha Fang Blade', type: 'equipment',
+    description: "A blade hafted from a pack alpha's own fang — a rare trophy from the toughest thing in the foothills.",
+    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 6 }, sellValue: 30,
+  },
+  focusing_wand: {
+    id: 'focusing_wand', name: 'Focusing Wand', type: 'equipment',
+    description: "A bandit's stolen spellcasting focus, still humming with someone else's magic.",
+    stackable: true, equipSlot: 'weapon', statBonuses: { INT: 5 }, sellValue: 26,
   },
 
   // ── Smithing materials ───────────────────────────────────────────────
@@ -351,5 +386,17 @@ export const ITEMS: Record<string, ItemDef> = {
     armorType: 'cloth',
     statBonuses: { INT: 2, SPI: 2 },
     sellValue: 14,
+  },
+
+  // ── Dungeon boss drops (Phase 8) ──────────────────────────────────────
+  chieftains_warhammer: {
+    id: 'chieftains_warhammer', name: "Chieftain's Warhammer", type: 'equipment',
+    description: 'The warhammer of the Kobold Warrens’ chieftain — heavier and better balanced than anything else this side of the Warrens.',
+    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 8 }, sellValue: 45,
+  },
+  warlords_signet: {
+    id: 'warlords_signet', name: "Warlord's Signet", type: 'equipment',
+    description: 'A heavy signet ring taken from the Alpha Warlord of the Stonecrag Depths.',
+    stackable: true, equipSlot: 'ring', statBonuses: { STA: 4, STR: 4 }, sellValue: 50,
   },
 };
