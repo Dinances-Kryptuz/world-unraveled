@@ -3,17 +3,26 @@ import { useAuth } from '../hooks/useAuth';
 import { useCharacter } from '../hooks/useCharacter';
 import { applyCombatResult, setCharacterLevel, stopActivity, getCharacter } from '../firebase/character';
 import { MONSTERS } from '../gameData/monsters';
-import { resolveSpecDef, computeFullCombatProfile, getExtraDamageTakenPct } from '../gameData/combatProfileWithTalents';
-import { resolveCombatEncounter } from '../gameData/combatResolver';
+import { resolveSpecDef, getExtraDamageTakenPct } from '../gameData/combatProfileWithTalents';
 import { evaluateTalents, EMPTY_TALENT_TOTALS } from '../utils/talentEvaluator';
-import { maxHp, resolveCurrentHp, ATTACK_INTERVAL_SECONDS } from '../gameData/combatFormulas';
+import { maxHp, resolveCurrentHp } from '../gameData/combatFormulas';
 import { getEquipmentStatBonuses } from '../gameData/equipmentStats';
 import { characterXpForLevelV2 } from '../gameData/xpTables';
-import { TickBar } from './TickBar';
+import {
+  createEncounterState,
+  advanceCombat,
+  tryManualUseAbility,
+  ABILITIES,
+  type EncounterSetupInput,
+  type KillReward,
+  type TickContext,
+} from '../combatEngine/engine';
+import type { CombatState } from '../combatEngine/types';
 import type { Character } from '../types/character';
 import type { User } from 'firebase/auth';
 
 const AUTOSAVE_INTERVAL_SECONDS = 10;
+const MAX_LOG_LINES = 30;
 
 interface SessionTotals {
   monstersDefeated: number;
@@ -35,11 +44,11 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
   const secondsSinceSaveRef = useRef(0);
 
   const [bankedTotals, setBankedTotals] = useState<SessionTotals>(EMPTY_TOTALS);
+  const [log, setLog] = useState<string[]>([]);
   const [retreated, setRetreated] = useState(false);
 
-  const anchorRef = useRef<Date | null>(character.currentActivity.startedAt);
-  const lootCarryRef = useRef<Record<string, number>>({});
-  const hpRef = useRef<number | null>(null);
+  const combatStateRef = useRef<CombatState | null>(null);
+  const pendingKillsRef = useRef<KillReward[]>([]);
   const retreatedRef = useRef(false);
 
   const characterRef = useRef<Character | null>(character);
@@ -53,30 +62,59 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
 
   const monster = MONSTERS[monsterId];
 
+  function buildEncounterInput(c: Character): EncounterSetupInput {
+    const specDef = resolveSpecDef(c.class, c.spec);
+    const talentTotals = c.spec ? evaluateTalents(c.spec, c.talentPicks).totals : EMPTY_TALENT_TOTALS;
+    const extraDamageTakenPct = getExtraDamageTakenPct(c.spec, c.talentPicks);
+    const equipmentBonuses = getEquipmentStatBonuses(c.equipment);
+    const charMaxHp = maxHp(c.class, c.level, equipmentBonuses);
+    const startedAt = c.currentActivity.startedAt ?? new Date();
+    const currentHp = resolveCurrentHp(c.currentHp, charMaxHp, c.hpCheckpointAt, startedAt);
+    return {
+      cls: c.class,
+      level: c.level,
+      specDef,
+      talentTotals,
+      extraDamageTakenPct,
+      equipmentBonuses,
+      currentHp,
+      monster,
+    };
+  }
+
   useEffect(() => {
     setBankedTotals(EMPTY_TOTALS);
+    setLog([]);
     setRetreated(false);
     retreatedRef.current = false;
-    anchorRef.current = character.currentActivity.startedAt;
-    lootCarryRef.current = {};
-    if (character.currentActivity.startedAt) {
-      const equipBonuses = getEquipmentStatBonuses(character.equipment);
-      const charMaxHp = maxHp(character.class, character.level, equipBonuses);
-      hpRef.current = resolveCurrentHp(
-        character.currentHp,
-        charMaxHp,
-        character.hpCheckpointAt,
-        character.currentActivity.startedAt
-      );
-    }
+    pendingKillsRef.current = [];
+    combatStateRef.current = createEncounterState(buildEncounterInput(character));
+    // Refs don't trigger a re-render on their own — without this, the
+    // screen would render nothing for up to a second, until the first
+    // interval tick happens to call setTick/setLog itself.
+    setTick((t) => t + 1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [monsterId]);
 
   useEffect(() => {
     const interval = setInterval(() => {
+      if (retreatedRef.current || !combatStateRef.current) return;
+
+      const ctx: TickContext = { monster, playerLevel: characterRef.current?.level ?? character.level };
+      const result = advanceCombat(combatStateRef.current, ctx, 1);
+      pendingKillsRef.current.push(...result.kills);
+      if (result.events.length > 0) {
+        setLog((prev) => [...result.events.map((e) => e.message), ...prev].slice(0, MAX_LOG_LINES));
+      }
+      if (result.playerDied) {
+        retreatedRef.current = true;
+        setRetreated(true);
+        void autosave();
+        return;
+      }
+
       setTick((t) => t + 1);
       secondsSinceSaveRef.current += 1;
-
       if (secondsSinceSaveRef.current >= AUTOSAVE_INTERVAL_SECONDS) {
         secondsSinceSaveRef.current = 0;
         void autosave();
@@ -86,61 +124,43 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [monsterId]);
 
-  function buildProfile(c: Character) {
-    const specDef = resolveSpecDef(c.class, c.spec);
-    const talentTotals = c.spec ? evaluateTalents(c.spec, c.talentPicks).totals : EMPTY_TALENT_TOTALS;
-    const extraDmgTaken = getExtraDamageTakenPct(c.spec, c.talentPicks);
-    const equipBonuses = getEquipmentStatBonuses(c.equipment);
-    return computeFullCombatProfile(c.class, specDef, c.level, monster.level, talentTotals, extraDmgTaken, equipBonuses);
-  }
-
   async function autosave() {
     const currentUser = userRef.current;
-    const currentCharacter = characterRef.current;
-    const anchor = anchorRef.current;
-    if (!currentUser || !currentCharacter || !anchor || retreatedRef.current || hpRef.current === null) return;
+    const state = combatStateRef.current;
+    const player = state?.party.find((p) => p.isPlayer);
+    if (!currentUser || !state || !player) return;
 
-    const now = new Date();
-    const profile = buildProfile(currentCharacter);
-    const result = resolveCombatEncounter(anchor, now, hpRef.current, profile, monster);
+    const kills = pendingKillsRef.current;
+    pendingKillsRef.current = [];
+    if (kills.length === 0) return;
 
-    if (result.monstersDefeated === 0 && !result.forcedRetreat) return;
-
-    const previousCarry = { ...lootCarryRef.current };
-    const lootToSave: { itemId: string; quantity: number }[] = [];
-    for (const drop of result.loot) {
-      const carry = lootCarryRef.current[drop.itemId] ?? 0;
-      const total = carry + drop.quantity;
-      const whole = Math.floor(total);
-      lootCarryRef.current[drop.itemId] = total - whole;
-      if (whole > 0) lootToSave.push({ itemId: drop.itemId, quantity: whole });
+    const xpGained = Math.round(kills.reduce((sum, k) => sum + k.xpGained, 0));
+    const goldGained = Math.round(kills.reduce((sum, k) => sum + k.goldGained, 0));
+    const lootByItem: Record<string, number> = {};
+    for (const kill of kills) {
+      for (const drop of kill.loot) {
+        lootByItem[drop.itemId] = (lootByItem[drop.itemId] ?? 0) + drop.quantity;
+      }
     }
+    const lootToSave = Object.entries(lootByItem).map(([itemId, quantity]) => ({ itemId, quantity }));
 
-    const previousAnchor = anchor;
-    const previousHp = hpRef.current;
-    anchorRef.current = now;
-    hpRef.current = result.hpAfter;
     setBankedTotals((prev) => ({
-      monstersDefeated: prev.monstersDefeated + result.monstersDefeated,
-      xpGained: prev.xpGained + Math.round(result.xpGained),
-      goldGained: prev.goldGained + Math.round(result.goldGained),
+      monstersDefeated: prev.monstersDefeated + kills.length,
+      xpGained: prev.xpGained + xpGained,
+      goldGained: prev.goldGained + goldGained,
     }));
     // Bump the shared character xp/gold now, in the same tick as the banked
     // session totals above, so the header bar and this screen's "session"
     // line move together instead of the header lagging behind the Firestore
     // round-trip below.
-    applyOptimisticUpdate((c) => ({
-      ...c,
-      xp: c.xp + Math.round(result.xpGained),
-      gold: c.gold + Math.round(result.goldGained),
-    }));
+    applyOptimisticUpdate((c) => ({ ...c, xp: c.xp + xpGained, gold: c.gold + goldGained }));
 
     try {
       await applyCombatResult(currentUser.uid, {
-        xpGained: Math.round(result.xpGained),
-        goldGained: Math.round(result.goldGained),
+        xpGained,
+        goldGained,
         loot: lootToSave,
-        hpAfter: result.hpAfter,
+        hpAfter: player.hp,
       });
 
       const fresh = await getCharacter(currentUser.uid);
@@ -153,31 +173,21 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
           const equipBonuses = getEquipmentStatBonuses(fresh.equipment);
           const restoredHp = maxHp(fresh.class, newLevel, equipBonuses);
           await setCharacterLevel(currentUser.uid, newLevel, restoredHp);
-          hpRef.current = restoredHp;
+          player.hp = restoredHp;
+          player.maxHp = restoredHp;
         }
       }
 
       await refetch();
-
-      if (result.forcedRetreat) {
-        retreatedRef.current = true;
-        setRetreated(true);
-      }
     } catch (err) {
       console.error('Combat autosave failed, will retry next cycle:', err);
-      anchorRef.current = previousAnchor;
-      hpRef.current = previousHp;
-      lootCarryRef.current = previousCarry;
+      pendingKillsRef.current.push(...kills);
       setBankedTotals((prev) => ({
-        monstersDefeated: prev.monstersDefeated - result.monstersDefeated,
-        xpGained: prev.xpGained - Math.round(result.xpGained),
-        goldGained: prev.goldGained - Math.round(result.goldGained),
+        monstersDefeated: prev.monstersDefeated - kills.length,
+        xpGained: prev.xpGained - xpGained,
+        goldGained: prev.goldGained - goldGained,
       }));
-      applyOptimisticUpdate((c) => ({
-        ...c,
-        xp: c.xp - Math.round(result.xpGained),
-        gold: c.gold - Math.round(result.goldGained),
-      }));
+      applyOptimisticUpdate((c) => ({ ...c, xp: c.xp - xpGained, gold: c.gold - goldGained }));
     }
   }
 
@@ -187,41 +197,75 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
     await refetch();
   }
 
-  if (!character.currentActivity.startedAt || hpRef.current === null) return null;
+  function handleManualUse(abilityId: string) {
+    const state = combatStateRef.current;
+    if (!state || retreatedRef.current) return;
+    const ctx: TickContext = { monster, playerLevel: characterRef.current?.level ?? character.level };
+    const result = tryManualUseAbility(state, 'player', abilityId, ctx);
+    if (!result) return;
+    pendingKillsRef.current.push(...result.kills);
+    if (result.events.length > 0) {
+      setLog((prev) => [...result.events.map((e) => e.message), ...prev].slice(0, MAX_LOG_LINES));
+    }
+    setTick((t) => t + 1);
+  }
 
-  const profile = buildProfile(character);
-  const sinceLastSave =
-    anchorRef.current && !retreated
-      ? resolveCombatEncounter(anchorRef.current, new Date(), hpRef.current, profile, monster)
-      : { monstersDefeated: 0, xpGained: 0, goldGained: 0 };
+  if (!character.currentActivity.startedAt || !combatStateRef.current) return null;
 
-  const displayTotals: SessionTotals = {
-    monstersDefeated: bankedTotals.monstersDefeated + sinceLastSave.monstersDefeated,
-    xpGained: bankedTotals.xpGained + Math.round(sinceLastSave.xpGained),
-    goldGained: bankedTotals.goldGained + Math.round(sinceLastSave.goldGained),
-  };
+  const state = combatStateRef.current;
+  const player = state.party.find((p) => p.isPlayer)!;
+  const enemy = state.enemies[0];
+  const equippedAbilityId = player.equippedAbilityIds[0];
+  const equippedAbility = equippedAbilityId ? ABILITIES[equippedAbilityId] : null;
+  const equippedCooldown = equippedAbilityId ? player.cooldowns[equippedAbilityId] ?? 0 : 0;
 
   return (
     <div className="combat-screen">
       <h2>Fighting {monster.name}</h2>
+
       {!retreated && (
         <>
-          <TickBar seconds={ATTACK_INTERVAL_SECONDS} color="#2e9e4f" label="Your attack" />
-          <TickBar seconds={ATTACK_INTERVAL_SECONDS} color="#c0392b" label={`${monster.name}'s attack`} />
+          <p>
+            You: {Math.round(player.hp)} / {Math.round(player.maxHp)} HP
+            {Object.entries(player.resources).map(([type, pool]) =>
+              pool ? (
+                <span key={type}>
+                  {' '}
+                  — {type}: {Math.round(pool.current)} / {pool.max}
+                </span>
+              ) : null
+            )}
+          </p>
+          <p>
+            {enemy.name}: {Math.round(enemy.hp)} / {Math.round(enemy.maxHp)} HP
+          </p>
+          {equippedAbility && (
+            <button onClick={() => handleManualUse(equippedAbility.id)} disabled={equippedCooldown > 0}>
+              {equippedCooldown > 0 ? `${equippedAbility.name} (${Math.ceil(equippedCooldown)}s)` : equippedAbility.name}
+            </button>
+          )}
         </>
       )}
+
       {retreated ? (
         <p>
-          You were forced to retreat! This session: {displayTotals.monstersDefeated} defeated, +
-          {displayTotals.xpGained} XP, +{displayTotals.goldGained} gold. Your HP will recover over time.
+          You were forced to retreat! This session: {bankedTotals.monstersDefeated} defeated, +
+          {bankedTotals.xpGained} XP, +{bankedTotals.goldGained} gold. Your HP will recover over time.
         </p>
       ) : (
         <p>
-          This session: {displayTotals.monstersDefeated} defeated, +{displayTotals.xpGained} XP, +
-          {displayTotals.goldGained} gold — HP: {Math.round(hpRef.current)} / {Math.round(profile.playerMaxHp)}
+          This session: {bankedTotals.monstersDefeated} defeated, +{bankedTotals.xpGained} XP, +
+          {bankedTotals.goldGained} gold
         </p>
       )}
+
       <button onClick={handleStop}>Stop</button>
+
+      <div style={{ marginTop: 12, maxHeight: 160, overflowY: 'auto', fontSize: '0.85rem', color: '#6b6156' }}>
+        {log.map((line, i) => (
+          <div key={i}>{line}</div>
+        ))}
+      </div>
     </div>
   );
 }
