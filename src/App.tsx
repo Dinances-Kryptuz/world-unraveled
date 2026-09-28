@@ -7,6 +7,7 @@ import { ZoneScreen } from './components/ZoneScreen';
 import { EquipmentScreen } from './components/EquipmentScreen';
 import { InventoryScreen } from './components/InventoryScreen';
 import { TalentScreen } from './components/TalentScreen';
+import { CombatSetupScreen } from './components/CombatSetupScreen';
 import { signOut } from './firebase/auth';
 import { CLASS_LABELS, SPEC_LABELS } from './gameData/classStats';
 import { maxHp, resolveCurrentHp } from './gameData/combatFormulas';
@@ -77,6 +78,7 @@ function AppContent() {
       </div>
       <ZoneScreen selectedZoneId={selectedZoneId} onSelectZone={setSelectedZoneId} />
       <EquipmentScreen />
+      <CombatSetupScreen />
       <InventoryScreen />
       <VendorScreen zoneId={selectedZoneId} />
       {character.spec && <TalentScreen />}

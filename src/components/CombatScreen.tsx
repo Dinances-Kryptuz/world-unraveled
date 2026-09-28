@@ -79,6 +79,7 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
       equipmentBonuses,
       currentHp,
       monster,
+      savedEquippedAbilityIds: c.equippedAbilityIds,
     };
   }
 
@@ -215,9 +216,6 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
   const state = combatStateRef.current;
   const player = state.party.find((p) => p.isPlayer)!;
   const enemy = state.enemies[0];
-  const equippedAbilityId = player.equippedAbilityIds[0];
-  const equippedAbility = equippedAbilityId ? ABILITIES[equippedAbilityId] : null;
-  const equippedCooldown = equippedAbilityId ? player.cooldowns[equippedAbilityId] ?? 0 : 0;
 
   return (
     <div className="combat-screen">
@@ -239,11 +237,16 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
           <p>
             {enemy.name}: {Math.round(enemy.hp)} / {Math.round(enemy.maxHp)} HP
           </p>
-          {equippedAbility && (
-            <button onClick={() => handleManualUse(equippedAbility.id)} disabled={equippedCooldown > 0}>
-              {equippedCooldown > 0 ? `${equippedAbility.name} (${Math.ceil(equippedCooldown)}s)` : equippedAbility.name}
-            </button>
-          )}
+          {player.equippedAbilityIds.map((abilityId) => {
+            const ability = ABILITIES[abilityId];
+            if (!ability) return null;
+            const cooldown = player.cooldowns[abilityId] ?? 0;
+            return (
+              <button key={abilityId} onClick={() => handleManualUse(abilityId)} disabled={cooldown > 0}>
+                {cooldown > 0 ? `${ability.name} (${Math.ceil(cooldown)}s)` : ability.name}
+              </button>
+            );
+          })}
         </>
       )}
 

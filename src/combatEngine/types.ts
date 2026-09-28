@@ -19,7 +19,15 @@ export interface ResourcePool {
 // anything that calls it.
 export type TargetType = 'SELF' | 'CURRENT_ENEMY';
 
-export type EffectType = 'damage' | 'heal' | 'dot' | 'resourceGain';
+// 'buff' covers both buffs and debuffs — it's a timed modifier applied to
+// whoever ability.targetType resolves to, affecting THEIR OWN outgoing/
+// incoming damage. A positive damageDealtPct on yourself is Battle Cry; a
+// negative damageDealtPct on the enemy (still "their own outgoing damage")
+// is Intimidating Shout — same mechanic, no separate debuff type needed.
+// 'stun' and 'dispel' are real early CC/utility tools; 'absorb' (Power Word:
+// Shield's real design) isn't built yet — see abilities.ts for what stands
+// in for it until then.
+export type EffectType = 'damage' | 'heal' | 'dot' | 'resourceGain' | 'buff' | 'stun' | 'dispel';
 
 export interface AbilityEffect {
   type: EffectType;
@@ -31,8 +39,10 @@ export interface AbilityEffect {
   power?: number;
   resource?: ResourceType;
   amount?: number; // flat resource amount, for resourceGain
-  durationSeconds?: number; // for dot
+  durationSeconds?: number; // for dot, buff, stun
   tickSeconds?: number; // for dot
+  damageDealtPct?: number; // for buff — added on top of the target's damageCoef
+  damageTakenPct?: number; // for buff — added on top of the target's damageTakenMult
 }
 
 export interface Ability {
@@ -60,6 +70,13 @@ export interface ActiveDot {
   hitPerTick: number;
 }
 
+export interface ActiveBuff {
+  abilityId: string;
+  remainingSeconds: number;
+  damageDealtPct: number;
+  damageTakenPct: number;
+}
+
 // Live combat state — everything that changes second to second. Static
 // combat math (attack power, armor, damage taken multiplier, spec
 // coefficients) lives in a separate CasterProfile computed once per
@@ -75,6 +92,8 @@ export interface Combatant {
   resources: Partial<Record<ResourceType, ResourcePool>>;
   cooldowns: Record<string, number>; // abilityId -> seconds remaining
   dots: ActiveDot[];
+  buffs: ActiveBuff[];
+  stunnedSeconds: number; // > 0 means this combatant cannot act (but cooldowns/dots/resources still tick)
   actionReadyIn: number; // seconds until this combatant's next action
   equippedAbilityIds: string[]; // priority order, highest first; empty for monsters
   basicAttackId: string;

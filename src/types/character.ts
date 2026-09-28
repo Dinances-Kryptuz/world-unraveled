@@ -32,6 +32,11 @@ export interface Character {
   equipment: Record<EquipmentSlot, string | null>;
   professions: Record<ProfessionId, ProfessionState>;
   currentActivity: CurrentActivity;
+  // The player's saved priority list (highest priority first). See
+  // combatEngine/progression.ts's effectiveLoadout() — an empty array is a
+  // valid, expected state (no choice made yet) and falls back to a
+  // recommended default rather than an empty combat bar.
+  equippedAbilityIds: string[];
 }
 
 export interface Inventory {

@@ -8,6 +8,7 @@ import { professionXpForLevel } from '../gameData/xpTables';
 import { maxHp } from '../gameData/combatFormulas';
 import { canClassEquip } from '../gameData/classStats';
 import { ITEMS } from '../gameData/items';
+import { maxEquippedSlots, unlockedAbilities } from '../combatEngine/progression';
 
 const STARTING_GATHERING_PROFESSIONS: ProfessionId[] = ['skinning', 'mining', 'herbalism'];
 const STARTING_PRODUCTION_PROFESSIONS: ProfessionId[] = ['leatherworking', 'smithing', 'tailoring'];
@@ -30,6 +31,10 @@ export async function getCharacter(uid: string): Promise<Character | null> {
     // Smithing) so existing characters don't crash on a missing key —
     // real saved progress always wins over the level-1 default.
     professions: { ...defaultProfessions(), ...data.professions },
+    // Same backfill idea for equippedAbilityIds, added after some characters
+    // already existed — an empty list is itself a valid "no choice made
+    // yet" state, so this only matters for a genuinely missing field.
+    equippedAbilityIds: data.equippedAbilityIds ?? [],
     createdAt: (data.createdAt as Timestamp)?.toDate() ?? new Date(),
     hpCheckpointAt: (data.hpCheckpointAt as Timestamp)?.toDate() ?? new Date(),
     currentActivity: {
@@ -68,6 +73,7 @@ export async function createCharacter(uid: string, name: string, characterClass:
     },
     professions,
     currentActivity: { type: null, targetId: null, zoneId: null, startedAt: null },
+    equippedAbilityIds: [],
   };
 
   await setDoc(doc(db, 'characters', uid), character);
@@ -243,6 +249,23 @@ export async function unequipItem(uid: string, slot: EquipmentSlot): Promise<voi
 
 export async function chooseSpec(uid: string, spec: SpecId): Promise<void> {
   await updateDoc(doc(db, 'characters', uid), { spec });
+}
+
+// Saves the player's priority list (highest priority first). Validated
+// against their CURRENT level here (not just trusted from the caller) so a
+// stale UI state or a direct client call can't save more slots or an
+// ability the character hasn't actually unlocked — the real gameplay gate
+// is still client-trusted overall (matches this project's existing
+// security posture), but this keeps an honest client from saving nonsense.
+export async function setEquippedAbilities(uid: string, abilityIds: string[]): Promise<void> {
+  const character = await getCharacter(uid);
+  if (!character) return;
+
+  const unlockedIds = new Set(unlockedAbilities(character.class, character.level).map((a) => a.id));
+  const slots = maxEquippedSlots(character.level);
+  const validated = abilityIds.filter((id) => unlockedIds.has(id)).slice(0, slots);
+
+  await updateDoc(doc(db, 'characters', uid), { equippedAbilityIds: validated });
 }
 
 export async function pickTalent(uid: string, rowLevel: number, column: TalentColumn): Promise<void> {

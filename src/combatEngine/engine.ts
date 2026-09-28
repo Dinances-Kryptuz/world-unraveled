@@ -18,7 +18,8 @@ import {
 } from '../gameData/combatFormulas';
 import type { TalentBonusTotals } from '../utils/talentEvaluator';
 import type { Monster } from '../gameData/types';
-import { ABILITIES, BASIC_ATTACK_BY_CLASS, LEVEL_1_LOADOUT_BY_CLASS } from './abilities';
+import { ABILITIES, BASIC_ATTACK_BY_CLASS } from './abilities';
+import { effectiveLoadout } from './progression';
 import { initialResources, regenResources, canAfford, spend, gain } from './resources';
 import { resolveTarget } from './targeting';
 import { pickAbility } from './priority';
@@ -33,6 +34,11 @@ export interface EncounterSetupInput {
   equipmentBonuses: Partial<Record<BaseStat, number>>;
   currentHp: number;
   monster: Monster;
+  // The player's saved priority-list choice (Character.equippedAbilityIds).
+  // effectiveLoadout() filters it to what's actually unlocked/slotted at
+  // this level, and falls back to a sensible default when it's empty (a
+  // character who's never touched the setup screen still fights well).
+  savedEquippedAbilityIds: string[];
 }
 
 function buildPlayerProfile(input: EncounterSetupInput): CasterProfile {
@@ -87,6 +93,8 @@ function createMonsterCombatant(monster: Monster, playerLevel: number, idSuffix:
     resources: {},
     cooldowns: {},
     dots: [],
+    buffs: [],
+    stunnedSeconds: 0,
     actionReadyIn: ATTACK_INTERVAL_SECONDS,
     equippedAbilityIds: [],
     basicAttackId: 'monster_basic_attack',
@@ -107,7 +115,7 @@ const MONSTER_BASIC_ATTACK: Ability = {
 };
 
 export function createPlayerCombatant(input: EncounterSetupInput): Combatant {
-  const level1Loadout = LEVEL_1_LOADOUT_BY_CLASS[input.cls] ?? [];
+  const loadout = effectiveLoadout(input.cls, input.level, input.savedEquippedAbilityIds);
   const intStat = statAtLevel(input.cls, 'INT', input.level) + (input.equipmentBonuses.INT ?? 0);
   const playerMaxHp = computeMaxHp(input.cls, input.level, input.equipmentBonuses);
 
@@ -121,8 +129,10 @@ export function createPlayerCombatant(input: EncounterSetupInput): Combatant {
     resources: initialResources(input.cls, input.level, intStat),
     cooldowns: {},
     dots: [],
+    buffs: [],
+    stunnedSeconds: 0,
     actionReadyIn: ATTACK_INTERVAL_SECONDS,
-    equippedAbilityIds: level1Loadout,
+    equippedAbilityIds: loadout,
     basicAttackId: BASIC_ATTACK_BY_CLASS[input.cls],
     profile: buildPlayerProfile(input),
   };
@@ -140,18 +150,31 @@ function abilitiesById(): Record<string, Ability> {
   return { ...ABILITIES, monster_basic_attack: MONSTER_BASIC_ATTACK };
 }
 
+// Sum of a combatant's active buffs' percentages — Battle Cry and
+// Intimidating Shout both stack onto this the same way (positive vs.
+// negative damageDealtPct), so there's one summation, not a "buffs" and a
+// separate "debuffs" path.
+function buffDamageDealtMult(c: Combatant): number {
+  return 1 + c.buffs.reduce((sum, b) => sum + b.damageDealtPct, 0) / 100;
+}
+
+function buffDamageTakenMult(c: Combatant): number {
+  return 1 + c.buffs.reduce((sum, b) => sum + b.damageTakenPct, 0) / 100;
+}
+
 // One roll for a landed hit's damage: attacker's normalized hit, spec/talent
-// coefficient, the defender's armor, and a level-gap accuracy check when the
-// attacker is the player (mirrors the old aggregate model's playerDamageModifier
-// input exactly — see resolveHit for the level-gap piece).
+// coefficient, active buffs, the defender's armor, and a level-gap accuracy
+// check when the attacker is the player (mirrors the old aggregate model's
+// playerDamageModifier input exactly — see resolveHit for the level-gap piece).
 function computeEffectDamage(attacker: Combatant, defender: Combatant, power: number, levelGapAccuracy: number): { hit: boolean; amount: number } {
   const accuracyRoll = attacker.isPlayer ? levelGapAccuracy : attacker.profile.accuracy;
   const avoided = Math.random() > accuracyRoll || Math.random() < defender.profile.avoidance;
   if (avoided) return { hit: false, amount: 0 };
 
   const armorMod = 1 - armorReduction(defender.profile.armor);
-  const raw = attacker.profile.normalizedHit * power * attacker.profile.damageCoef * armorMod;
-  const amount = Math.max(0, Math.round(raw * defender.profile.damageTakenMult));
+  const raw =
+    attacker.profile.normalizedHit * power * attacker.profile.damageCoef * buffDamageDealtMult(attacker) * armorMod;
+  const amount = Math.max(0, Math.round(raw * defender.profile.damageTakenMult * buffDamageTakenMult(defender)));
   return { hit: true, amount };
 }
 
@@ -180,7 +203,7 @@ export function advanceCombat(state: CombatState, ctx: TickContext, deltaSeconds
 
   const allCombatants = [...state.party, ...state.enemies];
 
-  // 1. Advance time-based state: cooldowns, dots, resource regen.
+  // 1. Advance time-based state: cooldowns, dots, buffs, stun, resource regen.
   for (const c of allCombatants) {
     if (!c.isAlive) continue;
     for (const id of Object.keys(c.cooldowns)) {
@@ -188,11 +211,15 @@ export function advanceCombat(state: CombatState, ctx: TickContext, deltaSeconds
     }
     regenResources(c.resources, deltaSeconds);
     tickDots(c, deltaSeconds, ctx, events, kills);
+    c.buffs = c.buffs.filter((b) => (b.remainingSeconds -= deltaSeconds) > 0);
+    if (c.stunnedSeconds > 0) c.stunnedSeconds = Math.max(0, c.stunnedSeconds - deltaSeconds);
   }
 
-  // 2. Let anyone whose action timer has elapsed act.
+  // 2. Let anyone whose action timer has elapsed act — a stunned combatant's
+  // action timer doesn't advance at all (matches "your swing timer freezes
+  // during a stun," not "swings bank up and all fire the instant it ends").
   for (const c of allCombatants) {
-    if (!c.isAlive) continue;
+    if (!c.isAlive || c.stunnedSeconds > 0) continue;
     c.actionReadyIn -= deltaSeconds;
     while (c.actionReadyIn <= 0 && c.isAlive) {
       const picked = pickAbility(state, c, abilities);
@@ -291,6 +318,27 @@ export function useAbility(
         const healAmount = Math.round(source.profile.normalizedHit * (effect.power ?? 1) * source.profile.damageCoef);
         target.hp = Math.min(target.maxHp, target.hp + healAmount);
         events.push({ message: `${source.name} uses ${ability.name} on ${target.name}, healing for ${healAmount}.` });
+        break;
+      }
+      case 'buff': {
+        target.buffs.push({
+          abilityId: ability.id,
+          remainingSeconds: effect.durationSeconds ?? 0,
+          damageDealtPct: effect.damageDealtPct ?? 0,
+          damageTakenPct: effect.damageTakenPct ?? 0,
+        });
+        const verb = (effect.damageDealtPct ?? 0) < 0 || (effect.damageTakenPct ?? 0) < 0 ? 'afflicts' : 'buffs';
+        events.push({ message: `${source.name} ${verb} ${target.name} with ${ability.name}.` });
+        break;
+      }
+      case 'stun': {
+        target.stunnedSeconds = Math.max(target.stunnedSeconds, effect.durationSeconds ?? 0);
+        events.push({ message: `${source.name} stuns ${target.name} with ${ability.name}.` });
+        break;
+      }
+      case 'dispel': {
+        target.dots = [];
+        events.push({ message: `${source.name} uses ${ability.name} on ${target.name}.` });
         break;
       }
     }
