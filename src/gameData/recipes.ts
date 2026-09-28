@@ -180,4 +180,48 @@ export const RECIPES: Record<string, Recipe> = {
     xpAward: 22,
     colorBreakpoints: { orangeUntil: 21, yellowUntil: 26, greenUntil: 36 },
   },
+
+  // ── Stonecrag Foothills leatherworking ───────────────────────────────
+  coarse_leather: {
+    id: 'coarse_leather',
+    name: 'Coarse Leather',
+    profession: 'leatherworking',
+    requiredSkill: 12,
+    resultItemId: 'coarse_leather',
+    resultQuantity: 1,
+    materials: [{ itemId: 'coarse_hide', quantity: 5 }],
+    craftSeconds: 6,
+    xpAward: 9,
+    colorBreakpoints: { orangeUntil: 21, yellowUntil: 26, greenUntil: 36 },
+  },
+  reinforced_leather_vest: {
+    id: 'reinforced_leather_vest',
+    name: 'Reinforced Leather Vest',
+    profession: 'leatherworking',
+    requiredSkill: 15,
+    resultItemId: 'reinforced_leather_vest',
+    resultQuantity: 1,
+    materials: [
+      { itemId: 'coarse_leather', quantity: 5 },
+      { itemId: 'thick_hide', quantity: 2 },
+    ],
+    craftSeconds: 16,
+    xpAward: 24,
+    colorBreakpoints: { orangeUntil: 24, yellowUntil: 29, greenUntil: 39 },
+  },
+  alphahide_gloves: {
+    id: 'alphahide_gloves',
+    name: 'Alphahide Gloves',
+    profession: 'leatherworking',
+    requiredSkill: 20,
+    resultItemId: 'alphahide_gloves',
+    resultQuantity: 1,
+    materials: [
+      { itemId: 'coarse_leather', quantity: 3 },
+      { itemId: 'alpha_pelt', quantity: 1 },
+    ],
+    craftSeconds: 18,
+    xpAward: 30,
+    colorBreakpoints: { orangeUntil: 29, yellowUntil: 34, greenUntil: 44 },
+  },
 };

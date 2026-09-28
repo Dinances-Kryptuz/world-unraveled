@@ -156,6 +156,7 @@ export const MONSTERS: Record<string, Monster> = {
       { itemId: 'coarse_cloth', chance: 0.45, minQty: 1, maxQty: 2 },
       { itemId: 'worn_shiv', chance: 0.2, minQty: 1, maxQty: 1 },
       { itemId: 'bandit_coin_pouch', chance: 0.12, minQty: 1, maxQty: 1 },
+      { itemId: 'focusing_wand', chance: 0.07, minQty: 1, maxQty: 1 },
     ],
     specialAbility: {
       name: 'Backstab',
@@ -176,6 +177,7 @@ export const MONSTERS: Record<string, Monster> = {
       { itemId: 'sharp_fang', chance: 0.55, minQty: 1, maxQty: 2 },
       { itemId: 'coarse_hide', chance: 0.25, minQty: 1, maxQty: 1 },
       { itemId: 'alpha_pelt', chance: 0.06, minQty: 1, maxQty: 1 },
+      { itemId: 'alpha_fang_blade', chance: 0.05, minQty: 1, maxQty: 1 },
     ],
     specialAbility: {
       name: 'Pack Leader',
