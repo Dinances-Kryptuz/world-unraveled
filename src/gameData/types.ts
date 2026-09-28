@@ -53,6 +53,25 @@ export interface Monster {
   goldMax: number;
   lootTable: LootDrop[];
   specialAbility?: SpecialAbility;
+  // Ability ids from combatEngine/monsterAbilities.ts, priority-ordered
+  // (highest first) — the same priority walk player combatants use. Absent
+  // (every non-boss monster) means auto-attack only, unchanged from before
+  // this field existed. Only dungeon bosses (Phase 8) set this.
+  equippedAbilityIds?: string[];
+  isBoss?: boolean;
+}
+
+export interface Dungeon {
+  id: string;
+  name: string;
+  description: string;
+  zoneId: string;
+  levelRange: [number, number];
+  // Ordered monster ids the player fights in sequence; the last one is the
+  // boss. Clearing it loops back to the first stage — same "repeatable
+  // content" convention as an open-world monster, just as a fixed gauntlet
+  // instead of one monster respawning as itself.
+  stages: string[];
 }
 
 export interface GatherNode {

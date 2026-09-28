@@ -387,4 +387,16 @@ export const ITEMS: Record<string, ItemDef> = {
     statBonuses: { INT: 2, SPI: 2 },
     sellValue: 14,
   },
+
+  // ── Dungeon boss drops (Phase 8) ──────────────────────────────────────
+  chieftains_warhammer: {
+    id: 'chieftains_warhammer', name: "Chieftain's Warhammer", type: 'equipment',
+    description: 'The warhammer of the Kobold Warrens’ chieftain — heavier and better balanced than anything else this side of the Warrens.',
+    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 8 }, sellValue: 45,
+  },
+  warlords_signet: {
+    id: 'warlords_signet', name: "Warlord's Signet", type: 'equipment',
+    description: 'A heavy signet ring taken from the Alpha Warlord of the Stonecrag Depths.',
+    stackable: true, equipSlot: 'ring', statBonuses: { STA: 4, STR: 4 }, sellValue: 50,
+  },
 };

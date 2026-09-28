@@ -19,6 +19,7 @@ import {
 import type { TalentBonusTotals } from '../utils/talentEvaluator';
 import type { Monster } from '../gameData/types';
 import { ABILITIES, BASIC_ATTACK_BY_CLASS } from './abilities';
+import { MONSTER_ABILITIES } from './monsterAbilities';
 import { effectiveLoadout } from './progression';
 import { initialResources, regenResources, canAfford, spend, gain } from './resources';
 import { resolveTarget } from './targeting';
@@ -105,7 +106,12 @@ function createMonsterCombatant(monster: Monster, playerLevel: number, idSuffix:
     buffs: [],
     stunnedSeconds: 0,
     actionReadyIn: ATTACK_INTERVAL_SECONDS,
-    equippedAbilityIds: [],
+    // Every existing monster has no equippedAbilityIds, so this defaults to
+    // [] and behaves exactly as before — falls straight through to the free
+    // basic attack via the same priority walk the player uses. A dungeon
+    // boss (Phase 8) sets this on its Monster def to get a real, ordered
+    // ability rotation instead of a flat auto-attack.
+    equippedAbilityIds: monster.equippedAbilityIds ?? [],
     basicAttackId: 'monster_basic_attack',
     profile: buildMonsterProfile(monster, playerLevel),
   };
@@ -156,8 +162,11 @@ export function createEncounterState(input: EncounterSetupInput): CombatState {
   };
 }
 
-function abilitiesById(): Record<string, Ability> {
-  return { ...ABILITIES, monster_basic_attack: MONSTER_BASIC_ATTACK };
+// Exported so the UI can resolve any ability id (player or monster) to its
+// display name/description in one place — StatusBadges and AbilityBar both
+// need this, and neither should have to know which registry an id came from.
+export function abilitiesById(): Record<string, Ability> {
+  return { ...ABILITIES, ...MONSTER_ABILITIES, monster_basic_attack: MONSTER_BASIC_ATTACK };
 }
 
 // Sum of a combatant's active buffs' percentages — Battle Cry and
@@ -203,6 +212,15 @@ export interface TickResult {
 export interface TickContext {
   monster: Monster;
   playerLevel: number;
+  // Dungeon stage progression hook (Phase 8) — called right before an
+  // enemy respawn to decide what respawns next. Omitted, the enemy just
+  // respawns as `monster` again forever (every non-dungeon fight). When
+  // present, the engine also updates `monster` to match so the rest of
+  // this same tick (and the next one) sees the new stage as current —
+  // callers needing to react to a stage change (UI, session counters)
+  // should compare the monster before/after a tick that produced a kill,
+  // not poll this mid-tick.
+  nextMonster?: (justDefeated: Monster) => Monster;
 }
 
 export function advanceCombat(state: CombatState, ctx: TickContext, deltaSeconds: number): TickResult {
@@ -252,9 +270,11 @@ export function advanceCombat(state: CombatState, ctx: TickContext, deltaSeconds
   }
 
   // 3. Respawn any dead enemy so the fight continues, and note player death.
-  state.enemies = state.enemies.map((e) =>
-    e.isAlive ? e : createMonsterCombatant(ctx.monster, ctx.playerLevel, Math.random())
-  );
+  state.enemies = state.enemies.map((e) => {
+    if (e.isAlive) return e;
+    if (ctx.nextMonster) ctx.monster = ctx.nextMonster(ctx.monster);
+    return createMonsterCombatant(ctx.monster, ctx.playerLevel, Math.random());
+  });
   const player = state.party.find((p) => p.isPlayer);
   if (player && !player.isAlive) playerDied = true;
 

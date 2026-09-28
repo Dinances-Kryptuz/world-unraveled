@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useCharacter } from '../hooks/useCharacter';
-import { startActivity } from '../firebase/character';
+import { startActivity, stopActivity } from '../firebase/character';
 import { ZONES, GATHER_NODES } from '../gameData/zones';
 import { MONSTERS } from '../gameData/monsters';
 import { RECIPES } from '../gameData/recipes';
+import { DUNGEONS } from '../gameData/dungeons';
 import { CombatScreen } from './CombatScreen';
 import { GatheringScreen } from './GatheringScreen';
 import { CraftingScreen } from './CraftingScreen';
+import { DungeonScreen } from './DungeonScreen';
 import { WelcomeBackScreen, isLongAbsence } from './WelcomeBackScreen';
 import { SpecSelectionScreen } from './SpecSelectionScreen';
 import { craftingColorTier } from '../gameData/activityEngine';
@@ -33,12 +35,24 @@ export function ZoneScreen({
   const { character, refetch } = useCharacter();
   const [dismissedWelcomeBack, setDismissedWelcomeBack] = useState(false);
   const [expandedMonsterId, setExpandedMonsterId] = useState<string | null>(null);
+  const [activeDungeonId, setActiveDungeonId] = useState<string | null>(null);
   const zone = ZONES[selectedZoneId];
 
   async function handleFight(monsterId: string) {
     if (!user) return;
     await startActivity(user.uid, { type: 'combat', targetId: monsterId, zoneId: zone.id });
     await refetch();
+  }
+
+  // Dungeons are deliberately not written to currentActivity (see
+  // DungeonScreen's own doc comment) — entering one just clears whatever
+  // regular activity was running so it doesn't keep "elapsing" underneath
+  // the run, and local state alone decides which screen renders.
+  async function handleEnterDungeon(dungeonId: string) {
+    if (!user) return;
+    await stopActivity(user.uid);
+    await refetch();
+    setActiveDungeonId(dungeonId);
   }
 
   async function handleGather(nodeId: string) {
@@ -57,6 +71,10 @@ export function ZoneScreen({
 
   if (character.level >= 5 && character.spec === null) {
     return <SpecSelectionScreen />;
+  }
+
+  if (activeDungeonId) {
+    return <DungeonScreen dungeonId={activeDungeonId} onExit={() => setActiveDungeonId(null)} />;
   }
 
   const activity = character.currentActivity;
@@ -127,6 +145,25 @@ export function ZoneScreen({
           );
         })}
       </ul>
+
+      {Object.values(DUNGEONS)
+        .filter((d) => d.zoneId === zone.id)
+        .map((dungeon) => (
+          <div key={dungeon.id}>
+            <h2>Dungeons</h2>
+            <ul>
+              <li>
+                <div>
+                  <strong>{dungeon.name}</strong> (Lv {dungeon.levelRange[0]}–{dungeon.levelRange[1]}) —{' '}
+                  {dungeon.description}
+                  <br />
+                  <small>{dungeon.stages.length} stages, ending in a boss</small>
+                </div>
+                <button onClick={() => handleEnterDungeon(dungeon.id)}>Enter</button>
+              </li>
+            </ul>
+          </div>
+        ))}
 
       <h2>Gathering (Mining, Herbalism, Skinning)</h2>
       <ul>
