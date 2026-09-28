@@ -23,7 +23,7 @@ import { effectiveLoadout } from './progression';
 import { initialResources, regenResources, canAfford, spend, gain } from './resources';
 import { resolveTarget } from './targeting';
 import { pickAbility } from './priority';
-import type { Ability, CasterProfile, Combatant, CombatState, CombatEvent } from './types';
+import type { Ability, CasterProfile, Combatant, CombatState, CombatEvent, ConditionGroup } from './types';
 
 export interface EncounterSetupInput {
   cls: ClassId;
@@ -39,6 +39,10 @@ export interface EncounterSetupInput {
   // this level, and falls back to a sensible default when it's empty (a
   // character who's never touched the setup screen still fights well).
   savedEquippedAbilityIds: string[];
+  // The player's saved per-ability condition groups (Character.abilityConditions).
+  // Keyed by ability id; an ability with no entry (or an empty conditions
+  // array) is always usable, same as before this field existed.
+  savedAbilityConditions: Record<string, ConditionGroup>;
 }
 
 function buildPlayerProfile(input: EncounterSetupInput): CasterProfile {
@@ -133,6 +137,7 @@ export function createPlayerCombatant(input: EncounterSetupInput): Combatant {
     stunnedSeconds: 0,
     actionReadyIn: ATTACK_INTERVAL_SECONDS,
     equippedAbilityIds: loadout,
+    abilityConditions: input.savedAbilityConditions,
     basicAttackId: BASIC_ATTACK_BY_CLASS[input.cls],
     profile: buildPlayerProfile(input),
   };

@@ -96,6 +96,10 @@ export interface Combatant {
   stunnedSeconds: number; // > 0 means this combatant cannot act (but cooldowns/dots/resources still tick)
   actionReadyIn: number; // seconds until this combatant's next action
   equippedAbilityIds: string[]; // priority order, highest first; empty for monsters
+  // Keyed by ability id, matching equippedAbilityIds. Optional — monsters
+  // never have it, and a player who's never opened the conditions editor
+  // simply has no entry for a given ability (treated as "always usable").
+  abilityConditions?: Record<string, ConditionGroup>;
   basicAttackId: string;
   profile: CasterProfile;
 }
@@ -119,6 +123,31 @@ export interface CombatState {
   party: Combatant[];
   enemies: Combatant[];
   timeElapsed: number;
+}
+
+// Phase 3: conditions. A ConditionGroup gates whether an equipped ability is
+// considered "usable" during the priority walk, on top of the existing
+// cooldown/resource/target checks — see conditions.ts's evaluateConditionGroup.
+// An empty conditions array means "always usable," matching every existing
+// character's implicit behavior before this field existed (no migration
+// needed — see firebase/character.ts's backfill).
+export type ConditionType =
+  | 'self_hp_below'
+  | 'self_hp_above'
+  | 'target_hp_below'
+  | 'target_hp_above'
+  | 'resource_below'
+  | 'resource_above';
+
+export interface Condition {
+  type: ConditionType;
+  value: number; // percentage, 0-100 — of max HP for hp conditions, of max pool for resource conditions
+  resource?: ResourceType; // only meaningful for resource_below/resource_above
+}
+
+export interface ConditionGroup {
+  logic: 'AND' | 'OR';
+  conditions: Condition[];
 }
 
 export interface CombatEvent {

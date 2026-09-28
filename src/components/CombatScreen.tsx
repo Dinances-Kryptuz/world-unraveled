@@ -80,6 +80,7 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
       currentHp,
       monster,
       savedEquippedAbilityIds: c.equippedAbilityIds,
+      savedAbilityConditions: c.abilityConditions,
     };
   }
 

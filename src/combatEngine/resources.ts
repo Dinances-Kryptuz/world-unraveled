@@ -27,6 +27,20 @@ function manaMax(level: number, intStat: number): number {
   return Math.round(50 + level * 10 + intStat * 2);
 }
 
+// Which resource types a class's combatant ever has, in the same order
+// initialResources() creates them — used by the Combat Setup screen to only
+// offer resource conditions ("if my Mana is below...") that actually apply.
+export function resourcesForClass(cls: ClassId): ResourceType[] {
+  switch (cls) {
+    case 'warrior':
+      return ['rage'];
+    case 'priest':
+      return ['mana'];
+    case 'paladin':
+      return ['mana', 'holyPower'];
+  }
+}
+
 // Rage decays out of combat and doesn't passively regenerate in combat —
 // omitted here on purpose since nothing spends Rage yet in Phase 1. Mana
 // regenerates a small percentage of its max every second, in or out of

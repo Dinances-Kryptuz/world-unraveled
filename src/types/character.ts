@@ -1,6 +1,7 @@
 import type { EquipmentSlot, ProfessionId, ActivityType, ProfessionTierName } from '../gameData/types';
 import type { ClassId, SpecId } from '../gameData/classStats';
 import type { TalentPicks } from '../gameData/talents';
+import type { ConditionGroup } from '../combatEngine/types';
 
 export interface ProfessionState {
   level: number;
@@ -37,6 +38,10 @@ export interface Character {
   // valid, expected state (no choice made yet) and falls back to a
   // recommended default rather than an empty combat bar.
   equippedAbilityIds: string[];
+  // Per-ability condition groups, keyed by ability id — see
+  // combatEngine/conditions.ts. An ability with no entry here has no
+  // conditions and is always usable, same as before this field existed.
+  abilityConditions: Record<string, ConditionGroup>;
 }
 
 export interface Inventory {
