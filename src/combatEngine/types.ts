@@ -154,6 +154,13 @@ export interface ConditionGroup {
   conditions: Condition[];
 }
 
+// Lets the UI color-code the log (WoW-style: your damage in the default
+// color, damage taken in red, healing in green, misses greyed out, deaths
+// bolded) without re-parsing message text — engine.ts sets this at the
+// point it already knows what happened, which is the only place that does.
+export type CombatEventKind = 'damage_out' | 'damage_in' | 'heal' | 'miss' | 'death' | 'status';
+
 export interface CombatEvent {
   message: string;
+  kind: CombatEventKind;
 }

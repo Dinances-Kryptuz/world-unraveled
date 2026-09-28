@@ -10,38 +10,16 @@ import { GatheringScreen } from './GatheringScreen';
 import { CraftingScreen } from './CraftingScreen';
 import { WelcomeBackScreen, isLongAbsence } from './WelcomeBackScreen';
 import { SpecSelectionScreen } from './SpecSelectionScreen';
-import { mobColorTier, type MobColorTier } from '../gameData/combatFormulas';
 import { craftingColorTier } from '../gameData/activityEngine';
 import { professionXpForLevel } from '../gameData/xpTables';
 import { XpBar } from './XpBar';
 import { MonsterLootPanel } from './MonsterLootPanel';
+import { MonsterLevelBadge, TIER_COLORS } from './MonsterLevelBadge';
 import { ITEMS } from '../gameData/items';
 import type { ProfessionId, Recipe, Zone } from '../gameData/types';
 
 function isZoneUnlocked(zone: Zone, characterLevel: number): boolean {
   return zone.unlockRequirement.type === 'none' || characterLevel >= zone.unlockRequirement.level;
-}
-
-// Shared by the monster level badge and the crafting recipe color-tier text —
-// both use the same classic-WoW grey/green/yellow/orange/red palette.
-const TIER_COLORS: Record<MobColorTier, string> = {
-  grey: '#8c8c8c',
-  green: '#2e9e4f',
-  yellow: '#b8960c',
-  orange: '#d2691e',
-  red: '#c0392b',
-  unknown: '#7d2ae8',
-};
-
-function MonsterLevelBadge({ monsterLevel, playerLevel }: { monsterLevel: number; playerLevel: number }) {
-  const diff = monsterLevel - playerLevel;
-  const tier = mobColorTier(diff);
-  const label = tier === 'unknown' ? '??' : `Lv ${monsterLevel}`;
-  return (
-    <span style={{ color: TIER_COLORS[tier], fontWeight: 700 }} title={`${tier} — ${diff >= 0 ? '+' : ''}${diff} levels vs you`}>
-      {label}
-    </span>
-  );
 }
 
 export function ZoneScreen({

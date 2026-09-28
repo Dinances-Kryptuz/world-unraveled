@@ -5,7 +5,7 @@ import { applyCombatResult, setCharacterLevel, stopActivity, getCharacter } from
 import { MONSTERS } from '../gameData/monsters';
 import { resolveSpecDef, getExtraDamageTakenPct } from '../gameData/combatProfileWithTalents';
 import { evaluateTalents, EMPTY_TALENT_TOTALS } from '../utils/talentEvaluator';
-import { maxHp, resolveCurrentHp } from '../gameData/combatFormulas';
+import { maxHp, resolveCurrentHp, ATTACK_INTERVAL_SECONDS } from '../gameData/combatFormulas';
 import { getEquipmentStatBonuses } from '../gameData/equipmentStats';
 import { characterXpForLevelV2 } from '../gameData/xpTables';
 import {
@@ -17,12 +17,64 @@ import {
   type KillReward,
   type TickContext,
 } from '../combatEngine/engine';
-import type { CombatState } from '../combatEngine/types';
+import type { CombatState, CombatEvent, CombatEventKind, Combatant } from '../combatEngine/types';
 import type { Character } from '../types/character';
 import type { User } from 'firebase/auth';
+import { TickBar } from './TickBar';
+import { StatBar, hpBarColor } from './StatBar';
+import { MonsterLevelBadge } from './MonsterLevelBadge';
 
 const AUTOSAVE_INTERVAL_SECONDS = 10;
 const MAX_LOG_LINES = 30;
+
+const RESOURCE_LABELS: Record<string, string> = { rage: 'Rage', mana: 'Mana', holyPower: 'Holy Power' };
+const RESOURCE_COLORS: Record<string, string> = { rage: '#a3312a', mana: '#2d6ca3', holyPower: '#b8960c' };
+
+const LOG_COLORS: Record<CombatEventKind, string> = {
+  damage_out: '#2a2420',
+  damage_in: '#c0392b',
+  heal: '#2e9e4f',
+  miss: '#8c8c8c',
+  death: '#b8960c',
+  status: '#5c4a8a',
+};
+
+// Buffs/dots/stuns as small badges under a combatant's HP bar, so their
+// status is visible at a glance instead of only inferable from the log.
+function StatusBadges({ combatant }: { combatant: Combatant }) {
+  const badges: { key: string; label: string; harmful: boolean }[] = [];
+  for (const buff of combatant.buffs) {
+    const harmful = buff.damageDealtPct < 0 || buff.damageTakenPct > 0;
+    const name = ABILITIES[buff.abilityId]?.name ?? buff.abilityId;
+    badges.push({ key: `buff-${buff.abilityId}`, label: `${name} (${Math.ceil(buff.remainingSeconds)}s)`, harmful });
+  }
+  for (const dot of combatant.dots) {
+    const name = ABILITIES[dot.abilityId]?.name ?? dot.abilityId;
+    badges.push({ key: `dot-${dot.abilityId}`, label: `${name} (${Math.ceil(dot.remainingSeconds)}s)`, harmful: true });
+  }
+  if (combatant.stunnedSeconds > 0) {
+    badges.push({ key: 'stun', label: `Stunned (${Math.ceil(combatant.stunnedSeconds)}s)`, harmful: true });
+  }
+  if (badges.length === 0) return null;
+  return (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 6 }}>
+      {badges.map((b) => (
+        <span
+          key={b.key}
+          style={{
+            fontSize: '0.75rem',
+            padding: '2px 6px',
+            borderRadius: 4,
+            background: b.harmful ? '#f4d9d6' : '#d9f0df',
+            color: b.harmful ? '#a3312a' : '#1f7a3d',
+          }}
+        >
+          {b.label}
+        </span>
+      ))}
+    </div>
+  );
+}
 
 interface SessionTotals {
   monstersDefeated: number;
@@ -44,7 +96,7 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
   const secondsSinceSaveRef = useRef(0);
 
   const [bankedTotals, setBankedTotals] = useState<SessionTotals>(EMPTY_TOTALS);
-  const [log, setLog] = useState<string[]>([]);
+  const [log, setLog] = useState<CombatEvent[]>([]);
   const [retreated, setRetreated] = useState(false);
 
   const combatStateRef = useRef<CombatState | null>(null);
@@ -107,7 +159,7 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
       const result = advanceCombat(combatStateRef.current, ctx, 1);
       pendingKillsRef.current.push(...result.kills);
       if (result.events.length > 0) {
-        setLog((prev) => [...result.events.map((e) => e.message), ...prev].slice(0, MAX_LOG_LINES));
+        setLog((prev) => [...result.events, ...prev].slice(0, MAX_LOG_LINES));
       }
       if (result.playerDied) {
         retreatedRef.current = true;
@@ -208,7 +260,7 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
     if (!result) return;
     pendingKillsRef.current.push(...result.kills);
     if (result.events.length > 0) {
-      setLog((prev) => [...result.events.map((e) => e.message), ...prev].slice(0, MAX_LOG_LINES));
+      setLog((prev) => [...result.events, ...prev].slice(0, MAX_LOG_LINES));
     }
     setTick((t) => t + 1);
   }
@@ -221,34 +273,62 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
 
   return (
     <div className="combat-screen">
-      <h2>Fighting {monster.name}</h2>
+      <h2>
+        Fighting {monster.name} — <MonsterLevelBadge monsterLevel={monster.level} playerLevel={character.level} />
+      </h2>
 
       {!retreated && (
         <>
-          <p>
-            You: {Math.round(player.hp)} / {Math.round(player.maxHp)} HP
-            {Object.entries(player.resources).map(([type, pool]) =>
-              pool ? (
-                <span key={type}>
-                  {' '}
-                  — {type}: {Math.round(pool.current)} / {pool.max}
-                </span>
-              ) : null
-            )}
-          </p>
-          <p>
-            {enemy.name}: {Math.round(enemy.hp)} / {Math.round(enemy.maxHp)} HP
-          </p>
-          {player.equippedAbilityIds.map((abilityId) => {
-            const ability = ABILITIES[abilityId];
-            if (!ability) return null;
-            const cooldown = player.cooldowns[abilityId] ?? 0;
-            return (
-              <button key={abilityId} onClick={() => handleManualUse(abilityId)} disabled={cooldown > 0}>
-                {cooldown > 0 ? `${ability.name} (${Math.ceil(cooldown)}s)` : ability.name}
-              </button>
-            );
-          })}
+          <StatBar label="You" current={player.hp} max={player.maxHp} color={hpBarColor((player.hp / player.maxHp) * 100)} />
+          {Object.entries(player.resources).map(([type, pool]) =>
+            pool ? (
+              <StatBar
+                key={type}
+                label={RESOURCE_LABELS[type] ?? type}
+                current={pool.current}
+                max={pool.max}
+                color={RESOURCE_COLORS[type] ?? '#6b4f2a'}
+              />
+            ) : null
+          )}
+          <StatusBadges combatant={player} />
+
+          <StatBar label={enemy.name} current={enemy.hp} max={enemy.maxHp} color={hpBarColor((enemy.hp / enemy.maxHp) * 100)} />
+          <StatusBadges combatant={enemy} />
+
+          <TickBar seconds={ATTACK_INTERVAL_SECONDS} color="#6b4f2a" label="Attack rhythm" />
+
+          <div style={{ marginTop: 8 }}>
+            {player.equippedAbilityIds.map((abilityId) => {
+              const ability = ABILITIES[abilityId];
+              if (!ability) return null;
+              const cooldown = player.cooldowns[abilityId] ?? 0;
+              const pool = ability.resourceType ? player.resources[ability.resourceType] : undefined;
+              const affordable = !ability.resourceType || (pool !== undefined && pool.current >= (ability.resourceCost ?? 0));
+              const disabled = cooldown > 0 || !affordable;
+              const cdPct =
+                ability.cooldownSeconds > 0
+                  ? Math.max(0, Math.min(100, ((ability.cooldownSeconds - cooldown) / ability.cooldownSeconds) * 100))
+                  : 100;
+              return (
+                <div key={abilityId} style={{ display: 'inline-block', marginRight: 8, marginBottom: 8, width: 140 }}>
+                  <button
+                    onClick={() => handleManualUse(abilityId)}
+                    disabled={disabled}
+                    title={cooldown <= 0 && !affordable ? `Not enough ${RESOURCE_LABELS[ability.resourceType!] ?? ability.resourceType}` : undefined}
+                    style={{ width: '100%' }}
+                  >
+                    {cooldown > 0 ? `${ability.name} (${Math.ceil(cooldown)}s)` : ability.name}
+                  </button>
+                  {ability.cooldownSeconds > 0 && (
+                    <div style={{ background: '#e2d9c8', borderRadius: 3, height: 4, width: '100%', marginTop: 3, overflow: 'hidden' }}>
+                      <div style={{ background: '#6b4f2a', height: '100%', width: `${cdPct}%`, transition: 'width 1s linear' }} />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </>
       )}
 
@@ -266,9 +346,18 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
 
       <button onClick={handleStop}>Stop</button>
 
-      <div style={{ marginTop: 12, maxHeight: 160, overflowY: 'auto', fontSize: '0.85rem', color: '#6b6156' }}>
-        {log.map((line, i) => (
-          <div key={i}>{line}</div>
+      <div style={{ marginTop: 12, maxHeight: 160, overflowY: 'auto', fontSize: '0.85rem' }}>
+        {log.map((entry, i) => (
+          <div
+            key={i}
+            style={{
+              color: LOG_COLORS[entry.kind],
+              fontStyle: entry.kind === 'miss' ? 'italic' : 'normal',
+              fontWeight: entry.kind === 'death' ? 700 : 400,
+            }}
+          >
+            {entry.message}
+          </div>
         ))}
       </div>
     </div>

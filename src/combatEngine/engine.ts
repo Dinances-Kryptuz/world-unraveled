@@ -270,10 +270,13 @@ function tickDots(c: Combatant, deltaSeconds: number, ctx: TickContext, events: 
       dot.timeSinceLastTick -= dot.tickSeconds;
       const amount = Math.round(dot.hitPerTick);
       c.hp = Math.max(0, c.hp - amount);
-      events.push({ message: `${c.name} takes ${amount} damage from a lingering effect.` });
+      events.push({
+        message: `${c.name} takes ${amount} damage from a lingering effect.`,
+        kind: c.isPlayer ? 'damage_in' : 'damage_out',
+      });
       if (c.hp <= 0 && c.isAlive) {
         c.isAlive = false;
-        events.push({ message: `${c.name} is defeated!` });
+        events.push({ message: `${c.name} is defeated!`, kind: 'death' });
         if (!c.isPlayer) kills.push(rollKillReward(ctx.monster, ctx.monster.level - ctx.playerLevel));
       }
     }
@@ -307,7 +310,7 @@ export function useAbility(
       case 'damage': {
         const { hit, amount } = computeEffectDamage(source, target, effect.power ?? 1, levelGapAccuracy);
         if (!hit) {
-          events.push({ message: `${source.name} uses ${ability.name} on ${target.name}, but it misses.` });
+          events.push({ message: `${source.name} uses ${ability.name} on ${target.name}, but it misses.`, kind: 'miss' });
           break;
         }
         target.hp = Math.max(0, target.hp - amount);
@@ -321,10 +324,13 @@ export function useAbility(
         if (source.profile.healFrac > 0 && source.isAlive) {
           source.hp = Math.min(source.maxHp, source.hp + amount * source.profile.healFrac);
         }
-        events.push({ message: `${source.name} uses ${ability.name} on ${target.name} for ${amount} damage.` });
+        events.push({
+          message: `${source.name} uses ${ability.name} on ${target.name} for ${amount} damage.`,
+          kind: target.isPlayer ? 'damage_in' : 'damage_out',
+        });
         if (target.hp <= 0 && target.isAlive) {
           target.isAlive = false;
-          events.push({ message: `${target.name} is defeated!` });
+          events.push({ message: `${target.name} is defeated!`, kind: 'death' });
           if (!target.isPlayer) kills.push(rollKillReward(ctx.monster, levelDiff));
         }
         break;
@@ -341,7 +347,7 @@ export function useAbility(
           // needing to re-evaluate the source's buffs on every future tick.
           hitPerTick: source.profile.normalizedHit * (effect.power ?? 0.3) * source.profile.damageCoef * buffDamageDealtMult(source),
         });
-        events.push({ message: `${source.name} afflicts ${target.name} with ${ability.name}.` });
+        events.push({ message: `${source.name} afflicts ${target.name} with ${ability.name}.`, kind: 'status' });
         break;
       }
       case 'resourceGain':
@@ -356,7 +362,7 @@ export function useAbility(
           source.profile.normalizedHit * (effect.power ?? 1) * source.profile.damageCoef * buffDamageDealtMult(source)
         );
         target.hp = Math.min(target.maxHp, target.hp + healAmount);
-        events.push({ message: `${source.name} uses ${ability.name} on ${target.name}, healing for ${healAmount}.` });
+        events.push({ message: `${source.name} uses ${ability.name} on ${target.name}, healing for ${healAmount}.`, kind: 'heal' });
         break;
       }
       case 'buff': {
@@ -367,17 +373,17 @@ export function useAbility(
           damageTakenPct: effect.damageTakenPct ?? 0,
         });
         const verb = (effect.damageDealtPct ?? 0) < 0 || (effect.damageTakenPct ?? 0) < 0 ? 'afflicts' : 'buffs';
-        events.push({ message: `${source.name} ${verb} ${target.name} with ${ability.name}.` });
+        events.push({ message: `${source.name} ${verb} ${target.name} with ${ability.name}.`, kind: 'status' });
         break;
       }
       case 'stun': {
         target.stunnedSeconds = Math.max(target.stunnedSeconds, effect.durationSeconds ?? 0);
-        events.push({ message: `${source.name} stuns ${target.name} with ${ability.name}.` });
+        events.push({ message: `${source.name} stuns ${target.name} with ${ability.name}.`, kind: 'status' });
         break;
       }
       case 'dispel': {
         target.dots = [];
-        events.push({ message: `${source.name} uses ${ability.name} on ${target.name}.` });
+        events.push({ message: `${source.name} uses ${ability.name} on ${target.name}.`, kind: 'status' });
         break;
       }
     }
