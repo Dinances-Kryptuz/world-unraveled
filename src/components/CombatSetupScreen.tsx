@@ -1,11 +1,18 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useCharacter } from '../hooks/useCharacter';
-import { saveCombatSetup } from '../firebase/character';
-import { maxEquippedSlots, unlockedAbilities, effectiveLoadout, basicAttackFor } from '../combatEngine/progression';
+import { saveCombatSetup, saveCombatPreset, activateCombatPreset, deleteCombatPreset } from '../firebase/character';
+import {
+  maxEquippedSlots,
+  unlockedAbilities,
+  effectiveLoadout,
+  basicAttackFor,
+  MAX_COMBAT_PRESETS,
+} from '../combatEngine/progression';
 import { resourcesForClass } from '../combatEngine/resources';
 import type { ClassId } from '../gameData/classStats';
 import type { Ability, Condition, ConditionGroup, ConditionType, ResourceType } from '../combatEngine/types';
+import type { CombatPreset } from '../types/character';
 
 const RESOURCE_LABELS: Record<ResourceType, string> = {
   rage: 'Rage',
@@ -127,6 +134,9 @@ export function CombatSetupScreen() {
   const [pending, setPending] = useState<string[]>([]);
   const [pendingConditions, setPendingConditions] = useState<Record<string, ConditionGroup>>({});
   const [saving, setSaving] = useState(false);
+  const [presetName, setPresetName] = useState('');
+  const [presetBusyId, setPresetBusyId] = useState<string | null>(null);
+  const [presetError, setPresetError] = useState<string | null>(null);
 
   const level = character?.level ?? 1;
   const cls = character?.class;
@@ -230,6 +240,57 @@ export function CombatSetupScreen() {
     }
   }
 
+  // Compares against the EFFECTIVE saved loadout (savedLoadout/savedConditions,
+  // computed below from effectiveLoadout()), not the raw character fields —
+  // a character who's never explicitly saved has an empty equippedAbilityIds
+  // in storage while still fighting with the recommended default, and a
+  // preset that happens to match that default should still show as active.
+  function isPresetActive(preset: CombatPreset): boolean {
+    return (
+      JSON.stringify(preset.equippedAbilityIds) === JSON.stringify(savedLoadout) &&
+      JSON.stringify(preset.abilityConditions) === JSON.stringify(savedConditions)
+    );
+  }
+
+  async function handleSaveAsPreset() {
+    if (!user) return;
+    setPresetBusyId('__saving__');
+    setPresetError(null);
+    try {
+      const result = await saveCombatPreset(user.uid, presetName);
+      if (!result.success) {
+        setPresetError(result.reason ?? 'Could not save preset.');
+        return;
+      }
+      setPresetName('');
+      await refetch();
+    } finally {
+      setPresetBusyId(null);
+    }
+  }
+
+  async function handleActivatePreset(presetId: string) {
+    if (!user) return;
+    setPresetBusyId(presetId);
+    try {
+      await activateCombatPreset(user.uid, presetId);
+      await refetch();
+    } finally {
+      setPresetBusyId(null);
+    }
+  }
+
+  async function handleDeletePreset(presetId: string) {
+    if (!user) return;
+    setPresetBusyId(presetId);
+    try {
+      await deleteCombatPreset(user.uid, presetId);
+      await refetch();
+    } finally {
+      setPresetBusyId(null);
+    }
+  }
+
   if (level < 10) {
     return (
       <div className="combat-setup-screen">
@@ -325,6 +386,59 @@ export function CombatSetupScreen() {
       <button onClick={handleSave} disabled={saving || !dirty}>
         {saving ? 'Saving…' : 'Save'}
       </button>
+
+      <h3>Presets</h3>
+      <p>Save your current (saved) loadout under a name to switch back to it with one click later.</p>
+      {character.combatPresets.length === 0 ? (
+        <p>No saved presets yet.</p>
+      ) : (
+        <ul style={{ listStyle: 'none', paddingLeft: 0 }}>
+          {character.combatPresets.map((preset) => {
+            const active = isPresetActive(preset);
+            return (
+              <li key={preset.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>
+                  <strong>{preset.name}</strong>
+                  {active ? ' — active' : ''}
+                </span>
+                <div>
+                  <button onClick={() => handleActivatePreset(preset.id)} disabled={active || presetBusyId !== null}>
+                    {presetBusyId === preset.id ? 'Activating…' : 'Activate'}
+                  </button>
+                  <button onClick={() => handleDeletePreset(preset.id)} disabled={presetBusyId !== null}>
+                    Delete
+                  </button>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+        <input
+          type="text"
+          placeholder="Preset name"
+          value={presetName}
+          onChange={(e) => setPresetName(e.target.value)}
+          maxLength={24}
+        />
+        <button
+          onClick={handleSaveAsPreset}
+          disabled={
+            dirty ||
+            presetBusyId !== null ||
+            presetName.trim().length === 0 ||
+            character.combatPresets.length >= MAX_COMBAT_PRESETS
+          }
+        >
+          Save current as preset
+        </button>
+      </div>
+      {dirty && <small style={{ color: '#6b6156' }}>Save your changes above first — presets snapshot your saved loadout.</small>}
+      {character.combatPresets.length >= MAX_COMBAT_PRESETS && (
+        <small style={{ color: '#6b6156' }}>You've saved the maximum of {MAX_COMBAT_PRESETS} presets — delete one to save another.</small>
+      )}
+      {presetError && <p className="error">{presetError}</p>}
     </div>
   );
 }

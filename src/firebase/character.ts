@@ -1,6 +1,6 @@
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp, Timestamp, increment } from 'firebase/firestore';
 import { db } from './config';
-import type { Character } from '../types/character';
+import type { Character, CombatPreset } from '../types/character';
 import type { ProfessionId, EquipmentSlot } from '../gameData/types';
 import type { ClassId, SpecId } from '../gameData/classStats';
 import type { TalentColumn } from '../gameData/talents';
@@ -8,7 +8,7 @@ import { professionXpForLevel } from '../gameData/xpTables';
 import { maxHp } from '../gameData/combatFormulas';
 import { canClassEquip } from '../gameData/classStats';
 import { ITEMS } from '../gameData/items';
-import { maxEquippedSlots, unlockedAbilities } from '../combatEngine/progression';
+import { maxEquippedSlots, unlockedAbilities, effectiveLoadout, MAX_COMBAT_PRESETS } from '../combatEngine/progression';
 import type { Condition, ConditionGroup, ConditionType, ResourceType } from '../combatEngine/types';
 
 const STARTING_GATHERING_PROFESSIONS: ProfessionId[] = ['skinning', 'mining', 'herbalism'];
@@ -38,6 +38,8 @@ export async function getCharacter(uid: string): Promise<Character | null> {
     equippedAbilityIds: data.equippedAbilityIds ?? [],
     // Same backfill idea again, for the Phase 3 conditions system.
     abilityConditions: data.abilityConditions ?? {},
+    // Same backfill idea again, for the Phase 7 presets system.
+    combatPresets: data.combatPresets ?? [],
     createdAt: (data.createdAt as Timestamp)?.toDate() ?? new Date(),
     hpCheckpointAt: (data.hpCheckpointAt as Timestamp)?.toDate() ?? new Date(),
     currentActivity: {
@@ -78,6 +80,7 @@ export async function createCharacter(uid: string, name: string, characterClass:
     currentActivity: { type: null, targetId: null, zoneId: null, startedAt: null },
     equippedAbilityIds: [],
     abilityConditions: {},
+    combatPresets: [],
   };
 
   await setDoc(doc(db, 'characters', uid), character);
@@ -320,6 +323,72 @@ export async function saveCombatSetup(
   }
 
   await updateDoc(doc(db, 'characters', uid), { equippedAbilityIds: validatedIds, abilityConditions });
+}
+
+function generatePresetId(): string {
+  return `preset_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+// Snapshots the character's CURRENTLY ACTIVE loadout/conditions (i.e.
+// whatever the last successful saveCombatSetup() call wrote) into a new
+// named preset. Deliberately doesn't accept a loadout from the caller —
+// the active config already passed saveCombatSetup's validation, so
+// there's nothing left to sanitize, and a preset can never end up holding
+// an ability the character never actually had equipped.
+export async function saveCombatPreset(uid: string, name: string): Promise<{ success: boolean; reason?: string }> {
+  const character = await getCharacter(uid);
+  if (!character) return { success: false, reason: 'Character not found.' };
+
+  const trimmedName = name.trim().slice(0, 24);
+  if (trimmedName.length === 0) return { success: false, reason: 'Give the preset a name.' };
+  if (character.combatPresets.length >= MAX_COMBAT_PRESETS) {
+    return { success: false, reason: `You can only save ${MAX_COMBAT_PRESETS} presets — delete one first.` };
+  }
+
+  // A character who's never opened Combat Setup can have an empty
+  // equippedAbilityIds in storage while still fighting with
+  // effectiveLoadout()'s recommended default (see progression.ts) — that
+  // default, not the possibly-empty raw field, is what's actually "active"
+  // from the player's point of view, so it's what a preset should capture.
+  const activeAbilityIds = effectiveLoadout(character.class, character.spec, character.level, character.equippedAbilityIds);
+  const activeConditions: Record<string, ConditionGroup> = {};
+  for (const id of activeAbilityIds) {
+    if (character.abilityConditions[id]) activeConditions[id] = character.abilityConditions[id];
+  }
+
+  const preset: CombatPreset = {
+    id: generatePresetId(),
+    name: trimmedName,
+    equippedAbilityIds: activeAbilityIds,
+    abilityConditions: activeConditions,
+  };
+
+  await updateDoc(doc(db, 'characters', uid), {
+    combatPresets: [...character.combatPresets, preset],
+  });
+  return { success: true };
+}
+
+export async function deleteCombatPreset(uid: string, presetId: string): Promise<void> {
+  const character = await getCharacter(uid);
+  if (!character) return;
+  await updateDoc(doc(db, 'characters', uid), {
+    combatPresets: character.combatPresets.filter((p) => p.id !== presetId),
+  });
+}
+
+// Makes a saved preset the active loadout. Routed through saveCombatSetup
+// rather than writing equippedAbilityIds/abilityConditions directly — a
+// preset saved at a lower level or a different spec might reference
+// abilities the character can no longer (or couldn't yet) use, and
+// saveCombatSetup already knows how to filter that down safely.
+export async function activateCombatPreset(uid: string, presetId: string): Promise<{ success: boolean; reason?: string }> {
+  const character = await getCharacter(uid);
+  if (!character) return { success: false, reason: 'Character not found.' };
+  const preset = character.combatPresets.find((p) => p.id === presetId);
+  if (!preset) return { success: false, reason: 'Preset not found.' };
+  await saveCombatSetup(uid, preset.equippedAbilityIds, preset.abilityConditions);
+  return { success: true };
 }
 
 export async function pickTalent(uid: string, rowLevel: number, column: TalentColumn): Promise<void> {

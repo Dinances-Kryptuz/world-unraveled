@@ -45,7 +45,8 @@ service cloud.firestore {
       && isValidNewProfessions(data.professions)
       && data.currentActivity.type == null
       && data.equippedAbilityIds == []
-      && data.abilityConditions == {};
+      && data.abilityConditions == {}
+      && data.combatPresets == [];
   }
 
   function isValidCharacterUpdate(before, after) {
@@ -60,7 +61,8 @@ service cloud.firestore {
       && professionsNeverDecrease(before.professions, after.professions)
       && isValidActivity(after.currentActivity)
       && isValidEquippedAbilityIds(after)
-      && isValidAbilityConditions(after);
+      && isValidAbilityConditions(after)
+      && isValidCombatPresets(after);
   }
 
   // Same "may not exist yet on an old character" treatment as Smithing/
@@ -83,6 +85,17 @@ service cloud.firestore {
   function isValidAbilityConditions(after) {
     return !('abilityConditions' in after)
       || (after.abilityConditions is map && after.abilityConditions.size() <= 5);
+  }
+
+  // Same "may not exist yet on an old character" treatment and the same
+  // ownership-scoped posture as isValidEquippedAbilityIds/
+  // isValidAbilityConditions above — full validation of each preset's shape
+  // happens in firebase/character.ts's saveCombatPreset (the only path that
+  // ever adds an entry), so this just bounds how many can exist. Keep this
+  // 3 in sync with combatEngine/progression.ts's MAX_COMBAT_PRESETS.
+  function isValidCombatPresets(after) {
+    return !('combatPresets' in after)
+      || (after.combatPresets is list && after.combatPresets.size() <= 3);
   }
 
   function isValidEquipment(e) {

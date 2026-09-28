@@ -6,6 +6,13 @@ import type { ClassId, SpecId } from '../gameData/classStats';
 import { ABILITIES, BASIC_ATTACK_BY_CLASS } from './abilities';
 import type { Ability } from './types';
 
+// A saved-preset slot count, not an ability-roster limit — with only 5
+// abilities per class right now, 3 named presets ("Grinding", "Boss",
+// whatever the player calls them) is plenty of room to matter without
+// needing a scrolling list. Raise this later if the roster grows enough to
+// justify more.
+export const MAX_COMBAT_PRESETS = 3;
+
 export function maxEquippedSlots(level: number): number {
   if (level < 10) return 1;
   if (level < 20) return 2;
