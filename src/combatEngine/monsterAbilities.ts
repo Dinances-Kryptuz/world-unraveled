@@ -74,4 +74,38 @@ export const MONSTER_ABILITIES: Record<string, Ability> = {
     targetType: 'CURRENT_ENEMY',
     effects: [{ type: 'damage', power: 1.5 }],
   },
+
+  kaldrun_warcry: {
+    id: 'kaldrun_warcry',
+    name: "Forgemaster's Warcry",
+    class: 'warrior',
+    unlockLevel: 1,
+    description: 'Stokes the forge fire within, increasing Kaldrun’s own damage dealt for a short time.',
+    cooldownSeconds: 32,
+    targetType: 'SELF',
+    effects: [{ type: 'buff', damageDealtPct: 30, durationSeconds: 8 }],
+  },
+  kaldrun_hammerfall: {
+    id: 'kaldrun_hammerfall',
+    name: 'Hammerfall',
+    class: 'warrior',
+    unlockLevel: 1,
+    description: 'A crushing overhead hammer strike that stuns.',
+    cooldownSeconds: 18,
+    targetType: 'CURRENT_ENEMY',
+    effects: [
+      { type: 'damage', power: 1.3 },
+      { type: 'stun', durationSeconds: 3 },
+    ],
+  },
+  kaldrun_cinderlash: {
+    id: 'kaldrun_cinderlash',
+    name: 'Cinderlash',
+    class: 'warrior',
+    unlockLevel: 1,
+    description: 'A whip of molten cinders that leaves a smoldering wound.',
+    cooldownSeconds: 12,
+    targetType: 'CURRENT_ENEMY',
+    effects: [{ type: 'dot', power: 0.4, durationSeconds: 12, tickSeconds: 3 }],
+  },
 };

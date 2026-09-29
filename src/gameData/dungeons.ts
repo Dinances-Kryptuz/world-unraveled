@@ -23,4 +23,13 @@ export const DUNGEONS: Record<string, Dungeon> = {
     levelRange: [16, 24],
     stages: ['craggy_goat', 'rubble_crawler', 'highland_bandit', 'alpha_warlord'],
   },
+  sundered_forge: {
+    id: 'sundered_forge',
+    name: 'The Sundered Forge',
+    description:
+      'An old dwarven forge cracked open by the mountain’s fire, now claimed by a self-styled Forgemaster and the brutes who serve him.',
+    zoneId: 'emberfall_ridge',
+    levelRange: [36, 40],
+    stages: ['molten_crawler', 'ridgeback_marauder', 'scorched_drake', 'forgemaster_kaldrun'],
+  },
 };

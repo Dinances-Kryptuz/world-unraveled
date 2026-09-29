@@ -186,6 +186,107 @@ export const MONSTERS: Record<string, Monster> = {
     },
   },
 
+  // ── Emberfall Ridge ──────────────────────────────────────────────────
+  cinder_wolf: {
+    id: 'cinder_wolf',
+    name: 'Cinder Wolf',
+    zoneIds: ['emberfall_ridge'],
+    levelRange: [25, 29],
+    level: 27,
+    goldMin: 11,
+    goldMax: 20,
+    lootTable: [
+      { itemId: 'scaled_hide', chance: 0.5, minQty: 1, maxQty: 2 },
+      { itemId: 'raw_meat', chance: 0.4, minQty: 1, maxQty: 2 },
+      { itemId: 'ember_shard', chance: 0.05, minQty: 1, maxQty: 1 },
+    ],
+    specialAbility: {
+      name: 'Ember Bite',
+      description: 'A searing bite that leaves the wound smoldering.',
+      implemented: false,
+    },
+  },
+
+  ashwing_bat: {
+    id: 'ashwing_bat',
+    name: 'Ashwing Bat',
+    zoneIds: ['emberfall_ridge'],
+    levelRange: [27, 32],
+    level: 30,
+    goldMin: 12,
+    goldMax: 22,
+    lootTable: [
+      { itemId: 'sunpetal', chance: 0.4, minQty: 1, maxQty: 2 },
+      { itemId: 'stone_shard', chance: 0.2, minQty: 1, maxQty: 1 },
+      { itemId: 'obsidian_shard', chance: 0.06, minQty: 1, maxQty: 1 },
+    ],
+    specialAbility: {
+      name: 'Sonic Screech',
+      description: 'A disorienting shriek that briefly lowers player accuracy.',
+      implemented: false,
+    },
+  },
+
+  molten_crawler: {
+    id: 'molten_crawler',
+    name: 'Molten Crawler',
+    zoneIds: ['emberfall_ridge'],
+    levelRange: [30, 34],
+    level: 33,
+    goldMin: 14,
+    goldMax: 26,
+    lootTable: [
+      { itemId: 'iron_ore', chance: 0.45, minQty: 1, maxQty: 2 },
+      { itemId: 'stone_shard', chance: 0.3, minQty: 1, maxQty: 2 },
+      { itemId: 'obsidian_shard', chance: 0.08, minQty: 1, maxQty: 1 },
+    ],
+    specialAbility: {
+      name: 'Magma Spray',
+      description: 'Hurls molten rock for a burst of extra damage.',
+      implemented: false,
+    },
+  },
+
+  ridgeback_marauder: {
+    id: 'ridgeback_marauder',
+    name: 'Ridgeback Marauder',
+    zoneIds: ['emberfall_ridge'],
+    levelRange: [32, 37],
+    level: 35,
+    goldMin: 18,
+    goldMax: 32,
+    lootTable: [
+      { itemId: 'heavy_cloth', chance: 0.45, minQty: 1, maxQty: 2 },
+      { itemId: 'iron_ore', chance: 0.2, minQty: 1, maxQty: 1 },
+      { itemId: 'serrated_cleaver', chance: 0.06, minQty: 1, maxQty: 1 },
+    ],
+    specialAbility: {
+      name: 'Brutal Slash',
+      description: 'A chance for a large burst of extra damage.',
+      implemented: false,
+    },
+  },
+
+  scorched_drake: {
+    id: 'scorched_drake',
+    name: 'Scorched Drake',
+    zoneIds: ['emberfall_ridge'],
+    levelRange: [36, 40],
+    level: 39,
+    goldMin: 22,
+    goldMax: 38,
+    lootTable: [
+      { itemId: 'scaled_hide', chance: 0.3, minQty: 2, maxQty: 3 },
+      { itemId: 'ember_shard', chance: 0.15, minQty: 1, maxQty: 1 },
+      { itemId: 'drakes_ember_eye', chance: 0.05, minQty: 1, maxQty: 1 },
+    ],
+    specialAbility: {
+      name: 'Flame Breath',
+      description: 'A blast of fire that hits harder the longer the fight goes on.',
+      implemented: false,
+    },
+  },
+
   // ── Dungeon bosses (Phase 8) — real ability rotations via
   // combatEngine/monsterAbilities.ts instead of auto-attack only. ───────
   kobold_chieftain: {
@@ -227,6 +328,27 @@ export const MONSTERS: Record<string, Monster> = {
     specialAbility: {
       name: 'Warlord of the Depths',
       description: 'A savage pack leader with a real ability rotation — rend, a leaping strike, and a self-buffing howl.',
+      implemented: false,
+    },
+  },
+  forgemaster_kaldrun: {
+    id: 'forgemaster_kaldrun',
+    name: 'Forgemaster Kaldrun',
+    zoneIds: ['emberfall_ridge'],
+    levelRange: [40, 40],
+    level: 40,
+    goldMin: 30,
+    goldMax: 48,
+    isBoss: true,
+    equippedAbilityIds: ['kaldrun_warcry', 'kaldrun_hammerfall', 'kaldrun_cinderlash'],
+    lootTable: [
+      { itemId: 'heavy_cloth', chance: 0.5, minQty: 2, maxQty: 3 },
+      { itemId: 'ember_shard', chance: 0.35, minQty: 1, maxQty: 2 },
+      { itemId: 'kaldrun_warhammer', chance: 0.15, minQty: 1, maxQty: 1 },
+    ],
+    specialAbility: {
+      name: 'Master of the Sundered Forge',
+      description: 'A self-styled forgemaster with a real ability rotation — a crushing hammer strike, a smoldering cinder wound, and a self-buffing warcry.',
       implemented: false,
     },
   },

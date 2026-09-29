@@ -440,4 +440,120 @@ export const ITEMS: Record<string, ItemDef> = {
     stackable: true, sellValue: 4,
     consumableEffect: { healAmount: 70, cooldownSeconds: 20 },
   },
+  sunpetal_elixir: {
+    id: 'sunpetal_elixir', name: 'Sunpetal Elixir', type: 'consumable',
+    description: 'A potent brew of Emberfall sunpetal. Restores 110 health. Usable anywhere, once every 25 seconds.',
+    stackable: true, sellValue: 6,
+    consumableEffect: { healAmount: 110, cooldownSeconds: 25 },
+  },
+
+  // ── Emberfall Ridge materials ─────────────────────────────────────────
+  iron_ore: {
+    id: 'iron_ore',
+    name: 'Iron Ore',
+    type: 'material',
+    description: 'Raw ore mined from an Iron Vein, heavier and harder than tin.',
+    stackable: true,
+    sellValue: 3,
+  },
+  sunpetal: {
+    id: 'sunpetal',
+    name: 'Sunpetal',
+    type: 'material',
+    description: 'A bright, heat-loving flower that only grows near open flame.',
+    stackable: true,
+    sellValue: 2,
+  },
+  scaled_hide: {
+    id: 'scaled_hide',
+    name: 'Scaled Hide',
+    type: 'material',
+    description: "Tough, fire-hardened hide shed by the ridge's wolves.",
+    stackable: true,
+    sellValue: 3,
+  },
+  iron_bar: {
+    id: 'iron_bar',
+    name: 'Iron Bar',
+    type: 'material',
+    description: 'Iron ore smelted into a dense, workable bar.',
+    stackable: true,
+    sellValue: 7,
+  },
+  scaled_leather: {
+    id: 'scaled_leather',
+    name: 'Scaled Leather',
+    type: 'material',
+    description: 'Several scaled hides worked into leather tough enough to shrug off embers.',
+    stackable: true,
+    sellValue: 4,
+  },
+  heavy_cloth: {
+    id: 'heavy_cloth',
+    name: 'Heavy Cloth',
+    type: 'material',
+    description: 'Densely woven cloth, thick enough to blunt a blade.',
+    stackable: true,
+    sellValue: 4,
+  },
+  ember_shard: {
+    id: 'ember_shard',
+    name: 'Ember Shard',
+    type: 'material',
+    description: 'A shard of stone still warm to the touch, prized by craftsmen.',
+    stackable: true,
+    sellValue: 15,
+  },
+  obsidian_shard: {
+    id: 'obsidian_shard',
+    name: 'Obsidian Shard',
+    type: 'material',
+    description: 'A jagged black glass fragment, cooled from molten rock.',
+    stackable: true,
+    sellValue: 18,
+  },
+
+  // ── Emberfall Ridge equipment ─────────────────────────────────────────
+  iron_chestguard: {
+    id: 'iron_chestguard', name: 'Iron Chestguard', type: 'equipment',
+    description: 'A heavy plate chestpiece hammered from iron bars.',
+    stackable: true, equipSlot: 'chest', armorType: 'plate', statBonuses: { STA: 8 }, sellValue: 32,
+  },
+  iron_greatsword: {
+    id: 'iron_greatsword', name: 'Iron Greatsword', type: 'equipment',
+    description: 'A hefty forged blade, a clear step up from bronze.',
+    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 10 }, sellValue: 40,
+  },
+  scaled_leggings: {
+    id: 'scaled_leggings', name: 'Scaled Leggings', type: 'equipment',
+    description: 'Leggings worked from fire-hardened scaled leather.',
+    stackable: true, equipSlot: 'legs', armorType: 'leather', statBonuses: { STA: 7, STR: 4 }, sellValue: 34,
+  },
+  drakescale_boots: {
+    id: 'drakescale_boots', name: 'Drakescale Boots', type: 'equipment',
+    description: 'Boots reinforced with an ember shard — warm to the touch, and nearly as tough as a drake.',
+    stackable: true, equipSlot: 'boots', armorType: 'leather', statBonuses: { STA: 6, STR: 6 }, sellValue: 42,
+  },
+  heavy_robe: {
+    id: 'heavy_robe', name: 'Heavy Robe', type: 'equipment',
+    description: 'A dense robe woven from heavy cloth, built to survive the ridge as much as the fight.',
+    stackable: true, equipSlot: 'chest', armorType: 'cloth', statBonuses: { INT: 6, SPI: 4 }, sellValue: 30,
+  },
+  serrated_cleaver: {
+    id: 'serrated_cleaver', name: 'Serrated Cleaver', type: 'equipment',
+    description: "A brutal, notch-edged blade favored by the ridge's marauders.",
+    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 8 }, sellValue: 35,
+  },
+  drakes_ember_eye: {
+    id: 'drakes_ember_eye', name: "Drake's Ember Eye", type: 'equipment',
+    description: 'A polished ring set with a still-smoldering ember, taken from a scorched drake.',
+    stackable: true, equipSlot: 'ring', statBonuses: { INT: 7 }, sellValue: 44,
+  },
+
+  // ── Sundered Forge dungeon boss drop ─────────────────────────────────
+  kaldrun_warhammer: {
+    id: 'kaldrun_warhammer', name: "Kaldrun's Warhammer", type: 'equipment',
+    description: "The Forgemaster's own warhammer — heavier and better balanced than anything else on the ridge.",
+    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 12, STA: 3 }, sellValue: 70,
+  },
 };

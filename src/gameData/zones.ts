@@ -64,6 +64,37 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     xpPerAction: 9,
     secondsPerAction: 9,
   },
+
+  emberfall_iron_vein: {
+    id: 'emberfall_iron_vein',
+    name: 'Iron Vein',
+    profession: 'mining',
+    zoneId: 'emberfall_ridge',
+    requiredLevel: 25,
+    itemId: 'iron_ore',
+    xpPerAction: 13,
+    secondsPerAction: 10,
+  },
+  emberfall_sunpetal_patch: {
+    id: 'emberfall_sunpetal_patch',
+    name: 'Sunpetal Patch',
+    profession: 'herbalism',
+    zoneId: 'emberfall_ridge',
+    requiredLevel: 25,
+    itemId: 'sunpetal',
+    xpPerAction: 13,
+    secondsPerAction: 10,
+  },
+  emberfall_ashfang_den: {
+    id: 'emberfall_ashfang_den',
+    name: 'Ashfang Den',
+    profession: 'skinning',
+    zoneId: 'emberfall_ridge',
+    requiredLevel: 25,
+    itemId: 'scaled_hide',
+    xpPerAction: 13,
+    secondsPerAction: 10,
+  },
 };
 
 export const ZONES: Record<string, Zone> = {
@@ -87,5 +118,16 @@ export const ZONES: Record<string, Zone> = {
     unlockRequirement: { type: 'characterLevel', level: 8 },
     monsterIds: ['ridge_jackal', 'craggy_goat', 'rubble_crawler', 'highland_bandit', 'crag_wolf_alpha'],
     gatherNodeIds: ['stonecrag_tin_vein', 'stonecrag_sage_patch', 'stonecrag_foothill_game'],
+  },
+
+  emberfall_ridge: {
+    id: 'emberfall_ridge',
+    name: 'Emberfall Ridge',
+    description:
+      'A volcanic highland beyond Stonecrag, scarred by old fissures that still breathe heat. Fire-hardened wolves and raiders hold the ridge, and an ancient dwarven forge lies cracked open at its heart.',
+    levelRange: [25, 40],
+    unlockRequirement: { type: 'characterLevel', level: 25 },
+    monsterIds: ['cinder_wolf', 'ashwing_bat', 'molten_crawler', 'ridgeback_marauder', 'scorched_drake'],
+    gatherNodeIds: ['emberfall_iron_vein', 'emberfall_sunpetal_patch', 'emberfall_ashfang_den'],
   },
 };
