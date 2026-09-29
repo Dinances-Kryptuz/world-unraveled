@@ -18,6 +18,7 @@ import { XpBar } from './XpBar';
 import { MonsterLootPanel } from './MonsterLootPanel';
 import { MonsterLevelBadge, TIER_COLORS } from './MonsterLevelBadge';
 import { ITEMS } from '../gameData/items';
+import { describeItemStats } from '../gameData/equipmentStats';
 import type { ProfessionId, Recipe, Zone } from '../gameData/types';
 
 function isZoneUnlocked(zone: Zone, characterLevel: number): boolean {
@@ -170,10 +171,14 @@ export function ZoneScreen({
         {zone.gatherNodeIds.map((nodeId) => {
           const node = GATHER_NODES[nodeId];
           const professionLabel = node.profession.charAt(0).toUpperCase() + node.profession.slice(1);
+          const skillLevel = character.professions[node.profession].level;
+          const meetsLevel = skillLevel >= node.requiredLevel;
           return (
             <li key={nodeId}>
               {node.name} ({professionLabel}, Lv {node.requiredLevel}+) — yields {ITEMS[node.itemId]?.name ?? node.itemId}
-              <button onClick={() => handleGather(nodeId)}>Gather</button>
+              <button onClick={() => handleGather(nodeId)} disabled={!meetsLevel}>
+                {meetsLevel ? 'Gather' : `Need Lv ${node.requiredLevel}`}
+              </button>
             </li>
           );
         })}
@@ -189,10 +194,16 @@ export function ZoneScreen({
               {recipes.map((recipe) => {
                 const meetsLevel = professionLevel >= recipe.requiredSkill;
                 const tier = craftingColorTier(professionLevel, recipe.requiredSkill, recipe.colorBreakpoints);
+                const resultItem = ITEMS[recipe.resultItemId];
                 return (
                   <li key={recipe.id}>
-                    <span style={{ color: TIER_COLORS[tier], fontWeight: 700 }}>{recipe.name}</span> (requires Lv{' '}
-                    {recipe.requiredSkill}) — materials:{' '}
+                    <span
+                      style={{ color: TIER_COLORS[tier], fontWeight: 700, cursor: 'help' }}
+                      title={resultItem ? describeItemStats(resultItem) : undefined}
+                    >
+                      {recipe.name}
+                    </span>{' '}
+                    (requires Lv {recipe.requiredSkill}) — materials:{' '}
                     {recipe.materials
                       .map((m) => `${m.quantity}x ${ITEMS[m.itemId]?.name ?? m.itemId}`)
                       .join(', ')}

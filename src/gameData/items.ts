@@ -399,4 +399,24 @@ export const ITEMS: Record<string, ItemDef> = {
     description: 'A heavy signet ring taken from the Alpha Warlord of the Stonecrag Depths.',
     stackable: true, equipSlot: 'ring', statBonuses: { STA: 4, STR: 4 }, sellValue: 50,
   },
+
+  // ── Consumables — a stand-in for real Alchemy until that exists ────────
+  health_potion: {
+    id: 'health_potion', name: 'Health Potion', type: 'consumable',
+    description: 'Restores 20 health. Usable anywhere, once every 30 seconds.',
+    stackable: true, sellValue: 3,
+    consumableEffect: { healAmount: 20, cooldownSeconds: 30 },
+  },
+  bread: {
+    id: 'bread', name: 'Bread', type: 'consumable',
+    description: 'A dense travel loaf. Restores 40 health. Usable anywhere, once every 10 seconds.',
+    stackable: true, sellValue: 1,
+    consumableEffect: { healAmount: 40, cooldownSeconds: 10 },
+  },
+  orange_juice: {
+    id: 'orange_juice', name: 'Orange Juice', type: 'consumable',
+    description: 'Freshly squeezed. Restores 50 mana. Only usable in combat (there’s no mana to restore outside a fight), once every 10 seconds.',
+    stackable: true, sellValue: 1,
+    consumableEffect: { manaAmount: 50, cooldownSeconds: 10 },
+  },
 };

@@ -46,7 +46,8 @@ service cloud.firestore {
       && data.currentActivity.type == null
       && data.equippedAbilityIds == []
       && data.abilityConditions == {}
-      && data.combatPresets == [];
+      && data.combatPresets == []
+      && data.itemCooldowns == {};
   }
 
   function isValidCharacterUpdate(before, after) {
@@ -62,7 +63,8 @@ service cloud.firestore {
       && isValidActivity(after.currentActivity)
       && isValidEquippedAbilityIds(after)
       && isValidAbilityConditions(after)
-      && isValidCombatPresets(after);
+      && isValidCombatPresets(after)
+      && isValidItemCooldowns(after);
   }
 
   // Same "may not exist yet on an old character" treatment as Smithing/
@@ -96,6 +98,17 @@ service cloud.firestore {
   function isValidCombatPresets(after) {
     return !('combatPresets' in after)
       || (after.combatPresets is list && after.combatPresets.size() <= 3);
+  }
+
+  // Same "may not exist yet on an old character" treatment and ownership-
+  // scoped posture as the sibling maps above — full validation (that a key
+  // is an actual consumable item id, that the write only ever sets it to
+  // now()) happens in firebase/consumables.ts, the only path that touches
+  // this field. Bounded generously since this grows with the consumable
+  // item catalog, not with player action.
+  function isValidItemCooldowns(after) {
+    return !('itemCooldowns' in after)
+      || (after.itemCooldowns is map && after.itemCooldowns.size() <= 20);
   }
 
   function isValidEquipment(e) {

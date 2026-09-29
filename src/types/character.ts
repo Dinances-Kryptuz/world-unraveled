@@ -57,6 +57,11 @@ export interface Character {
   abilityConditions: Record<string, ConditionGroup>;
   // Saved combat loadout/condition snapshots — see CombatPreset above.
   combatPresets: CombatPreset[];
+  // Last-used timestamp per consumable item id (Timestamp on write, always
+  // read back as a Date — see getCharacter()). An item with no entry has
+  // never been used and is always off cooldown. See
+  // firebase/consumables.ts's remainingCooldownSeconds().
+  itemCooldowns: Record<string, Date>;
 }
 
 export interface Inventory {
