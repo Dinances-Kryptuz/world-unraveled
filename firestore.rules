@@ -144,17 +144,18 @@ service cloud.firestore {
   // be a valid state IF it's present, so an old document without them still
   // passes every other check.
   function isValidProfessions(profs) {
-    return profs.keys().hasOnly(['skinning','mining','herbalism','leatherworking','smithing','tailoring'])
+    return profs.keys().hasOnly(['skinning','mining','herbalism','leatherworking','smithing','tailoring','alchemy'])
       && isValidProfessionState(profs.skinning)
       && isValidProfessionState(profs.mining)
       && isValidProfessionState(profs.herbalism)
       && isValidProfessionState(profs.leatherworking)
       && (!('smithing' in profs) || isValidProfessionState(profs.smithing))
-      && (!('tailoring' in profs) || isValidProfessionState(profs.tailoring));
+      && (!('tailoring' in profs) || isValidProfessionState(profs.tailoring))
+      && (!('alchemy' in profs) || isValidProfessionState(profs.alchemy));
   }
 
   // Unlike isValidProfessions, new-character creation always writes the
-  // full defaultProfessions() map, so all six are required unconditionally.
+  // full defaultProfessions() map, so all seven are required unconditionally.
   function isValidNewProfessions(profs) {
     return isValidProfessions(profs)
       && profs.skinning.level == 1 && profs.skinning.xp == 0 && profs.skinning.unlockedTier == 'apprentice'
@@ -162,7 +163,8 @@ service cloud.firestore {
       && profs.herbalism.level == 1 && profs.herbalism.xp == 0 && profs.herbalism.unlockedTier == 'apprentice'
       && profs.leatherworking.level == 1 && profs.leatherworking.xp == 0 && profs.leatherworking.unlockedTier == 'apprentice'
       && profs.smithing.level == 1 && profs.smithing.xp == 0 && profs.smithing.unlockedTier == 'apprentice'
-      && profs.tailoring.level == 1 && profs.tailoring.xp == 0 && profs.tailoring.unlockedTier == 'apprentice';
+      && profs.tailoring.level == 1 && profs.tailoring.xp == 0 && profs.tailoring.unlockedTier == 'apprentice'
+      && profs.alchemy.level == 1 && profs.alchemy.xp == 0 && profs.alchemy.unlockedTier == 'apprentice';
   }
 
   function professionsNeverDecrease(before, after) {
@@ -171,7 +173,8 @@ service cloud.firestore {
       && professionNeverDecreased(before, after, 'herbalism')
       && professionNeverDecreased(before, after, 'leatherworking')
       && professionNeverDecreased(before, after, 'smithing')
-      && professionNeverDecreased(before, after, 'tailoring');
+      && professionNeverDecreased(before, after, 'tailoring')
+      && professionNeverDecreased(before, after, 'alchemy');
   }
 
   // A profession that doesn't exist yet in "before" (an old character that

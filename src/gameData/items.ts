@@ -400,7 +400,8 @@ export const ITEMS: Record<string, ItemDef> = {
     stackable: true, equipSlot: 'ring', statBonuses: { STA: 4, STR: 4 }, sellValue: 50,
   },
 
-  // ── Consumables — a stand-in for real Alchemy until that exists ────────
+  // ── Consumables — vendor-bought basics; see Alchemy below for the
+  // craftable, stronger line that gives Herbalism's herbs an actual use ──
   health_potion: {
     id: 'health_potion', name: 'Health Potion', type: 'consumable',
     description: 'Restores 20 health. Usable anywhere, once every 30 seconds.',
@@ -418,5 +419,25 @@ export const ITEMS: Record<string, ItemDef> = {
     description: 'Freshly squeezed. Restores 50 mana. Only usable in combat (there’s no mana to restore outside a fight), once every 10 seconds.',
     stackable: true, sellValue: 1,
     consumableEffect: { manaAmount: 50, cooldownSeconds: 10 },
+  },
+
+  // ── Alchemy — crafted from Herbalism's herbs, stronger than the vendor line above ──
+  minor_healing_draught: {
+    id: 'minor_healing_draught', name: 'Minor Healing Draught', type: 'consumable',
+    description: 'A simple alchemical brew. Restores 35 health. Usable anywhere, once every 25 seconds.',
+    stackable: true, sellValue: 2,
+    consumableEffect: { healAmount: 35, cooldownSeconds: 25 },
+  },
+  minor_mana_draught: {
+    id: 'minor_mana_draught', name: 'Minor Mana Draught', type: 'consumable',
+    description: 'Restores 70 mana. Only usable in combat, once every 10 seconds.',
+    stackable: true, sellValue: 2,
+    consumableEffect: { manaAmount: 70, cooldownSeconds: 10 },
+  },
+  sage_healing_potion: {
+    id: 'sage_healing_potion', name: 'Sage Healing Potion', type: 'consumable',
+    description: 'A stronger brew made with mountain sage. Restores 70 health. Usable anywhere, once every 20 seconds.',
+    stackable: true, sellValue: 4,
+    consumableEffect: { healAmount: 70, cooldownSeconds: 20 },
   },
 };

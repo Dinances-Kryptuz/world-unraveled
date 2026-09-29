@@ -1,7 +1,7 @@
 // Shared types for all static game data (zones, monsters, items, recipes, etc.)
 // This file has no dependencies — everything else imports from here.
 
-export type ProfessionId = 'skinning' | 'mining' | 'herbalism' | 'leatherworking' | 'smithing' | 'tailoring';
+export type ProfessionId = 'skinning' | 'mining' | 'herbalism' | 'leatherworking' | 'smithing' | 'tailoring' | 'alchemy';
 
 export type ActivityType = 'combat' | 'gathering' | 'crafting';
 

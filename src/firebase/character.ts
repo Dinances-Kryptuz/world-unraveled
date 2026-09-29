@@ -12,7 +12,7 @@ import { maxEquippedSlots, unlockedAbilities, effectiveLoadout, MAX_COMBAT_PRESE
 import type { Condition, ConditionGroup, ConditionType, ResourceType } from '../combatEngine/types';
 
 const STARTING_GATHERING_PROFESSIONS: ProfessionId[] = ['skinning', 'mining', 'herbalism'];
-const STARTING_PRODUCTION_PROFESSIONS: ProfessionId[] = ['leatherworking', 'smithing', 'tailoring'];
+const STARTING_PRODUCTION_PROFESSIONS: ProfessionId[] = ['leatherworking', 'smithing', 'tailoring', 'alchemy'];
 const ALL_V1_PROFESSIONS = [...STARTING_GATHERING_PROFESSIONS, ...STARTING_PRODUCTION_PROFESSIONS];
 
 function defaultProfessions(): Record<ProfessionId, { level: number; xp: number; unlockedTier: 'apprentice' }> {
