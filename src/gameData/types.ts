@@ -14,7 +14,21 @@ export type EquipmentSlot =
   | 'boots'
   | 'ring';
 
-export type ItemType = 'material' | 'equipment';
+export type ItemType = 'material' | 'equipment' | 'consumable';
+
+// A temporary stand-in for real Alchemy (per the user's own plan) — every
+// effect applies instantly rather than as a true heal/restore-over-time,
+// and cooldownSeconds is tracked per item id (Character.itemCooldowns), not
+// shared across items the way classic WoW's potion cooldown works. manaAmount
+// only does anything mid-combat (see ConsumablesBar/DungeonScreen/
+// CombatScreen) — there's no persisted mana value outside a live encounter
+// to restore into, since resource pools are recomputed fresh at the start
+// of every fight.
+export interface ConsumableEffect {
+  healAmount?: number;
+  manaAmount?: number;
+  cooldownSeconds: number;
+}
 
 // Which classes can equip a given piece of armor — see classStats.ts's
 // ALLOWED_ARMOR_TYPES. Only relevant for armor (chest/helmet/gloves/legs/
@@ -114,6 +128,7 @@ export interface ItemDef {
   // Equipment stat bonuses are raw STR/STA/INT/SPI points — the same
   // currency the class-growth system already uses (see classStats.ts).
   statBonuses?: Partial<Record<import('./classStats').BaseStat, number>>;
+  consumableEffect?: ConsumableEffect; // only present when type === 'consumable'
   sellValue: number;
 }
 

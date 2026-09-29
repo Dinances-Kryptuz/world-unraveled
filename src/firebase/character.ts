@@ -40,6 +40,12 @@ export async function getCharacter(uid: string): Promise<Character | null> {
     abilityConditions: data.abilityConditions ?? {},
     // Same backfill idea again, for the Phase 7 presets system.
     combatPresets: data.combatPresets ?? [],
+    // Same backfill idea again, for consumable item cooldowns — each value
+    // is a Firestore Timestamp on disk, converted to a Date here same as
+    // every other timestamp field this function returns.
+    itemCooldowns: Object.fromEntries(
+      Object.entries(data.itemCooldowns ?? {}).map(([itemId, ts]) => [itemId, (ts as Timestamp).toDate()])
+    ),
     createdAt: (data.createdAt as Timestamp)?.toDate() ?? new Date(),
     hpCheckpointAt: (data.hpCheckpointAt as Timestamp)?.toDate() ?? new Date(),
     currentActivity: {
@@ -81,6 +87,7 @@ export async function createCharacter(uid: string, name: string, characterClass:
     equippedAbilityIds: [],
     abilityConditions: {},
     combatPresets: [],
+    itemCooldowns: {},
   };
 
   await setDoc(doc(db, 'characters', uid), character);

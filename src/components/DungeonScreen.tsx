@@ -2,8 +2,11 @@ import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useCharacter } from '../hooks/useCharacter';
 import { applyCombatResult, setCharacterLevel, getCharacter } from '../firebase/character';
+import { subscribeToInventory } from '../firebase/inventory';
+import { recordConsumableUse, remainingCooldownSeconds } from '../firebase/consumables';
 import { DUNGEONS } from '../gameData/dungeons';
 import { MONSTERS } from '../gameData/monsters';
+import { ITEMS } from '../gameData/items';
 import { resolveSpecDef, getExtraDamageTakenPct } from '../gameData/combatProfileWithTalents';
 import { evaluateTalents, EMPTY_TALENT_TOTALS } from '../utils/talentEvaluator';
 import { maxHp, resolveCurrentHp, ATTACK_INTERVAL_SECONDS } from '../gameData/combatFormulas';
@@ -19,7 +22,7 @@ import {
 } from '../combatEngine/engine';
 import type { CombatState, CombatEvent } from '../combatEngine/types';
 import type { Monster } from '../gameData/types';
-import type { Character } from '../types/character';
+import type { Character, Inventory } from '../types/character';
 import type { User } from 'firebase/auth';
 import { TickBar } from './TickBar';
 import { StatBar, hpBarColor } from './StatBar';
@@ -27,6 +30,7 @@ import { MonsterLevelBadge } from './MonsterLevelBadge';
 import { StatusBadges } from './StatusBadges';
 import { ResourceBars } from './ResourceBars';
 import { AbilityBar } from './AbilityBar';
+import { ConsumablesBar } from './ConsumablesBar';
 import { CombatLog } from './CombatLog';
 
 const AUTOSAVE_INTERVAL_SECONDS = 10;
@@ -58,6 +62,7 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
   const [fullClears, setFullClears] = useState(0);
   const [log, setLog] = useState<CombatEvent[]>([]);
   const [retreated, setRetreated] = useState(false);
+  const [inventory, setInventory] = useState<Inventory | null>(null);
 
   const dungeon = DUNGEONS[dungeonId];
   const stageIndexRef = useRef(0);
@@ -76,6 +81,11 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
   }, [character]);
   useEffect(() => {
     userRef.current = user;
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    return subscribeToInventory(user.uid, setInventory);
   }, [user]);
 
   // Advances to the next stage (looping back to the first after the boss),
@@ -253,6 +263,30 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
     setTick((t) => t + 1);
   }
 
+  function handleUseConsumable(itemId: string) {
+    const state = combatStateRef.current;
+    const currentUser = userRef.current;
+    if (!state || retreatedRef.current || !currentUser) return;
+    const item = ITEMS[itemId];
+    const effect = item?.consumableEffect;
+    if (!effect) return;
+    const currentCharacter = characterRef.current ?? character;
+    if (remainingCooldownSeconds(currentCharacter, itemId, effect.cooldownSeconds, new Date()) > 0) return;
+
+    const player = state.party.find((p) => p.isPlayer)!;
+    if (effect.healAmount) {
+      player.hp = Math.min(player.maxHp, player.hp + effect.healAmount);
+    }
+    if (effect.manaAmount && player.resources.mana) {
+      player.resources.mana.current = Math.min(player.resources.mana.max, player.resources.mana.current + effect.manaAmount);
+    }
+    setTick((t) => t + 1);
+
+    const usedAt = new Date();
+    applyOptimisticUpdate((c) => ({ ...c, itemCooldowns: { ...c.itemCooldowns, [itemId]: usedAt } }));
+    void recordConsumableUse(currentUser.uid, itemId);
+  }
+
   if (!combatStateRef.current) return null;
 
   const state = combatStateRef.current;
@@ -284,6 +318,12 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
           <TickBar seconds={ATTACK_INTERVAL_SECONDS} color="#6b4f2a" label="Attack rhythm" />
 
           <AbilityBar player={player} onUse={handleManualUse} />
+          <ConsumablesBar
+            character={character}
+            inventoryItems={inventory?.items ?? {}}
+            allowMana={true}
+            onUse={handleUseConsumable}
+          />
         </>
       )}
 

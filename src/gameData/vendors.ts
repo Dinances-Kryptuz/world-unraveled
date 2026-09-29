@@ -10,5 +10,10 @@ export interface VendorStockEntry {
 }
 
 export const VENDOR_STOCK: Record<string, VendorStockEntry[]> = {
-  greenhollow_fields: [{ itemId: 'simple_thread', price: 2 }],
+  greenhollow_fields: [
+    { itemId: 'simple_thread', price: 2 },
+    { itemId: 'health_potion', price: 10 },
+    { itemId: 'bread', price: 5 },
+    { itemId: 'orange_juice', price: 6 },
+  ],
 };
