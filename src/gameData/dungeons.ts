@@ -32,4 +32,31 @@ export const DUNGEONS: Record<string, Dungeon> = {
     levelRange: [36, 40],
     stages: ['molten_crawler', 'ridgeback_marauder', 'scorched_drake', 'forgemaster_kaldrun'],
   },
+  buried_foundry: {
+    id: 'buried_foundry',
+    name: 'The Buried Foundry',
+    description:
+      'The foundry that once powered all of Cinderfall, buried by the same cataclysm that ended it — and still, somehow, running.',
+    zoneId: 'cinderfall_depths',
+    levelRange: [40, 44],
+    stages: ['ashforge_golem', 'ember_stalker', 'ruin_marauder', 'ashen_overseer'],
+  },
+  scarred_sanctum: {
+    id: 'scarred_sanctum',
+    name: 'The Scarred Sanctum',
+    description:
+      'A cultist stronghold built directly into the rift, where the faithful commune with the power stirring beneath the world.',
+    zoneId: 'molten_scar',
+    levelRange: [50, 54],
+    stages: ['scaleback_drake', 'cultist_zealot', 'magma_hound', 'molten_herald'],
+  },
+  cinderheart_sanctum: {
+    id: 'cinderheart_sanctum',
+    name: 'The Cinderheart Sanctum',
+    description:
+      'The innermost sanctum of the crater, where Pyraxis stands watch over a power that has slept for ages — and shows every sign of waking.',
+    zoneId: 'cinderheart_crater',
+    levelRange: [56, 60],
+    stages: ['charhide_behemoth', 'ashfall_harbinger', 'emberguard_sentinel', 'pyraxis'],
+  },
 };

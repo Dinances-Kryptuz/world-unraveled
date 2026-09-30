@@ -167,6 +167,99 @@ export const QUESTS: Record<string, QuestDef> = {
     prerequisiteQuestId: 'emberfall_marauders',
   },
 
+  // ── Cinderfall Depths ──────────────────────────────────────────────────
+  cinderfall_wraiths: {
+    id: 'cinderfall_wraiths',
+    name: 'Wraiths of the Deep',
+    category: 'zone',
+    zoneId: 'cinderfall_depths',
+    description: 'Ash Wraiths drift through the buried tunnels, drawn by anything still living.',
+    objectives: [{ type: 'kill', monsterId: 'ash_wraith', count: 15 }],
+    rewards: { xp: 16000, gold: 400 },
+  },
+  cinderfall_scavengers: {
+    id: 'cinderfall_scavengers',
+    name: 'Scavengers of Cinderfall',
+    category: 'zone',
+    zoneId: 'cinderfall_depths',
+    description: 'Cinder Scavengers pick through the ruins for anything of value — including you.',
+    objectives: [{ type: 'kill', monsterId: 'cinder_scavenger', count: 12 }],
+    rewards: { xp: 22000, gold: 550 },
+    prerequisiteQuestId: 'cinderfall_wraiths',
+  },
+  cinderfall_overseer: {
+    id: 'cinderfall_overseer',
+    name: 'The Ashen Overseer',
+    category: 'zone',
+    zoneId: 'cinderfall_depths',
+    description: 'The Ashen Overseer still runs the Buried Foundry as if the city above it never fell. End its watch.',
+    objectives: [{ type: 'kill', monsterId: 'ashen_overseer', count: 1 }],
+    rewards: { xp: 32000, gold: 900, itemId: 'emberpetal_tonic', itemQuantity: 5 },
+    prerequisiteQuestId: 'cinderfall_scavengers',
+  },
+
+  // ── The Molten Scar ────────────────────────────────────────────────────
+  molten_scar_cultists: {
+    id: 'molten_scar_cultists',
+    name: 'Cultists of the Rift',
+    category: 'zone',
+    zoneId: 'molten_scar',
+    description: 'Cultists gather at the rift’s edge, worshipping a power that hasn’t stirred in ages.',
+    objectives: [{ type: 'kill', monsterId: 'cultist_adept', count: 15 }],
+    rewards: { xp: 45000, gold: 1200 },
+  },
+  molten_scar_embers: {
+    id: 'molten_scar_embers',
+    name: 'Living Embers',
+    category: 'zone',
+    zoneId: 'molten_scar',
+    description: 'Living Embers spill from the rift itself, hungry for fuel.',
+    objectives: [{ type: 'kill', monsterId: 'living_ember', count: 12 }],
+    rewards: { xp: 60000, gold: 1600 },
+    prerequisiteQuestId: 'molten_scar_cultists',
+  },
+  molten_scar_herald: {
+    id: 'molten_scar_herald',
+    name: 'The Molten Herald',
+    category: 'zone',
+    zoneId: 'molten_scar',
+    description: 'The Molten Herald commands the Scarred Sanctum in the name of a power still sleeping below. Silence it.',
+    objectives: [{ type: 'kill', monsterId: 'molten_herald', count: 1 }],
+    rewards: { xp: 85000, gold: 2400, itemId: 'cinderbloom_elixir', itemQuantity: 5 },
+    prerequisiteQuestId: 'molten_scar_embers',
+  },
+
+  // ── Cinderheart Crater ─────────────────────────────────────────────────
+  cinderheart_cultists: {
+    id: 'cinderheart_cultists',
+    name: 'Devoted of the Crater',
+    category: 'zone',
+    zoneId: 'cinderheart_crater',
+    description: 'The Emberlord’s most devoted cultists have made the crater’s rim their home.',
+    objectives: [{ type: 'kill', monsterId: 'emberlord_cultist', count: 15 }],
+    rewards: { xp: 110000, gold: 3200 },
+  },
+  cinderheart_walkers: {
+    id: 'cinderheart_walkers',
+    name: 'Flamewalkers',
+    category: 'zone',
+    zoneId: 'cinderheart_crater',
+    description: 'Flamewalkers stride the crater freely, answering to something ancient and patient.',
+    objectives: [{ type: 'kill', monsterId: 'flamewalker', count: 12 }],
+    rewards: { xp: 150000, gold: 4200 },
+    prerequisiteQuestId: 'cinderheart_cultists',
+  },
+  cinderheart_pyraxis: {
+    id: 'cinderheart_pyraxis',
+    name: 'Warden of the Cinderheart',
+    category: 'zone',
+    zoneId: 'cinderheart_crater',
+    description: 'Pyraxis guards the path into the crater’s heart. What waits beyond is a problem for another day — first, it must fall.',
+    objectives: [{ type: 'kill', monsterId: 'pyraxis', count: 1 }],
+    rewards: { xp: 220000, gold: 6000, itemId: 'emberheart_potion', itemQuantity: 5 },
+    prerequisiteQuestId: 'cinderheart_walkers',
+  },
+
   // ── Class quests ──────────────────────────────────────────────────────
   // Warrior Tank: Last Stand is spec-locked, so this chain is too.
   warrior_tank_shield_and_steel: {

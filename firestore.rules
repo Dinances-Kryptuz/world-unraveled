@@ -143,15 +143,19 @@ service cloud.firestore {
       && q.dailyCompletedAt == {};
   }
 
+  // Ownership-scoped, not fully value-scoped — same posture as
+  // isValidCombatPresets/isValidAbilityConditions/isValidItemCooldowns/
+  // isValidQuests below (full validation, e.g. that a slot's value is a real
+  // equippable item id the class can wear, happens in firebase/character.ts's
+  // equipItem before the write is even sent). Deliberately NOT checking each
+  // of the 7 slots individually with a per-field null-or-string branch: with
+  // every slot non-null (a fully-geared character, the normal end state of
+  // real play) that per-field branching was enough to trip Firestore's
+  // 1000-expression-per-request rules evaluation limit on every single
+  // combat/gather/craft autosave — a real, production-blocking bug, not an
+  // emulator artifact.
   function isValidEquipment(e) {
-    return e.keys().hasOnly(['weapon','chest','helmet','gloves','legs','boots','ring'])
-      && (e.weapon == null || e.weapon is string)
-      && (e.chest == null || e.chest is string)
-      && (e.helmet == null || e.helmet is string)
-      && (e.gloves == null || e.gloves is string)
-      && (e.legs == null || e.legs is string)
-      && (e.boots == null || e.boots is string)
-      && (e.ring == null || e.ring is string);
+    return e is map && e.keys().hasOnly(['weapon','chest','helmet','gloves','legs','boots','ring']);
   }
 
   // weapon/chest/boots may already be filled at creation — createCharacter()

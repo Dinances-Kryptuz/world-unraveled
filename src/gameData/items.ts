@@ -586,4 +586,266 @@ export const ITEMS: Record<string, ItemDef> = {
     description: "The Forgemaster's own warhammer — heavier and better balanced than anything else on the ridge.",
     stackable: true, equipSlot: 'weapon', statBonuses: { STR: 12, STA: 3 }, sellValue: 70,
   },
+
+  // ── Cinderfall Depths materials ───────────────────────────────────────
+  cinderore: {
+    id: 'cinderore', name: 'Cinderore', type: 'material',
+    description: 'A heavy ore veined with cooled ash, found deep in collapsed dwarven tunnels.',
+    stackable: true, sellValue: 4,
+  },
+  emberpetal: {
+    id: 'emberpetal', name: 'Emberpetal', type: 'material',
+    description: 'A hardy bloom that thrives on residual heat, found nowhere else.',
+    stackable: true, sellValue: 3,
+  },
+  ashhide: {
+    id: 'ashhide', name: 'Ashhide', type: 'material',
+    description: 'Tough, ash-grey hide from a beast long adapted to the ruins.',
+    stackable: true, sellValue: 4,
+  },
+  cinder_steel_bar: {
+    id: 'cinder_steel_bar', name: 'Cinder Steel Bar', type: 'material',
+    description: 'Cinderore smelted into a dense, ash-tempered bar.',
+    stackable: true, sellValue: 9,
+  },
+  ashhide_leather: {
+    id: 'ashhide_leather', name: 'Ashhide Leather', type: 'material',
+    description: 'Ashhide worked into leather tough enough to survive the ruins.',
+    stackable: true, sellValue: 5,
+  },
+  ashwoven_cloth: {
+    id: 'ashwoven_cloth', name: 'Ashwoven Cloth', type: 'material',
+    description: 'Cloth salvaged from a cinder scavenger, woven through with fine ash fibers.',
+    stackable: true, sellValue: 5,
+  },
+  cindercore_shard: {
+    id: 'cindercore_shard', name: 'Cindercore Shard', type: 'material',
+    description: 'A shard still glowing faintly from within, prized by craftsmen.',
+    stackable: true, sellValue: 18,
+  },
+  smoky_quartz: {
+    id: 'smoky_quartz', name: 'Smoky Quartz', type: 'material',
+    description: 'A dark, smoke-clouded crystal formed under ash and pressure.',
+    stackable: true, sellValue: 20,
+  },
+
+  // ── Cinderfall Depths equipment ───────────────────────────────────────
+  cinderplate_chestguard: {
+    id: 'cinderplate_chestguard', name: 'Cinderplate Chestguard', type: 'equipment',
+    description: 'A heavy plate chestpiece forged from cinder steel.',
+    stackable: true, equipSlot: 'chest', armorType: 'plate', statBonuses: { STA: 10 }, sellValue: 38,
+  },
+  cinderforged_hammer: {
+    id: 'cinderforged_hammer', name: 'Cinderforged Hammer', type: 'equipment',
+    description: 'A brutal warhammer, its head still warm from the forge.',
+    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 12 }, sellValue: 48,
+  },
+  ashhide_leggings: {
+    id: 'ashhide_leggings', name: 'Ashhide Leggings', type: 'equipment',
+    description: 'Leggings worked from tough ashhide leather.',
+    stackable: true, equipSlot: 'legs', armorType: 'leather', statBonuses: { STA: 8, STR: 5 }, sellValue: 40,
+  },
+  ashhide_boots: {
+    id: 'ashhide_boots', name: 'Ashhide Boots', type: 'equipment',
+    description: 'Boots reinforced with a cindercore shard, warm underfoot even in the deep ruins.',
+    stackable: true, equipSlot: 'boots', armorType: 'leather', statBonuses: { STA: 7, STR: 7 }, sellValue: 50,
+  },
+  ashwoven_robe: {
+    id: 'ashwoven_robe', name: 'Ashwoven Robe', type: 'equipment',
+    description: 'A robe woven from salvaged ashwoven cloth, still faintly warm.',
+    stackable: true, equipSlot: 'chest', armorType: 'cloth', statBonuses: { INT: 7, SPI: 5 }, sellValue: 36,
+  },
+  scavenged_hatchet: {
+    id: 'scavenged_hatchet', name: 'Scavenged Hatchet', type: 'equipment',
+    description: "A cinder scavenger's own hatchet, still sharp despite its owner's fate.",
+    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 9 }, sellValue: 40,
+  },
+  overseers_greatmace: {
+    id: 'overseers_greatmace', name: "Overseer's Greatmace", type: 'equipment',
+    description: 'The ceremonial mace of the Ashen Overseer — too heavy for most, and twice as deadly.',
+    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 14, STA: 4 }, sellValue: 80,
+  },
+  emberpetal_tonic: {
+    id: 'emberpetal_tonic', name: 'Emberpetal Tonic', type: 'consumable',
+    description: 'A potent brew of emberpetal. Restores 150 health. Usable anywhere, once every 25 seconds.',
+    stackable: true, sellValue: 8,
+    consumableEffect: { healAmount: 150, cooldownSeconds: 25 },
+  },
+
+  // ── The Molten Scar materials ─────────────────────────────────────────
+  brimstone_ore: {
+    id: 'brimstone_ore', name: 'Brimstone Ore', type: 'material',
+    description: 'A sulfurous ore that never fully cools, mined from the rift itself.',
+    stackable: true, sellValue: 5,
+  },
+  cinderbloom: {
+    id: 'cinderbloom', name: 'Cinderbloom', type: 'material',
+    description: 'A rare flower that only grows in the heat radiating from the rift.',
+    stackable: true, sellValue: 4,
+  },
+  scaleback_hide: {
+    id: 'scaleback_hide', name: 'Scaleback Hide', type: 'material',
+    description: 'Thick, overlapping scaled hide from a beast that calls the rift home.',
+    stackable: true, sellValue: 5,
+  },
+  brimstone_bar: {
+    id: 'brimstone_bar', name: 'Brimstone Bar', type: 'material',
+    description: 'Brimstone ore smelted into a bar that radiates heat long after cooling.',
+    stackable: true, sellValue: 11,
+  },
+  scaleback_leather: {
+    id: 'scaleback_leather', name: 'Scaleback Leather', type: 'material',
+    description: 'Scaleback hide worked into leather that shrugs off both blade and flame.',
+    stackable: true, sellValue: 6,
+  },
+  charred_cloth: {
+    id: 'charred_cloth', name: 'Charred Cloth', type: 'material',
+    description: 'Cultist robes, scorched but salvageable.',
+    stackable: true, sellValue: 6,
+  },
+  magma_heart: {
+    id: 'magma_heart', name: 'Magma Heart', type: 'material',
+    description: 'A core of solidified magma that still pulses with faint heat, prized by craftsmen.',
+    stackable: true, sellValue: 22,
+  },
+  fire_opal: {
+    id: 'fire_opal', name: 'Fire Opal', type: 'material',
+    description: 'A gemstone that seems to hold a flame within it.',
+    stackable: true, sellValue: 25,
+  },
+
+  // ── The Molten Scar equipment ─────────────────────────────────────────
+  brimstone_plate: {
+    id: 'brimstone_plate', name: 'Brimstone Plate', type: 'equipment',
+    description: 'A plate chestpiece forged from brimstone — heavy, and always faintly warm.',
+    stackable: true, equipSlot: 'chest', armorType: 'plate', statBonuses: { STA: 12 }, sellValue: 46,
+  },
+  brimstone_greatsword: {
+    id: 'brimstone_greatsword', name: 'Brimstone Greatsword', type: 'equipment',
+    description: 'A massive blade forged from brimstone, its edge never quite cool to the touch.',
+    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 15 }, sellValue: 58,
+  },
+  scaleback_leggings: {
+    id: 'scaleback_leggings', name: 'Scaleback Leggings', type: 'equipment',
+    description: 'Leggings worked from scaleback leather.',
+    stackable: true, equipSlot: 'legs', armorType: 'leather', statBonuses: { STA: 10, STR: 6 }, sellValue: 48,
+  },
+  scaleback_boots: {
+    id: 'scaleback_boots', name: 'Scaleback Boots', type: 'equipment',
+    description: 'Boots set with a magma heart, warm and unyielding.',
+    stackable: true, equipSlot: 'boots', armorType: 'leather', statBonuses: { STA: 9, STR: 9 }, sellValue: 62,
+  },
+  charred_robe: {
+    id: 'charred_robe', name: 'Charred Robe', type: 'equipment',
+    description: 'A cultist robe, reclaimed and re-stitched from salvaged charred cloth.',
+    stackable: true, equipSlot: 'chest', armorType: 'cloth', statBonuses: { INT: 9, SPI: 6 }, sellValue: 44,
+  },
+  zealots_blade: {
+    id: 'zealots_blade', name: "Zealot's Blade", type: 'equipment',
+    description: 'A ritual blade carried by a cultist zealot, its edge blessed by something best left unnamed.',
+    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 11 }, sellValue: 50,
+  },
+  heralds_ember_band: {
+    id: 'heralds_ember_band', name: "Herald's Ember Band", type: 'equipment',
+    description: 'A ring taken from the Molten Herald, still warm as a living coal.',
+    stackable: true, equipSlot: 'ring', statBonuses: { INT: 12, STA: 3 }, sellValue: 95,
+  },
+  cinderbloom_elixir: {
+    id: 'cinderbloom_elixir', name: 'Cinderbloom Elixir', type: 'consumable',
+    description: 'A powerful brew of cinderbloom. Restores 200 health. Usable anywhere, once every 25 seconds.',
+    stackable: true, sellValue: 10,
+    consumableEffect: { healAmount: 200, cooldownSeconds: 25 },
+  },
+
+  // ── Cinderheart Crater materials ──────────────────────────────────────
+  emberforge_ore: {
+    id: 'emberforge_ore', name: 'Emberforge Ore', type: 'material',
+    description: 'The finest ore in the known world, mined at the very edge of the crater.',
+    stackable: true, sellValue: 6,
+  },
+  emberheart_bloom: {
+    id: 'emberheart_bloom', name: 'Emberheart Bloom', type: 'material',
+    description: 'A flower that blooms only at the crater’s rim, pulsing faintly like a heartbeat.',
+    stackable: true, sellValue: 5,
+  },
+  emberscale_hide: {
+    id: 'emberscale_hide', name: 'Emberscale Hide', type: 'material',
+    description: 'Hide from a beast that has lived its whole life at the crater’s edge.',
+    stackable: true, sellValue: 6,
+  },
+  emberforged_bar: {
+    id: 'emberforged_bar', name: 'Emberforged Bar', type: 'material',
+    description: 'Emberforge ore smelted at incredible heat into the strongest bar yet forged.',
+    stackable: true, sellValue: 13,
+  },
+  emberscale_leather: {
+    id: 'emberscale_leather', name: 'Emberscale Leather', type: 'material',
+    description: 'Emberscale hide worked into the toughest leather yet crafted.',
+    stackable: true, sellValue: 7,
+  },
+  ashenweave_cloth: {
+    id: 'ashenweave_cloth', name: 'Ashenweave Cloth', type: 'material',
+    description: 'Cloth woven with fine ash, taken from the crater’s most fervent cultists.',
+    stackable: true, sellValue: 7,
+  },
+  emberlords_ash: {
+    id: 'emberlords_ash', name: "Emberlord's Ash", type: 'material',
+    description: 'Ash gathered at the very edge of the crater, said to still carry a fraction of the sleeping power below.',
+    stackable: true, sellValue: 26,
+  },
+  heartflame_crystal: {
+    id: 'heartflame_crystal', name: 'Heartflame Crystal', type: 'material',
+    description: 'A crystal that burns with an inner flame, never dimming and never spreading.',
+    stackable: true, sellValue: 30,
+  },
+
+  // ── Cinderheart Crater equipment ──────────────────────────────────────
+  emberforged_chestguard: {
+    id: 'emberforged_chestguard', name: 'Emberforged Chestguard', type: 'equipment',
+    description: 'The finest plate armor forged in the known world.',
+    stackable: true, equipSlot: 'chest', armorType: 'plate', statBonuses: { STA: 14 }, sellValue: 54,
+  },
+  emberforged_greatsword: {
+    id: 'emberforged_greatsword', name: 'Emberforged Greatsword', type: 'equipment',
+    description: 'A greatsword forged at the edge of the crater itself.',
+    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 18 }, sellValue: 68,
+  },
+  emberscale_leggings: {
+    id: 'emberscale_leggings', name: 'Emberscale Leggings', type: 'equipment',
+    description: 'Leggings worked from emberscale leather, the toughest hide known.',
+    stackable: true, equipSlot: 'legs', armorType: 'leather', statBonuses: { STA: 12, STR: 7 }, sellValue: 58,
+  },
+  emberscale_boots: {
+    id: 'emberscale_boots', name: 'Emberscale Boots', type: 'equipment',
+    description: "Boots set with a fragment of the Emberlord's own ash.",
+    stackable: true, equipSlot: 'boots', armorType: 'leather', statBonuses: { STA: 11, STR: 11 }, sellValue: 75,
+  },
+  ashenweave_robe: {
+    id: 'ashenweave_robe', name: 'Ashenweave Robe', type: 'equipment',
+    description: 'A robe woven from the finest ashenweave cloth, taken from the crater’s most devout.',
+    stackable: true, equipSlot: 'chest', armorType: 'cloth', statBonuses: { INT: 11, SPI: 7 }, sellValue: 52,
+  },
+  harbingers_talon: {
+    id: 'harbingers_talon', name: "Harbinger's Talon", type: 'equipment',
+    description: "A curved blade shaped like the claw of the Ashfall Harbinger it was taken from.",
+    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 13 }, sellValue: 80,
+  },
+  sentinels_signet: {
+    id: 'sentinels_signet', name: "Sentinel's Signet", type: 'equipment',
+    description: 'A heavy signet ring pried from a fallen Emberguard Sentinel.',
+    stackable: true, equipSlot: 'ring', statBonuses: { STA: 10 }, sellValue: 85,
+  },
+  emberheart_potion: {
+    id: 'emberheart_potion', name: 'Emberheart Potion', type: 'consumable',
+    description: 'The strongest healing brew yet devised. Restores 260 health. Usable anywhere, once every 25 seconds.',
+    stackable: true, sellValue: 14,
+    consumableEffect: { healAmount: 260, cooldownSeconds: 25 },
+  },
+
+  // ── Cinderheart Sanctum dungeon boss drop ─────────────────────────────
+  pyraxis_warblade: {
+    id: 'pyraxis_warblade', name: "Pyraxis's Warblade", type: 'equipment',
+    description: 'The warblade of Pyraxis, Warden of the Cinderheart — forged in fire older than the world above.',
+    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 18, STA: 5 }, sellValue: 140,
+  },
 };

@@ -95,6 +95,99 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     xpPerAction: 13,
     secondsPerAction: 10,
   },
+
+  cinderfall_ore_seam: {
+    id: 'cinderfall_ore_seam',
+    name: 'Cinderore Seam',
+    profession: 'mining',
+    zoneId: 'cinderfall_depths',
+    requiredLevel: 30,
+    itemId: 'cinderore',
+    xpPerAction: 17,
+    secondsPerAction: 11,
+  },
+  cinderfall_emberpetal_patch: {
+    id: 'cinderfall_emberpetal_patch',
+    name: 'Emberpetal Patch',
+    profession: 'herbalism',
+    zoneId: 'cinderfall_depths',
+    requiredLevel: 30,
+    itemId: 'emberpetal',
+    xpPerAction: 17,
+    secondsPerAction: 11,
+  },
+  cinderfall_ash_burrow: {
+    id: 'cinderfall_ash_burrow',
+    name: 'Ash Burrow',
+    profession: 'skinning',
+    zoneId: 'cinderfall_depths',
+    requiredLevel: 30,
+    itemId: 'ashhide',
+    xpPerAction: 17,
+    secondsPerAction: 11,
+  },
+
+  molten_scar_brimstone_vein: {
+    id: 'molten_scar_brimstone_vein',
+    name: 'Brimstone Vein',
+    profession: 'mining',
+    zoneId: 'molten_scar',
+    requiredLevel: 40,
+    itemId: 'brimstone_ore',
+    xpPerAction: 21,
+    secondsPerAction: 12,
+  },
+  molten_scar_cinderbloom_patch: {
+    id: 'molten_scar_cinderbloom_patch',
+    name: 'Cinderbloom Patch',
+    profession: 'herbalism',
+    zoneId: 'molten_scar',
+    requiredLevel: 40,
+    itemId: 'cinderbloom',
+    xpPerAction: 21,
+    secondsPerAction: 12,
+  },
+  molten_scar_scaleback_den: {
+    id: 'molten_scar_scaleback_den',
+    name: 'Scaleback Den',
+    profession: 'skinning',
+    zoneId: 'molten_scar',
+    requiredLevel: 40,
+    itemId: 'scaleback_hide',
+    xpPerAction: 21,
+    secondsPerAction: 12,
+  },
+
+  cinderheart_ore_vein: {
+    id: 'cinderheart_ore_vein',
+    name: 'Emberforge Vein',
+    profession: 'mining',
+    zoneId: 'cinderheart_crater',
+    requiredLevel: 48,
+    itemId: 'emberforge_ore',
+    xpPerAction: 25,
+    secondsPerAction: 13,
+  },
+  cinderheart_bloom_patch: {
+    id: 'cinderheart_bloom_patch',
+    name: 'Emberheart Patch',
+    profession: 'herbalism',
+    zoneId: 'cinderheart_crater',
+    requiredLevel: 48,
+    itemId: 'emberheart_bloom',
+    xpPerAction: 25,
+    secondsPerAction: 13,
+  },
+  cinderheart_hide_grounds: {
+    id: 'cinderheart_hide_grounds',
+    name: 'Emberscale Grounds',
+    profession: 'skinning',
+    zoneId: 'cinderheart_crater',
+    requiredLevel: 48,
+    itemId: 'emberscale_hide',
+    xpPerAction: 25,
+    secondsPerAction: 13,
+  },
 };
 
 export const ZONES: Record<string, Zone> = {
@@ -129,5 +222,38 @@ export const ZONES: Record<string, Zone> = {
     unlockRequirement: { type: 'characterLevel', level: 25 },
     monsterIds: ['cinder_wolf', 'ashwing_bat', 'molten_crawler', 'ridgeback_marauder', 'scorched_drake'],
     gatherNodeIds: ['emberfall_iron_vein', 'emberfall_sunpetal_patch', 'emberfall_ashfang_den'],
+  },
+
+  cinderfall_depths: {
+    id: 'cinderfall_depths',
+    name: 'Cinderfall Depths',
+    description:
+      'Once a thriving dwarven mining city, Cinderfall was swallowed by fire and ash generations ago. Its ruins are now home to scavengers, restless spirits, and constructs still obeying orders no living dwarf gave.',
+    levelRange: [30, 44],
+    unlockRequirement: { type: 'characterLevel', level: 30 },
+    monsterIds: ['ash_wraith', 'cinder_scavenger', 'ashforge_golem', 'ember_stalker', 'ruin_marauder'],
+    gatherNodeIds: ['cinderfall_ore_seam', 'cinderfall_emberpetal_patch', 'cinderfall_ash_burrow'],
+  },
+
+  molten_scar: {
+    id: 'molten_scar',
+    name: 'The Molten Scar',
+    description:
+      'A massive rift has torn open the earth here, spilling lava and heat into the world above. Cultists who worship the stirring fire below have made this place their own, and the land itself seems to answer their call.',
+    levelRange: [40, 54],
+    unlockRequirement: { type: 'characterLevel', level: 40 },
+    monsterIds: ['cultist_adept', 'living_ember', 'scaleback_drake', 'cultist_zealot', 'magma_hound'],
+    gatherNodeIds: ['molten_scar_brimstone_vein', 'molten_scar_cinderbloom_patch', 'molten_scar_scaleback_den'],
+  },
+
+  cinderheart_crater: {
+    id: 'cinderheart_crater',
+    name: 'Cinderheart Crater',
+    description:
+      'At the world’s molten heart lies a crater no living thing should call home — yet the fire’s servants gather here in growing numbers, drawn by a power stirring after ages of sleep. This is the frontier of what’s still to come.',
+    levelRange: [48, 60],
+    unlockRequirement: { type: 'characterLevel', level: 48 },
+    monsterIds: ['emberlord_cultist', 'flamewalker', 'charhide_behemoth', 'ashfall_harbinger', 'emberguard_sentinel'],
+    gatherNodeIds: ['cinderheart_ore_vein', 'cinderheart_bloom_patch', 'cinderheart_hide_grounds'],
   },
 };
