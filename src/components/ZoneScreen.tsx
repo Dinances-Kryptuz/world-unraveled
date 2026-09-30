@@ -16,9 +16,11 @@ import { craftingColorTier } from '../gameData/activityEngine';
 import { professionXpForLevel } from '../gameData/xpTables';
 import { XpBar } from './XpBar';
 import { MonsterLootPanel } from './MonsterLootPanel';
-import { MonsterLevelBadge, TIER_COLORS } from './MonsterLevelBadge';
+import { MonsterLevelBadge, CombatTypeBadge, TIER_COLORS } from './MonsterLevelBadge';
 import { ITEMS } from '../gameData/items';
 import { describeItemStats } from '../gameData/equipmentStats';
+import { resolveSpecDef } from '../gameData/combatProfileWithTalents';
+import { COMBAT_TYPE_ICONS, COMBAT_TYPE_LABELS } from '../gameData/combatTriangle';
 import type { ProfessionId, Recipe, Zone } from '../gameData/types';
 
 function isZoneUnlocked(zone: Zone, characterLevel: number): boolean {
@@ -80,6 +82,7 @@ export function ZoneScreen({
 
   const activity = character.currentActivity;
   const showWelcomeBack = !dismissedWelcomeBack && activity.type !== null && isLongAbsence(activity);
+  const playerCombatType = resolveSpecDef(character.class, character.spec).combatType;
 
   if (showWelcomeBack) {
     return <WelcomeBackScreen character={character} onContinue={() => setDismissedWelcomeBack(true)} />;
@@ -130,6 +133,16 @@ export function ZoneScreen({
 
       <h1>{zone.name}</h1>
       <p>{zone.description}</p>
+      <p>
+        <small>
+          Enemy composition:{' '}
+          {(['melee', 'ranged', 'magic'] as const)
+            .map((t) => ({ t, count: zone.monsterIds.filter((id) => MONSTERS[id].combatType === t).length }))
+            .filter(({ count }) => count > 0)
+            .map(({ t, count }) => `${COMBAT_TYPE_ICONS[t]} ${COMBAT_TYPE_LABELS[t]} (${count})`)
+            .join(' · ')}
+        </small>
+      </p>
 
       <h2>Monsters</h2>
       <ul>
@@ -138,7 +151,8 @@ export function ZoneScreen({
           const isExpanded = expandedMonsterId === monsterId;
           return (
             <li key={monsterId}>
-              {monster.name} (<MonsterLevelBadge monsterLevel={monster.level} playerLevel={character.level} />)
+              {monster.name} (<MonsterLevelBadge monsterLevel={monster.level} playerLevel={character.level} />{' '}
+              <CombatTypeBadge monsterType={monster.combatType} playerType={playerCombatType} />)
               <button onClick={() => handleFight(monsterId)}>Fight</button>
               <button onClick={() => setExpandedMonsterId(isExpanded ? null : monsterId)}>Drops</button>
               {isExpanded && <MonsterLootPanel monster={monster} />}

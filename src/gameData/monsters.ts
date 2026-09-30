@@ -7,6 +7,7 @@ export const MONSTERS: Record<string, Monster> = {
     zoneIds: ['greenhollow_fields'],
     levelRange: [1, 5],
     level: 3, // placeholder — real tuning against the new formulas happens at Step 10
+    combatType: 'melee',
     goldMin: 1,
     goldMax: 3,
     lootTable: [
@@ -27,6 +28,7 @@ export const MONSTERS: Record<string, Monster> = {
     zoneIds: ['greenhollow_fields'],
     levelRange: [3, 8],
     level: 6, // placeholder — real tuning against the new formulas happens at Step 10
+    combatType: 'melee',
     goldMin: 2,
     goldMax: 5,
     lootTable: [
@@ -47,6 +49,7 @@ export const MONSTERS: Record<string, Monster> = {
     zoneIds: ['greenhollow_fields'],
     levelRange: [5, 10],
     level: 9, // placeholder — real tuning against the new formulas happens at Step 10
+    combatType: 'melee',
     goldMin: 3,
     goldMax: 7,
     lootTable: [
@@ -69,6 +72,7 @@ export const MONSTERS: Record<string, Monster> = {
     zoneIds: ['greenhollow_fields'],
     levelRange: [2, 6],
     level: 1, // placeholder — real tuning against the new formulas happens at Step 10
+    combatType: 'ranged',
     goldMin: 1,
     goldMax: 2,
     lootTable: [
@@ -90,6 +94,7 @@ export const MONSTERS: Record<string, Monster> = {
     zoneIds: ['stonecrag_foothills'],
     levelRange: [8, 12],
     level: 10,
+    combatType: 'melee',
     goldMin: 4,
     goldMax: 9,
     lootTable: [
@@ -110,6 +115,7 @@ export const MONSTERS: Record<string, Monster> = {
     zoneIds: ['stonecrag_foothills'],
     levelRange: [11, 16],
     level: 13,
+    combatType: 'melee',
     goldMin: 5,
     goldMax: 11,
     lootTable: [
@@ -130,6 +136,7 @@ export const MONSTERS: Record<string, Monster> = {
     zoneIds: ['stonecrag_foothills'],
     levelRange: [14, 19],
     level: 16,
+    combatType: 'ranged',
     goldMin: 6,
     goldMax: 13,
     lootTable: [
@@ -150,6 +157,7 @@ export const MONSTERS: Record<string, Monster> = {
     zoneIds: ['stonecrag_foothills'],
     levelRange: [16, 22],
     level: 19,
+    combatType: 'ranged',
     goldMin: 9,
     goldMax: 18,
     lootTable: [
@@ -171,6 +179,7 @@ export const MONSTERS: Record<string, Monster> = {
     zoneIds: ['stonecrag_foothills'],
     levelRange: [19, 25],
     level: 22,
+    combatType: 'melee',
     goldMin: 11,
     goldMax: 22,
     lootTable: [
@@ -193,6 +202,7 @@ export const MONSTERS: Record<string, Monster> = {
     zoneIds: ['emberfall_ridge'],
     levelRange: [25, 29],
     level: 27,
+    combatType: 'melee',
     goldMin: 11,
     goldMax: 20,
     lootTable: [
@@ -213,6 +223,7 @@ export const MONSTERS: Record<string, Monster> = {
     zoneIds: ['emberfall_ridge'],
     levelRange: [27, 32],
     level: 30,
+    combatType: 'ranged',
     goldMin: 12,
     goldMax: 22,
     lootTable: [
@@ -233,6 +244,7 @@ export const MONSTERS: Record<string, Monster> = {
     zoneIds: ['emberfall_ridge'],
     levelRange: [30, 34],
     level: 33,
+    combatType: 'magic',
     goldMin: 14,
     goldMax: 26,
     lootTable: [
@@ -253,6 +265,7 @@ export const MONSTERS: Record<string, Monster> = {
     zoneIds: ['emberfall_ridge'],
     levelRange: [32, 37],
     level: 35,
+    combatType: 'melee',
     goldMin: 18,
     goldMax: 32,
     lootTable: [
@@ -273,6 +286,7 @@ export const MONSTERS: Record<string, Monster> = {
     zoneIds: ['emberfall_ridge'],
     levelRange: [36, 40],
     level: 39,
+    combatType: 'magic',
     goldMin: 22,
     goldMax: 38,
     lootTable: [
@@ -295,6 +309,7 @@ export const MONSTERS: Record<string, Monster> = {
     zoneIds: ['greenhollow_fields'],
     levelRange: [10, 10],
     level: 10,
+    combatType: 'melee',
     goldMin: 8,
     goldMax: 15,
     isBoss: true,
@@ -316,6 +331,7 @@ export const MONSTERS: Record<string, Monster> = {
     zoneIds: ['stonecrag_foothills'],
     levelRange: [24, 24],
     level: 24,
+    combatType: 'melee',
     goldMin: 18,
     goldMax: 30,
     isBoss: true,
@@ -337,6 +353,7 @@ export const MONSTERS: Record<string, Monster> = {
     zoneIds: ['emberfall_ridge'],
     levelRange: [40, 40],
     level: 40,
+    combatType: 'melee',
     goldMin: 30,
     goldMax: 48,
     isBoss: true,

@@ -1,8 +1,9 @@
 import type { ClassId, SpecId, SpecDef } from './classStats';
 import { SPECS } from './classStats';
+import type { CombatType } from './combatTriangle';
 import { WARRIOR_DPS_EXTRA_DMG_TAKEN_AT_60, type TalentPicks } from './talents';
 
-export const PRE_SPEC_DEFAULT: Omit<SpecDef, 'class'> = {
+export const PRE_SPEC_DEFAULT: Omit<SpecDef, 'class' | 'combatType'> = {
   damageCoef: 0.85,
   survivabilityCoef: 1.0,
   avoidance: 0.05,
@@ -10,9 +11,18 @@ export const PRE_SPEC_DEFAULT: Omit<SpecDef, 'class'> = {
   passiveHealPct: 0,
 };
 
+// Before the level-5 spec choice, there's no SpecDef to read a combatType
+// from yet — fall back to the type every spec of that class ends up as
+// (all warrior/paladin specs are melee, all priest specs are magic).
+const PRE_SPEC_COMBAT_TYPE: Record<ClassId, CombatType> = {
+  warrior: 'melee',
+  paladin: 'melee',
+  priest: 'magic',
+};
+
 export function resolveSpecDef(cls: ClassId, spec: SpecId | null): SpecDef {
   if (spec) return SPECS[spec];
-  return { class: cls, ...PRE_SPEC_DEFAULT };
+  return { class: cls, combatType: PRE_SPEC_COMBAT_TYPE[cls], ...PRE_SPEC_DEFAULT };
 }
 
 export function getExtraDamageTakenPct(spec: SpecId | null, talentPicks: TalentPicks): number {

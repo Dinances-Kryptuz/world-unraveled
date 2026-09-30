@@ -83,7 +83,7 @@ export function simulateOfflineCombat(input: OfflineCombatInput): OfflineCombatR
   const lootTotals: Record<string, number> = {};
 
   const state: CombatState = createEncounterState(buildInput(level, input.startingHp));
-  const ctx: TickContext = { monster: input.monster, playerLevel: level };
+  const ctx: TickContext = { monster: input.monster, playerLevel: level, playerCombatType: input.specDef.combatType };
 
   let elapsed = 0;
   let ticks = 0;

@@ -8,6 +8,8 @@ import {
   effectiveLoadout,
   basicAttackFor,
   MAX_COMBAT_PRESETS,
+  CONDITIONS_UNLOCK_LEVEL,
+  PRIORITY_UNLOCK_LEVEL,
 } from '../combatEngine/progression';
 import { resourcesForClass } from '../combatEngine/resources';
 import type { ClassId } from '../gameData/classStats';
@@ -186,7 +188,16 @@ export function CombatSetupScreen() {
 
   function equip(id: string) {
     if (pending.length >= slots) return;
-    setPending((prev) => [...prev, id]);
+    setPending((prev) => {
+      const next = [...prev, id];
+      if (canReorder) return next;
+      // Below the priority-system unlock, equip order isn't meaningful —
+      // effectiveLoadout() re-sorts by unlockLevel at combat time regardless,
+      // so keep the setup screen's display in sync with that instead of
+      // showing an order combat won't actually use.
+      const unlockLevelById = new Map(unlocked.map((a) => [a.id, a.unlockLevel]));
+      return next.sort((a, b) => (unlockLevelById.get(a) ?? 0) - (unlockLevelById.get(b) ?? 0));
+    });
   }
 
   function addCondition(abilityId: string) {
@@ -291,18 +302,8 @@ export function CombatSetupScreen() {
     }
   }
 
-  if (level < 10) {
-    return (
-      <div className="combat-setup-screen">
-        <h2>Combat Setup</h2>
-        <p>
-          You're currently using <strong>{basic?.name}</strong>
-          {unlocked[unlocked.length - 1] ? ` and ${unlocked[unlocked.length - 1].name}` : ''} automatically.
-        </p>
-        <p>The priority system — choosing and ordering your own abilities — unlocks at level 10.</p>
-      </div>
-    );
-  }
+  const canReorder = level >= PRIORITY_UNLOCK_LEVEL;
+  const canUseConditions = level >= CONDITIONS_UNLOCK_LEVEL;
 
   const savedLoadout = effectiveLoadout(cls, spec, level, character.equippedAbilityIds);
   const savedConditions: Record<string, ConditionGroup> = {};
@@ -317,9 +318,14 @@ export function CombatSetupScreen() {
     <div className="combat-setup-screen">
       <h2>Combat Setup</h2>
       <p>
-        {slots} ability slot{slots === 1 ? '' : 's'} — checked top to bottom every time you act. An ability with a
-        condition is skipped (falling through to the next one) unless that condition is met. {basic?.name} is always
-        available as a free, unconditional fallback and never takes a slot.
+        {slots} ability slot{slots === 1 ? '' : 's'}
+        {canReorder
+          ? ' — checked top to bottom every time you act.'
+          : " — used automatically in a fixed order (reordering unlocks at level " + PRIORITY_UNLOCK_LEVEL + ')'}
+        {canUseConditions
+          ? " An ability with a condition is skipped (falling through to the next one) unless that condition is met."
+          : ` Conditions unlock at level ${CONDITIONS_UNLOCK_LEVEL}.`}{' '}
+        {basic?.name} is always available as a free, unconditional fallback and never takes a slot.
       </p>
 
       <h3>
@@ -338,25 +344,31 @@ export function CombatSetupScreen() {
                 ability={ability}
                 controls={
                   <div>
-                    <button onClick={() => move(index, -1)} disabled={index === 0}>
-                      ↑
-                    </button>
-                    <button onClick={() => move(index, 1)} disabled={index === pending.length - 1}>
-                      ↓
-                    </button>
+                    {canReorder && (
+                      <>
+                        <button onClick={() => move(index, -1)} disabled={index === 0}>
+                          ↑
+                        </button>
+                        <button onClick={() => move(index, 1)} disabled={index === pending.length - 1}>
+                          ↓
+                        </button>
+                      </>
+                    )}
                     <button onClick={() => unequip(id)}>Unequip</button>
                   </div>
                 }
                 footer={
-                  <ConditionsEditor
-                    abilityId={id}
-                    cls={cls}
-                    group={pendingConditions[id]}
-                    onAdd={addCondition}
-                    onUpdate={updateCondition}
-                    onRemove={removeCondition}
-                    onSetLogic={setLogic}
-                  />
+                  canUseConditions ? (
+                    <ConditionsEditor
+                      abilityId={id}
+                      cls={cls}
+                      group={pendingConditions[id]}
+                      onAdd={addCondition}
+                      onUpdate={updateCondition}
+                      onRemove={removeCondition}
+                      onSetLogic={setLogic}
+                    />
+                  ) : undefined
                 }
               />
             );

@@ -63,6 +63,11 @@ export interface Monster {
   zoneIds: string[];
   levelRange: [number, number];
   level: number; // canonical single level used by the new formula-driven combat system
+  // The combat-triangle type this monster fights as (see combatTriangle.ts).
+  // Zones should generally skew their monster composition toward one type
+  // (a forest mostly melee, a bandit camp mostly ranged, an arcane ruin
+  // mostly magic) so type matters for zone choice, not just per-monster.
+  combatType: import('./combatTriangle').CombatType;
   goldMin: number;
   goldMax: number;
   lootTable: LootDrop[];

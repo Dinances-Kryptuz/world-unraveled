@@ -78,6 +78,14 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
 
   const monster = MONSTERS[monsterId];
 
+  // The player's current combat-triangle type — read from the freshest
+  // character data available (the ref during an active tick, falling back
+  // to the render-time character before the ref is populated).
+  function currentPlayerCombatType() {
+    const c = characterRef.current ?? character;
+    return resolveSpecDef(c.class, c.spec).combatType;
+  }
+
   function buildEncounterInput(c: Character): EncounterSetupInput {
     const specDef = resolveSpecDef(c.class, c.spec);
     const talentTotals = c.spec ? evaluateTalents(c.spec, c.talentPicks).totals : EMPTY_TALENT_TOTALS;
@@ -119,7 +127,7 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
     const interval = setInterval(() => {
       if (retreatedRef.current || !combatStateRef.current) return;
 
-      const ctx: TickContext = { monster, playerLevel: characterRef.current?.level ?? character.level };
+      const ctx: TickContext = { monster, playerLevel: characterRef.current?.level ?? character.level, playerCombatType: currentPlayerCombatType() };
       const result = advanceCombat(combatStateRef.current, ctx, 1);
       pendingKillsRef.current.push(...result.kills);
       if (result.events.length > 0) {
@@ -219,7 +227,7 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
   function handleManualUse(abilityId: string) {
     const state = combatStateRef.current;
     if (!state || retreatedRef.current) return;
-    const ctx: TickContext = { monster, playerLevel: characterRef.current?.level ?? character.level };
+    const ctx: TickContext = { monster, playerLevel: characterRef.current?.level ?? character.level, playerCombatType: currentPlayerCombatType() };
     const result = tryManualUseAbility(state, 'player', abilityId, ctx);
     if (!result) return;
     pendingKillsRef.current.push(...result.kills);

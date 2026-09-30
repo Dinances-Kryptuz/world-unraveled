@@ -106,6 +106,14 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
     return next;
   }
 
+  // The player's current combat-triangle type — read from the freshest
+  // character data available (the ref during an active tick, falling back
+  // to the render-time character before the ref is populated).
+  function currentPlayerCombatType() {
+    const c = characterRef.current ?? character;
+    return resolveSpecDef(c.class, c.spec).combatType;
+  }
+
   function buildEncounterInput(c: Character): EncounterSetupInput {
     const specDef = resolveSpecDef(c.class, c.spec);
     const talentTotals = c.spec ? evaluateTalents(c.spec, c.talentPicks).totals : EMPTY_TALENT_TOTALS;
@@ -150,6 +158,7 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
       const ctx: TickContext = {
         monster: currentMonsterRef.current,
         playerLevel: characterRef.current?.level ?? character.level,
+        playerCombatType: currentPlayerCombatType(),
         nextMonster,
       };
       const result = advanceCombat(combatStateRef.current, ctx, 1);
@@ -252,6 +261,7 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
     const ctx: TickContext = {
       monster: currentMonsterRef.current,
       playerLevel: characterRef.current?.level ?? character.level,
+      playerCombatType: currentPlayerCombatType(),
       nextMonster,
     };
     const result = tryManualUseAbility(state, 'player', abilityId, ctx);

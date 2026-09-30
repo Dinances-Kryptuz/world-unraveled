@@ -18,9 +18,10 @@ import {
 } from '../gameData/combatFormulas';
 import type { TalentBonusTotals } from '../utils/talentEvaluator';
 import type { Monster } from '../gameData/types';
+import { combatTypeModifier, type CombatType } from '../gameData/combatTriangle';
 import { ABILITIES, BASIC_ATTACK_BY_CLASS } from './abilities';
 import { MONSTER_ABILITIES } from './monsterAbilities';
-import { effectiveLoadout } from './progression';
+import { effectiveLoadout, effectiveAbilityConditions } from './progression';
 import { initialResources, regenResources, canAfford, spend, gain } from './resources';
 import { resolveTarget } from './targeting';
 import { pickAbility } from './priority';
@@ -66,8 +67,13 @@ function buildPlayerProfile(input: EncounterSetupInput): CasterProfile {
     // playerDamageModifier(diff) folds the level-gap difficulty curve (the
     // same one that drives the grey/green/yellow/orange/red monster tiers)
     // into every ability's damage — a level-30 hitting a level-1 mob still
-    // hits like it, same as the old aggregate model.
-    damageCoef: specDef.damageCoef * playerDamageModifier(diff) * (1 + talentTotals.flatDmgPct / 100),
+    // hits like it, same as the old aggregate model. combatTypeModifier
+    // folds in the melee/ranged/magic triangle the same way.
+    damageCoef:
+      specDef.damageCoef *
+      playerDamageModifier(diff) *
+      combatTypeModifier(specDef.combatType, monster.combatType) *
+      (1 + talentTotals.flatDmgPct / 100),
     accuracy: 1, // levelDiff-based accuracy is applied per-hit in useAbility, not baked in here
     avoidance,
     armor,
@@ -78,11 +84,11 @@ function buildPlayerProfile(input: EncounterSetupInput): CasterProfile {
   };
 }
 
-function buildMonsterProfile(monster: Monster, playerLevel: number): CasterProfile {
+function buildMonsterProfile(monster: Monster, playerLevel: number, playerCombatType: CombatType): CasterProfile {
   const diff = monster.level - playerLevel;
   return {
     normalizedHit: monsterBaseDamage(monster.level),
-    damageCoef: enemyDamageModifier(diff),
+    damageCoef: enemyDamageModifier(diff) * combatTypeModifier(monster.combatType, playerCombatType),
     accuracy: 1, // monsters always attempt to hit; only the player's avoidance can prevent it
     avoidance: 0, // monsters have no avoidance stat in the existing balance model
     armor: monsterArmor(monster.level),
@@ -92,7 +98,7 @@ function buildMonsterProfile(monster: Monster, playerLevel: number): CasterProfi
   };
 }
 
-function createMonsterCombatant(monster: Monster, playerLevel: number, idSuffix: number): Combatant {
+function createMonsterCombatant(monster: Monster, playerLevel: number, playerCombatType: CombatType, idSuffix: number): Combatant {
   return {
     id: `enemy-${idSuffix}`,
     name: monster.name,
@@ -113,7 +119,7 @@ function createMonsterCombatant(monster: Monster, playerLevel: number, idSuffix:
     // ability rotation instead of a flat auto-attack.
     equippedAbilityIds: monster.equippedAbilityIds ?? [],
     basicAttackId: 'monster_basic_attack',
-    profile: buildMonsterProfile(monster, playerLevel),
+    profile: buildMonsterProfile(monster, playerLevel, playerCombatType),
   };
 }
 
@@ -148,7 +154,7 @@ export function createPlayerCombatant(input: EncounterSetupInput): Combatant {
     stunnedSeconds: 0,
     actionReadyIn: ATTACK_INTERVAL_SECONDS,
     equippedAbilityIds: loadout,
-    abilityConditions: input.savedAbilityConditions,
+    abilityConditions: effectiveAbilityConditions(input.level, input.savedAbilityConditions),
     basicAttackId: BASIC_ATTACK_BY_CLASS[input.cls],
     profile: buildPlayerProfile(input),
   };
@@ -157,7 +163,7 @@ export function createPlayerCombatant(input: EncounterSetupInput): Combatant {
 export function createEncounterState(input: EncounterSetupInput): CombatState {
   return {
     party: [createPlayerCombatant(input)],
-    enemies: [createMonsterCombatant(input.monster, input.level, 1)],
+    enemies: [createMonsterCombatant(input.monster, input.level, input.specDef.combatType, 1)],
     timeElapsed: 0,
   };
 }
@@ -212,6 +218,7 @@ export interface TickResult {
 export interface TickContext {
   monster: Monster;
   playerLevel: number;
+  playerCombatType: CombatType;
   // Dungeon stage progression hook (Phase 8) — called right before an
   // enemy respawn to decide what respawns next. Omitted, the enemy just
   // respawns as `monster` again forever (every non-dungeon fight). When
@@ -273,7 +280,7 @@ export function advanceCombat(state: CombatState, ctx: TickContext, deltaSeconds
   state.enemies = state.enemies.map((e) => {
     if (e.isAlive) return e;
     if (ctx.nextMonster) ctx.monster = ctx.nextMonster(ctx.monster);
-    return createMonsterCombatant(ctx.monster, ctx.playerLevel, Math.random());
+    return createMonsterCombatant(ctx.monster, ctx.playerLevel, ctx.playerCombatType, Math.random());
   });
   const player = state.party.find((p) => p.isPlayer);
   if (player && !player.isAlive) playerDied = true;
