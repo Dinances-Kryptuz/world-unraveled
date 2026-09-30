@@ -138,7 +138,7 @@ const MONSTER_BASIC_ATTACK: Ability = {
 export function createPlayerCombatant(input: EncounterSetupInput): Combatant {
   const loadout = effectiveLoadout(input.cls, input.specId, input.level, input.savedEquippedAbilityIds);
   const intStat = statAtLevel(input.cls, 'INT', input.level) + (input.equipmentBonuses.INT ?? 0);
-  const playerMaxHp = computeMaxHp(input.cls, input.level, input.equipmentBonuses);
+  const playerMaxHp = computeMaxHp(input.cls, input.level, input.equipmentBonuses, input.talentTotals.hpMultPct);
 
   return {
     id: 'player',

@@ -95,7 +95,7 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
     const talentTotals = c.spec ? evaluateTalents(c.spec, c.talentPicks).totals : EMPTY_TALENT_TOTALS;
     const extraDamageTakenPct = getExtraDamageTakenPct(c.spec, c.talentPicks);
     const equipmentBonuses = getEquipmentStatBonuses(c.equipment);
-    const charMaxHp = maxHp(c.class, c.level, equipmentBonuses);
+    const charMaxHp = maxHp(c.class, c.level, equipmentBonuses, talentTotals.hpMultPct);
     const startedAt = c.currentActivity.startedAt ?? new Date();
     const currentHp = resolveCurrentHp(c.currentHp, charMaxHp, c.hpCheckpointAt, startedAt);
     return {
@@ -207,7 +207,8 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
         }
         if (newLevel !== fresh.level) {
           const equipBonuses = getEquipmentStatBonuses(fresh.equipment);
-          const restoredHp = maxHp(fresh.class, newLevel, equipBonuses);
+          const freshTalentTotals = fresh.spec ? evaluateTalents(fresh.spec, fresh.talentPicks).totals : EMPTY_TALENT_TOTALS;
+          const restoredHp = maxHp(fresh.class, newLevel, equipBonuses, freshTalentTotals.hpMultPct);
           await setCharacterLevel(currentUser.uid, newLevel, restoredHp);
           player.hp = restoredHp;
           player.maxHp = restoredHp;

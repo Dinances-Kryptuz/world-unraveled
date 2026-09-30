@@ -118,7 +118,7 @@ export function simulateOfflineCombat(input: OfflineCombatInput): OfflineCombatR
     }
     if (leveledUp) {
       ctx.playerLevel = level;
-      const freshMaxHp = maxHp(input.cls, level, input.equipmentBonuses);
+      const freshMaxHp = maxHp(input.cls, level, input.equipmentBonuses, input.talentTotals.hpMultPct);
       state.party = [createPlayerCombatant(buildInput(level, freshMaxHp))];
     }
   }

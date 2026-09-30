@@ -49,7 +49,7 @@ export function WelcomeBackScreen({
           : EMPTY_TALENT_TOTALS;
         const extraDmgTaken = getExtraDamageTakenPct(character.spec, character.talentPicks);
         const equipBonuses = getEquipmentStatBonuses(character.equipment);
-        const charMaxHp = maxHp(character.class, character.level, equipBonuses);
+        const charMaxHp = maxHp(character.class, character.level, equipBonuses, talentTotals.hpMultPct);
         const startingHp = resolveCurrentHp(character.currentHp, charMaxHp, character.hpCheckpointAt, activity.startedAt);
 
         const result = simulateOfflineCombat({

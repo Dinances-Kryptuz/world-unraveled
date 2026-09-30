@@ -5,6 +5,7 @@ import { getInventory } from './inventory';
 import { ITEMS } from '../gameData/items';
 import { maxHp, resolveCurrentHp } from '../gameData/combatFormulas';
 import { getEquipmentStatBonuses } from '../gameData/equipmentStats';
+import { evaluateTalents, EMPTY_TALENT_TOTALS } from '../utils/talentEvaluator';
 import type { Character } from '../types/character';
 
 // Seconds left before an item can be used again — 0 if it's never been used
@@ -41,7 +42,8 @@ export async function useConsumableOutOfCombat(uid: string, itemId: string): Pro
   if (remaining > 0) return { success: false, reason: `On cooldown for ${Math.ceil(remaining)}s.` };
 
   const equipBonuses = getEquipmentStatBonuses(character.equipment);
-  const charMaxHp = maxHp(character.class, character.level, equipBonuses);
+  const talentTotals = character.spec ? evaluateTalents(character.spec, character.talentPicks).totals : EMPTY_TALENT_TOTALS;
+  const charMaxHp = maxHp(character.class, character.level, equipBonuses, talentTotals.hpMultPct);
   const currentHp = resolveCurrentHp(character.currentHp, charMaxHp, character.hpCheckpointAt, now);
   const newHp = Math.min(charMaxHp, currentHp + item.consumableEffect.healAmount);
 

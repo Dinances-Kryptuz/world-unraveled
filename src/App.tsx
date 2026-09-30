@@ -12,6 +12,7 @@ import { signOut } from './firebase/auth';
 import { CLASS_LABELS, SPEC_LABELS } from './gameData/classStats';
 import { maxHp, resolveCurrentHp } from './gameData/combatFormulas';
 import { getEquipmentStatBonuses } from './gameData/equipmentStats';
+import { evaluateTalents, EMPTY_TALENT_TOTALS } from './utils/talentEvaluator';
 import { characterXpForLevelV2 } from './gameData/xpTables';
 import { DEFAULT_ZONE_ID } from './gameData/zones';
 import { VendorScreen } from './components/VendorScreen';
@@ -39,7 +40,8 @@ function AppContent() {
   }
 
   const equipBonuses = getEquipmentStatBonuses(character.equipment);
-  const characterMaxHp = maxHp(character.class, character.level, equipBonuses);
+  const talentTotals = character.spec ? evaluateTalents(character.spec, character.talentPicks).totals : EMPTY_TALENT_TOTALS;
+  const characterMaxHp = maxHp(character.class, character.level, equipBonuses, talentTotals.hpMultPct);
   const currentHp = resolveCurrentHp(character.currentHp, characterMaxHp, character.hpCheckpointAt, new Date());
 
   const currentLevelXp = characterXpForLevelV2(character.level);

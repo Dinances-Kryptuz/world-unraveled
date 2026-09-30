@@ -564,10 +564,35 @@ export const ITEMS: Record<string, ItemDef> = {
     description: 'Boots reinforced with an ember shard — warm to the touch, and nearly as tough as a drake.',
     stackable: true, equipSlot: 'boots', armorType: 'leather', statBonuses: { STA: 6, STR: 6 }, sellValue: 42,
   },
+  scaled_gloves: {
+    id: 'scaled_gloves', name: 'Scaled Gloves', type: 'equipment',
+    description: 'Gloves worked from fire-hardened scaled leather — the grip holds even when the hilt gets hot.',
+    stackable: true, equipSlot: 'gloves', armorType: 'leather', statBonuses: { STA: 5, STR: 3 }, sellValue: 32,
+  },
+  scaled_cap: {
+    id: 'scaled_cap', name: 'Scaled Cap', type: 'equipment',
+    description: 'A cap of overlapping scaled leather plates, tough enough to turn a glancing blow.',
+    stackable: true, equipSlot: 'helmet', armorType: 'leather', statBonuses: { STA: 7 }, sellValue: 30,
+  },
   heavy_robe: {
     id: 'heavy_robe', name: 'Heavy Robe', type: 'equipment',
     description: 'A dense robe woven from heavy cloth, built to survive the ridge as much as the fight.',
     stackable: true, equipSlot: 'chest', armorType: 'cloth', statBonuses: { INT: 6, SPI: 4 }, sellValue: 30,
+  },
+  heavy_leggings: {
+    id: 'heavy_leggings', name: 'Heavy Leggings', type: 'equipment',
+    description: 'Leggings woven from heavy cloth, thick enough to blunt a blade.',
+    stackable: true, equipSlot: 'legs', armorType: 'cloth', statBonuses: { INT: 8, SPI: 5 }, sellValue: 32,
+  },
+  heavy_gloves: {
+    id: 'heavy_gloves', name: 'Heavy Gloves', type: 'equipment',
+    description: 'Gloves cut from heavy cloth, thick but never clumsy.',
+    stackable: true, equipSlot: 'gloves', armorType: 'cloth', statBonuses: { INT: 6, SPI: 3 }, sellValue: 28,
+  },
+  heavy_cap: {
+    id: 'heavy_cap', name: 'Heavy Cap', type: 'equipment',
+    description: 'A dense cloth cap, warm against the ridge’s wind.',
+    stackable: true, equipSlot: 'helmet', armorType: 'cloth', statBonuses: { INT: 8, SPI: 2 }, sellValue: 30,
   },
   serrated_cleaver: {
     id: 'serrated_cleaver', name: 'Serrated Cleaver', type: 'equipment',
@@ -650,10 +675,35 @@ export const ITEMS: Record<string, ItemDef> = {
     description: 'Boots reinforced with a cindercore shard, warm underfoot even in the deep ruins.',
     stackable: true, equipSlot: 'boots', armorType: 'leather', statBonuses: { STA: 7, STR: 7 }, sellValue: 50,
   },
+  ashhide_gloves: {
+    id: 'ashhide_gloves', name: 'Ashhide Gloves', type: 'equipment',
+    description: 'Gloves cut from tough ashhide, stitched to survive the ruins.',
+    stackable: true, equipSlot: 'gloves', armorType: 'leather', statBonuses: { STA: 6, STR: 4 }, sellValue: 38,
+  },
+  ashhide_cap: {
+    id: 'ashhide_cap', name: 'Ashhide Cap', type: 'equipment',
+    description: 'A sturdy cap of ashhide leather, worn by scavengers who plan on coming back out.',
+    stackable: true, equipSlot: 'helmet', armorType: 'leather', statBonuses: { STA: 9 }, sellValue: 35,
+  },
   ashwoven_robe: {
     id: 'ashwoven_robe', name: 'Ashwoven Robe', type: 'equipment',
     description: 'A robe woven from salvaged ashwoven cloth, still faintly warm.',
     stackable: true, equipSlot: 'chest', armorType: 'cloth', statBonuses: { INT: 7, SPI: 5 }, sellValue: 36,
+  },
+  ashwoven_leggings: {
+    id: 'ashwoven_leggings', name: 'Ashwoven Leggings', type: 'equipment',
+    description: 'Leggings woven from salvaged ashwoven cloth.',
+    stackable: true, equipSlot: 'legs', armorType: 'cloth', statBonuses: { INT: 9, SPI: 6 }, sellValue: 38,
+  },
+  ashwoven_gloves: {
+    id: 'ashwoven_gloves', name: 'Ashwoven Gloves', type: 'equipment',
+    description: 'Gloves cut from ashwoven cloth, still faintly warm.',
+    stackable: true, equipSlot: 'gloves', armorType: 'cloth', statBonuses: { INT: 7, SPI: 4 }, sellValue: 34,
+  },
+  ashwoven_cap: {
+    id: 'ashwoven_cap', name: 'Ashwoven Cap', type: 'equipment',
+    description: 'A cap of ashwoven cloth, worn by those who work the ruins.',
+    stackable: true, equipSlot: 'helmet', armorType: 'cloth', statBonuses: { INT: 9, SPI: 3 }, sellValue: 35,
   },
   scavenged_hatchet: {
     id: 'scavenged_hatchet', name: 'Scavenged Hatchet', type: 'equipment',
@@ -735,10 +785,35 @@ export const ITEMS: Record<string, ItemDef> = {
     description: 'Boots set with a magma heart, warm and unyielding.',
     stackable: true, equipSlot: 'boots', armorType: 'leather', statBonuses: { STA: 9, STR: 9 }, sellValue: 62,
   },
+  scaleback_gloves: {
+    id: 'scaleback_gloves', name: 'Scaleback Gloves', type: 'equipment',
+    description: 'Gloves worked from scaleback leather, tough enough to grip a blade fresh from the forge.',
+    stackable: true, equipSlot: 'gloves', armorType: 'leather', statBonuses: { STA: 8, STR: 6 }, sellValue: 46,
+  },
+  scaleback_cap: {
+    id: 'scaleback_cap', name: 'Scaleback Cap', type: 'equipment',
+    description: 'A heavy cap of scaleback leather, molded to shrug off both blade and flame.',
+    stackable: true, equipSlot: 'helmet', armorType: 'leather', statBonuses: { STA: 12 }, sellValue: 42,
+  },
   charred_robe: {
     id: 'charred_robe', name: 'Charred Robe', type: 'equipment',
     description: 'A cultist robe, reclaimed and re-stitched from salvaged charred cloth.',
     stackable: true, equipSlot: 'chest', armorType: 'cloth', statBonuses: { INT: 9, SPI: 6 }, sellValue: 44,
+  },
+  charred_leggings: {
+    id: 'charred_leggings', name: 'Charred Leggings', type: 'equipment',
+    description: 'Cultist leggings, reclaimed and re-stitched from salvaged charred cloth.',
+    stackable: true, equipSlot: 'legs', armorType: 'cloth', statBonuses: { INT: 11, SPI: 7 }, sellValue: 46,
+  },
+  charred_gloves: {
+    id: 'charred_gloves', name: 'Charred Gloves', type: 'equipment',
+    description: 'Cultist gloves, still smelling faintly of brimstone.',
+    stackable: true, equipSlot: 'gloves', armorType: 'cloth', statBonuses: { INT: 9, SPI: 5 }, sellValue: 42,
+  },
+  charred_cap: {
+    id: 'charred_cap', name: 'Charred Cap', type: 'equipment',
+    description: "A cultist's hood, reclaimed from the rift's edge.",
+    stackable: true, equipSlot: 'helmet', armorType: 'cloth', statBonuses: { INT: 11, SPI: 4 }, sellValue: 43,
   },
   zealots_blade: {
     id: 'zealots_blade', name: "Zealot's Blade", type: 'equipment',
@@ -820,10 +895,35 @@ export const ITEMS: Record<string, ItemDef> = {
     description: "Boots set with a fragment of the Emberlord's own ash.",
     stackable: true, equipSlot: 'boots', armorType: 'leather', statBonuses: { STA: 11, STR: 11 }, sellValue: 75,
   },
+  emberscale_gloves: {
+    id: 'emberscale_gloves', name: 'Emberscale Gloves', type: 'equipment',
+    description: 'Gloves worked from the toughest leather known, fit for the crater’s edge.',
+    stackable: true, equipSlot: 'gloves', armorType: 'leather', statBonuses: { STA: 10, STR: 8 }, sellValue: 55,
+  },
+  emberscale_cap: {
+    id: 'emberscale_cap', name: 'Emberscale Cap', type: 'equipment',
+    description: 'A crown of emberscale leather, worn by those who’ve stared into the crater and lived.',
+    stackable: true, equipSlot: 'helmet', armorType: 'leather', statBonuses: { STA: 15 }, sellValue: 50,
+  },
   ashenweave_robe: {
     id: 'ashenweave_robe', name: 'Ashenweave Robe', type: 'equipment',
     description: 'A robe woven from the finest ashenweave cloth, taken from the crater’s most devout.',
     stackable: true, equipSlot: 'chest', armorType: 'cloth', statBonuses: { INT: 11, SPI: 7 }, sellValue: 52,
+  },
+  ashenweave_leggings: {
+    id: 'ashenweave_leggings', name: 'Ashenweave Leggings', type: 'equipment',
+    description: 'Leggings woven from the finest ashenweave cloth, taken from the crater’s most devout.',
+    stackable: true, equipSlot: 'legs', armorType: 'cloth', statBonuses: { INT: 13, SPI: 8 }, sellValue: 55,
+  },
+  ashenweave_gloves: {
+    id: 'ashenweave_gloves', name: 'Ashenweave Gloves', type: 'equipment',
+    description: 'Gloves of the finest ashenweave cloth, still warm from the crater’s edge.',
+    stackable: true, equipSlot: 'gloves', armorType: 'cloth', statBonuses: { INT: 11, SPI: 6 }, sellValue: 50,
+  },
+  ashenweave_cap: {
+    id: 'ashenweave_cap', name: 'Ashenweave Cap', type: 'equipment',
+    description: 'A hood of ashenweave cloth, worn by the crater’s most devoted.',
+    stackable: true, equipSlot: 'helmet', armorType: 'cloth', statBonuses: { INT: 13, SPI: 5 }, sellValue: 51,
   },
   harbingers_talon: {
     id: 'harbingers_talon', name: "Harbinger's Talon", type: 'equipment',
