@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useCharacter } from '../hooks/useCharacter';
-import { applyGatheringResult, checkAndApplyProfessionLevelUp, stopActivity } from '../firebase/character';
+import { applyGatheringResult, checkAndApplyProfessionLevelUp, stopActivity, getCharacter, advanceQuests } from '../firebase/character';
 import { resolveGathering } from '../gameData/activityEngine';
 import { professionXpForLevel } from '../gameData/xpTables';
 import { XpBar } from './XpBar';
@@ -106,6 +106,16 @@ export function GatheringScreen({ node }: { node: GatherNode }) {
         quantity: wholeItems,
       });
       await checkAndApplyProfessionLevelUp(currentUser.uid, node.profession);
+
+      // Fetched fresh (not the possibly-stale characterRef) for the same
+      // reason CombatScreen does before its own level-up check: applying
+      // quest progress against stale quest state and writing it back would
+      // silently lose any progress that landed in between.
+      const fresh = await getCharacter(currentUser.uid);
+      if (fresh) {
+        await advanceQuests(currentUser.uid, fresh, [{ type: 'gather', itemId: node.itemId, count: wholeItems }]);
+      }
+
       await refetch();
     } catch (err) {
       console.error('Gathering autosave failed, will retry next cycle:', err);

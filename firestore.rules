@@ -47,7 +47,8 @@ service cloud.firestore {
       && data.equippedAbilityIds == []
       && data.abilityConditions == {}
       && data.combatPresets == []
-      && data.itemCooldowns == {};
+      && data.itemCooldowns == {}
+      && isValidNewQuests(data.quests);
   }
 
   function isValidCharacterUpdate(before, after) {
@@ -64,7 +65,8 @@ service cloud.firestore {
       && isValidEquippedAbilityIds(after)
       && isValidAbilityConditions(after)
       && isValidCombatPresets(after)
-      && isValidItemCooldowns(after);
+      && isValidItemCooldowns(after)
+      && isValidQuests(after);
   }
 
   // Same "may not exist yet on an old character" treatment as Smithing/
@@ -109,6 +111,36 @@ service cloud.firestore {
   function isValidItemCooldowns(after) {
     return !('itemCooldowns' in after)
       || (after.itemCooldowns is map && after.itemCooldowns.size() <= 20);
+  }
+
+  // Same "may not exist yet on an old character" treatment as the sibling
+  // fields above — full validation (that active quest ids are real, that
+  // objective progress never exceeds a quest's own target, that rewards
+  // match QuestDef) happens in gameData/questEngine.ts's applyQuestEvents,
+  // the only path that ever writes this field. Bounded generously on
+  // completedIds/dailyCompletedAt since those only grow with the quest
+  // catalog, not with player action; active is capped at
+  // gameData/quests.ts's MAX_ACTIVE_QUESTS.
+  function isValidQuests(after) {
+    return !('quests' in after)
+      || (after.quests is map
+          && after.quests.keys().hasOnly(['active', 'completedIds', 'dailyCompletedAt'])
+          && after.quests.active is map && after.quests.active.size() <= 8
+          && after.quests.completedIds is list && after.quests.completedIds.size() <= 200
+          && after.quests.dailyCompletedAt is map && after.quests.dailyCompletedAt.size() <= 50);
+  }
+
+  // New-character quests: completedIds/dailyCompletedAt must be empty (a
+  // fresh character has completed nothing yet), but active may already
+  // hold up to MAX_ACTIVE_QUESTS starter quests — createCharacter() fills
+  // it via refillActiveQuests() before the write, so a brand new character
+  // sees its quest board immediately instead of an empty one.
+  function isValidNewQuests(q) {
+    return q is map
+      && q.keys().hasOnly(['active', 'completedIds', 'dailyCompletedAt'])
+      && q.active is map && q.active.size() <= 8
+      && q.completedIds == []
+      && q.dailyCompletedAt == {};
   }
 
   function isValidEquipment(e) {

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useCharacter } from '../hooks/useCharacter';
-import { applyCombatResult, setCharacterLevel, stopActivity, getCharacter } from '../firebase/character';
+import { applyCombatResult, setCharacterLevel, stopActivity, getCharacter, advanceQuests } from '../firebase/character';
 import { subscribeToInventory } from '../firebase/inventory';
 import { recordConsumableUse, remainingCooldownSeconds } from '../firebase/consumables';
 import { MONSTERS } from '../gameData/monsters';
@@ -11,12 +11,15 @@ import { evaluateTalents, EMPTY_TALENT_TOTALS } from '../utils/talentEvaluator';
 import { maxHp, resolveCurrentHp, ATTACK_INTERVAL_SECONDS } from '../gameData/combatFormulas';
 import { getEquipmentStatBonuses } from '../gameData/equipmentStats';
 import { characterXpForLevelV2 } from '../gameData/xpTables';
+import type { QuestEvent } from '../gameData/questEngine';
 import {
   createEncounterState,
   advanceCombat,
   tryManualUseAbility,
+  mergeQuestSignals,
   type EncounterSetupInput,
   type KillReward,
+  type QuestSignals,
   type TickContext,
 } from '../combatEngine/engine';
 import type { CombatState, CombatEvent } from '../combatEngine/types';
@@ -60,6 +63,7 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
 
   const combatStateRef = useRef<CombatState | null>(null);
   const pendingKillsRef = useRef<KillReward[]>([]);
+  const pendingQuestSignalsRef = useRef<QuestSignals>({ healingDone: 0, abilityUseCounts: {} });
   const retreatedRef = useRef(false);
 
   const characterRef = useRef<Character | null>(character);
@@ -115,6 +119,7 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
     setRetreated(false);
     retreatedRef.current = false;
     pendingKillsRef.current = [];
+    pendingQuestSignalsRef.current = { healingDone: 0, abilityUseCounts: {} };
     combatStateRef.current = createEncounterState(buildEncounterInput(character));
     // Refs don't trigger a re-render on their own — without this, the
     // screen would render nothing for up to a second, until the first
@@ -130,6 +135,7 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
       const ctx: TickContext = { monster, playerLevel: characterRef.current?.level ?? character.level, playerCombatType: currentPlayerCombatType() };
       const result = advanceCombat(combatStateRef.current, ctx, 1);
       pendingKillsRef.current.push(...result.kills);
+      mergeQuestSignals(pendingQuestSignalsRef.current, result.questSignals);
       if (result.events.length > 0) {
         setLog((prev) => [...result.events, ...prev].slice(0, MAX_LOG_LINES));
       }
@@ -158,8 +164,11 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
     if (!currentUser || !state || !player) return;
 
     const kills = pendingKillsRef.current;
+    const questSignals = pendingQuestSignalsRef.current;
+    const hasQuestSignals = questSignals.healingDone > 0 || Object.keys(questSignals.abilityUseCounts).length > 0;
+    if (kills.length === 0 && !hasQuestSignals) return;
     pendingKillsRef.current = [];
-    if (kills.length === 0) return;
+    pendingQuestSignalsRef.current = { healingDone: 0, abilityUseCounts: {} };
 
     const xpGained = Math.round(kills.reduce((sum, k) => sum + k.xpGained, 0));
     const goldGained = Math.round(kills.reduce((sum, k) => sum + k.goldGained, 0));
@@ -203,12 +212,40 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
           player.hp = restoredHp;
           player.maxHp = restoredHp;
         }
+
+        const killCountsByMonster: Record<string, number> = {};
+        for (const kill of kills) {
+          killCountsByMonster[kill.monsterId] = (killCountsByMonster[kill.monsterId] ?? 0) + 1;
+        }
+        const questEvents: QuestEvent[] = Object.entries(killCountsByMonster).map(([monsterId, count]) => ({
+          type: 'kill',
+          monsterId,
+          count,
+        }));
+        if (questSignals.healingDone > 0) {
+          questEvents.push({ type: 'heal_amount', amount: Math.round(questSignals.healingDone) });
+        }
+        for (const [abilityId, count] of Object.entries(questSignals.abilityUseCounts)) {
+          questEvents.push({ type: 'use_ability', abilityId, count });
+        }
+        if (questEvents.length > 0) {
+          const questResult = await advanceQuests(currentUser.uid, fresh, questEvents);
+          if (questResult.completedQuestNames.length > 0) {
+            setLog((prev) =>
+              [
+                ...questResult.completedQuestNames.map((name) => ({ message: `Quest complete: ${name}!`, kind: 'status' as const })),
+                ...prev,
+              ].slice(0, MAX_LOG_LINES)
+            );
+          }
+        }
       }
 
       await refetch();
     } catch (err) {
       console.error('Combat autosave failed, will retry next cycle:', err);
       pendingKillsRef.current.push(...kills);
+      mergeQuestSignals(pendingQuestSignalsRef.current, questSignals);
       setBankedTotals((prev) => ({
         monstersDefeated: prev.monstersDefeated - kills.length,
         xpGained: prev.xpGained - xpGained,
@@ -231,6 +268,7 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
     const result = tryManualUseAbility(state, 'player', abilityId, ctx);
     if (!result) return;
     pendingKillsRef.current.push(...result.kills);
+    mergeQuestSignals(pendingQuestSignalsRef.current, result.questSignals);
     if (result.events.length > 0) {
       setLog((prev) => [...result.events, ...prev].slice(0, MAX_LOG_LINES));
     }

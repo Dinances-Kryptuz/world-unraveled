@@ -207,12 +207,42 @@ export interface KillReward {
   xpGained: number;
   goldGained: number;
   loot: { itemId: string; quantity: number }[];
+  // Which monster this reward came from — lets callers (the quest system)
+  // attribute a kill to a specific monster id without re-deriving it from
+  // display text. Always the monster actually defeated, even mid-dungeon
+  // where `ctx.monster` changes stage to stage.
+  monsterId: string;
+}
+
+// Player-only combat signals the quest system cares about, accumulated
+// across everything that happens in one advanceCombat/tryManualUseAbility
+// call — passed by reference the same way `events`/`kills` already are, so
+// every place damage/healing/ability-use happens can contribute without
+// engine.ts needing to know anything about quests itself.
+export interface QuestSignals {
+  healingDone: number;
+  abilityUseCounts: Record<string, number>;
+}
+
+function emptyQuestSignals(): QuestSignals {
+  return { healingDone: 0, abilityUseCounts: {} };
+}
+
+// Accumulates one tick/manual-use's signals into a running total — both
+// CombatScreen and DungeonScreen collect these across many ticks between
+// autosaves, the same way they already batch `kills` via a ref.
+export function mergeQuestSignals(into: QuestSignals, from: QuestSignals): void {
+  into.healingDone += from.healingDone;
+  for (const [abilityId, count] of Object.entries(from.abilityUseCounts)) {
+    into.abilityUseCounts[abilityId] = (into.abilityUseCounts[abilityId] ?? 0) + count;
+  }
 }
 
 export interface TickResult {
   events: CombatEvent[];
   kills: KillReward[];
   playerDied: boolean;
+  questSignals: QuestSignals;
 }
 
 export interface TickContext {
@@ -233,6 +263,7 @@ export interface TickContext {
 export function advanceCombat(state: CombatState, ctx: TickContext, deltaSeconds: number): TickResult {
   const events: CombatEvent[] = [];
   const kills: KillReward[] = [];
+  const questSignals = emptyQuestSignals();
   let playerDied = false;
   const abilities = abilitiesById();
 
@@ -255,7 +286,9 @@ export function advanceCombat(state: CombatState, ctx: TickContext, deltaSeconds
     // tick above can still kill c in this same iteration, so check isAlive
     // again rather than trusting the outer loop's guard.
     if (c.isAlive && c.profile.passiveHealPct > 0) {
+      const before = c.hp;
       c.hp = Math.min(c.maxHp, c.hp + c.maxHp * c.profile.passiveHealPct * deltaSeconds);
+      if (c.isPlayer) questSignals.healingDone += c.hp - before;
     }
   }
 
@@ -271,7 +304,7 @@ export function advanceCombat(state: CombatState, ctx: TickContext, deltaSeconds
         c.actionReadyIn += ATTACK_INTERVAL_SECONDS;
         break;
       }
-      useAbility(state, c, picked.ability, picked.targetId, ctx, events, kills);
+      useAbility(state, c, picked.ability, picked.targetId, ctx, events, kills, questSignals);
       c.actionReadyIn += ATTACK_INTERVAL_SECONDS;
     }
   }
@@ -286,7 +319,7 @@ export function advanceCombat(state: CombatState, ctx: TickContext, deltaSeconds
   if (player && !player.isAlive) playerDied = true;
 
   state.timeElapsed += deltaSeconds;
-  return { events, kills, playerDied };
+  return { events, kills, playerDied, questSignals };
 }
 
 function tickDots(c: Combatant, deltaSeconds: number, ctx: TickContext, events: CombatEvent[], kills: KillReward[]): void {
@@ -321,10 +354,14 @@ export function useAbility(
   targetId: string,
   ctx: TickContext,
   events: CombatEvent[],
-  kills: KillReward[]
+  kills: KillReward[],
+  questSignals: QuestSignals = emptyQuestSignals()
 ): void {
   spend(source.resources, ability.resourceType, ability.resourceCost);
   if (ability.cooldownSeconds > 0) source.cooldowns[ability.id] = ability.cooldownSeconds;
+  if (source.isPlayer) {
+    questSignals.abilityUseCounts[ability.id] = (questSignals.abilityUseCounts[ability.id] ?? 0) + 1;
+  }
 
   const target = [...state.party, ...state.enemies].find((c) => c.id === targetId);
   if (!target) return;
@@ -349,7 +386,9 @@ export function useAbility(
         // healFrac into every tick too would double-count the same "damage
         // dealt" against a single self-heal budget for no real benefit.
         if (source.profile.healFrac > 0 && source.isAlive) {
+          const before = source.hp;
           source.hp = Math.min(source.maxHp, source.hp + amount * source.profile.healFrac);
+          if (source.isPlayer) questSignals.healingDone += source.hp - before;
         }
         events.push({
           message: `${source.name} uses ${ability.name} on ${target.name} for ${amount} damage.`,
@@ -388,7 +427,9 @@ export function useAbility(
         const healAmount = Math.round(
           source.profile.normalizedHit * (effect.power ?? 1) * source.profile.damageCoef * buffDamageDealtMult(source)
         );
+        const hpBefore = target.hp;
         target.hp = Math.min(target.maxHp, target.hp + healAmount);
+        if (source.isPlayer) questSignals.healingDone += target.hp - hpBefore;
         events.push({ message: `${source.name} uses ${ability.name} on ${target.name}, healing for ${healAmount}.`, kind: 'heal' });
         break;
       }
@@ -427,7 +468,7 @@ function rollKillReward(monster: Monster, levelDiff: number): KillReward {
       if (qty > 0) loot.push({ itemId: drop.itemId, quantity: qty });
     }
   }
-  return { xpGained, goldGained, loot };
+  return { xpGained, goldGained, loot, monsterId: monster.id };
 }
 
 // Manual override — same function the AI uses, just triggered by a click
@@ -438,7 +479,7 @@ export function tryManualUseAbility(
   sourceId: string,
   abilityId: string,
   ctx: TickContext
-): { events: CombatEvent[]; kills: KillReward[] } | null {
+): { events: CombatEvent[]; kills: KillReward[]; questSignals: QuestSignals } | null {
   const source = state.party.find((c) => c.id === sourceId);
   const ability = abilitiesById()[abilityId];
   if (!source || !source.isAlive || !ability) return null;
@@ -449,8 +490,9 @@ export function tryManualUseAbility(
 
   const events: CombatEvent[] = [];
   const kills: KillReward[] = [];
-  useAbility(state, source, ability, target.id, ctx, events, kills);
-  return { events, kills };
+  const questSignals = emptyQuestSignals();
+  useAbility(state, source, ability, target.id, ctx, events, kills, questSignals);
+  return { events, kills, questSignals };
 }
 
 export { ABILITIES } from './abilities';

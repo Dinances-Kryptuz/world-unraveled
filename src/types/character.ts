@@ -30,6 +30,19 @@ export interface CombatPreset {
   abilityConditions: Record<string, ConditionGroup>;
 }
 
+// Quest state — see gameData/questEngine.ts for how this is read/written.
+// `active` is questId -> per-objective progress counters (parallel to that
+// quest's QuestDef.objectives). `completedIds` is every quest ever finished
+// at least once (permanent, drives prerequisite chains). `dailyCompletedAt`
+// is only for repeatable quests, tracking when they can next be re-offered
+// — a repeatable quest stays in completedIds forever once first finished,
+// but that alone doesn't mean it's on cooldown.
+export interface QuestState {
+  active: Record<string, number[]>;
+  completedIds: string[];
+  dailyCompletedAt: Record<string, Date>;
+}
+
 export interface Character {
   name: string;
   createdAt: Date;
@@ -62,6 +75,8 @@ export interface Character {
   // never been used and is always off cooldown. See
   // firebase/consumables.ts's remainingCooldownSeconds().
   itemCooldowns: Record<string, Date>;
+  // Quest progress — see QuestState above.
+  quests: QuestState;
 }
 
 export interface Inventory {

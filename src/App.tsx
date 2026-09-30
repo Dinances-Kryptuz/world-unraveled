@@ -15,6 +15,7 @@ import { getEquipmentStatBonuses } from './gameData/equipmentStats';
 import { characterXpForLevelV2 } from './gameData/xpTables';
 import { DEFAULT_ZONE_ID } from './gameData/zones';
 import { VendorScreen } from './components/VendorScreen';
+import { QuestLog } from './components/QuestLog';
 
 function AppContent() {
   const { user, loading: authLoading } = useAuth();
@@ -76,6 +77,7 @@ function AppContent() {
         </div>
         <button onClick={() => signOut()}>Sign out</button>
       </div>
+      <QuestLog />
       <ZoneScreen selectedZoneId={selectedZoneId} onSelectZone={setSelectedZoneId} />
       <EquipmentScreen />
       <CombatSetupScreen />

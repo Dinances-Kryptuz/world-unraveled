@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useCharacter } from '../hooks/useCharacter';
-import { applyCraftingResult, checkAndApplyProfessionLevelUp, stopActivity } from '../firebase/character';
+import { applyCraftingResult, checkAndApplyProfessionLevelUp, stopActivity, getCharacter, advanceQuests } from '../firebase/character';
 import { getInventory } from '../firebase/inventory';
 import { resolveCrafting } from '../gameData/activityEngine';
 import { professionXpForLevel } from '../gameData/xpTables';
@@ -128,6 +128,15 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
         materialsConsumed: result.materialsConsumed,
       });
       await checkAndApplyProfessionLevelUp(currentUser.uid, recipe.profession);
+
+      // Fetched fresh for the same lost-update reason as GatheringScreen.
+      const fresh = await getCharacter(currentUser.uid);
+      if (fresh) {
+        await advanceQuests(currentUser.uid, fresh, [
+          { type: 'craft', itemId: recipe.resultItemId, count: result.itemsCrafted },
+        ]);
+      }
+
       await refetch();
     } catch (err) {
       console.error('Crafting autosave failed, will retry next cycle:', err);

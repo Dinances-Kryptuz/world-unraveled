@@ -10,6 +10,7 @@ import { canClassEquip } from '../gameData/classStats';
 import { ITEMS } from '../gameData/items';
 import { maxEquippedSlots, unlockedAbilities, effectiveLoadout, MAX_COMBAT_PRESETS } from '../combatEngine/progression';
 import type { Condition, ConditionGroup, ConditionType, ResourceType } from '../combatEngine/types';
+import { refillActiveQuests, applyQuestEvents, type QuestEvent } from '../gameData/questEngine';
 
 const STARTING_GATHERING_PROFESSIONS: ProfessionId[] = ['skinning', 'mining', 'herbalism'];
 const STARTING_PRODUCTION_PROFESSIONS: ProfessionId[] = ['leatherworking', 'smithing', 'tailoring', 'alchemy'];
@@ -46,6 +47,18 @@ export async function getCharacter(uid: string): Promise<Character | null> {
     itemCooldowns: Object.fromEntries(
       Object.entries(data.itemCooldowns ?? {}).map(([itemId, ts]) => [itemId, (ts as Timestamp).toDate()])
     ),
+    // Same backfill idea again, for the quest system — an old character
+    // without this field just starts with an empty board and picks up its
+    // first quests the next time it completes a trackable action (or via
+    // the Quest Log's manual refresh), same non-eager pattern as every
+    // other backfill here.
+    quests: {
+      active: data.quests?.active ?? {},
+      completedIds: data.quests?.completedIds ?? [],
+      dailyCompletedAt: Object.fromEntries(
+        Object.entries(data.quests?.dailyCompletedAt ?? {}).map(([id, ts]) => [id, (ts as Timestamp).toDate()])
+      ),
+    },
     createdAt: (data.createdAt as Timestamp)?.toDate() ?? new Date(),
     hpCheckpointAt: (data.hpCheckpointAt as Timestamp)?.toDate() ?? new Date(),
     currentActivity: {
@@ -59,6 +72,14 @@ export async function getCharacter(uid: string): Promise<Character | null> {
 
 export async function createCharacter(uid: string, name: string, characterClass: ClassId): Promise<void> {
   const professions = defaultProfessions();
+
+  // A brand-new character immediately sees a starter quest board (its
+  // level-1 zone/class/profession quests) rather than an empty one that
+  // only fills in after their first kill/gather/craft.
+  const initialActiveQuests = refillActiveQuests(
+    { class: characterClass, spec: null, level: 1, quests: { active: {}, completedIds: [], dailyCompletedAt: {} } },
+    new Date()
+  );
 
   const character = {
     name,
@@ -88,6 +109,7 @@ export async function createCharacter(uid: string, name: string, characterClass:
     abilityConditions: {},
     combatPresets: [],
     itemCooldowns: {},
+    quests: { active: initialActiveQuests, completedIds: [], dailyCompletedAt: {} },
   };
 
   await setDoc(doc(db, 'characters', uid), character);
@@ -178,6 +200,48 @@ export async function applyGatheringResult(
       [`items.${result.itemId}`]: increment(result.quantity),
     });
   }
+}
+
+// Applies a batch of quest-progress events (kills, gathers, crafts, ability
+// uses, healing) to the character's active quests, persists the result, and
+// pays out any rewards from newly-completed quests. Called from the same
+// autosave paths that already report kills/gathers/crafts to Firestore —
+// see CombatScreen/DungeonScreen/GatheringScreen/CraftingScreen. Takes the
+// caller's already-loaded `character` rather than re-fetching, since every
+// call site already has a fresh one in hand.
+export async function advanceQuests(
+  uid: string,
+  character: Character,
+  events: QuestEvent[]
+): Promise<{ rewards: { xp: number; gold: number; items: { itemId: string; quantity: number }[] }; completedQuestNames: string[] }> {
+  if (events.length === 0) return { rewards: { xp: 0, gold: 0, items: [] }, completedQuestNames: [] };
+  const result = applyQuestEvents(character, events, new Date());
+
+  const characterUpdate: Record<string, unknown> = { quests: result.quests };
+  if (result.rewards.xp) characterUpdate.xp = increment(result.rewards.xp);
+  if (result.rewards.gold) characterUpdate.gold = increment(result.rewards.gold);
+  await updateDoc(doc(db, 'characters', uid), characterUpdate);
+
+  if (result.rewards.items.length > 0) {
+    const inventoryUpdates: Record<string, unknown> = {};
+    for (const item of result.rewards.items) {
+      inventoryUpdates[`items.${item.itemId}`] = increment(item.quantity);
+    }
+    await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), inventoryUpdates);
+  }
+
+  return { rewards: result.rewards, completedQuestNames: result.completedQuestNames };
+}
+
+// Manual "check for new quests" — lets a player pull in a just-expired
+// daily or a chain successor without needing to complete some unrelated
+// action first. Only ever adds to `active`; never touches completedIds or
+// dailyCompletedAt, so it can't affect cooldowns or chain state.
+export async function refreshQuestBoard(uid: string): Promise<void> {
+  const character = await getCharacter(uid);
+  if (!character) return;
+  const active = refillActiveQuests(character, new Date());
+  await updateDoc(doc(db, 'characters', uid), { 'quests.active': active });
 }
 
 export async function checkAndApplyProfessionLevelUp(uid: string, profession: ProfessionId): Promise<void> {
