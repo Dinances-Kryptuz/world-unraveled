@@ -154,10 +154,14 @@ service cloud.firestore {
       && (e.ring == null || e.ring is string);
   }
 
+  // weapon/chest/boots may already be filled at creation — createCharacter()
+  // grants a small class-appropriate starter kit there (see gameData/items.ts's
+  // "Starter gear" section) so a level-1 character isn't fighting bare-handed.
+  // The remaining slots (helmet/gloves/legs/ring) the starter kit never
+  // touches, so those must still be empty on a genuinely new character.
   function isValidNewEquipment(e) {
     return isValidEquipment(e)
-      && e.weapon == null && e.chest == null && e.helmet == null
-      && e.gloves == null && e.legs == null && e.boots == null && e.ring == null;
+      && e.helmet == null && e.gloves == null && e.legs == null && e.ring == null;
   }
 
   function isValidProfessionState(p) {

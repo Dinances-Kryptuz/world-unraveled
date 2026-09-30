@@ -5,6 +5,36 @@ import type { ItemDef } from './types';
 // of tracking per-item instances.
 
 export const ITEMS: Record<string, ItemDef> = {
+  // ── Starter gear — granted directly at character creation (see
+  // firebase/character.ts's createCharacter), not sold, gathered, or
+  // crafted. A level-1 character fighting bare-handed dies to the first
+  // same-level enemy within a couple of hits; this closes most of that gap
+  // with "single digit" stat bumps per the design doc, without touching
+  // the calibrated per-level/per-spec combat formulas. novice_tunic and
+  // novice_boots are cloth so they're legal for every class (cloth is
+  // always allowed, even for Warrior/Paladin) — one shared pair of armor
+  // items instead of one per class. ──────────────────────────────────────
+  novice_blade: {
+    id: 'novice_blade', name: 'Novice Blade', type: 'equipment',
+    description: 'A plain but serviceable blade issued to every new recruit.',
+    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 5 }, sellValue: 1,
+  },
+  novice_focus: {
+    id: 'novice_focus', name: 'Novice Focus', type: 'equipment',
+    description: 'A simple focus for channeling the first sparks of spellcraft.',
+    stackable: true, equipSlot: 'weapon', statBonuses: { INT: 5 }, sellValue: 1,
+  },
+  novice_tunic: {
+    id: 'novice_tunic', name: 'Novice Tunic', type: 'equipment',
+    description: 'A sturdy traveling tunic, plain but well-made.',
+    stackable: true, equipSlot: 'chest', armorType: 'cloth', statBonuses: { STA: 5 }, sellValue: 1,
+  },
+  novice_boots: {
+    id: 'novice_boots', name: 'Novice Boots', type: 'equipment',
+    description: 'Well-worn boots, broken in for the road ahead.',
+    stackable: true, equipSlot: 'boots', armorType: 'cloth', statBonuses: { STA: 3 }, sellValue: 1,
+  },
+
   // ── Skinning materials ──────────────────────────────────────────────
   leather_scraps: {
     id: 'leather_scraps',

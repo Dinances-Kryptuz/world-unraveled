@@ -8,6 +8,7 @@ import { professionXpForLevel } from '../gameData/xpTables';
 import { maxHp } from '../gameData/combatFormulas';
 import { canClassEquip } from '../gameData/classStats';
 import { ITEMS } from '../gameData/items';
+import { getEquipmentStatBonuses } from '../gameData/equipmentStats';
 import { maxEquippedSlots, unlockedAbilities, effectiveLoadout, MAX_COMBAT_PRESETS } from '../combatEngine/progression';
 import type { Condition, ConditionGroup, ConditionType, ResourceType } from '../combatEngine/types';
 import { refillActiveQuests, applyQuestEvents, type QuestEvent } from '../gameData/questEngine';
@@ -70,8 +71,27 @@ export async function getCharacter(uid: string): Promise<Character | null> {
   } as Character;
 }
 
+// A level-1 character fighting bare-handed dies to the first same-level
+// enemy within a couple of hits (see the balance pass that added this) — a
+// small starter kit closes most of that gap. novice_tunic/novice_boots are
+// cloth, which every class can equip, so only the weapon differs by class
+// (primary-stat weapon: STR for the physical classes, INT for Priest).
+function starterEquipment(cls: ClassId): Record<EquipmentSlot, string | null> {
+  return {
+    weapon: cls === 'priest' ? 'novice_focus' : 'novice_blade',
+    chest: 'novice_tunic',
+    helmet: null,
+    gloves: null,
+    legs: null,
+    boots: 'novice_boots',
+    ring: null,
+  };
+}
+
 export async function createCharacter(uid: string, name: string, characterClass: ClassId): Promise<void> {
   const professions = defaultProfessions();
+  const equipment = starterEquipment(characterClass);
+  const startingHpBonuses = getEquipmentStatBonuses(equipment);
 
   // A brand-new character immediately sees a starter quest board (its
   // level-1 zone/class/profession quests) rather than an empty one that
@@ -91,18 +111,10 @@ export async function createCharacter(uid: string, name: string, characterClass:
     class: characterClass,
     spec: null,
     talentPicks: {},
-    currentHp: maxHp(characterClass, 1),
+    currentHp: maxHp(characterClass, 1, startingHpBonuses),
     hpCheckpointAt: serverTimestamp(),
     respecCount: 0,
-    equipment: {
-      weapon: null,
-      chest: null,
-      helmet: null,
-      gloves: null,
-      legs: null,
-      boots: null,
-      ring: null,
-    },
+    equipment,
     professions,
     currentActivity: { type: null, targetId: null, zoneId: null, startedAt: null },
     equippedAbilityIds: [],

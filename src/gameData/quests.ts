@@ -61,6 +61,19 @@ export const DEFAULT_DAILY_COOLDOWN_HOURS = 20;
 
 export const QUESTS: Record<string, QuestDef> = {
   // ── Greenhollow Fields ──────────────────────────────────────────────
+  // Hares first, not boars — a level-1 character starting completely
+  // unequipped is badly overmatched by the Greenhorn Boar's level-3
+  // canonical level (see the early-game balance pass); the Thornback Hare
+  // is the zone's actual level-1-appropriate target, so it opens the chain.
+  greenhollow_hares: {
+    id: 'greenhollow_hares',
+    name: 'Hares of Greenhollow',
+    category: 'zone',
+    zoneId: 'greenhollow_fields',
+    description: 'Thornback Hares are stripping the fields bare. Cull a few.',
+    objectives: [{ type: 'kill', monsterId: 'thornback_hare', count: 15 }],
+    rewards: { xp: 100, gold: 8 },
+  },
   greenhollow_boars: {
     id: 'greenhollow_boars',
     name: 'Boars of Greenhollow',
@@ -69,6 +82,7 @@ export const QUESTS: Record<string, QuestDef> = {
     description: 'Greenhorn Boars have been trampling the fields. Thin their numbers.',
     objectives: [{ type: 'kill', monsterId: 'greenhorn_boar', count: 15 }],
     rewards: { xp: 200, gold: 15 },
+    prerequisiteQuestId: 'greenhollow_hares',
   },
   greenhollow_wolves: {
     id: 'greenhollow_wolves',
