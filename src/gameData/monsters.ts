@@ -272,6 +272,7 @@ export const MONSTERS: Record<string, Monster> = {
       { itemId: 'heavy_cloth', chance: 0.45, minQty: 1, maxQty: 2 },
       { itemId: 'iron_ore', chance: 0.2, minQty: 1, maxQty: 1 },
       { itemId: 'serrated_cleaver', chance: 0.06, minQty: 1, maxQty: 1 },
+      { itemId: 'embertwined_rod', chance: 0.06, minQty: 1, maxQty: 1 },
     ],
     specialAbility: {
       name: 'Brutal Slash',
@@ -403,6 +404,7 @@ export const MONSTERS: Record<string, Monster> = {
       { itemId: 'cinderore', chance: 0.4, minQty: 1, maxQty: 2 },
       { itemId: 'ashwoven_cloth', chance: 0.25, minQty: 1, maxQty: 1 },
       { itemId: 'scavenged_hatchet', chance: 0.06, minQty: 1, maxQty: 1 },
+      { itemId: 'scavenged_focus', chance: 0.06, minQty: 1, maxQty: 1 },
     ],
     specialAbility: {
       name: 'Firebrand Toss',
@@ -539,6 +541,7 @@ export const MONSTERS: Record<string, Monster> = {
     lootTable: [
       { itemId: 'charred_cloth', chance: 0.45, minQty: 1, maxQty: 2 },
       { itemId: 'zealots_blade', chance: 0.06, minQty: 1, maxQty: 1 },
+      { itemId: 'zealots_icon', chance: 0.06, minQty: 1, maxQty: 1 },
     ],
     specialAbility: {
       name: 'Zealous Fervor',
@@ -644,6 +647,7 @@ export const MONSTERS: Record<string, Monster> = {
     lootTable: [
       { itemId: 'ashenweave_cloth', chance: 0.4, minQty: 1, maxQty: 2 },
       { itemId: 'harbingers_talon', chance: 0.06, minQty: 1, maxQty: 1 },
+      { itemId: 'harbingers_omen', chance: 0.06, minQty: 1, maxQty: 1 },
     ],
     specialAbility: {
       name: 'Cinder Rain',

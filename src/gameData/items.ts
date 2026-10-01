@@ -599,6 +599,11 @@ export const ITEMS: Record<string, ItemDef> = {
     description: "A brutal, notch-edged blade favored by the ridge's marauders.",
     stackable: true, equipSlot: 'weapon', statBonuses: { STR: 8 }, sellValue: 35,
   },
+  embertwined_rod: {
+    id: 'embertwined_rod', name: 'Ember-Twined Rod', type: 'equipment',
+    description: 'A rod wound with heat-cured vine, dropped by the same marauders who prize the Serrated Cleaver.',
+    stackable: true, equipSlot: 'weapon', statBonuses: { INT: 8 }, sellValue: 35,
+  },
   drakes_ember_eye: {
     id: 'drakes_ember_eye', name: "Drake's Ember Eye", type: 'equipment',
     description: 'A polished ring set with a still-smoldering ember, taken from a scorched drake.',
@@ -710,6 +715,11 @@ export const ITEMS: Record<string, ItemDef> = {
     description: "A cinder scavenger's own hatchet, still sharp despite its owner's fate.",
     stackable: true, equipSlot: 'weapon', statBonuses: { STR: 9 }, sellValue: 40,
   },
+  scavenged_focus: {
+    id: 'scavenged_focus', name: 'Scavenged Focus', type: 'equipment',
+    description: "A cracked focusing crystal pried from the same scavenger's hoard as the Scavenged Hatchet.",
+    stackable: true, equipSlot: 'weapon', statBonuses: { INT: 9 }, sellValue: 40,
+  },
   overseers_greatmace: {
     id: 'overseers_greatmace', name: "Overseer's Greatmace", type: 'equipment',
     description: 'The ceremonial mace of the Ashen Overseer — too heavy for most, and twice as deadly.',
@@ -820,6 +830,11 @@ export const ITEMS: Record<string, ItemDef> = {
     description: 'A ritual blade carried by a cultist zealot, its edge blessed by something best left unnamed.',
     stackable: true, equipSlot: 'weapon', statBonuses: { STR: 11 }, sellValue: 50,
   },
+  zealots_icon: {
+    id: 'zealots_icon', name: "Zealot's Icon", type: 'equipment',
+    description: 'A cult icon carried by the same zealot who wields the Zealot’s Blade, warm to the touch.',
+    stackable: true, equipSlot: 'weapon', statBonuses: { INT: 11 }, sellValue: 50,
+  },
   heralds_ember_band: {
     id: 'heralds_ember_band', name: "Herald's Ember Band", type: 'equipment',
     description: 'A ring taken from the Molten Herald, still warm as a living coal.',
@@ -929,6 +944,11 @@ export const ITEMS: Record<string, ItemDef> = {
     id: 'harbingers_talon', name: "Harbinger's Talon", type: 'equipment',
     description: "A curved blade shaped like the claw of the Ashfall Harbinger it was taken from.",
     stackable: true, equipSlot: 'weapon', statBonuses: { STR: 13 }, sellValue: 80,
+  },
+  harbingers_omen: {
+    id: 'harbingers_omen', name: "Harbinger's Omen", type: 'equipment',
+    description: 'A cracked oracle-bone carried by the Ashfall Harbinger, still whispering warnings of what’s waking below.',
+    stackable: true, equipSlot: 'weapon', statBonuses: { INT: 13 }, sellValue: 80,
   },
   sentinels_signet: {
     id: 'sentinels_signet', name: "Sentinel's Signet", type: 'equipment',
