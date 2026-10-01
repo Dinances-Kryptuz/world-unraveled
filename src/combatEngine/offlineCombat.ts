@@ -40,11 +40,11 @@ export interface OfflineCombatInput {
   savedEquippedAbilityIds: string[];
   savedAbilityConditions: Record<string, ConditionGroup>;
   monster: Monster;
-  // Same as EncounterSetupInput.companion — its `level` is overwritten on
-  // every buildInput() call (including after a mid-simulation level-up) to
-  // track the player's current simulated level, since a companion always
-  // fights at the player's level.
-  companion?: CompanionCombatSetup;
+  // Same as EncounterSetupInput.companions — each one's `level` is
+  // overwritten on every buildInput() call (including after a
+  // mid-simulation level-up) to track the player's current simulated
+  // level, since a companion always fights at the player's level.
+  companions?: CompanionCombatSetup[];
 }
 
 export interface OfflineCombatResult {
@@ -89,7 +89,7 @@ export function simulateOfflineCombat(input: OfflineCombatInput): OfflineCombatR
       monster: input.monster,
       savedEquippedAbilityIds: input.savedEquippedAbilityIds,
       savedAbilityConditions: input.savedAbilityConditions,
-      companion: input.companion ? { ...input.companion, level } : undefined,
+      companions: input.companions?.map((c) => ({ ...c, level })),
     };
   }
 
@@ -140,7 +140,9 @@ export function simulateOfflineCombat(input: OfflineCombatInput): OfflineCombatR
       ctx.playerLevel = level;
       const freshMaxHp = maxHp(input.cls, level, input.equipmentBonuses, input.talentTotals.hpMultPct);
       const freshParty = [createPlayerCombatant(buildInput(level, freshMaxHp))];
-      if (input.companion) freshParty.push(createCompanionCombatant({ ...input.companion, level }, input.monster));
+      for (const companion of input.companions ?? []) {
+        freshParty.push(createCompanionCombatant({ ...companion, level }, input.monster));
+      }
       state.party = freshParty;
     }
   }

@@ -40,17 +40,26 @@ export interface SpecDef {
   // spec of an existing class can fight as a different type without any
   // triangle-side change.
   combatType: CombatType;
+  // Relative chance of being the one a monster attacks when there's more
+  // than one party member to choose from (combatEngine/targeting.ts's
+  // LOWEST_HP_ALLY-adjacent weighted pick for CURRENT_ENEMY) — a simple
+  // stand-in for a real threat/taunt system. 1 for everyone except the two
+  // tank specs, which are deliberately high enough that a dungeon group
+  // without one visibly spreads damage (and risk) across its squishier
+  // members instead — the whole point of "a tank" mattering once dungeon
+  // groups exist. Solo play (a one-member party) never reads this at all.
+  threatWeight: number;
 }
 
 // Final Pass 1 calibrated values — every spec verified solvent (margin >= ~1.0x)
 // at every level 1-59 in the naked-kit (no talent, no gear) baseline sim.
 export const SPECS: Record<SpecId, SpecDef> = {
-  warrior_dps: { class: 'warrior', damageCoef: 1.0, survivabilityCoef: 1.0, avoidance: 0.05, healFrac: 0.0, passiveHealPct: 0.0, combatType: 'melee' },
-  warrior_tank: { class: 'warrior', damageCoef: 0.75, survivabilityCoef: 1.5, avoidance: 0.1, healFrac: 0.0, passiveHealPct: 0.0, combatType: 'melee' },
-  shadow_priest: { class: 'priest', damageCoef: 1.0, survivabilityCoef: 0.8, avoidance: 0.05, healFrac: 0.35, passiveHealPct: 0.018, combatType: 'magic' },
-  holy_priest: { class: 'priest', damageCoef: 0.4, survivabilityCoef: 1.0, avoidance: 0.05, healFrac: 0.35, passiveHealPct: 0.044, combatType: 'magic' },
-  prot_paladin: { class: 'paladin', damageCoef: 0.75, survivabilityCoef: 1.5, avoidance: 0.1, healFrac: 0.0, passiveHealPct: 0.006, combatType: 'melee' },
-  holy_paladin: { class: 'paladin', damageCoef: 0.5, survivabilityCoef: 1.0, avoidance: 0.05, healFrac: 0.3, passiveHealPct: 0.022, combatType: 'magic' },
+  warrior_dps: { class: 'warrior', damageCoef: 1.0, survivabilityCoef: 1.0, avoidance: 0.05, healFrac: 0.0, passiveHealPct: 0.0, combatType: 'melee', threatWeight: 1 },
+  warrior_tank: { class: 'warrior', damageCoef: 0.75, survivabilityCoef: 1.5, avoidance: 0.1, healFrac: 0.0, passiveHealPct: 0.0, combatType: 'melee', threatWeight: 4 },
+  shadow_priest: { class: 'priest', damageCoef: 1.0, survivabilityCoef: 0.8, avoidance: 0.05, healFrac: 0.35, passiveHealPct: 0.018, combatType: 'magic', threatWeight: 1 },
+  holy_priest: { class: 'priest', damageCoef: 0.4, survivabilityCoef: 1.0, avoidance: 0.05, healFrac: 0.35, passiveHealPct: 0.044, combatType: 'magic', threatWeight: 1 },
+  prot_paladin: { class: 'paladin', damageCoef: 0.75, survivabilityCoef: 1.5, avoidance: 0.1, healFrac: 0.0, passiveHealPct: 0.006, combatType: 'melee', threatWeight: 4 },
+  holy_paladin: { class: 'paladin', damageCoef: 0.5, survivabilityCoef: 1.0, avoidance: 0.05, healFrac: 0.3, passiveHealPct: 0.022, combatType: 'magic', threatWeight: 1 },
 };
 
 export function statAtLevel(cls: ClassId, stat: BaseStat, level: number): number {

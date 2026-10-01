@@ -9,7 +9,7 @@ import { ITEMS } from '../gameData/items';
 import { resolveSpecDef, getExtraDamageTakenPct } from '../gameData/combatProfileWithTalents';
 import { evaluateTalents, EMPTY_TALENT_TOTALS } from '../utils/talentEvaluator';
 import { evaluateActiveBuffs } from '../gameData/buffs';
-import { resolveActiveCompanionSetup } from '../gameData/companions';
+import { resolveActiveCompanionSetups } from '../gameData/companions';
 import { maxHp, resolveCurrentHp, ATTACK_INTERVAL_SECONDS } from '../gameData/combatFormulas';
 import { getEquipmentStatBonuses } from '../gameData/equipmentStats';
 import { characterXpForLevelV2 } from '../gameData/xpTables';
@@ -119,7 +119,7 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
       monster,
       savedEquippedAbilityIds: c.equippedAbilityIds,
       savedAbilityConditions: c.abilityConditions,
-      companion: resolveActiveCompanionSetup(c),
+      companions: resolveActiveCompanionSetups(c),
     };
   }
 
@@ -346,7 +346,7 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
 
   const state = combatStateRef.current;
   const player = state.party.find((p) => p.isPlayer)!;
-  const companion = state.party.find((p) => !p.isPlayer);
+  const companions = state.party.filter((p) => !p.isPlayer);
   const enemy = state.enemies[0];
 
   return (
@@ -361,8 +361,8 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
           <ResourceBars combatant={player} />
           <StatusBadges combatant={player} />
 
-          {companion && (
-            <>
+          {companions.map((companion) => (
+            <div key={companion.id}>
               <StatBar
                 label={companion.name}
                 current={companion.hp}
@@ -370,8 +370,8 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
                 color={hpBarColor((companion.hp / companion.maxHp) * 100)}
               />
               <StatusBadges combatant={companion} />
-            </>
-          )}
+            </div>
+          ))}
 
           <StatBar label={enemy.name} current={enemy.hp} max={enemy.maxHp} color={hpBarColor((enemy.hp / enemy.maxHp) * 100)} />
           <StatusBadges combatant={enemy} />

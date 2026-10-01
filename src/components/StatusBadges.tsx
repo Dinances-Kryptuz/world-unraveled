@@ -9,15 +9,20 @@ import type { Combatant } from '../combatEngine/types';
 export function StatusBadges({ combatant }: { combatant: Combatant }) {
   const abilities = abilitiesById();
   const badges: { key: string; label: string; harmful: boolean }[] = [];
-  for (const buff of combatant.buffs) {
+  // Keyed with the array index too, not just the ability id — now that a
+  // dungeon can field more than one of the same class, two different party
+  // members can land the same-named buff/dot on one target at once (e.g.
+  // two Warriors both landing Intimidating Shout on the boss), which would
+  // otherwise collide on a bare `buff-${abilityId}` key.
+  combatant.buffs.forEach((buff, i) => {
     const harmful = buff.damageDealtPct < 0 || buff.damageTakenPct > 0;
     const name = abilities[buff.abilityId]?.name ?? buff.abilityId;
-    badges.push({ key: `buff-${buff.abilityId}`, label: `${name} (${Math.ceil(buff.remainingSeconds)}s)`, harmful });
-  }
-  for (const dot of combatant.dots) {
+    badges.push({ key: `buff-${i}-${buff.abilityId}`, label: `${name} (${Math.ceil(buff.remainingSeconds)}s)`, harmful });
+  });
+  combatant.dots.forEach((dot, i) => {
     const name = abilities[dot.abilityId]?.name ?? dot.abilityId;
-    badges.push({ key: `dot-${dot.abilityId}`, label: `${name} (${Math.ceil(dot.remainingSeconds)}s)`, harmful: true });
-  }
+    badges.push({ key: `dot-${i}-${dot.abilityId}`, label: `${name} (${Math.ceil(dot.remainingSeconds)}s)`, harmful: true });
+  });
   if (combatant.stunnedSeconds > 0) {
     badges.push({ key: 'stun', label: `Stunned (${Math.ceil(combatant.stunnedSeconds)}s)`, harmful: true });
   }

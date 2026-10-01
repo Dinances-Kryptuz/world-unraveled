@@ -57,9 +57,11 @@ export async function getCharacter(uid: string): Promise<Character | null> {
     ),
     // Same backfill idea again, for companions — an old character has
     // recruited none yet and fights solo, same "no entry at all" convention
-    // as professions above.
+    // as professions above. A character saved before multi-companion
+    // parties existed may still have the old singular activeCompanionId —
+    // carry it over as a one-member array rather than dropping it.
     companions: data.companions ?? {},
-    activeCompanionId: data.activeCompanionId ?? null,
+    activeCompanionIds: data.activeCompanionIds ?? (data.activeCompanionId ? [data.activeCompanionId] : []),
     // Same backfill idea again, for the quest system — an old character
     // without this field just starts with an empty board and picks up its
     // first quests the next time it completes a trackable action (or via
@@ -144,7 +146,7 @@ export async function createCharacter(uid: string, name: string, characterClass:
     itemCooldowns: {},
     quests: { active: initialActiveQuests, completedIds: [], dailyCompletedAt: {} },
     companions: {},
-    activeCompanionId: null,
+    activeCompanionIds: [],
   };
 
   await setDoc(doc(db, 'characters', uid), character);

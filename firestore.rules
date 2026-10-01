@@ -54,7 +54,7 @@ service cloud.firestore {
       && data.itemCooldowns == {}
       && isValidNewQuests(data.quests)
       && data.companions == {}
-      && data.activeCompanionId == null;
+      && data.activeCompanionIds == [];
   }
 
   function isValidCharacterUpdate(before, after) {
@@ -77,7 +77,7 @@ service cloud.firestore {
       && isValidItemCooldowns(after)
       && isValidQuests(after)
       && isValidCompanions(after)
-      && isValidActiveCompanionId(after);
+      && isValidActiveCompanionIds(after);
   }
 
   // Ownership-scoped, not fully value-scoped — same posture as the sibling
@@ -190,14 +190,15 @@ service cloud.firestore {
     return !('companions' in after) || (after.companions is map && after.companions.size() <= 10);
   }
 
-  // Must be a recruited companion id or null (solo) — but "is this id
-  // actually recruited" is a cross-field check, not something this layer
-  // alone can verify cheaply, so this only bounds the type and leaves full
-  // validation to firebase/companions.ts's setActiveCompanion, same posture
-  // as every other companions field.
-  function isValidActiveCompanionId(after) {
-    return !('activeCompanionId' in after)
-      || after.activeCompanionId == null || after.activeCompanionId is string;
+  // Must be a list of recruited companion ids, at most MAX_ACTIVE_COMPANIONS
+  // (gameData/companions.ts) long — but "are these ids actually recruited"
+  // is a cross-field check, not something this layer alone can verify
+  // cheaply, so this only bounds the type/size and leaves full validation to
+  // firebase/companions.ts's addCompanionToParty/removeCompanionFromParty,
+  // same posture as every other companions field.
+  function isValidActiveCompanionIds(after) {
+    return !('activeCompanionIds' in after)
+      || (after.activeCompanionIds is list && after.activeCompanionIds.size() <= 4);
   }
 
   // Ownership-scoped, not fully value-scoped — same posture as

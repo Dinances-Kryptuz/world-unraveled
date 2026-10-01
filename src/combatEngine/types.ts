@@ -110,6 +110,11 @@ export interface Combatant {
   abilityConditions?: Record<string, ConditionGroup>;
   basicAttackId: string;
   profile: CasterProfile;
+  // Relative chance of being picked when an enemy's CURRENT_ENEMY resolves
+  // among more than one alive party member (see classStats.ts's SpecDef.
+  // threatWeight and targeting.ts's weighted pick) — always 1 for a monster,
+  // since nothing on the party side differentiates among enemies yet.
+  threatWeight: number;
 }
 
 // Raw per-side stats rather than a pre-mixed matchup number — mitigation is

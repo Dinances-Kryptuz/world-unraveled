@@ -10,7 +10,7 @@ import { ITEMS } from '../gameData/items';
 import { resolveSpecDef, getExtraDamageTakenPct } from '../gameData/combatProfileWithTalents';
 import { evaluateTalents, EMPTY_TALENT_TOTALS } from '../utils/talentEvaluator';
 import { evaluateActiveBuffs } from '../gameData/buffs';
-import { resolveActiveCompanionSetup } from '../gameData/companions';
+import { resolveActiveCompanionSetups } from '../gameData/companions';
 import { maxHp, resolveCurrentHp, ATTACK_INTERVAL_SECONDS } from '../gameData/combatFormulas';
 import { getEquipmentStatBonuses } from '../gameData/equipmentStats';
 import { characterXpForLevelV2 } from '../gameData/xpTables';
@@ -133,6 +133,7 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
     const equipmentBonuses = getEquipmentStatBonuses(c.equipment, c.enchantments);
     const charMaxHp = maxHp(c.class, c.level, equipmentBonuses, talentTotals.hpMultPct);
     const currentHp = resolveCurrentHp(c.currentHp, charMaxHp, c.hpCheckpointAt, new Date());
+    const companions = resolveActiveCompanionSetups(c);
     return {
       cls: c.class,
       level: c.level,
@@ -146,7 +147,16 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
       monster: currentMonsterRef.current,
       savedEquippedAbilityIds: c.equippedAbilityIds,
       savedAbilityConditions: c.abilityConditions,
-      companion: resolveActiveCompanionSetup(c),
+      companions,
+      // A dungeon is fixed-size group content (REQUIRED_DUNGEON_PARTY_SIZE,
+      // enforced before the player can even enter — see ZoneScreen.tsx) —
+      // scale the monster's HP by the full party size so a 5-person group
+      // fighting it is a real fight instead of an instant kill, without
+      // touching the per-hit damage formulas open-world combat already
+      // relies on. Monster HP is otherwise purely a function of its level
+      // (see combatFormulas.ts's monsterHp), so this has to happen here
+      // rather than by inventing a per-monster "group HP" field.
+      monsterHpMultiplier: 1 + companions.length,
     };
   }
 
@@ -374,7 +384,7 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
 
   const state = combatStateRef.current;
   const player = state.party.find((p) => p.isPlayer)!;
-  const companion = state.party.find((p) => !p.isPlayer);
+  const companions = state.party.filter((p) => !p.isPlayer);
   const enemy = state.enemies[0];
   const monster = currentMonsterRef.current;
   const stageLabel = `Stage ${stageIndexRef.current + 1} / ${dungeon.stages.length}${monster.isBoss ? ' — Boss' : ''}`;
@@ -396,8 +406,8 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
           <ResourceBars combatant={player} />
           <StatusBadges combatant={player} />
 
-          {companion && (
-            <>
+          {companions.map((companion) => (
+            <div key={companion.id}>
               <StatBar
                 label={companion.name}
                 current={companion.hp}
@@ -405,8 +415,8 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
                 color={hpBarColor((companion.hp / companion.maxHp) * 100)}
               />
               <StatusBadges combatant={companion} />
-            </>
-          )}
+            </div>
+          ))}
 
           <StatBar label={enemy.name} current={enemy.hp} max={enemy.maxHp} color={hpBarColor((enemy.hp / enemy.maxHp) * 100)} />
           <StatusBadges combatant={enemy} />

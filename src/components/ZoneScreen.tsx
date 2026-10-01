@@ -7,6 +7,7 @@ import { FishingScreen } from './FishingScreen';
 import { MONSTERS } from '../gameData/monsters';
 import { RECIPES } from '../gameData/recipes';
 import { DUNGEONS } from '../gameData/dungeons';
+import { MAX_ACTIVE_COMPANIONS, REQUIRED_DUNGEON_PARTY_SIZE } from '../gameData/companions';
 import { CombatScreen } from './CombatScreen';
 import { GatheringScreen } from './GatheringScreen';
 import { CraftingScreen } from './CraftingScreen';
@@ -202,22 +203,33 @@ export function ZoneScreen({
 
       {Object.values(DUNGEONS)
         .filter((d) => d.zoneId === zone.id)
-        .map((dungeon) => (
-          <div key={dungeon.id}>
-            <h2>Dungeons</h2>
-            <ul>
-              <li>
-                <div>
-                  <strong>{dungeon.name}</strong> (Lv {dungeon.levelRange[0]}–{dungeon.levelRange[1]}) —{' '}
-                  {dungeon.description}
-                  <br />
-                  <small>{dungeon.stages.length} stages, ending in a boss</small>
-                </div>
-                <button onClick={() => handleEnterDungeon(dungeon.id)}>Enter</button>
-              </li>
-            </ul>
-          </div>
-        ))}
+        .map((dungeon) => {
+          const partySize = character.activeCompanionIds.length + 1;
+          const readyForDungeon = character.activeCompanionIds.length === MAX_ACTIVE_COMPANIONS;
+          return (
+            <div key={dungeon.id}>
+              <h2>Dungeons</h2>
+              <ul>
+                <li>
+                  <div>
+                    <strong>{dungeon.name}</strong> (Lv {dungeon.levelRange[0]}–{dungeon.levelRange[1]}) —{' '}
+                    {dungeon.description}
+                    <br />
+                    <small>{dungeon.stages.length} stages, ending in a boss</small>
+                    <br />
+                    <small>
+                      Requires a full party of {REQUIRED_DUNGEON_PARTY_SIZE} — you have {partySize}/
+                      {REQUIRED_DUNGEON_PARTY_SIZE} (see Companions below to recruit and add more)
+                    </small>
+                  </div>
+                  <button onClick={() => handleEnterDungeon(dungeon.id)} disabled={!readyForDungeon}>
+                    Enter
+                  </button>
+                </li>
+              </ul>
+            </div>
+          );
+        })}
 
       <h2>Gathering</h2>
       <ul>
