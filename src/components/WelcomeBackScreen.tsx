@@ -13,6 +13,7 @@ import { maxHp, resolveCurrentHp } from '../gameData/combatFormulas';
 import { getEquipmentStatBonuses } from '../gameData/equipmentStats';
 import { getProfessionState } from '../gameData/professionTiers';
 import { evaluateActiveBuffs } from '../gameData/buffs';
+import { resolveActiveCompanionSetup } from '../gameData/companions';
 import { getInventory } from '../firebase/inventory';
 import { applyCombatResult, setCharacterLevel } from '../firebase/character';
 import type { Character, CurrentActivity } from '../types/character';
@@ -71,6 +72,7 @@ export function WelcomeBackScreen({
           savedEquippedAbilityIds: character.equippedAbilityIds,
           savedAbilityConditions: character.abilityConditions,
           monster,
+          companion: resolveActiveCompanionSetup(character),
         });
 
         if (user) {

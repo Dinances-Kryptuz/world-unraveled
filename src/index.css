@@ -149,12 +149,20 @@ input[type="number"] {
 .inventory-screen,
 .welcome-back-screen,
 .character-creation,
+.companion-screen,
 .login-screen {
   background: #fff;
   border: 1px solid #e2d9c8;
   border-radius: 8px;
   padding: 16px 20px;
   margin-bottom: 20px;
+}
+
+.companion-card {
+  border: 1px solid #e2d9c8;
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
 }
 
 .login-screen,

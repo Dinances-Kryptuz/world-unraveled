@@ -55,6 +55,11 @@ export async function getCharacter(uid: string): Promise<Character | null> {
     itemCooldowns: Object.fromEntries(
       Object.entries(data.itemCooldowns ?? {}).map(([itemId, ts]) => [itemId, (ts as Timestamp).toDate()])
     ),
+    // Same backfill idea again, for companions — an old character has
+    // recruited none yet and fights solo, same "no entry at all" convention
+    // as professions above.
+    companions: data.companions ?? {},
+    activeCompanionId: data.activeCompanionId ?? null,
     // Same backfill idea again, for the quest system — an old character
     // without this field just starts with an empty board and picks up its
     // first quests the next time it completes a trackable action (or via
@@ -138,6 +143,8 @@ export async function createCharacter(uid: string, name: string, characterClass:
     combatPresets: [],
     itemCooldowns: {},
     quests: { active: initialActiveQuests, completedIds: [], dailyCompletedAt: {} },
+    companions: {},
+    activeCompanionId: null,
   };
 
   await setDoc(doc(db, 'characters', uid), character);

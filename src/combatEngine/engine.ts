@@ -18,6 +18,7 @@ import {
 } from '../gameData/combatFormulas';
 import type { TalentBonusTotals } from '../utils/talentEvaluator';
 import type { BuffTotals } from '../gameData/buffs';
+import type { CompanionCombatSetup } from '../gameData/companions';
 import type { Monster } from '../gameData/types';
 import { combatTypeModifier, type CombatType } from '../gameData/combatTriangle';
 import { ABILITIES, BASIC_ATTACK_BY_CLASS } from './abilities';
@@ -52,6 +53,10 @@ export interface EncounterSetupInput {
   // Keyed by ability id; an ability with no entry (or an empty conditions
   // array) is always usable, same as before this field existed.
   savedAbilityConditions: Record<string, ConditionGroup>;
+  // The player's currently-active recruited companion, if any — see
+  // gameData/companions.ts's resolveActiveCompanionSetup. Absent/undefined
+  // means solo, same as every encounter before companions existed.
+  companion?: CompanionCombatSetup;
 }
 
 // Folds active-buff stat bonuses (Alchemy stat potions, Cooking's Well Fed)
@@ -113,6 +118,30 @@ function buildPlayerProfile(input: EncounterSetupInput): CasterProfile {
     healFrac: specDef.healFrac + talentTotals.healFracAddPct / 100,
     passiveHealPct:
       (specDef.passiveHealPct + talentTotals.passiveHealAddPct / 100) * (1 + talentTotals.healMultPct / 100),
+  };
+}
+
+// A companion fights at the player's level with its own fixed spec and
+// whatever gear is equipped to it, but — unlike the player — has no
+// talents or active buffs (V1 scope cut; see gameData/companions.ts's doc
+// comment). accuracy is set directly to the level-gap value here (rather
+// than treated as a bonus added on top of it, the player's convention)
+// because computeEffectDamage reads a non-player attacker's profile.accuracy
+// straight through as its hit chance.
+function buildCompanionProfile(companion: CompanionCombatSetup, monster: Monster): CasterProfile {
+  const { cls, level, specDef, equipmentBonuses } = companion;
+  const diff = monster.level - level;
+  const effectiveSta = statAtLevel(cls, 'STA', level) + (equipmentBonuses.STA ?? 0);
+  const armor = effectiveSta * 2 * specDef.survivabilityCoef;
+  return {
+    normalizedHit: baseDamage(cls, level, equipmentBonuses),
+    damageCoef: specDef.damageCoef * playerDamageModifier(diff) * combatTypeModifier(specDef.combatType, monster.combatType),
+    accuracy: playerAccuracy(diff),
+    avoidance: specDef.avoidance,
+    armor,
+    damageTakenMult: 1,
+    healFrac: specDef.healFrac,
+    passiveHealPct: specDef.passiveHealPct,
   };
 }
 
@@ -193,9 +222,44 @@ export function createPlayerCombatant(input: EncounterSetupInput): Combatant {
   };
 }
 
-export function createEncounterState(input: EncounterSetupInput): CombatState {
+// A companion always uses its class's default ability loadout
+// (effectiveLoadout with an empty saved choice — see progression.ts's own
+// "sensible default" fallback) rather than a player-editable one; there's
+// no companion Combat Setup screen in this V1. Placed in state.party AFTER
+// the player, which matters: targeting.ts's CURRENT_ENEMY resolves to
+// "first alive combatant on the opposing side," so as long as the player
+// is alive a monster's attacks always land on party[0] (the player) first —
+// the companion only draws enemy attacks once the player has died, a simple
+// stand-in for real threat/tanking that needs no changes to targeting.ts.
+export function createCompanionCombatant(companion: CompanionCombatSetup, monster: Monster): Combatant {
+  const loadout = effectiveLoadout(companion.cls, companion.specId, companion.level, []);
+  const intStat = statAtLevel(companion.cls, 'INT', companion.level) + (companion.equipmentBonuses.INT ?? 0);
+  const companionMaxHp = computeMaxHp(companion.cls, companion.level, companion.equipmentBonuses, 0);
+
   return {
-    party: [createPlayerCombatant(input)],
+    id: 'companion',
+    name: companion.name,
+    isPlayer: false,
+    hp: companionMaxHp,
+    maxHp: companionMaxHp,
+    isAlive: true,
+    resources: initialResources(companion.cls, companion.level, intStat),
+    cooldowns: {},
+    dots: [],
+    buffs: [],
+    stunnedSeconds: 0,
+    actionReadyIn: ATTACK_INTERVAL_SECONDS,
+    equippedAbilityIds: loadout,
+    basicAttackId: BASIC_ATTACK_BY_CLASS[companion.cls],
+    profile: buildCompanionProfile(companion, monster),
+  };
+}
+
+export function createEncounterState(input: EncounterSetupInput): CombatState {
+  const party = [createPlayerCombatant(input)];
+  if (input.companion) party.push(createCompanionCombatant(input.companion, input.monster));
+  return {
+    party,
     enemies: [createMonsterCombatant(input.monster, input.level, input.specDef.combatType, 1)],
     timeElapsed: 0,
   };

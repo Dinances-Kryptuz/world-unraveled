@@ -17,6 +17,7 @@ import { characterXpForLevelV2 } from './gameData/xpTables';
 import { DEFAULT_ZONE_ID } from './gameData/zones';
 import { VendorScreen } from './components/VendorScreen';
 import { QuestLog } from './components/QuestLog';
+import { CompanionScreen } from './components/CompanionScreen';
 
 function AppContent() {
   const { user, loading: authLoading } = useAuth();
@@ -86,6 +87,7 @@ function AppContent() {
       <CombatSetupScreen />
       <InventoryScreen />
       <VendorScreen zoneId={selectedZoneId} />
+      <CompanionScreen zoneId={selectedZoneId} />
       {character.spec && <TalentScreen />}
     </div>
   );
