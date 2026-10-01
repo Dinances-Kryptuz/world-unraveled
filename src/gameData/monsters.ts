@@ -165,6 +165,7 @@ export const MONSTERS: Record<string, Monster> = {
       { itemId: 'worn_shiv', chance: 0.2, minQty: 1, maxQty: 1 },
       { itemId: 'bandit_coin_pouch', chance: 0.12, minQty: 1, maxQty: 1 },
       { itemId: 'focusing_wand', chance: 0.07, minQty: 1, maxQty: 1 },
+      { itemId: 'stolen_spellband', chance: 0.07, minQty: 1, maxQty: 1 },
     ],
     specialAbility: {
       name: 'Backstab',
@@ -319,6 +320,7 @@ export const MONSTERS: Record<string, Monster> = {
       { itemId: 'linen_cloth', chance: 0.5, minQty: 2, maxQty: 3 },
       { itemId: 'small_coin_pouch', chance: 0.25, minQty: 1, maxQty: 1 },
       { itemId: 'chieftains_warhammer', chance: 0.15, minQty: 1, maxQty: 1 },
+      { itemId: 'chieftains_seal', chance: 0.12, minQty: 1, maxQty: 1 },
     ],
     specialAbility: {
       name: 'Warlord’s Command',
@@ -363,6 +365,7 @@ export const MONSTERS: Record<string, Monster> = {
       { itemId: 'heavy_cloth', chance: 0.5, minQty: 2, maxQty: 3 },
       { itemId: 'ember_shard', chance: 0.35, minQty: 1, maxQty: 2 },
       { itemId: 'kaldrun_warhammer', chance: 0.15, minQty: 1, maxQty: 1 },
+      { itemId: 'kaldrun_tempered_band', chance: 0.15, minQty: 1, maxQty: 1 },
     ],
     specialAbility: {
       name: 'Master of the Sundered Forge',
@@ -561,6 +564,7 @@ export const MONSTERS: Record<string, Monster> = {
     lootTable: [
       { itemId: 'scaleback_hide', chance: 0.35, minQty: 1, maxQty: 2 },
       { itemId: 'magma_heart', chance: 0.08, minQty: 1, maxQty: 1 },
+      { itemId: 'magma_forged_band', chance: 0.08, minQty: 1, maxQty: 1 },
     ],
     specialAbility: {
       name: 'Magma Breath',
@@ -693,6 +697,7 @@ export const MONSTERS: Record<string, Monster> = {
       { itemId: 'ashwoven_cloth', chance: 0.5, minQty: 2, maxQty: 3 },
       { itemId: 'cindercore_shard', chance: 0.35, minQty: 1, maxQty: 2 },
       { itemId: 'overseers_greatmace_damaged', chance: 0.15, minQty: 1, maxQty: 1 },
+      { itemId: 'overseers_band', chance: 0.15, minQty: 1, maxQty: 1 },
     ],
     specialAbility: {
       name: 'The Last Overseer',
