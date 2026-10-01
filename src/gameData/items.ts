@@ -299,6 +299,16 @@ export const ITEMS: Record<string, ItemDef> = {
     description: "Gloves cut from a pack alpha's pelt. Only the strongest wolf in the foothills carries hide like this.",
     stackable: true, equipSlot: 'gloves', armorType: 'leather', statBonuses: { STA: 4, STR: 4 }, sellValue: 25,
   },
+  thick_hide_cap: {
+    id: 'thick_hide_cap', name: 'Thick Hide Cap', type: 'equipment',
+    description: 'A heavy cap worked from thick hide, built to take a hit on the rocky trails.',
+    stackable: true, equipSlot: 'helmet', armorType: 'leather', statBonuses: { STA: 5 }, sellValue: 20,
+  },
+  ridgehide_boots: {
+    id: 'ridgehide_boots', name: 'Ridgehide Boots', type: 'equipment',
+    description: 'Sturdy boots cut from coarse leather and thick hide, soled for broken rock.',
+    stackable: true, equipSlot: 'boots', armorType: 'leather', statBonuses: { STA: 4, STR: 3 }, sellValue: 20,
+  },
   alpha_fang_blade: {
     id: 'alpha_fang_blade', name: 'Alpha Fang Blade', type: 'equipment',
     description: "A blade hafted from a pack alpha's own fang — a rare trophy from the toughest thing in the foothills.",
@@ -405,6 +415,17 @@ export const ITEMS: Record<string, ItemDef> = {
     armorType: 'cloth',
     statBonuses: { SPI: 2, INT: 1 },
     sellValue: 9,
+  },
+  linen_boots: {
+    id: 'linen_boots',
+    name: 'Linen Boots',
+    type: 'equipment',
+    description: 'Soft-soled boots stitched from linen, quiet enough for spellwork on the move.',
+    stackable: true,
+    equipSlot: 'boots',
+    armorType: 'cloth',
+    statBonuses: { INT: 1, SPI: 2 },
+    sellValue: 8,
   },
   sage_leggings: {
     id: 'sage_leggings',
@@ -594,6 +615,11 @@ export const ITEMS: Record<string, ItemDef> = {
     description: 'A dense cloth cap, warm against the ridge’s wind.',
     stackable: true, equipSlot: 'helmet', armorType: 'cloth', statBonuses: { INT: 8, SPI: 2 }, sellValue: 30,
   },
+  heavy_boots: {
+    id: 'heavy_boots', name: 'Heavy Boots', type: 'equipment',
+    description: 'Boots cut from heavy cloth and lined for the ridge’s scorched ground.',
+    stackable: true, equipSlot: 'boots', armorType: 'cloth', statBonuses: { INT: 7, SPI: 5 }, sellValue: 31,
+  },
   serrated_cleaver: {
     id: 'serrated_cleaver', name: 'Serrated Cleaver', type: 'equipment',
     description: "A brutal, notch-edged blade favored by the ridge's marauders.",
@@ -710,6 +736,11 @@ export const ITEMS: Record<string, ItemDef> = {
     description: 'A cap of ashwoven cloth, worn by those who work the ruins.',
     stackable: true, equipSlot: 'helmet', armorType: 'cloth', statBonuses: { INT: 9, SPI: 3 }, sellValue: 35,
   },
+  ashwoven_boots: {
+    id: 'ashwoven_boots', name: 'Ashwoven Boots', type: 'equipment',
+    description: 'Boots woven from salvaged ashwoven cloth, soft-footed in the ruins.',
+    stackable: true, equipSlot: 'boots', armorType: 'cloth', statBonuses: { INT: 8, SPI: 6 }, sellValue: 37,
+  },
   scavenged_hatchet: {
     id: 'scavenged_hatchet', name: 'Scavenged Hatchet', type: 'equipment',
     description: "A cinder scavenger's own hatchet, still sharp despite its owner's fate.",
@@ -825,6 +856,11 @@ export const ITEMS: Record<string, ItemDef> = {
     description: "A cultist's hood, reclaimed from the rift's edge.",
     stackable: true, equipSlot: 'helmet', armorType: 'cloth', statBonuses: { INT: 11, SPI: 4 }, sellValue: 43,
   },
+  charred_boots: {
+    id: 'charred_boots', name: 'Charred Boots', type: 'equipment',
+    description: 'Cultist boots, re-stitched from salvaged charred cloth.',
+    stackable: true, equipSlot: 'boots', armorType: 'cloth', statBonuses: { INT: 10, SPI: 7 }, sellValue: 45,
+  },
   zealots_blade: {
     id: 'zealots_blade', name: "Zealot's Blade", type: 'equipment',
     description: 'A ritual blade carried by a cultist zealot, its edge blessed by something best left unnamed.',
@@ -939,6 +975,11 @@ export const ITEMS: Record<string, ItemDef> = {
     id: 'ashenweave_cap', name: 'Ashenweave Cap', type: 'equipment',
     description: 'A hood of ashenweave cloth, worn by the crater’s most devoted.',
     stackable: true, equipSlot: 'helmet', armorType: 'cloth', statBonuses: { INT: 13, SPI: 5 }, sellValue: 51,
+  },
+  ashenweave_boots: {
+    id: 'ashenweave_boots', name: 'Ashenweave Boots', type: 'equipment',
+    description: 'Boots of the finest ashenweave cloth, taken from the crater’s most devout.',
+    stackable: true, equipSlot: 'boots', armorType: 'cloth', statBonuses: { INT: 12, SPI: 8 }, sellValue: 53,
   },
   harbingers_talon: {
     id: 'harbingers_talon', name: "Harbinger's Talon", type: 'equipment',
