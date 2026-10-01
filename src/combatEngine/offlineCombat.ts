@@ -9,6 +9,7 @@
 import type { ClassId, SpecDef, SpecId, BaseStat } from '../gameData/classStats';
 import { maxHp } from '../gameData/combatFormulas';
 import type { TalentBonusTotals } from '../utils/talentEvaluator';
+import type { BuffTotals } from '../gameData/buffs';
 import type { Monster } from '../gameData/types';
 import { characterXpForLevelV2 } from '../gameData/xpTables';
 import { resolveElapsedProgress, COMBAT_OFFLINE_THROTTLE } from '../gameData/activityEngine';
@@ -22,6 +23,7 @@ export interface OfflineCombatInput {
   specId: SpecId | null;
   specDef: SpecDef;
   talentTotals: TalentBonusTotals;
+  buffTotals: BuffTotals;
   extraDamageTakenPct: number;
   equipmentBonuses: Partial<Record<BaseStat, number>>;
   startingLevel: number;
@@ -66,6 +68,7 @@ export function simulateOfflineCombat(input: OfflineCombatInput): OfflineCombatR
       specId: input.specId,
       specDef: input.specDef,
       talentTotals: input.talentTotals,
+      buffTotals: input.buffTotals,
       extraDamageTakenPct: input.extraDamageTakenPct,
       equipmentBonuses: input.equipmentBonuses,
       currentHp,

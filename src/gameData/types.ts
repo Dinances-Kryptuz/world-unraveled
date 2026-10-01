@@ -46,6 +46,8 @@ export type BuffCategory =
   | 'defensive_potion'
   | 'stat_potion'
   | 'resistance_potion'
+  | 'precision_potion'
+  | 'evasion_potion'
   | 'well_fed';
 
 export interface BuffEffect {

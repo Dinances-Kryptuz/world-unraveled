@@ -12,6 +12,7 @@ import { evaluateTalents, EMPTY_TALENT_TOTALS } from '../utils/talentEvaluator';
 import { maxHp, resolveCurrentHp } from '../gameData/combatFormulas';
 import { getEquipmentStatBonuses } from '../gameData/equipmentStats';
 import { getProfessionState } from '../gameData/professionTiers';
+import { evaluateActiveBuffs } from '../gameData/buffs';
 import { getInventory } from '../firebase/inventory';
 import { applyCombatResult, setCharacterLevel } from '../firebase/character';
 import type { Character, CurrentActivity } from '../types/character';
@@ -48,6 +49,7 @@ export function WelcomeBackScreen({
         const talentTotals = character.spec
           ? evaluateTalents(character.spec, character.talentPicks).totals
           : EMPTY_TALENT_TOTALS;
+        const buffTotals = evaluateActiveBuffs(character.activeBuffs, now);
         const extraDmgTaken = getExtraDamageTakenPct(character.spec, character.talentPicks);
         const equipBonuses = getEquipmentStatBonuses(character.equipment);
         const charMaxHp = maxHp(character.class, character.level, equipBonuses, talentTotals.hpMultPct);
@@ -60,6 +62,7 @@ export function WelcomeBackScreen({
           specId: character.spec,
           specDef,
           talentTotals,
+          buffTotals,
           extraDamageTakenPct: extraDmgTaken,
           equipmentBonuses: equipBonuses,
           startingLevel: character.level,

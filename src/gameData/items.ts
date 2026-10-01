@@ -1112,4 +1112,144 @@ export const ITEMS: Record<string, ItemDef> = {
     description: 'A hardened crystal of pure enchanting power, disenchanted only from the finest equipment.',
     stackable: true, sellValue: 25,
   },
+
+  // ── Alchemy potions — healAmount/manaAmount potions stay simple instant
+  // active-use items (health_potion/emberpetal_tonic/etc. above); these are
+  // the buff-category potions the profession overhaul adds. Only one buff
+  // per category can be active at a time (see gameData/buffs.ts).
+  mana_potion: {
+    id: 'mana_potion', name: 'Mana Potion', type: 'consumable',
+    description: 'Restores 25 mana. Usable anywhere, once every 30 seconds.',
+    stackable: true, sellValue: 4,
+    consumableEffect: { manaAmount: 25, cooldownSeconds: 30 },
+  },
+  minor_battle_draught: {
+    id: 'minor_battle_draught', name: 'Minor Battle Draught', type: 'consumable',
+    description: 'An offensive draught: +10% damage dealt for 20 offensive actions.',
+    stackable: true, sellValue: 8,
+    consumableEffect: { cooldownSeconds: 60, buff: { category: 'offensive_potion', damageMultiplierPct: 10, charges: 20 } },
+  },
+  minor_stoneskin_draught: {
+    id: 'minor_stoneskin_draught', name: 'Minor Stoneskin Draught', type: 'consumable',
+    description: 'A defensive draught: -10% damage taken for 20 hits.',
+    stackable: true, sellValue: 8,
+    consumableEffect: { cooldownSeconds: 60, buff: { category: 'defensive_potion', mitigationMultiplierPct: 10, charges: 20 } },
+  },
+  tonic_of_might: {
+    id: 'tonic_of_might', name: 'Tonic of Might', type: 'consumable',
+    description: 'Grants +8 Strength for 5 minutes.',
+    stackable: true, sellValue: 12,
+    consumableEffect: { cooldownSeconds: 90, buff: { category: 'stat_potion', statBonuses: { STR: 8 }, durationSeconds: 300 } },
+  },
+  elixir_of_the_mind: {
+    id: 'elixir_of_the_mind', name: 'Elixir of the Mind', type: 'consumable',
+    description: 'Grants +8 Intellect for 5 minutes.',
+    stackable: true, sellValue: 12,
+    consumableEffect: { cooldownSeconds: 90, buff: { category: 'stat_potion', statBonuses: { INT: 8 }, durationSeconds: 300 } },
+  },
+  draught_of_resistance: {
+    id: 'draught_of_resistance', name: 'Draught of Resistance', type: 'consumable',
+    description: 'Hardens the skin against harm: -15% damage taken for 5 minutes.',
+    stackable: true, sellValue: 18,
+    consumableEffect: { cooldownSeconds: 90, buff: { category: 'resistance_potion', mitigationMultiplierPct: 15, durationSeconds: 300 } },
+  },
+  potion_of_precision: {
+    id: 'potion_of_precision', name: 'Potion of Precision', type: 'consumable',
+    description: 'Sharpens the senses: +8% chance to hit for 5 minutes.',
+    stackable: true, sellValue: 18,
+    consumableEffect: { cooldownSeconds: 90, buff: { category: 'precision_potion', hitChanceBonusPct: 8, durationSeconds: 300 } },
+  },
+  potion_of_evasion: {
+    id: 'potion_of_evasion', name: 'Potion of Evasion', type: 'consumable',
+    description: 'Lightens the step: +8% chance to dodge for 5 minutes.',
+    stackable: true, sellValue: 18,
+    consumableEffect: { cooldownSeconds: 90, buff: { category: 'evasion_potion', dodgeBonusPct: 8, durationSeconds: 300 } },
+  },
+  greater_battle_draught: {
+    id: 'greater_battle_draught', name: 'Greater Battle Draught', type: 'consumable',
+    description: 'An offensive draught: +18% damage dealt for 25 offensive actions.',
+    stackable: true, sellValue: 30,
+    consumableEffect: { cooldownSeconds: 60, buff: { category: 'offensive_potion', damageMultiplierPct: 18, charges: 25 } },
+  },
+  greater_stoneskin_draught: {
+    id: 'greater_stoneskin_draught', name: 'Greater Stoneskin Draught', type: 'consumable',
+    description: 'A defensive draught: -18% damage taken for 25 hits.',
+    stackable: true, sellValue: 30,
+    consumableEffect: { cooldownSeconds: 60, buff: { category: 'defensive_potion', mitigationMultiplierPct: 18, charges: 25 } },
+  },
+
+  // ── Cooking food — one "Well Fed" style dish per zone, scaling in both
+  // heal amount and stat bonus. Only one Well Fed buff active at a time
+  // (same exclusivity rule as potions), and food is a separate buff
+  // category entirely so eating doesn't compete with potions for a slot.
+  farmhouse_stew: {
+    id: 'farmhouse_stew', name: 'Farmhouse Stew', type: 'consumable',
+    description: 'A hearty stew. Restores 30 health and grants +3 Stamina (Well Fed) for 10 minutes.',
+    stackable: true, sellValue: 6,
+    consumableEffect: { healAmount: 30, cooldownSeconds: 30, buff: { category: 'well_fed', statBonuses: { STA: 3 }, durationSeconds: 600 } },
+  },
+  highland_roast: {
+    id: 'highland_roast', name: 'Highland Roast', type: 'consumable',
+    description: 'Roasted mountain game. Restores 50 health and grants +5 Stamina (Well Fed) for 10 minutes.',
+    stackable: true, sellValue: 10,
+    consumableEffect: { healAmount: 50, cooldownSeconds: 30, buff: { category: 'well_fed', statBonuses: { STA: 5 }, durationSeconds: 600 } },
+  },
+  embercured_fillet: {
+    id: 'embercured_fillet', name: 'Embercured Fillet', type: 'consumable',
+    description: 'Fire-cured eel. Restores 75 health and grants +4 Strength and +4 Intellect (Well Fed) for 10 minutes.',
+    stackable: true, sellValue: 16,
+    consumableEffect: {
+      healAmount: 75, cooldownSeconds: 30,
+      buff: { category: 'well_fed', statBonuses: { STR: 4, INT: 4 }, durationSeconds: 600 },
+    },
+  },
+  ashfin_chowder: {
+    id: 'ashfin_chowder', name: 'Ashfin Chowder', type: 'consumable',
+    description: 'A thick carp chowder. Restores 100 health and grants +7 Stamina (Well Fed) for 10 minutes.',
+    stackable: true, sellValue: 22,
+    consumableEffect: { healAmount: 100, cooldownSeconds: 30, buff: { category: 'well_fed', statBonuses: { STA: 7 }, durationSeconds: 600 } },
+  },
+  magma_darter_skewers: {
+    id: 'magma_darter_skewers', name: 'Magma Darter Skewers', type: 'consumable',
+    description: 'Skewered and seared. Restores 130 health and grants +6 Strength and +6 Intellect (Well Fed) for 10 minutes.',
+    stackable: true, sellValue: 30,
+    consumableEffect: {
+      healAmount: 130, cooldownSeconds: 30,
+      buff: { category: 'well_fed', statBonuses: { STR: 6, INT: 6 }, durationSeconds: 600 },
+    },
+  },
+  emberheart_feast: {
+    id: 'emberheart_feast', name: 'Emberheart Feast', type: 'consumable',
+    description: 'A banquet fit for the world’s molten heart. Restores 180 health and grants +10 Stamina (Well Fed) for 10 minutes.',
+    stackable: true, sellValue: 40,
+    consumableEffect: { healAmount: 180, cooldownSeconds: 30, buff: { category: 'well_fed', statBonuses: { STA: 10 }, durationSeconds: 600 } },
+  },
+
+  // ── Tailoring bags — permanent inventory capacity, consumed on use (see
+  // firebase/consumables.ts's bagCapacityBonus handling). Each is strictly
+  // additive, so order of purchase/use never matters.
+  small_pack: {
+    id: 'small_pack', name: 'Small Pack', type: 'consumable',
+    description: 'A simple cloth pack. Permanently increases inventory capacity by 8.',
+    stackable: true, sellValue: 5,
+    consumableEffect: { cooldownSeconds: 0, bagCapacityBonus: 8 },
+  },
+  travelers_pack: {
+    id: 'travelers_pack', name: "Traveler's Pack", type: 'consumable',
+    description: 'A reinforced traveling pack. Permanently increases inventory capacity by 12.',
+    stackable: true, sellValue: 12,
+    consumableEffect: { cooldownSeconds: 0, bagCapacityBonus: 12 },
+  },
+  explorers_pack: {
+    id: 'explorers_pack', name: "Explorer's Pack", type: 'consumable',
+    description: 'A rugged multi-pocket pack. Permanently increases inventory capacity by 16.',
+    stackable: true, sellValue: 25,
+    consumableEffect: { cooldownSeconds: 0, bagCapacityBonus: 16 },
+  },
+  dwarven_rucksack: {
+    id: 'dwarven_rucksack', name: 'Dwarven Rucksack', type: 'consumable',
+    description: 'A dwarven-made rucksack recovered from Cinderfall. Permanently increases inventory capacity by 20.',
+    stackable: true, sellValue: 45,
+    consumableEffect: { cooldownSeconds: 0, bagCapacityBonus: 20 },
+  },
 };

@@ -96,10 +96,10 @@ service cloud.firestore {
     return !('bagSlots' in after) || (after.bagSlots is number && after.bagSlots >= 24 && after.bagSlots <= 500);
   }
 
-  // Capped at 5 — the number of BuffCategory values (gameData/types.ts) —
+  // Capped at 7 — the number of BuffCategory values (gameData/types.ts) —
   // since at most one buff per category can ever be active at once.
   function isValidActiveBuffs(after) {
-    return !('activeBuffs' in after) || (after.activeBuffs is map && after.activeBuffs.size() <= 5);
+    return !('activeBuffs' in after) || (after.activeBuffs is map && after.activeBuffs.size() <= 7);
   }
 
   // Same "may not exist yet on an old character" treatment as Smithing/

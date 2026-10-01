@@ -17,6 +17,7 @@ import {
   xpModifier,
 } from '../gameData/combatFormulas';
 import type { TalentBonusTotals } from '../utils/talentEvaluator';
+import type { BuffTotals } from '../gameData/buffs';
 import type { Monster } from '../gameData/types';
 import { combatTypeModifier, type CombatType } from '../gameData/combatTriangle';
 import { ABILITIES, BASIC_ATTACK_BY_CLASS } from './abilities';
@@ -37,6 +38,7 @@ export interface EncounterSetupInput {
   specId: SpecId | null;
   specDef: SpecDef;
   talentTotals: TalentBonusTotals;
+  buffTotals: BuffTotals;
   extraDamageTakenPct: number;
   equipmentBonuses: Partial<Record<BaseStat, number>>;
   currentHp: number;
@@ -52,18 +54,43 @@ export interface EncounterSetupInput {
   savedAbilityConditions: Record<string, ConditionGroup>;
 }
 
+// Folds active-buff stat bonuses (Alchemy stat potions, Cooking's Well Fed)
+// onto equipment bonuses before any STA/INT/baseDamage calc uses them —
+// mechanically identical to wearing +stat gear, just temporary. Buffs are
+// baked into the profile once at encounter setup, same as talents and
+// equipment; a charge-based buff running out mid-fight is reconciled at the
+// next encounter setup rather than live mid-tick, matching how this engine
+// already treats equipment/talents/resources as fixed-for-the-fight.
+function mergeStatBonuses(
+  base: Partial<Record<BaseStat, number>>,
+  extra: Partial<Record<BaseStat, number>>
+): Partial<Record<BaseStat, number>> {
+  const merged = { ...base };
+  for (const [stat, value] of Object.entries(extra)) {
+    const key = stat as BaseStat;
+    merged[key] = (merged[key] ?? 0) + (value ?? 0);
+  }
+  return merged;
+}
+
 function buildPlayerProfile(input: EncounterSetupInput): CasterProfile {
-  const { cls, level, specDef, talentTotals, extraDamageTakenPct, equipmentBonuses, monster } = input;
+  const { cls, level, specDef, talentTotals, buffTotals, extraDamageTakenPct, monster } = input;
+  const equipmentBonuses = mergeStatBonuses(input.equipmentBonuses, buffTotals.statBonuses);
   const diff = monster.level - level;
   const survCoefFinal = specDef.survivabilityCoef * (1 + talentTotals.survCoefMultPct / 100);
   const effectiveSta = statAtLevel(cls, 'STA', level) + (equipmentBonuses.STA ?? 0);
   const armor = effectiveSta * 2 * survCoefFinal * (1 + talentTotals.armorMultPct / 100);
-  const avoidance = Math.min(0.75, specDef.avoidance + talentTotals.avoidanceAddPct / 100);
+  const avoidance = Math.min(
+    0.75,
+    specDef.avoidance + talentTotals.avoidanceAddPct / 100 + buffTotals.avoidanceAddPct / 100
+  );
   const damageTakenMult =
-    Math.max(0.05, 1 - talentTotals.flatDmgTakenPct / 100) * (1 + extraDamageTakenPct / 100);
+    Math.max(0.05, 1 - talentTotals.flatDmgTakenPct / 100) *
+    (1 - buffTotals.mitigationMultiplierPct / 100) *
+    (1 + extraDamageTakenPct / 100);
 
   return {
-    normalizedHit: baseDamage(cls, level, input.equipmentBonuses),
+    normalizedHit: baseDamage(cls, level, equipmentBonuses),
     // playerDamageModifier(diff) folds the level-gap difficulty curve (the
     // same one that drives the grey/green/yellow/orange/red monster tiers)
     // into every ability's damage — a level-30 hitting a level-1 mob still
@@ -73,8 +100,13 @@ function buildPlayerProfile(input: EncounterSetupInput): CasterProfile {
       specDef.damageCoef *
       playerDamageModifier(diff) *
       combatTypeModifier(specDef.combatType, monster.combatType) *
-      (1 + talentTotals.flatDmgPct / 100),
-    accuracy: 1, // levelDiff-based accuracy is applied per-hit in useAbility, not baked in here
+      (1 + talentTotals.flatDmgPct / 100) *
+      (1 + buffTotals.damageMultiplierPct / 100),
+    // 1 + hitChanceBonusPct/100 — an Alchemy hit-chance potion's only effect.
+    // See the levelGapAccuracy calc in useAbility below, the one place this
+    // is actually read for the player (unused for monsters, who always
+    // "attempt to hit" regardless).
+    accuracy: 1 + buffTotals.hitChanceBonusPct / 100,
     avoidance,
     armor,
     damageTakenMult,
@@ -137,8 +169,9 @@ const MONSTER_BASIC_ATTACK: Ability = {
 
 export function createPlayerCombatant(input: EncounterSetupInput): Combatant {
   const loadout = effectiveLoadout(input.cls, input.specId, input.level, input.savedEquippedAbilityIds);
-  const intStat = statAtLevel(input.cls, 'INT', input.level) + (input.equipmentBonuses.INT ?? 0);
-  const playerMaxHp = computeMaxHp(input.cls, input.level, input.equipmentBonuses, input.talentTotals.hpMultPct);
+  const mergedBonuses = mergeStatBonuses(input.equipmentBonuses, input.buffTotals.statBonuses);
+  const intStat = statAtLevel(input.cls, 'INT', input.level) + (mergedBonuses.INT ?? 0);
+  const playerMaxHp = computeMaxHp(input.cls, input.level, mergedBonuses, input.talentTotals.hpMultPct);
 
   return {
     id: 'player',
@@ -367,7 +400,12 @@ export function useAbility(
   if (!target) return;
 
   const levelDiff = ctx.monster.level - ctx.playerLevel;
-  const levelGapAccuracy = source.isPlayer ? playerAccuracy(levelDiff) : 1;
+  // source.profile.accuracy is 1 + any hit-chance buff bonus (see
+  // buildPlayerProfile) — additive on top of the level-gap base chance,
+  // same convention as every other buff/talent bonus in this engine.
+  const levelGapAccuracy = source.isPlayer
+    ? Math.min(1, playerAccuracy(levelDiff) + (source.profile.accuracy - 1))
+    : 1;
 
   for (const effect of ability.effects) {
     switch (effect.type) {
