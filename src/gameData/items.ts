@@ -319,6 +319,11 @@ export const ITEMS: Record<string, ItemDef> = {
     description: "A bandit's stolen spellcasting focus, still humming with someone else's magic.",
     stackable: true, equipSlot: 'weapon', statBonuses: { INT: 5 }, sellValue: 26,
   },
+  stolen_spellband: {
+    id: 'stolen_spellband', name: 'Stolen Spellband', type: 'equipment',
+    description: "Another piece of a bandit's stolen spellcasting kit — a ring that still carries a trace of someone else's magic.",
+    stackable: true, equipSlot: 'ring', statBonuses: { INT: 4, STA: 4 }, sellValue: 50,
+  },
 
   // ── Smithing materials ───────────────────────────────────────────────
   copper_bar: {
@@ -444,6 +449,11 @@ export const ITEMS: Record<string, ItemDef> = {
     id: 'chieftains_warhammer', name: "Chieftain's Warhammer", type: 'equipment',
     description: 'The warhammer of the Kobold Warrens’ chieftain — heavier and better balanced than anything else this side of the Warrens.',
     stackable: true, equipSlot: 'weapon', statBonuses: { STR: 8 }, sellValue: 45,
+  },
+  chieftains_seal: {
+    id: 'chieftains_seal', name: "Chieftain's Seal", type: 'equipment',
+    description: 'A plain band the Kobold Chieftain wore into every fight — worn smooth, but still solid.',
+    stackable: true, equipSlot: 'ring', statBonuses: { STA: 3 }, sellValue: 15,
   },
   warlords_signet: {
     id: 'warlords_signet', name: "Warlord's Signet", type: 'equipment',
@@ -642,6 +652,11 @@ export const ITEMS: Record<string, ItemDef> = {
     description: "The Forgemaster's own warhammer — heavier and better balanced than anything else on the ridge.",
     stackable: true, equipSlot: 'weapon', statBonuses: { STR: 12, STA: 3 }, sellValue: 70,
   },
+  kaldrun_tempered_band: {
+    id: 'kaldrun_tempered_band', name: "Kaldrun's Tempered Band", type: 'equipment',
+    description: "A heavy ring quenched in the Forgemaster's own fire, matching the ember-set rings the ridge's drakes carry.",
+    stackable: true, equipSlot: 'ring', statBonuses: { STR: 7 }, sellValue: 44,
+  },
 
   // ── Cinderfall Depths materials ───────────────────────────────────────
   cinderore: {
@@ -755,6 +770,11 @@ export const ITEMS: Record<string, ItemDef> = {
     id: 'overseers_greatmace', name: "Overseer's Greatmace", type: 'equipment',
     description: 'The ceremonial mace of the Ashen Overseer — too heavy for most, and twice as deadly.',
     stackable: true, equipSlot: 'weapon', statBonuses: { STR: 14, STA: 4 }, sellValue: 80,
+  },
+  overseers_band: {
+    id: 'overseers_band', name: "Overseer's Band", type: 'equipment',
+    description: 'A plain ash-blackened ring the Overseer wore under its gauntlet — solid, and built to outlast whoever wears it.',
+    stackable: true, equipSlot: 'ring', statBonuses: { STA: 8 }, sellValue: 60,
   },
   emberpetal_tonic: {
     id: 'emberpetal_tonic', name: 'Emberpetal Tonic', type: 'consumable',
@@ -875,6 +895,11 @@ export const ITEMS: Record<string, ItemDef> = {
     id: 'heralds_ember_band', name: "Herald's Ember Band", type: 'equipment',
     description: 'A ring taken from the Molten Herald, still warm as a living coal.',
     stackable: true, equipSlot: 'ring', statBonuses: { INT: 12, STA: 3 }, sellValue: 95,
+  },
+  magma_forged_band: {
+    id: 'magma_forged_band', name: 'Magma-Forged Band', type: 'equipment',
+    description: "A heavy band melted and reset around a magma hound's collar — the metal never fully cooled.",
+    stackable: true, equipSlot: 'ring', statBonuses: { STR: 12, STA: 3 }, sellValue: 95,
   },
   cinderbloom_elixir: {
     id: 'cinderbloom_elixir', name: 'Cinderbloom Elixir', type: 'consumable',
