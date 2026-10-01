@@ -169,6 +169,7 @@ export async function applyCombatResult(
   result: {
     xpGained: number;
     goldGained: number;
+    voidShardsGained?: number;
     loot: { itemId: string; quantity: number }[];
     hpAfter?: number;
   }
@@ -178,6 +179,9 @@ export async function applyCombatResult(
     gold: increment(result.goldGained),
     'currentActivity.startedAt': serverTimestamp(),
   };
+  if (result.voidShardsGained) {
+    characterUpdate.voidShards = increment(result.voidShardsGained);
+  }
   if (result.hpAfter !== undefined) {
     characterUpdate.currentHp = result.hpAfter;
     characterUpdate.hpCheckpointAt = serverTimestamp();

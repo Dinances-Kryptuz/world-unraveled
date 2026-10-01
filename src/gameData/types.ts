@@ -126,6 +126,12 @@ export interface Monster {
   goldMin: number;
   goldMax: number;
   lootTable: LootDrop[];
+  // Void Shards — the endgame currency spent at Cinderheart Crater's Void
+  // Vendor (see gameData/vendors.ts) on its Voidforged gear. Absent (every
+  // monster outside Cinderheart Crater) means 0, same convention as
+  // equippedAbilityIds below.
+  voidShardsMin?: number;
+  voidShardsMax?: number;
   specialAbility?: SpecialAbility;
   // Ability ids from combatEngine/monsterAbilities.ts, priority-ordered
   // (highest first) — the same priority walk player combatants use. Absent

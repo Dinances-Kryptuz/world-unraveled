@@ -42,9 +42,10 @@ interface SessionTotals {
   monstersDefeated: number;
   xpGained: number;
   goldGained: number;
+  voidShardsGained: number;
 }
 
-const EMPTY_TOTALS: SessionTotals = { monstersDefeated: 0, xpGained: 0, goldGained: 0 };
+const EMPTY_TOTALS: SessionTotals = { monstersDefeated: 0, xpGained: 0, goldGained: 0, voidShardsGained: 0 };
 
 export function CombatScreen({ monsterId }: { monsterId: string }) {
   const { user } = useAuth();
@@ -189,6 +190,7 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
 
     const xpGained = Math.round(kills.reduce((sum, k) => sum + k.xpGained, 0));
     const goldGained = Math.round(kills.reduce((sum, k) => sum + k.goldGained, 0));
+    const voidShardsGained = Math.round(kills.reduce((sum, k) => sum + k.voidShardsGained, 0));
     const lootByItem: Record<string, number> = {};
     for (const kill of kills) {
       for (const drop of kill.loot) {
@@ -201,17 +203,19 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
       monstersDefeated: prev.monstersDefeated + kills.length,
       xpGained: prev.xpGained + xpGained,
       goldGained: prev.goldGained + goldGained,
+      voidShardsGained: prev.voidShardsGained + voidShardsGained,
     }));
     // Bump the shared character xp/gold now, in the same tick as the banked
     // session totals above, so the header bar and this screen's "session"
     // line move together instead of the header lagging behind the Firestore
     // round-trip below.
-    applyOptimisticUpdate((c) => ({ ...c, xp: c.xp + xpGained, gold: c.gold + goldGained }));
+    applyOptimisticUpdate((c) => ({ ...c, xp: c.xp + xpGained, gold: c.gold + goldGained, voidShards: c.voidShards + voidShardsGained }));
 
     try {
       await applyCombatResult(currentUser.uid, {
         xpGained,
         goldGained,
+        voidShardsGained,
         loot: lootToSave,
         hpAfter: player.hp,
       });
@@ -268,8 +272,9 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
         monstersDefeated: prev.monstersDefeated - kills.length,
         xpGained: prev.xpGained - xpGained,
         goldGained: prev.goldGained - goldGained,
+        voidShardsGained: prev.voidShardsGained - voidShardsGained,
       }));
-      applyOptimisticUpdate((c) => ({ ...c, xp: c.xp - xpGained, gold: c.gold - goldGained }));
+      applyOptimisticUpdate((c) => ({ ...c, xp: c.xp - xpGained, gold: c.gold - goldGained, voidShards: c.voidShards - voidShardsGained }));
     }
   }
 
@@ -371,12 +376,15 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
       {retreated ? (
         <p>
           You were forced to retreat! This session: {bankedTotals.monstersDefeated} defeated, +
-          {bankedTotals.xpGained} XP, +{bankedTotals.goldGained} gold. Your HP will recover over time.
+          {bankedTotals.xpGained} XP, +{bankedTotals.goldGained} gold
+          {bankedTotals.voidShardsGained > 0 ? `, +${bankedTotals.voidShardsGained} Void Shards` : ''}. Your HP will
+          recover over time.
         </p>
       ) : (
         <p>
           This session: {bankedTotals.monstersDefeated} defeated, +{bankedTotals.xpGained} XP, +
           {bankedTotals.goldGained} gold
+          {bankedTotals.voidShardsGained > 0 ? `, +${bankedTotals.voidShardsGained} Void Shards` : ''}
         </p>
       )}
 

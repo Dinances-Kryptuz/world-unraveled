@@ -77,6 +77,7 @@ export function WelcomeBackScreen({
           await applyCombatResult(user.uid, {
             xpGained: result.xpGained,
             goldGained: result.goldGained,
+            voidShardsGained: result.voidShardsGained,
             loot: result.loot,
             hpAfter: result.hpAfter,
           });
@@ -92,10 +93,11 @@ export function WelcomeBackScreen({
 
         const retreatNote = result.forcedRetreat ? ' You were forced to retreat before your time was up.' : '';
         const levelUpNote = result.finalLevel !== character.level ? ` You reached level ${result.finalLevel}!` : '';
+        const voidShardsNote = result.voidShardsGained > 0 ? ` and ${result.voidShardsGained} Void Shards` : '';
         setSummary(
           `While you were away, you defeated ${result.monstersDefeated} ${monster.name}${
             result.monstersDefeated === 1 ? '' : 's'
-          }, earning ${result.xpGained} XP and ${result.goldGained} gold.${retreatNote}${levelUpNote}`
+          }, earning ${result.xpGained} XP and ${result.goldGained} gold${voidShardsNote}.${retreatNote}${levelUpNote}`
         );
       } else if (activity.type === 'gathering') {
         const node = GATHER_NODES[activity.targetId];

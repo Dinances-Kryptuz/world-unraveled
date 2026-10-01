@@ -45,12 +45,12 @@ export function VendorScreen({ zoneId }: { zoneId: string }) {
     }
   }
 
-  async function handleBuy(itemId: string, price: number, quantity: number) {
+  async function handleBuy(itemId: string, price: number, quantity: number, currency: 'gold' | 'voidShards') {
     if (!user || quantity <= 0) return;
     setBuying(itemId);
-    applyOptimisticUpdate((c) => ({ ...c, gold: c.gold - price * quantity }));
+    applyOptimisticUpdate((c) => ({ ...c, [currency]: c[currency] - price * quantity }));
     try {
-      await buyItem(user.uid, itemId, quantity, price);
+      await buyItem(user.uid, itemId, quantity, price, currency);
       await refetch();
     } finally {
       setBuying(null);
@@ -65,16 +65,18 @@ export function VendorScreen({ zoneId }: { zoneId: string }) {
         <>
           <h3>Buy</h3>
           <ul>
-            {stock.map(({ itemId, price }) => {
+            {stock.map(({ itemId, price, currency = 'gold' }) => {
               const item = ITEMS[itemId];
               const isBusy = buying === itemId;
               const qty = parseQuantity(buyQty[itemId], Infinity);
-              const canAffordOne = character.gold >= price;
-              const canAffordQty = character.gold >= price * qty;
+              const label = currency === 'voidShards' ? 'Void Shards' : 'gold';
+              const balance = character[currency];
+              const canAffordOne = balance >= price;
+              const canAffordQty = balance >= price * qty;
               return (
                 <li key={itemId}>
-                  {item?.name ?? itemId} ({price} gold each)
-                  <button onClick={() => handleBuy(itemId, price, 1)} disabled={isBusy || !canAffordOne}>
+                  {item?.name ?? itemId} ({price} {label} each)
+                  <button onClick={() => handleBuy(itemId, price, 1, currency)} disabled={isBusy || !canAffordOne}>
                     Buy 1
                   </button>
                   <input
@@ -84,8 +86,8 @@ export function VendorScreen({ zoneId }: { zoneId: string }) {
                     placeholder="qty"
                     onChange={(e) => setBuyQty((q) => ({ ...q, [itemId]: e.target.value }))}
                   />
-                  <button onClick={() => handleBuy(itemId, price, qty)} disabled={isBusy || !canAffordQty}>
-                    Buy X ({price * qty} gold)
+                  <button onClick={() => handleBuy(itemId, price, qty, currency)} disabled={isBusy || !canAffordQty}>
+                    Buy X ({price * qty} {label})
                   </button>
                 </li>
               );

@@ -44,9 +44,10 @@ interface SessionTotals {
   monstersDefeated: number;
   xpGained: number;
   goldGained: number;
+  voidShardsGained: number;
 }
 
-const EMPTY_TOTALS: SessionTotals = { monstersDefeated: 0, xpGained: 0, goldGained: 0 };
+const EMPTY_TOTALS: SessionTotals = { monstersDefeated: 0, xpGained: 0, goldGained: 0, voidShardsGained: 0 };
 
 // A dungeon run: the same discrete engine as CombatScreen, just fed a fixed
 // sequence of monster stages via TickContext.nextMonster instead of one
@@ -223,6 +224,7 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
 
     const xpGained = Math.round(kills.reduce((sum, k) => sum + k.xpGained, 0));
     const goldGained = Math.round(kills.reduce((sum, k) => sum + k.goldGained, 0));
+    const voidShardsGained = Math.round(kills.reduce((sum, k) => sum + k.voidShardsGained, 0));
     const lootByItem: Record<string, number> = {};
     for (const kill of kills) {
       for (const drop of kill.loot) {
@@ -235,13 +237,15 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
       monstersDefeated: prev.monstersDefeated + kills.length,
       xpGained: prev.xpGained + xpGained,
       goldGained: prev.goldGained + goldGained,
+      voidShardsGained: prev.voidShardsGained + voidShardsGained,
     }));
-    applyOptimisticUpdate((c) => ({ ...c, xp: c.xp + xpGained, gold: c.gold + goldGained }));
+    applyOptimisticUpdate((c) => ({ ...c, xp: c.xp + xpGained, gold: c.gold + goldGained, voidShards: c.voidShards + voidShardsGained }));
 
     try {
       await applyCombatResult(currentUser.uid, {
         xpGained,
         goldGained,
+        voidShardsGained,
         loot: lootToSave,
         hpAfter: player.hp,
       });
@@ -298,8 +302,9 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
         monstersDefeated: prev.monstersDefeated - kills.length,
         xpGained: prev.xpGained - xpGained,
         goldGained: prev.goldGained - goldGained,
+        voidShardsGained: prev.voidShardsGained - voidShardsGained,
       }));
-      applyOptimisticUpdate((c) => ({ ...c, xp: c.xp - xpGained, gold: c.gold - goldGained }));
+      applyOptimisticUpdate((c) => ({ ...c, xp: c.xp - xpGained, gold: c.gold - goldGained, voidShards: c.voidShards - voidShardsGained }));
     }
   }
 
@@ -406,13 +411,15 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
       {retreated ? (
         <p>
           You were forced to retreat! This run: {bankedTotals.monstersDefeated} defeated, +{bankedTotals.xpGained} XP,
-          +{bankedTotals.goldGained} gold, {fullClears} full clear{fullClears === 1 ? '' : 's'}. Your HP will recover
-          over time.
+          +{bankedTotals.goldGained} gold
+          {bankedTotals.voidShardsGained > 0 ? `, +${bankedTotals.voidShardsGained} Void Shards` : ''}, {fullClears}{' '}
+          full clear{fullClears === 1 ? '' : 's'}. Your HP will recover over time.
         </p>
       ) : (
         <p>
           This run: {bankedTotals.monstersDefeated} defeated, +{bankedTotals.xpGained} XP, +{bankedTotals.goldGained}{' '}
-          gold, {fullClears} full clear{fullClears === 1 ? '' : 's'}
+          gold{bankedTotals.voidShardsGained > 0 ? `, +${bankedTotals.voidShardsGained} Void Shards` : ''}, {fullClears}{' '}
+          full clear{fullClears === 1 ? '' : 's'}
         </p>
       )}
 

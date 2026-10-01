@@ -1268,4 +1268,35 @@ export const ITEMS: Record<string, ItemDef> = {
     description: 'Gauntlets forged from a formula passed down since Cinderfall’s dwarves — among the finest a Blacksmith can make.',
     stackable: true, equipSlot: 'gloves', armorType: 'plate', statBonuses: { STR: 14, STA: 8 }, sellValue: 90,
   },
+
+  // ── Voidforged gear — the endgame capstone set, bought from the Void
+  // Vendor (Cinderheart Crater) for Void Shards rather than gold. A
+  // deliberate step above the best craftable/dungeon-drop gear in each
+  // slot, since it's gated behind farming the same endgame zone rather
+  // than being a shortcut around it.
+  voidforged_warblade: {
+    id: 'voidforged_warblade', name: 'Voidforged Warblade', type: 'equipment',
+    description: 'A blade quenched in the crater’s waking power. It hums faintly, even at rest.',
+    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 22, STA: 8 }, sellValue: 160,
+  },
+  voidforged_scepter: {
+    id: 'voidforged_scepter', name: 'Voidforged Scepter', type: 'equipment',
+    description: 'A scepter that channels the crater’s stirring power into focused will.',
+    stackable: true, equipSlot: 'weapon', statBonuses: { INT: 14, SPI: 6 }, sellValue: 160,
+  },
+  voidforged_chestguard: {
+    id: 'voidforged_chestguard', name: 'Voidforged Chestguard', type: 'equipment',
+    description: 'Plate forged at the world’s molten heart, tempered in something older than fire.',
+    stackable: true, equipSlot: 'chest', armorType: 'plate', statBonuses: { STA: 18, STR: 4 }, sellValue: 120,
+  },
+  voidforged_vestments: {
+    id: 'voidforged_vestments', name: 'Voidforged Vestments', type: 'equipment',
+    description: 'Robes woven through with threads of the crater’s own stirring power.',
+    stackable: true, equipSlot: 'chest', armorType: 'cloth', statBonuses: { INT: 15, SPI: 9 }, sellValue: 120,
+  },
+  voidforged_signet: {
+    id: 'voidforged_signet', name: 'Voidforged Signet', type: 'equipment',
+    description: 'A ring cut from crystallized Void Shard — equally at home on any hand.',
+    stackable: true, equipSlot: 'ring', statBonuses: { STR: 5, STA: 8, INT: 5, SPI: 5 }, sellValue: 110,
+  },
 };

@@ -38,6 +38,7 @@ export interface OfflineCombatResult {
   monstersDefeated: number;
   xpGained: number;
   goldGained: number;
+  voidShardsGained: number;
   loot: { itemId: string; quantity: number }[];
   hpAfter: number;
   finalLevel: number;
@@ -81,6 +82,7 @@ export function simulateOfflineCombat(input: OfflineCombatInput): OfflineCombatR
   let level = input.startingLevel;
   let xpTotal = input.startingXp;
   let goldGained = 0;
+  let voidShardsGained = 0;
   let monstersDefeated = 0;
   let forcedRetreat = false;
   const lootTotals: Record<string, number> = {};
@@ -99,6 +101,7 @@ export function simulateOfflineCombat(input: OfflineCombatInput): OfflineCombatR
       monstersDefeated++;
       xpTotal += kill.xpGained;
       goldGained += kill.goldGained;
+      voidShardsGained += kill.voidShardsGained;
       for (const drop of kill.loot) {
         lootTotals[drop.itemId] = (lootTotals[drop.itemId] ?? 0) + drop.quantity;
       }
@@ -131,6 +134,7 @@ export function simulateOfflineCombat(input: OfflineCombatInput): OfflineCombatR
     monstersDefeated,
     xpGained: xpTotal - input.startingXp,
     goldGained: Math.round(goldGained),
+    voidShardsGained: Math.round(voidShardsGained),
     loot: Object.entries(lootTotals).map(([itemId, quantity]) => ({ itemId, quantity })),
     hpAfter: player.hp,
     finalLevel: level,

@@ -239,6 +239,7 @@ function computeEffectDamage(attacker: Combatant, defender: Combatant, power: nu
 export interface KillReward {
   xpGained: number;
   goldGained: number;
+  voidShardsGained: number;
   loot: { itemId: string; quantity: number }[];
   // Which monster this reward came from — lets callers (the quest system)
   // attribute a kill to a specific monster id without re-deriving it from
@@ -499,6 +500,9 @@ export function useAbility(
 function rollKillReward(monster: Monster, levelDiff: number): KillReward {
   const goldGained = Math.round(monster.goldMin + Math.random() * (monster.goldMax - monster.goldMin));
   const xpGained = Math.round(50 * monster.level * xpModifier(levelDiff));
+  const voidShardsGained = monster.voidShardsMin
+    ? Math.round(monster.voidShardsMin + Math.random() * ((monster.voidShardsMax ?? monster.voidShardsMin) - monster.voidShardsMin))
+    : 0;
   const loot: { itemId: string; quantity: number }[] = [];
   for (const drop of monster.lootTable) {
     if (Math.random() < drop.chance) {
@@ -506,7 +510,7 @@ function rollKillReward(monster: Monster, levelDiff: number): KillReward {
       if (qty > 0) loot.push({ itemId: drop.itemId, quantity: qty });
     }
   }
-  return { xpGained, goldGained, loot, monsterId: monster.id };
+  return { xpGained, goldGained, voidShardsGained, loot, monsterId: monster.id };
 }
 
 // Manual override — same function the AI uses, just triggered by a click
