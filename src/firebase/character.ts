@@ -30,11 +30,16 @@ export async function getCharacter(uid: string): Promise<Character | null> {
     enchantments: data.enchantments ?? {},
     learnedRecipeIds: data.learnedRecipeIds ?? [],
     bagSlots: data.bagSlots ?? BASE_BAG_SLOTS,
+    // A charge-based buff has no expiresAt in Firestore at all — omitting
+    // the key entirely (rather than setting it to `undefined`) matters
+    // because this object gets spread again later (consumeBuffCharges),
+    // and Firestore's updateDoc rejects an explicit `undefined` value even
+    // though it accepts a genuinely absent key.
     activeBuffs: Object.fromEntries(
-      Object.entries(data.activeBuffs ?? {}).map(([category, buff]: [string, any]) => [
-        category,
-        { ...buff, expiresAt: buff.expiresAt ? (buff.expiresAt as Timestamp).toDate() : undefined },
-      ])
+      Object.entries(data.activeBuffs ?? {}).map(([category, buff]: [string, any]) => {
+        const { expiresAt, ...rest } = buff;
+        return [category, expiresAt ? { ...rest, expiresAt: (expiresAt as Timestamp).toDate() } : rest];
+      })
     ),
     // Same backfill idea for equippedAbilityIds, added after some characters
     // already existed — an empty list is itself a valid "no choice made
