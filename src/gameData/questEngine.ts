@@ -20,11 +20,21 @@ function isZoneUnlockedForQuests(zoneId: string, characterLevel: number): boolea
   return zone.unlockRequirement.type === 'none' || characterLevel >= zone.unlockRequirement.level;
 }
 
-function isQuestAvailable(quest: QuestDef, character: Pick<Character, 'class' | 'spec' | 'level' | 'quests'>, now: Date): boolean {
+function isQuestAvailable(
+  quest: QuestDef,
+  character: Pick<Character, 'class' | 'spec' | 'level' | 'quests' | 'professions'>,
+  now: Date
+): boolean {
   if (quest.classId && quest.classId !== character.class) return false;
   if (quest.requiredSpecs && (!character.spec || !quest.requiredSpecs.includes(character.spec))) return false;
   if (quest.requiredLevel && character.level < quest.requiredLevel) return false;
   if (quest.zoneId && !isZoneUnlockedForQuests(quest.zoneId, character.level)) return false;
+  // A profession-category quest with a declared `profession` is only ever
+  // offered to a character who actually knows it — professions stopped
+  // being auto-granted once learning became a real, trainer-gated choice
+  // (see firebase/professions.ts), so an ungated profession quest could
+  // otherwise be handed to someone who can never complete it.
+  if (quest.profession && !character.professions[quest.profession]) return false;
   if (quest.prerequisiteQuestId && !character.quests.completedIds.includes(quest.prerequisiteQuestId)) return false;
   if (quest.id in character.quests.active) return false;
 
@@ -43,7 +53,7 @@ function isQuestAvailable(quest: QuestDef, character: Pick<Character, 'class' | 
 const CATEGORY_PRIORITY: Record<QuestDef['category'], number> = { zone: 0, class: 1, profession: 2, daily: 3 };
 
 export function refillActiveQuests(
-  character: Pick<Character, 'class' | 'spec' | 'level' | 'quests'>,
+  character: Pick<Character, 'class' | 'spec' | 'level' | 'quests' | 'professions'>,
   now: Date
 ): Record<string, number[]> {
   const active = { ...character.quests.active };
@@ -102,7 +112,7 @@ export interface QuestApplyResult {
 // successor) — all in one pass. Doesn't touch Firestore; see
 // firebase/quests.ts.
 export function applyQuestEvents(
-  character: Pick<Character, 'class' | 'spec' | 'level' | 'quests'>,
+  character: Pick<Character, 'class' | 'spec' | 'level' | 'quests' | 'professions'>,
   events: QuestEvent[],
   now: Date
 ): QuestApplyResult {

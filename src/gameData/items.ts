@@ -1252,4 +1252,20 @@ export const ITEMS: Record<string, ItemDef> = {
     stackable: true, sellValue: 45,
     consumableEffect: { cooldownSeconds: 0, bagCapacityBonus: 20 },
   },
+
+  // ── Blacksmithing profession quest chain reward (see quests.ts's
+  // "The Lost Forge" chain) — a recipe that must be taught by this item
+  // rather than just hitting a skill threshold (Recipe.learnedAutomatically
+  // === false), per the design brief's "profession quest chains can teach
+  // unique recipes" requirement.
+  formula_emberforged_gauntlets: {
+    id: 'formula_emberforged_gauntlets', name: 'Formula: Emberforged Gauntlets', type: 'recipe',
+    description: 'A scorched forge-formula recovered from the Molten Scar. Use to learn the recipe.',
+    stackable: true, teachesRecipeId: 'emberforged_gauntlets_recipe', sellValue: 0,
+  },
+  emberforged_gauntlets: {
+    id: 'emberforged_gauntlets', name: 'Emberforged Gauntlets', type: 'equipment',
+    description: 'Gauntlets forged from a formula passed down since Cinderfall’s dwarves — among the finest a Blacksmith can make.',
+    stackable: true, equipSlot: 'gloves', armorType: 'plate', statBonuses: { STR: 14, STA: 8 }, sellValue: 90,
+  },
 };

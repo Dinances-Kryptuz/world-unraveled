@@ -38,10 +38,20 @@ export const VENDOR_STOCK: Record<string, VendorStockEntry[]> = {
     { itemId: 'brimstone_pick', price: 120 },
     { itemId: 'brimstone_skinning_knife', price: 120 },
     { itemId: 'brimstone_fishing_rod', price: 120 },
+    // High-tier finished consumables for sale — most recipes in this game
+    // are skill-gated rather than item-taught (see Recipe.learnedAutomatically),
+    // so a "recipe vendor" here sells the end product rather than a
+    // formula; formula_emberforged_gauntlets (The Lost Forge quest chain)
+    // is the one recipe that genuinely needs to be taught by an item.
+    { itemId: 'draught_of_resistance', price: 40 },
+    { itemId: 'magma_darter_skewers', price: 35 },
   ],
   cinderheart_crater: [
     { itemId: 'emberforged_pick', price: 180 },
     { itemId: 'emberforged_skinning_knife', price: 180 },
     { itemId: 'emberforged_fishing_rod', price: 180 },
+    { itemId: 'greater_battle_draught', price: 70 },
+    { itemId: 'greater_stoneskin_draught', price: 70 },
+    { itemId: 'emberheart_feast', price: 60 },
   ],
 };

@@ -99,7 +99,10 @@ export async function createCharacter(uid: string, name: string, characterClass:
   // level-1 zone/class/profession quests) rather than an empty one that
   // only fills in after their first kill/gather/craft.
   const initialActiveQuests = refillActiveQuests(
-    { class: characterClass, spec: null, level: 1, quests: { active: {}, completedIds: [], dailyCompletedAt: {} } },
+    {
+      class: characterClass, spec: null, level: 1, professions: {},
+      quests: { active: {}, completedIds: [], dailyCompletedAt: {} },
+    },
     new Date()
   );
 

@@ -1,4 +1,5 @@
 import type { ClassId, SpecId } from './classStats';
+import type { ProfessionId } from './types';
 
 export type QuestCategory = 'zone' | 'class' | 'profession' | 'daily';
 
@@ -51,6 +52,12 @@ export interface QuestDef {
   zoneId?: string;
   repeatable?: boolean;
   cooldownHours?: number;
+  // Profession quests only: which profession the character must already
+  // know for this to be offered — see questEngine.ts's isQuestAvailable.
+  // Undefined means "no profession gate" (used by nothing currently, but
+  // kept optional rather than required since not every future profession
+  // quest need be gated this narrowly).
+  profession?: ProfessionId;
 }
 
 // "Keep active quests relatively limited... so the player does not have a
@@ -355,6 +362,7 @@ export const QUESTS: Record<string, QuestDef> = {
     id: 'profession_leatherworking',
     name: 'Hide and Seam',
     category: 'profession',
+    profession: 'leatherworking',
     description: 'Gather leather scraps and work them into Light Leather.',
     objectives: [
       { type: 'gather', itemId: 'leather_scraps', count: 10 },
@@ -366,6 +374,7 @@ export const QUESTS: Record<string, QuestDef> = {
     id: 'profession_smithing',
     name: 'Ore to Bar',
     category: 'profession',
+    profession: 'smithing',
     description: 'Mine copper ore and smelt it into bars.',
     objectives: [
       { type: 'gather', itemId: 'copper_ore', count: 10 },
@@ -377,6 +386,7 @@ export const QUESTS: Record<string, QuestDef> = {
     id: 'profession_tailoring',
     name: 'First Stitches',
     category: 'profession',
+    profession: 'tailoring',
     description: 'Prove your skill at the loom with your first robe.',
     objectives: [{ type: 'craft', itemId: 'linen_robe', count: 1 }],
     rewards: { xp: 100, gold: 10 },
@@ -385,12 +395,53 @@ export const QUESTS: Record<string, QuestDef> = {
     id: 'profession_alchemy',
     name: 'A Simple Brew',
     category: 'profession',
+    profession: 'alchemy',
     description: 'Gather peacebloom and brew your first healing draughts.',
     objectives: [
       { type: 'gather', itemId: 'peacebloom', count: 10 },
       { type: 'craft', itemId: 'minor_healing_draught', count: 3 },
     ],
     rewards: { xp: 100, gold: 10 },
+  },
+
+  // ── "The Lost Forge" — Blacksmithing's profession quest chain, per the
+  // design brief's "profession quest chains... can teach unique recipes"
+  // requirement. Not required for ordinary Blacksmithing progression
+  // (nothing about leveling the skill depends on it) — purely a bonus
+  // path to a recipe you can't get any other way. Set in the Molten
+  // Scar/Cinderheart Crater (zones 5-6), where the brief asks for
+  // "additional rare recipe rewards."
+  forge_apprentice_trial: {
+    id: 'forge_apprentice_trial',
+    name: 'The Lost Forge: Apprentice Trial',
+    category: 'profession',
+    profession: 'smithing',
+    requiredLevel: 40,
+    description: 'A journeyman smith in the Molten Scar wants proof you can turn ore into something useful. Smelt Brimstone Bars.',
+    objectives: [{ type: 'craft', itemId: 'brimstone_bar', count: 10 }],
+    rewards: { xp: 300, gold: 20 },
+  },
+  forge_journeyman_trial: {
+    id: 'forge_journeyman_trial',
+    name: 'The Lost Forge: Journeyman Trial',
+    category: 'profession',
+    profession: 'smithing',
+    prerequisiteQuestId: 'forge_apprentice_trial',
+    requiredLevel: 40,
+    description: 'Dig deeper. The old forge’s formula is said to need a mountain of brimstone ore to even attempt.',
+    objectives: [{ type: 'gather', itemId: 'brimstone_ore', count: 20 }],
+    rewards: { xp: 400, gold: 30 },
+  },
+  forge_master_trial: {
+    id: 'forge_master_trial',
+    name: 'The Lost Forge: Master Trial',
+    category: 'profession',
+    profession: 'smithing',
+    prerequisiteQuestId: 'forge_journeyman_trial',
+    requiredLevel: 48,
+    description: 'The formula is sealed behind the Molten Herald itself. Bring it down to claim what it guards.',
+    objectives: [{ type: 'kill', monsterId: 'molten_herald', bossOnly: true, count: 1 }],
+    rewards: { xp: 600, gold: 50, itemId: 'formula_emberforged_gauntlets', itemQuantity: 1 },
   },
 
   // ── Dailies — simple, repeatable, deliberately not click-heavy. ───────

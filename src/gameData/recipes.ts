@@ -1089,4 +1089,15 @@ export const RECIPES: Record<string, Recipe> = {
     colorBreakpoints: { orangeUntil: 269, yellowUntil: 274, greenUntil: 284 },
     source: 'dungeon_drop', rarity: 'rare', learnedAutomatically: true,
   },
+
+  // ── Taught only by Formula: Emberforged Gauntlets (quests.ts's "The Lost
+  // Forge" chain) — not obtainable just by reaching the skill requirement.
+  emberforged_gauntlets_recipe: {
+    id: 'emberforged_gauntlets_recipe', name: 'Emberforged Gauntlets', profession: 'smithing', requiredSkill: 180,
+    resultItemId: 'emberforged_gauntlets', resultQuantity: 1,
+    materials: [{ itemId: 'emberforge_ore', quantity: 8 }, { itemId: 'arcane_essence', quantity: 2 }],
+    craftSeconds: 22, xpAward: 55,
+    colorBreakpoints: { orangeUntil: 189, yellowUntil: 194, greenUntil: 204 },
+    source: 'profession_quest', rarity: 'rare', learnedAutomatically: false,
+  },
 };
