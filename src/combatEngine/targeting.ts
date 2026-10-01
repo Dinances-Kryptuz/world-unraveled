@@ -12,6 +12,12 @@ export function resolveTarget(state: CombatState, type: TargetType, sourceId: st
       const pool = sourceIsPlayer ? state.enemies : state.party;
       return pool.find((c) => c.isAlive) ?? null;
     }
+    case 'LOWEST_HP_ALLY': {
+      const sourceIsPlayer = state.party.some((c) => c.id === sourceId);
+      const pool = (sourceIsPlayer ? state.party : state.enemies).filter((c) => c.isAlive);
+      if (pool.length === 0) return null;
+      return pool.reduce((lowest, c) => (c.hp / c.maxHp < lowest.hp / lowest.maxHp ? c : lowest));
+    }
     default:
       return null;
   }

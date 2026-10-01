@@ -119,7 +119,7 @@ export const ABILITIES: Record<string, Ability> = {
     resourceType: 'mana',
     resourceCost: 30,
     cooldownSeconds: 6,
-    targetType: 'SELF',
+    targetType: 'LOWEST_HP_ALLY',
     effects: [{ type: 'heal', power: 1.5 }],
   },
   priest_power_word_shield: {
@@ -203,7 +203,7 @@ export const ABILITIES: Record<string, Ability> = {
     description: 'A massive emergency heal. Extremely long cooldown.',
     unlockLevel: 10,
     cooldownSeconds: 300,
-    targetType: 'SELF',
+    targetType: 'LOWEST_HP_ALLY',
     effects: [{ type: 'heal', power: 4.0 }],
   },
 
@@ -304,7 +304,7 @@ export const ABILITIES: Record<string, Ability> = {
     cooldownSeconds: 10,
     resourceType: 'mana',
     resourceCost: 45,
-    targetType: 'SELF',
+    targetType: 'LOWEST_HP_ALLY',
     effects: [{ type: 'heal', power: 2.5 }],
   },
   holy_priest_guardian_spirit: {
@@ -363,7 +363,7 @@ export const ABILITIES: Record<string, Ability> = {
     cooldownSeconds: 8,
     resourceType: 'mana',
     resourceCost: 35,
-    targetType: 'SELF',
+    targetType: 'LOWEST_HP_ALLY',
     effects: [{ type: 'heal', power: 2.2 }],
   },
   holy_paladin_divine_favor: {
