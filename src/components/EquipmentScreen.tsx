@@ -10,11 +10,12 @@ import { canClassEquip } from '../gameData/classStats';
 import type { Inventory } from '../types/character';
 import type { EquipmentSlot, ItemDef } from '../gameData/types';
 
-const SLOT_ORDER: EquipmentSlot[] = ['weapon', 'chest', 'helmet', 'gloves', 'legs', 'boots', 'ring'];
+const SLOT_ORDER: EquipmentSlot[] = ['weapon', 'chest', 'helmet', 'gloves', 'legs', 'boots', 'ring', 'tool'];
 
 function formatStatBonuses(item: ItemDef): string {
-  if (!item.statBonuses) return '';
-  const parts = Object.entries(item.statBonuses).map(([stat, val]) => `+${val} ${stat}`);
+  const parts = Object.entries(item.statBonuses ?? {}).map(([stat, val]) => `+${val} ${stat}`);
+  // Tools have no statBonuses at all — gatherBonusPct is their equivalent.
+  if (item.gatherBonusPct) parts.push(`+${item.gatherBonusPct}% gathering`);
   return parts.length > 0 ? ` (${parts.join(', ')})` : '';
 }
 
