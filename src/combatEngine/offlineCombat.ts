@@ -9,6 +9,7 @@
 import type { ClassId, SpecDef, SpecId, BaseStat } from '../gameData/classStats';
 import { maxHp } from '../gameData/combatFormulas';
 import type { TalentBonusTotals } from '../utils/talentEvaluator';
+import type { BuffTotals } from '../gameData/buffs';
 import type { Monster } from '../gameData/types';
 import { characterXpForLevelV2 } from '../gameData/xpTables';
 import { resolveElapsedProgress, COMBAT_OFFLINE_THROTTLE } from '../gameData/activityEngine';
@@ -22,6 +23,7 @@ export interface OfflineCombatInput {
   specId: SpecId | null;
   specDef: SpecDef;
   talentTotals: TalentBonusTotals;
+  buffTotals: BuffTotals;
   extraDamageTakenPct: number;
   equipmentBonuses: Partial<Record<BaseStat, number>>;
   startingLevel: number;
@@ -66,6 +68,7 @@ export function simulateOfflineCombat(input: OfflineCombatInput): OfflineCombatR
       specId: input.specId,
       specDef: input.specDef,
       talentTotals: input.talentTotals,
+      buffTotals: input.buffTotals,
       extraDamageTakenPct: input.extraDamageTakenPct,
       equipmentBonuses: input.equipmentBonuses,
       currentHp,
@@ -83,7 +86,7 @@ export function simulateOfflineCombat(input: OfflineCombatInput): OfflineCombatR
   const lootTotals: Record<string, number> = {};
 
   const state: CombatState = createEncounterState(buildInput(level, input.startingHp));
-  const ctx: TickContext = { monster: input.monster, playerLevel: level };
+  const ctx: TickContext = { monster: input.monster, playerLevel: level, playerCombatType: input.specDef.combatType };
 
   let elapsed = 0;
   let ticks = 0;
@@ -118,7 +121,7 @@ export function simulateOfflineCombat(input: OfflineCombatInput): OfflineCombatR
     }
     if (leveledUp) {
       ctx.playerLevel = level;
-      const freshMaxHp = maxHp(input.cls, level, input.equipmentBonuses);
+      const freshMaxHp = maxHp(input.cls, level, input.equipmentBonuses, input.talentTotals.hpMultPct);
       state.party = [createPlayerCombatant(buildInput(level, freshMaxHp))];
     }
   }

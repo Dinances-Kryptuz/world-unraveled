@@ -3,6 +3,8 @@ import { useAuth } from '../hooks/useAuth';
 import { useCharacter } from '../hooks/useCharacter';
 import { subscribeToInventory } from '../firebase/inventory';
 import { useConsumableOutOfCombat } from '../firebase/consumables';
+import { disenchantItem } from '../firebase/enchanting';
+import { isDisenchantable, disenchantRequiredSkill, disenchantTier } from '../gameData/enchanting';
 import { ITEMS } from '../gameData/items';
 import { ConsumablesBar } from './ConsumablesBar';
 import type { Inventory } from '../types/character';
@@ -41,6 +43,18 @@ export function InventoryScreen() {
     await refetch();
   }
 
+  async function handleDisenchant(itemId: string) {
+    if (!user) return;
+    setError(null);
+    const result = await disenchantItem(user.uid, itemId);
+    if (!result.success) setError(result.reason ?? 'Could not disenchant that.');
+    await refetch();
+  }
+
+  const knowsEnchanting = !!character.professions.enchanting;
+  const enchantingSkill = character.professions.enchanting?.level ?? 0;
+  const distinctItemCount = Object.values(inventory.items).filter((q) => q > 0).length;
+
   const entries = Object.entries(inventory.items)
     .filter(([, quantity]) => quantity > 0)
     .sort(([a], [b]) => {
@@ -52,6 +66,11 @@ export function InventoryScreen() {
   return (
     <div className="inventory-screen">
       <h2>Inventory</h2>
+      <p>
+        <small>
+          {distinctItemCount} / {character.bagSlots} item slots used
+        </small>
+      </p>
       <ConsumablesBar character={character} inventoryItems={inventory.items} allowMana={false} onUse={handleUseConsumable} />
       {error && <p className="error">{error}</p>}
       {entries.length === 0 ? (
@@ -60,9 +79,21 @@ export function InventoryScreen() {
         <ul>
           {entries.map(([itemId, quantity]) => {
             const item = ITEMS[itemId];
+            const canDisenchant = knowsEnchanting && item && isDisenchantable(item);
+            const requiredSkill = item ? disenchantRequiredSkill(item) : 0;
+            const meetsSkill = enchantingSkill >= requiredSkill;
             return (
               <li key={itemId}>
                 {item ? item.name : itemId}: {quantity}
+                {canDisenchant && (
+                  <button
+                    onClick={() => handleDisenchant(itemId)}
+                    disabled={!meetsSkill}
+                    title={`Disenchants into ${disenchantTier(item!)} (requires Enchanting ${requiredSkill})`}
+                  >
+                    Disenchant{!meetsSkill ? ` (needs skill ${requiredSkill})` : ''}
+                  </button>
+                )}
               </li>
             );
           })}

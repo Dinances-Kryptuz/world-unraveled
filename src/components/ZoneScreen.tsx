@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useCharacter } from '../hooks/useCharacter';
 import { startActivity, stopActivity } from '../firebase/character';
-import { ZONES, GATHER_NODES } from '../gameData/zones';
+import { ZONES, GATHER_NODES, FISHING_HOLES } from '../gameData/zones';
+import { FishingScreen } from './FishingScreen';
 import { MONSTERS } from '../gameData/monsters';
 import { RECIPES } from '../gameData/recipes';
 import { DUNGEONS } from '../gameData/dungeons';
@@ -13,12 +14,17 @@ import { DungeonScreen } from './DungeonScreen';
 import { WelcomeBackScreen, isLongAbsence } from './WelcomeBackScreen';
 import { SpecSelectionScreen } from './SpecSelectionScreen';
 import { craftingColorTier } from '../gameData/activityEngine';
+import { getProfessionState, PROFESSION_LABELS, checkLearnProfession, checkRankUp } from '../gameData/professionTiers';
+import { trainersInZone } from '../gameData/professionTrainers';
+import { learnProfession, advanceProfessionRank, abandonProfession, canUseRecipe } from '../firebase/professions';
 import { professionXpForLevel } from '../gameData/xpTables';
 import { XpBar } from './XpBar';
 import { MonsterLootPanel } from './MonsterLootPanel';
-import { MonsterLevelBadge, TIER_COLORS } from './MonsterLevelBadge';
+import { MonsterLevelBadge, CombatTypeBadge, TIER_COLORS } from './MonsterLevelBadge';
 import { ITEMS } from '../gameData/items';
 import { describeItemStats } from '../gameData/equipmentStats';
+import { resolveSpecDef } from '../gameData/combatProfileWithTalents';
+import { COMBAT_TYPE_ICONS, COMBAT_TYPE_LABELS } from '../gameData/combatTriangle';
 import type { ProfessionId, Recipe, Zone } from '../gameData/types';
 
 function isZoneUnlocked(zone: Zone, characterLevel: number): boolean {
@@ -62,9 +68,34 @@ export function ZoneScreen({
     await refetch();
   }
 
+  async function handleFish(holeId: string) {
+    if (!user) return;
+    await startActivity(user.uid, { type: 'fishing', targetId: holeId, zoneId: zone.id });
+    await refetch();
+  }
+
   async function handleCraft(recipeId: string) {
     if (!user) return;
     await startActivity(user.uid, { type: 'crafting', targetId: recipeId, zoneId: zone.id });
+    await refetch();
+  }
+
+  async function handleLearnProfession(professionId: ProfessionId) {
+    if (!user) return;
+    await learnProfession(user.uid, professionId);
+    await refetch();
+  }
+
+  async function handleAdvanceRank(professionId: ProfessionId) {
+    if (!user) return;
+    await advanceProfessionRank(user.uid, professionId);
+    await refetch();
+  }
+
+  async function handleAbandon(professionId: ProfessionId) {
+    if (!user) return;
+    if (!confirm(`Abandon ${PROFESSION_LABELS[professionId]}? Your skill progress will be lost.`)) return;
+    await abandonProfession(user.uid, professionId);
     await refetch();
   }
 
@@ -80,6 +111,7 @@ export function ZoneScreen({
 
   const activity = character.currentActivity;
   const showWelcomeBack = !dismissedWelcomeBack && activity.type !== null && isLongAbsence(activity);
+  const playerCombatType = resolveSpecDef(character.class, character.spec).combatType;
 
   if (showWelcomeBack) {
     return <WelcomeBackScreen character={character} onContinue={() => setDismissedWelcomeBack(true)} />;
@@ -94,15 +126,25 @@ export function ZoneScreen({
     if (node) return <GatheringScreen node={node} />;
   }
 
+  if (activity.type === 'fishing' && activity.targetId) {
+    const hole = FISHING_HOLES[activity.targetId];
+    if (hole) return <FishingScreen hole={hole} />;
+  }
+
   if (activity.type === 'crafting' && activity.targetId) {
     const recipe = RECIPES[activity.targetId];
     if (recipe) return <CraftingScreen recipe={recipe} />;
   }
 
-  const professionEntries = Object.entries(character.professions) as [ProfessionId, { level: number; xp: number }][];
+  const professionEntries = Object.entries(character.professions) as [ProfessionId, { level: number; xp: number; unlockedTier: import('../gameData/types').ProfessionTierName }][];
+  const knownProfessionIds = new Set(professionEntries.map(([id]) => id));
 
+  // Only professions the character actually knows show up as craftable —
+  // an unknown profession's recipes are invisible rather than
+  // visible-but-disabled, matching "learn it at a trainer first."
   const recipesByProfession = new Map<ProfessionId, Recipe[]>();
   for (const recipe of Object.values(RECIPES)) {
+    if (!knownProfessionIds.has(recipe.profession)) continue;
     const list = recipesByProfession.get(recipe.profession) ?? [];
     list.push(recipe);
     recipesByProfession.set(recipe.profession, list);
@@ -130,6 +172,16 @@ export function ZoneScreen({
 
       <h1>{zone.name}</h1>
       <p>{zone.description}</p>
+      <p>
+        <small>
+          Enemy composition:{' '}
+          {(['melee', 'ranged', 'magic'] as const)
+            .map((t) => ({ t, count: zone.monsterIds.filter((id) => MONSTERS[id].combatType === t).length }))
+            .filter(({ count }) => count > 0)
+            .map(({ t, count }) => `${COMBAT_TYPE_ICONS[t]} ${COMBAT_TYPE_LABELS[t]} (${count})`)
+            .join(' · ')}
+        </small>
+      </p>
 
       <h2>Monsters</h2>
       <ul>
@@ -138,7 +190,8 @@ export function ZoneScreen({
           const isExpanded = expandedMonsterId === monsterId;
           return (
             <li key={monsterId}>
-              {monster.name} (<MonsterLevelBadge monsterLevel={monster.level} playerLevel={character.level} />)
+              {monster.name} (<MonsterLevelBadge monsterLevel={monster.level} playerLevel={character.level} />{' '}
+              <CombatTypeBadge monsterType={monster.combatType} playerType={playerCombatType} />)
               <button onClick={() => handleFight(monsterId)}>Fight</button>
               <button onClick={() => setExpandedMonsterId(isExpanded ? null : monsterId)}>Drops</button>
               {isExpanded && <MonsterLootPanel monster={monster} />}
@@ -166,18 +219,54 @@ export function ZoneScreen({
           </div>
         ))}
 
-      <h2>Gathering (Mining, Herbalism, Skinning)</h2>
+      <h2>Gathering</h2>
       <ul>
         {zone.gatherNodeIds.map((nodeId) => {
           const node = GATHER_NODES[nodeId];
-          const professionLabel = node.profession.charAt(0).toUpperCase() + node.profession.slice(1);
-          const skillLevel = character.professions[node.profession].level;
+          const professionLabel = PROFESSION_LABELS[node.profession];
+          if (!knownProfessionIds.has(node.profession)) {
+            return (
+              <li key={nodeId} style={{ opacity: 0.6 }}>
+                {node.name} ({professionLabel}) — learn {professionLabel} at a trainer below to gather here.
+              </li>
+            );
+          }
+          const skillLevel = getProfessionState(character.professions, node.profession).level;
           const meetsLevel = skillLevel >= node.requiredLevel;
+          const tier = craftingColorTier(skillLevel, node.requiredLevel, node.colorBreakpoints);
+          const equippedTool = character.equipment.tool ? ITEMS[character.equipment.tool] : null;
+          const hasRequiredTool = !node.requiredToolType || equippedTool?.toolType === node.requiredToolType;
+          const canGather = meetsLevel && hasRequiredTool;
           return (
             <li key={nodeId}>
-              {node.name} ({professionLabel}, Lv {node.requiredLevel}+) — yields {ITEMS[node.itemId]?.name ?? node.itemId}
-              <button onClick={() => handleGather(nodeId)} disabled={!meetsLevel}>
-                {meetsLevel ? 'Gather' : `Need Lv ${node.requiredLevel}`}
+              <span style={{ color: TIER_COLORS[tier], fontWeight: 700 }}>{node.name}</span> ({professionLabel}, skill{' '}
+              {node.requiredLevel}+) — yields {ITEMS[node.itemId]?.name ?? node.itemId}
+              <button onClick={() => handleGather(nodeId)} disabled={!canGather}>
+                {!meetsLevel ? `Need skill ${node.requiredLevel}` : !hasRequiredTool ? 'Need tool equipped' : 'Gather'}
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+
+      <h2>Fishing</h2>
+      <ul>
+        {zone.fishingHoleIds.map((holeId) => {
+          const hole = FISHING_HOLES[holeId];
+          if (!knownProfessionIds.has('fishing')) {
+            return (
+              <li key={holeId} style={{ opacity: 0.6 }}>
+                {hole.name} (Fishing) — learn Fishing at a trainer below to fish here.
+              </li>
+            );
+          }
+          const equippedTool = character.equipment.tool ? ITEMS[character.equipment.tool] : null;
+          const hasRod = equippedTool?.toolType === 'fishing_rod';
+          return (
+            <li key={holeId}>
+              {hole.name} — yields {hole.lootTable.map((d) => ITEMS[d.itemId]?.name ?? d.itemId).join(', ')}
+              <button onClick={() => handleFish(holeId)} disabled={!hasRod}>
+                {hasRod ? 'Fish' : 'Need Fishing Rod equipped'}
               </button>
             </li>
           );
@@ -185,49 +274,98 @@ export function ZoneScreen({
       </ul>
 
       {[...recipesByProfession.entries()].map(([professionId, recipes]) => {
-        const professionLevel = character.professions[professionId].level;
-        const professionLabel = professionId.charAt(0).toUpperCase() + professionId.slice(1);
+        const professionLevel = getProfessionState(character.professions, professionId).level;
+        const professionLabel = PROFESSION_LABELS[professionId];
         return (
           <div key={professionId}>
             <h2>Crafting ({professionLabel})</h2>
             <ul>
-              {recipes.map((recipe) => {
-                const meetsLevel = professionLevel >= recipe.requiredSkill;
-                const tier = craftingColorTier(professionLevel, recipe.requiredSkill, recipe.colorBreakpoints);
-                const resultItem = ITEMS[recipe.resultItemId];
-                return (
-                  <li key={recipe.id}>
-                    <span
-                      style={{ color: TIER_COLORS[tier], fontWeight: 700, cursor: 'help' }}
-                      title={resultItem ? describeItemStats(resultItem) : undefined}
-                    >
-                      {recipe.name}
-                    </span>{' '}
-                    (requires Lv {recipe.requiredSkill}) — materials:{' '}
-                    {recipe.materials
-                      .map((m) => `${m.quantity}x ${ITEMS[m.itemId]?.name ?? m.itemId}`)
-                      .join(', ')}
-                    <button onClick={() => handleCraft(recipe.id)} disabled={!meetsLevel}>
-                      {meetsLevel ? 'Craft' : `Need Lv ${recipe.requiredSkill}`}
-                    </button>
-                  </li>
-                );
-              })}
+              {recipes
+                .filter((recipe) => canUseRecipe(character, recipe))
+                .map((recipe) => {
+                  const meetsSkill = professionLevel >= recipe.requiredSkill;
+                  const meetsLevel = !recipe.requiredCharacterLevel || character.level >= recipe.requiredCharacterLevel;
+                  const canCraft = meetsSkill && meetsLevel;
+                  const tier = craftingColorTier(professionLevel, recipe.requiredSkill, recipe.colorBreakpoints);
+                  const resultItem = ITEMS[recipe.resultItemId];
+                  return (
+                    <li key={recipe.id}>
+                      <span
+                        style={{ color: TIER_COLORS[tier], fontWeight: 700, cursor: 'help' }}
+                        title={resultItem ? describeItemStats(resultItem) : undefined}
+                      >
+                        {recipe.name}
+                      </span>{' '}
+                      (requires skill {recipe.requiredSkill}
+                      {recipe.requiredCharacterLevel ? `, Lv ${recipe.requiredCharacterLevel}` : ''}) — materials:{' '}
+                      {recipe.materials
+                        .map((m) => `${m.quantity}x ${ITEMS[m.itemId]?.name ?? m.itemId}`)
+                        .join(', ')}
+                      <button onClick={() => handleCraft(recipe.id)} disabled={!canCraft}>
+                        {canCraft ? 'Craft' : !meetsLevel ? `Need Lv ${recipe.requiredCharacterLevel}` : `Need skill ${recipe.requiredSkill}`}
+                      </button>
+                    </li>
+                  );
+                })}
             </ul>
           </div>
         );
       })}
 
+      <h2>Profession Trainers</h2>
+      <ul>
+        {trainersInZone(zone.id).map(({ profession, rank }) => {
+          const label = PROFESSION_LABELS[profession];
+          const state = character.professions[profession];
+
+          if (rank === 'apprentice') {
+            if (state) return null; // already learned — nothing to do with this trainer
+            const check = checkLearnProfession(profession, Object.keys(character.professions) as ProfessionId[], character.level, character.gold);
+            return (
+              <li key={profession}>
+                Learn {label} ({check.goldCost} gold)
+                <button onClick={() => handleLearnProfession(profession)} disabled={!check.ok}>
+                  Learn
+                </button>
+                {!check.ok && <small> — {check.reason}</small>}
+              </li>
+            );
+          }
+
+          if (!state || state.unlockedTier !== PROFESSION_TIER_BELOW[rank]) return null; // not relevant yet / already past
+          const check = checkRankUp(profession, state.level, state.unlockedTier, character.level, character.gold);
+          return (
+            <li key={profession}>
+              Train {rank[0].toUpperCase() + rank.slice(1)} {label} ({check.goldCost} gold)
+              <button onClick={() => handleAdvanceRank(profession)} disabled={!check.ok}>
+                Train
+              </button>
+              {!check.ok && <small> — {check.reason}</small>}
+            </li>
+          );
+        })}
+      </ul>
+
       <h2>Professions</h2>
       {professionEntries.map(([professionId, state]) => (
-        <XpBar
-          key={professionId}
-          level={state.level}
-          xp={state.xp}
-          curve={professionXpForLevel}
-          label={professionId.charAt(0).toUpperCase() + professionId.slice(1)}
-        />
+        <div key={professionId} style={{ marginBottom: 8 }}>
+          <XpBar
+            level={state.level}
+            xp={state.xp}
+            curve={professionXpForLevel}
+            label={`${PROFESSION_LABELS[professionId]} (${state.unlockedTier})`}
+          />
+          <button onClick={() => handleAbandon(professionId)}>Abandon {PROFESSION_LABELS[professionId]}</button>
+        </div>
       ))}
+      {professionEntries.length === 0 && <p>You haven’t learned any professions yet — visit a trainer above.</p>}
     </div>
   );
 }
+
+const PROFESSION_TIER_BELOW: Record<import('../gameData/types').ProfessionTierName, import('../gameData/types').ProfessionTierName> = {
+  apprentice: 'apprentice', // unused — apprentice is handled by the learn-profession branch above
+  journeyman: 'apprentice',
+  expert: 'journeyman',
+  artisan: 'expert',
+};

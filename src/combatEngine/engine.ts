@@ -17,10 +17,12 @@ import {
   xpModifier,
 } from '../gameData/combatFormulas';
 import type { TalentBonusTotals } from '../utils/talentEvaluator';
+import type { BuffTotals } from '../gameData/buffs';
 import type { Monster } from '../gameData/types';
+import { combatTypeModifier, type CombatType } from '../gameData/combatTriangle';
 import { ABILITIES, BASIC_ATTACK_BY_CLASS } from './abilities';
 import { MONSTER_ABILITIES } from './monsterAbilities';
-import { effectiveLoadout } from './progression';
+import { effectiveLoadout, effectiveAbilityConditions } from './progression';
 import { initialResources, regenResources, canAfford, spend, gain } from './resources';
 import { resolveTarget } from './targeting';
 import { pickAbility } from './priority';
@@ -36,6 +38,7 @@ export interface EncounterSetupInput {
   specId: SpecId | null;
   specDef: SpecDef;
   talentTotals: TalentBonusTotals;
+  buffTotals: BuffTotals;
   extraDamageTakenPct: number;
   equipmentBonuses: Partial<Record<BaseStat, number>>;
   currentHp: number;
@@ -51,24 +54,59 @@ export interface EncounterSetupInput {
   savedAbilityConditions: Record<string, ConditionGroup>;
 }
 
+// Folds active-buff stat bonuses (Alchemy stat potions, Cooking's Well Fed)
+// onto equipment bonuses before any STA/INT/baseDamage calc uses them —
+// mechanically identical to wearing +stat gear, just temporary. Buffs are
+// baked into the profile once at encounter setup, same as talents and
+// equipment; a charge-based buff running out mid-fight is reconciled at the
+// next encounter setup rather than live mid-tick, matching how this engine
+// already treats equipment/talents/resources as fixed-for-the-fight.
+function mergeStatBonuses(
+  base: Partial<Record<BaseStat, number>>,
+  extra: Partial<Record<BaseStat, number>>
+): Partial<Record<BaseStat, number>> {
+  const merged = { ...base };
+  for (const [stat, value] of Object.entries(extra)) {
+    const key = stat as BaseStat;
+    merged[key] = (merged[key] ?? 0) + (value ?? 0);
+  }
+  return merged;
+}
+
 function buildPlayerProfile(input: EncounterSetupInput): CasterProfile {
-  const { cls, level, specDef, talentTotals, extraDamageTakenPct, equipmentBonuses, monster } = input;
+  const { cls, level, specDef, talentTotals, buffTotals, extraDamageTakenPct, monster } = input;
+  const equipmentBonuses = mergeStatBonuses(input.equipmentBonuses, buffTotals.statBonuses);
   const diff = monster.level - level;
   const survCoefFinal = specDef.survivabilityCoef * (1 + talentTotals.survCoefMultPct / 100);
   const effectiveSta = statAtLevel(cls, 'STA', level) + (equipmentBonuses.STA ?? 0);
   const armor = effectiveSta * 2 * survCoefFinal * (1 + talentTotals.armorMultPct / 100);
-  const avoidance = Math.min(0.75, specDef.avoidance + talentTotals.avoidanceAddPct / 100);
+  const avoidance = Math.min(
+    0.75,
+    specDef.avoidance + talentTotals.avoidanceAddPct / 100 + buffTotals.avoidanceAddPct / 100
+  );
   const damageTakenMult =
-    Math.max(0.05, 1 - talentTotals.flatDmgTakenPct / 100) * (1 + extraDamageTakenPct / 100);
+    Math.max(0.05, 1 - talentTotals.flatDmgTakenPct / 100) *
+    (1 - buffTotals.mitigationMultiplierPct / 100) *
+    (1 + extraDamageTakenPct / 100);
 
   return {
-    normalizedHit: baseDamage(cls, level, input.equipmentBonuses),
+    normalizedHit: baseDamage(cls, level, equipmentBonuses),
     // playerDamageModifier(diff) folds the level-gap difficulty curve (the
     // same one that drives the grey/green/yellow/orange/red monster tiers)
     // into every ability's damage — a level-30 hitting a level-1 mob still
-    // hits like it, same as the old aggregate model.
-    damageCoef: specDef.damageCoef * playerDamageModifier(diff) * (1 + talentTotals.flatDmgPct / 100),
-    accuracy: 1, // levelDiff-based accuracy is applied per-hit in useAbility, not baked in here
+    // hits like it, same as the old aggregate model. combatTypeModifier
+    // folds in the melee/ranged/magic triangle the same way.
+    damageCoef:
+      specDef.damageCoef *
+      playerDamageModifier(diff) *
+      combatTypeModifier(specDef.combatType, monster.combatType) *
+      (1 + talentTotals.flatDmgPct / 100) *
+      (1 + buffTotals.damageMultiplierPct / 100),
+    // 1 + hitChanceBonusPct/100 — an Alchemy hit-chance potion's only effect.
+    // See the levelGapAccuracy calc in useAbility below, the one place this
+    // is actually read for the player (unused for monsters, who always
+    // "attempt to hit" regardless).
+    accuracy: 1 + buffTotals.hitChanceBonusPct / 100,
     avoidance,
     armor,
     damageTakenMult,
@@ -78,11 +116,11 @@ function buildPlayerProfile(input: EncounterSetupInput): CasterProfile {
   };
 }
 
-function buildMonsterProfile(monster: Monster, playerLevel: number): CasterProfile {
+function buildMonsterProfile(monster: Monster, playerLevel: number, playerCombatType: CombatType): CasterProfile {
   const diff = monster.level - playerLevel;
   return {
     normalizedHit: monsterBaseDamage(monster.level),
-    damageCoef: enemyDamageModifier(diff),
+    damageCoef: enemyDamageModifier(diff) * combatTypeModifier(monster.combatType, playerCombatType),
     accuracy: 1, // monsters always attempt to hit; only the player's avoidance can prevent it
     avoidance: 0, // monsters have no avoidance stat in the existing balance model
     armor: monsterArmor(monster.level),
@@ -92,7 +130,7 @@ function buildMonsterProfile(monster: Monster, playerLevel: number): CasterProfi
   };
 }
 
-function createMonsterCombatant(monster: Monster, playerLevel: number, idSuffix: number): Combatant {
+function createMonsterCombatant(monster: Monster, playerLevel: number, playerCombatType: CombatType, idSuffix: number): Combatant {
   return {
     id: `enemy-${idSuffix}`,
     name: monster.name,
@@ -113,7 +151,7 @@ function createMonsterCombatant(monster: Monster, playerLevel: number, idSuffix:
     // ability rotation instead of a flat auto-attack.
     equippedAbilityIds: monster.equippedAbilityIds ?? [],
     basicAttackId: 'monster_basic_attack',
-    profile: buildMonsterProfile(monster, playerLevel),
+    profile: buildMonsterProfile(monster, playerLevel, playerCombatType),
   };
 }
 
@@ -131,8 +169,9 @@ const MONSTER_BASIC_ATTACK: Ability = {
 
 export function createPlayerCombatant(input: EncounterSetupInput): Combatant {
   const loadout = effectiveLoadout(input.cls, input.specId, input.level, input.savedEquippedAbilityIds);
-  const intStat = statAtLevel(input.cls, 'INT', input.level) + (input.equipmentBonuses.INT ?? 0);
-  const playerMaxHp = computeMaxHp(input.cls, input.level, input.equipmentBonuses);
+  const mergedBonuses = mergeStatBonuses(input.equipmentBonuses, input.buffTotals.statBonuses);
+  const intStat = statAtLevel(input.cls, 'INT', input.level) + (mergedBonuses.INT ?? 0);
+  const playerMaxHp = computeMaxHp(input.cls, input.level, mergedBonuses, input.talentTotals.hpMultPct);
 
   return {
     id: 'player',
@@ -148,7 +187,7 @@ export function createPlayerCombatant(input: EncounterSetupInput): Combatant {
     stunnedSeconds: 0,
     actionReadyIn: ATTACK_INTERVAL_SECONDS,
     equippedAbilityIds: loadout,
-    abilityConditions: input.savedAbilityConditions,
+    abilityConditions: effectiveAbilityConditions(input.level, input.savedAbilityConditions),
     basicAttackId: BASIC_ATTACK_BY_CLASS[input.cls],
     profile: buildPlayerProfile(input),
   };
@@ -157,7 +196,7 @@ export function createPlayerCombatant(input: EncounterSetupInput): Combatant {
 export function createEncounterState(input: EncounterSetupInput): CombatState {
   return {
     party: [createPlayerCombatant(input)],
-    enemies: [createMonsterCombatant(input.monster, input.level, 1)],
+    enemies: [createMonsterCombatant(input.monster, input.level, input.specDef.combatType, 1)],
     timeElapsed: 0,
   };
 }
@@ -201,17 +240,48 @@ export interface KillReward {
   xpGained: number;
   goldGained: number;
   loot: { itemId: string; quantity: number }[];
+  // Which monster this reward came from — lets callers (the quest system)
+  // attribute a kill to a specific monster id without re-deriving it from
+  // display text. Always the monster actually defeated, even mid-dungeon
+  // where `ctx.monster` changes stage to stage.
+  monsterId: string;
+}
+
+// Player-only combat signals the quest system cares about, accumulated
+// across everything that happens in one advanceCombat/tryManualUseAbility
+// call — passed by reference the same way `events`/`kills` already are, so
+// every place damage/healing/ability-use happens can contribute without
+// engine.ts needing to know anything about quests itself.
+export interface QuestSignals {
+  healingDone: number;
+  abilityUseCounts: Record<string, number>;
+}
+
+function emptyQuestSignals(): QuestSignals {
+  return { healingDone: 0, abilityUseCounts: {} };
+}
+
+// Accumulates one tick/manual-use's signals into a running total — both
+// CombatScreen and DungeonScreen collect these across many ticks between
+// autosaves, the same way they already batch `kills` via a ref.
+export function mergeQuestSignals(into: QuestSignals, from: QuestSignals): void {
+  into.healingDone += from.healingDone;
+  for (const [abilityId, count] of Object.entries(from.abilityUseCounts)) {
+    into.abilityUseCounts[abilityId] = (into.abilityUseCounts[abilityId] ?? 0) + count;
+  }
 }
 
 export interface TickResult {
   events: CombatEvent[];
   kills: KillReward[];
   playerDied: boolean;
+  questSignals: QuestSignals;
 }
 
 export interface TickContext {
   monster: Monster;
   playerLevel: number;
+  playerCombatType: CombatType;
   // Dungeon stage progression hook (Phase 8) — called right before an
   // enemy respawn to decide what respawns next. Omitted, the enemy just
   // respawns as `monster` again forever (every non-dungeon fight). When
@@ -226,6 +296,7 @@ export interface TickContext {
 export function advanceCombat(state: CombatState, ctx: TickContext, deltaSeconds: number): TickResult {
   const events: CombatEvent[] = [];
   const kills: KillReward[] = [];
+  const questSignals = emptyQuestSignals();
   let playerDied = false;
   const abilities = abilitiesById();
 
@@ -248,7 +319,9 @@ export function advanceCombat(state: CombatState, ctx: TickContext, deltaSeconds
     // tick above can still kill c in this same iteration, so check isAlive
     // again rather than trusting the outer loop's guard.
     if (c.isAlive && c.profile.passiveHealPct > 0) {
+      const before = c.hp;
       c.hp = Math.min(c.maxHp, c.hp + c.maxHp * c.profile.passiveHealPct * deltaSeconds);
+      if (c.isPlayer) questSignals.healingDone += c.hp - before;
     }
   }
 
@@ -264,7 +337,7 @@ export function advanceCombat(state: CombatState, ctx: TickContext, deltaSeconds
         c.actionReadyIn += ATTACK_INTERVAL_SECONDS;
         break;
       }
-      useAbility(state, c, picked.ability, picked.targetId, ctx, events, kills);
+      useAbility(state, c, picked.ability, picked.targetId, ctx, events, kills, questSignals);
       c.actionReadyIn += ATTACK_INTERVAL_SECONDS;
     }
   }
@@ -273,13 +346,13 @@ export function advanceCombat(state: CombatState, ctx: TickContext, deltaSeconds
   state.enemies = state.enemies.map((e) => {
     if (e.isAlive) return e;
     if (ctx.nextMonster) ctx.monster = ctx.nextMonster(ctx.monster);
-    return createMonsterCombatant(ctx.monster, ctx.playerLevel, Math.random());
+    return createMonsterCombatant(ctx.monster, ctx.playerLevel, ctx.playerCombatType, Math.random());
   });
   const player = state.party.find((p) => p.isPlayer);
   if (player && !player.isAlive) playerDied = true;
 
   state.timeElapsed += deltaSeconds;
-  return { events, kills, playerDied };
+  return { events, kills, playerDied, questSignals };
 }
 
 function tickDots(c: Combatant, deltaSeconds: number, ctx: TickContext, events: CombatEvent[], kills: KillReward[]): void {
@@ -314,16 +387,25 @@ export function useAbility(
   targetId: string,
   ctx: TickContext,
   events: CombatEvent[],
-  kills: KillReward[]
+  kills: KillReward[],
+  questSignals: QuestSignals = emptyQuestSignals()
 ): void {
   spend(source.resources, ability.resourceType, ability.resourceCost);
   if (ability.cooldownSeconds > 0) source.cooldowns[ability.id] = ability.cooldownSeconds;
+  if (source.isPlayer) {
+    questSignals.abilityUseCounts[ability.id] = (questSignals.abilityUseCounts[ability.id] ?? 0) + 1;
+  }
 
   const target = [...state.party, ...state.enemies].find((c) => c.id === targetId);
   if (!target) return;
 
   const levelDiff = ctx.monster.level - ctx.playerLevel;
-  const levelGapAccuracy = source.isPlayer ? playerAccuracy(levelDiff) : 1;
+  // source.profile.accuracy is 1 + any hit-chance buff bonus (see
+  // buildPlayerProfile) — additive on top of the level-gap base chance,
+  // same convention as every other buff/talent bonus in this engine.
+  const levelGapAccuracy = source.isPlayer
+    ? Math.min(1, playerAccuracy(levelDiff) + (source.profile.accuracy - 1))
+    : 1;
 
   for (const effect of ability.effects) {
     switch (effect.type) {
@@ -342,7 +424,9 @@ export function useAbility(
         // healFrac into every tick too would double-count the same "damage
         // dealt" against a single self-heal budget for no real benefit.
         if (source.profile.healFrac > 0 && source.isAlive) {
+          const before = source.hp;
           source.hp = Math.min(source.maxHp, source.hp + amount * source.profile.healFrac);
+          if (source.isPlayer) questSignals.healingDone += source.hp - before;
         }
         events.push({
           message: `${source.name} uses ${ability.name} on ${target.name} for ${amount} damage.`,
@@ -381,7 +465,9 @@ export function useAbility(
         const healAmount = Math.round(
           source.profile.normalizedHit * (effect.power ?? 1) * source.profile.damageCoef * buffDamageDealtMult(source)
         );
+        const hpBefore = target.hp;
         target.hp = Math.min(target.maxHp, target.hp + healAmount);
+        if (source.isPlayer) questSignals.healingDone += target.hp - hpBefore;
         events.push({ message: `${source.name} uses ${ability.name} on ${target.name}, healing for ${healAmount}.`, kind: 'heal' });
         break;
       }
@@ -420,7 +506,7 @@ function rollKillReward(monster: Monster, levelDiff: number): KillReward {
       if (qty > 0) loot.push({ itemId: drop.itemId, quantity: qty });
     }
   }
-  return { xpGained, goldGained, loot };
+  return { xpGained, goldGained, loot, monsterId: monster.id };
 }
 
 // Manual override — same function the AI uses, just triggered by a click
@@ -431,7 +517,7 @@ export function tryManualUseAbility(
   sourceId: string,
   abilityId: string,
   ctx: TickContext
-): { events: CombatEvent[]; kills: KillReward[] } | null {
+): { events: CombatEvent[]; kills: KillReward[]; questSignals: QuestSignals } | null {
   const source = state.party.find((c) => c.id === sourceId);
   const ability = abilitiesById()[abilityId];
   if (!source || !source.isAlive || !ability) return null;
@@ -442,8 +528,9 @@ export function tryManualUseAbility(
 
   const events: CombatEvent[] = [];
   const kills: KillReward[] = [];
-  useAbility(state, source, ability, target.id, ctx, events, kills);
-  return { events, kills };
+  const questSignals = emptyQuestSignals();
+  useAbility(state, source, ability, target.id, ctx, events, kills, questSignals);
+  return { events, kills, questSignals };
 }
 
 export { ABILITIES } from './abilities';

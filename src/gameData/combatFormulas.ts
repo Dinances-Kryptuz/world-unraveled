@@ -74,9 +74,14 @@ export function armorReduction(armor: number): number {
   return armor / (armor + 100);
 }
 
-export function maxHp(cls: ClassId, level: number, equipmentBonuses: Partial<Record<BaseStat, number>> = {}): number {
+export function maxHp(
+  cls: ClassId,
+  level: number,
+  equipmentBonuses: Partial<Record<BaseStat, number>> = {},
+  hpMultPct = 0
+): number {
   const sta = statAtLevel(cls, 'STA', level) + (equipmentBonuses.STA ?? 0);
-  return 50 + sta * 12 + level * 10;
+  return (50 + sta * 12 + level * 10) * (1 + hpMultPct / 100);
 }
 
 export function baseDamage(cls: ClassId, level: number, equipmentBonuses: Partial<Record<BaseStat, number>> = {}): number {

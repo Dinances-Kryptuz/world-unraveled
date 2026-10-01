@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useCharacter } from '../hooks/useCharacter';
-import { resolveGathering, resolveCrafting, LIVE_SESSION_THRESHOLD_SECONDS } from '../gameData/activityEngine';
+import { resolveGathering, resolveCrafting, resolveFishing, LIVE_SESSION_THRESHOLD_SECONDS } from '../gameData/activityEngine';
 import { MONSTERS } from '../gameData/monsters';
-import { GATHER_NODES } from '../gameData/zones';
+import { GATHER_NODES, FISHING_HOLES } from '../gameData/zones';
 import { RECIPES } from '../gameData/recipes';
 import { ITEMS } from '../gameData/items';
 import { resolveSpecDef, getExtraDamageTakenPct } from '../gameData/combatProfileWithTalents';
@@ -11,6 +11,8 @@ import { simulateOfflineCombat } from '../combatEngine/offlineCombat';
 import { evaluateTalents, EMPTY_TALENT_TOTALS } from '../utils/talentEvaluator';
 import { maxHp, resolveCurrentHp } from '../gameData/combatFormulas';
 import { getEquipmentStatBonuses } from '../gameData/equipmentStats';
+import { getProfessionState } from '../gameData/professionTiers';
+import { evaluateActiveBuffs } from '../gameData/buffs';
 import { getInventory } from '../firebase/inventory';
 import { applyCombatResult, setCharacterLevel } from '../firebase/character';
 import type { Character, CurrentActivity } from '../types/character';
@@ -47,9 +49,10 @@ export function WelcomeBackScreen({
         const talentTotals = character.spec
           ? evaluateTalents(character.spec, character.talentPicks).totals
           : EMPTY_TALENT_TOTALS;
+        const buffTotals = evaluateActiveBuffs(character.activeBuffs, now);
         const extraDmgTaken = getExtraDamageTakenPct(character.spec, character.talentPicks);
-        const equipBonuses = getEquipmentStatBonuses(character.equipment);
-        const charMaxHp = maxHp(character.class, character.level, equipBonuses);
+        const equipBonuses = getEquipmentStatBonuses(character.equipment, character.enchantments);
+        const charMaxHp = maxHp(character.class, character.level, equipBonuses, talentTotals.hpMultPct);
         const startingHp = resolveCurrentHp(character.currentHp, charMaxHp, character.hpCheckpointAt, activity.startedAt);
 
         const result = simulateOfflineCombat({
@@ -59,6 +62,7 @@ export function WelcomeBackScreen({
           specId: character.spec,
           specDef,
           talentTotals,
+          buffTotals,
           extraDamageTakenPct: extraDmgTaken,
           equipmentBonuses: equipBonuses,
           startingLevel: character.level,
@@ -95,7 +99,7 @@ export function WelcomeBackScreen({
         );
       } else if (activity.type === 'gathering') {
         const node = GATHER_NODES[activity.targetId];
-        const currentSkill = character.professions[node.profession].level;
+        const currentSkill = getProfessionState(character.professions, node.profession).level;
         const result = resolveGathering(activity.startedAt, now, node, currentSkill);
         const itemName = ITEMS[node.itemId]?.name ?? node.itemId;
         setSummary(
@@ -105,7 +109,7 @@ export function WelcomeBackScreen({
         );
       } else if (activity.type === 'crafting') {
         const recipe = RECIPES[activity.targetId];
-        const currentSkill = character.professions[recipe.profession].level;
+        const currentSkill = getProfessionState(character.professions, recipe.profession).level;
         const inventory = user ? await getInventory(user.uid) : { items: {} };
         const result = resolveCrafting(
           activity.startedAt,
@@ -117,6 +121,19 @@ export function WelcomeBackScreen({
         );
         setSummary(
           `While you were away, you crafted ${result.itemsCrafted} ${recipe.name}, earning ${result.xpGained} XP.`
+        );
+      } else if (activity.type === 'fishing') {
+        const hole = FISHING_HOLES[activity.targetId];
+        const currentSkill = getProfessionState(character.professions, 'fishing').level;
+        const result = resolveFishing(activity.startedAt, now, hole, currentSkill);
+        const caughtDescription = result.catches
+          .filter((c) => c.quantity >= 1)
+          .map((c) => `${Math.floor(c.quantity)} ${ITEMS[c.itemId]?.name ?? c.itemId}`)
+          .join(', ');
+        setSummary(
+          caughtDescription
+            ? `While you were away, you caught ${caughtDescription}.`
+            : 'While you were away, the fish weren’t biting.'
         );
       } else {
         setSummary('Welcome back!');

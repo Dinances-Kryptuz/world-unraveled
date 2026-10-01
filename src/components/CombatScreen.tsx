@@ -1,22 +1,26 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useCharacter } from '../hooks/useCharacter';
-import { applyCombatResult, setCharacterLevel, stopActivity, getCharacter } from '../firebase/character';
+import { applyCombatResult, setCharacterLevel, stopActivity, getCharacter, advanceQuests } from '../firebase/character';
 import { subscribeToInventory } from '../firebase/inventory';
-import { recordConsumableUse, remainingCooldownSeconds } from '../firebase/consumables';
+import { recordConsumableUse, remainingCooldownSeconds, consumeBuffCharges } from '../firebase/consumables';
 import { MONSTERS } from '../gameData/monsters';
 import { ITEMS } from '../gameData/items';
 import { resolveSpecDef, getExtraDamageTakenPct } from '../gameData/combatProfileWithTalents';
 import { evaluateTalents, EMPTY_TALENT_TOTALS } from '../utils/talentEvaluator';
+import { evaluateActiveBuffs } from '../gameData/buffs';
 import { maxHp, resolveCurrentHp, ATTACK_INTERVAL_SECONDS } from '../gameData/combatFormulas';
 import { getEquipmentStatBonuses } from '../gameData/equipmentStats';
 import { characterXpForLevelV2 } from '../gameData/xpTables';
+import type { QuestEvent } from '../gameData/questEngine';
 import {
   createEncounterState,
   advanceCombat,
   tryManualUseAbility,
+  mergeQuestSignals,
   type EncounterSetupInput,
   type KillReward,
+  type QuestSignals,
   type TickContext,
 } from '../combatEngine/engine';
 import type { CombatState, CombatEvent } from '../combatEngine/types';
@@ -60,6 +64,11 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
 
   const combatStateRef = useRef<CombatState | null>(null);
   const pendingKillsRef = useRef<KillReward[]>([]);
+  const pendingQuestSignalsRef = useRef<QuestSignals>({ healingDone: 0, abilityUseCounts: {} });
+  const pendingBuffTriggersRef = useRef<{ offensive_action: number; damage_taken: number }>({
+    offensive_action: 0,
+    damage_taken: 0,
+  });
   const retreatedRef = useRef(false);
 
   const characterRef = useRef<Character | null>(character);
@@ -78,12 +87,21 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
 
   const monster = MONSTERS[monsterId];
 
+  // The player's current combat-triangle type — read from the freshest
+  // character data available (the ref during an active tick, falling back
+  // to the render-time character before the ref is populated).
+  function currentPlayerCombatType() {
+    const c = characterRef.current ?? character;
+    return resolveSpecDef(c.class, c.spec).combatType;
+  }
+
   function buildEncounterInput(c: Character): EncounterSetupInput {
     const specDef = resolveSpecDef(c.class, c.spec);
     const talentTotals = c.spec ? evaluateTalents(c.spec, c.talentPicks).totals : EMPTY_TALENT_TOTALS;
+    const buffTotals = evaluateActiveBuffs(c.activeBuffs, new Date());
     const extraDamageTakenPct = getExtraDamageTakenPct(c.spec, c.talentPicks);
-    const equipmentBonuses = getEquipmentStatBonuses(c.equipment);
-    const charMaxHp = maxHp(c.class, c.level, equipmentBonuses);
+    const equipmentBonuses = getEquipmentStatBonuses(c.equipment, c.enchantments);
+    const charMaxHp = maxHp(c.class, c.level, equipmentBonuses, talentTotals.hpMultPct);
     const startedAt = c.currentActivity.startedAt ?? new Date();
     const currentHp = resolveCurrentHp(c.currentHp, charMaxHp, c.hpCheckpointAt, startedAt);
     return {
@@ -92,6 +110,7 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
       specId: c.spec,
       specDef,
       talentTotals,
+      buffTotals,
       extraDamageTakenPct,
       equipmentBonuses,
       currentHp,
@@ -107,6 +126,8 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
     setRetreated(false);
     retreatedRef.current = false;
     pendingKillsRef.current = [];
+    pendingQuestSignalsRef.current = { healingDone: 0, abilityUseCounts: {} };
+    pendingBuffTriggersRef.current = { offensive_action: 0, damage_taken: 0 };
     combatStateRef.current = createEncounterState(buildEncounterInput(character));
     // Refs don't trigger a re-render on their own — without this, the
     // screen would render nothing for up to a second, until the first
@@ -119,9 +140,14 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
     const interval = setInterval(() => {
       if (retreatedRef.current || !combatStateRef.current) return;
 
-      const ctx: TickContext = { monster, playerLevel: characterRef.current?.level ?? character.level };
+      const ctx: TickContext = { monster, playerLevel: characterRef.current?.level ?? character.level, playerCombatType: currentPlayerCombatType() };
       const result = advanceCombat(combatStateRef.current, ctx, 1);
       pendingKillsRef.current.push(...result.kills);
+      mergeQuestSignals(pendingQuestSignalsRef.current, result.questSignals);
+      for (const event of result.events) {
+        if (event.kind === 'damage_out') pendingBuffTriggersRef.current.offensive_action++;
+        else if (event.kind === 'damage_in') pendingBuffTriggersRef.current.damage_taken++;
+      }
       if (result.events.length > 0) {
         setLog((prev) => [...result.events, ...prev].slice(0, MAX_LOG_LINES));
       }
@@ -150,8 +176,16 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
     if (!currentUser || !state || !player) return;
 
     const kills = pendingKillsRef.current;
+    const questSignals = pendingQuestSignalsRef.current;
+    const buffTriggers = pendingBuffTriggersRef.current;
+    const hasQuestSignals = questSignals.healingDone > 0 || Object.keys(questSignals.abilityUseCounts).length > 0;
+    const hasBuffTriggers = buffTriggers.offensive_action > 0 || buffTriggers.damage_taken > 0;
+    if (kills.length === 0 && !hasQuestSignals && !hasBuffTriggers) return;
     pendingKillsRef.current = [];
-    if (kills.length === 0) return;
+    pendingQuestSignalsRef.current = { healingDone: 0, abilityUseCounts: {} };
+    pendingBuffTriggersRef.current = { offensive_action: 0, damage_taken: 0 };
+    const currentCharacterForBuffs = characterRef.current ?? character;
+    if (hasBuffTriggers) void consumeBuffCharges(currentUser.uid, currentCharacterForBuffs, buffTriggers);
 
     const xpGained = Math.round(kills.reduce((sum, k) => sum + k.xpGained, 0));
     const goldGained = Math.round(kills.reduce((sum, k) => sum + k.goldGained, 0));
@@ -189,11 +223,39 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
           newLevel++;
         }
         if (newLevel !== fresh.level) {
-          const equipBonuses = getEquipmentStatBonuses(fresh.equipment);
-          const restoredHp = maxHp(fresh.class, newLevel, equipBonuses);
+          const equipBonuses = getEquipmentStatBonuses(fresh.equipment, fresh.enchantments);
+          const freshTalentTotals = fresh.spec ? evaluateTalents(fresh.spec, fresh.talentPicks).totals : EMPTY_TALENT_TOTALS;
+          const restoredHp = maxHp(fresh.class, newLevel, equipBonuses, freshTalentTotals.hpMultPct);
           await setCharacterLevel(currentUser.uid, newLevel, restoredHp);
           player.hp = restoredHp;
           player.maxHp = restoredHp;
+        }
+
+        const killCountsByMonster: Record<string, number> = {};
+        for (const kill of kills) {
+          killCountsByMonster[kill.monsterId] = (killCountsByMonster[kill.monsterId] ?? 0) + 1;
+        }
+        const questEvents: QuestEvent[] = Object.entries(killCountsByMonster).map(([monsterId, count]) => ({
+          type: 'kill',
+          monsterId,
+          count,
+        }));
+        if (questSignals.healingDone > 0) {
+          questEvents.push({ type: 'heal_amount', amount: Math.round(questSignals.healingDone) });
+        }
+        for (const [abilityId, count] of Object.entries(questSignals.abilityUseCounts)) {
+          questEvents.push({ type: 'use_ability', abilityId, count });
+        }
+        if (questEvents.length > 0) {
+          const questResult = await advanceQuests(currentUser.uid, fresh, questEvents);
+          if (questResult.completedQuestNames.length > 0) {
+            setLog((prev) =>
+              [
+                ...questResult.completedQuestNames.map((name) => ({ message: `Quest complete: ${name}!`, kind: 'status' as const })),
+                ...prev,
+              ].slice(0, MAX_LOG_LINES)
+            );
+          }
         }
       }
 
@@ -201,6 +263,7 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
     } catch (err) {
       console.error('Combat autosave failed, will retry next cycle:', err);
       pendingKillsRef.current.push(...kills);
+      mergeQuestSignals(pendingQuestSignalsRef.current, questSignals);
       setBankedTotals((prev) => ({
         monstersDefeated: prev.monstersDefeated - kills.length,
         xpGained: prev.xpGained - xpGained,
@@ -219,10 +282,15 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
   function handleManualUse(abilityId: string) {
     const state = combatStateRef.current;
     if (!state || retreatedRef.current) return;
-    const ctx: TickContext = { monster, playerLevel: characterRef.current?.level ?? character.level };
+    const ctx: TickContext = { monster, playerLevel: characterRef.current?.level ?? character.level, playerCombatType: currentPlayerCombatType() };
     const result = tryManualUseAbility(state, 'player', abilityId, ctx);
     if (!result) return;
     pendingKillsRef.current.push(...result.kills);
+    mergeQuestSignals(pendingQuestSignalsRef.current, result.questSignals);
+    for (const event of result.events) {
+      if (event.kind === 'damage_out') pendingBuffTriggersRef.current.offensive_action++;
+      else if (event.kind === 'damage_in') pendingBuffTriggersRef.current.damage_taken++;
+    }
     if (result.events.length > 0) {
       setLog((prev) => [...result.events, ...prev].slice(0, MAX_LOG_LINES));
     }
@@ -249,6 +317,16 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
     }
     if (effect.manaAmount && player.resources.mana) {
       player.resources.mana.current = Math.min(player.resources.mana.max, player.resources.mana.current + effect.manaAmount);
+    }
+    // Applied directly to the live profile for immediate effect this fight
+    // (buffTotals is otherwise only baked in once, at encounter setup) —
+    // see buildPlayerProfile in engine.ts for the matching formulas.
+    if (effect.buff) {
+      const b = effect.buff;
+      player.profile.damageCoef *= 1 + (b.damageMultiplierPct ?? 0) / 100;
+      player.profile.damageTakenMult *= 1 - (b.mitigationMultiplierPct ?? 0) / 100;
+      player.profile.avoidance = Math.min(0.75, player.profile.avoidance + (b.dodgeBonusPct ?? 0) / 100);
+      player.profile.accuracy += (b.hitChanceBonusPct ?? 0) / 100;
     }
     setTick((t) => t + 1);
 
