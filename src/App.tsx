@@ -39,7 +39,7 @@ function AppContent() {
     return <CharacterCreationScreen />;
   }
 
-  const equipBonuses = getEquipmentStatBonuses(character.equipment);
+  const equipBonuses = getEquipmentStatBonuses(character.equipment, character.enchantments);
   const talentTotals = character.spec ? evaluateTalents(character.spec, character.talentPicks).totals : EMPTY_TALENT_TOTALS;
   const characterMaxHp = maxHp(character.class, character.level, equipBonuses, talentTotals.hpMultPct);
   const currentHp = resolveCurrentHp(character.currentHp, characterMaxHp, character.hpCheckpointAt, new Date());

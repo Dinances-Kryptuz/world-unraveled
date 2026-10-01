@@ -1,6 +1,7 @@
 import type { BaseStat } from './classStats';
 import type { EquipmentSlot, ItemDef } from './types';
 import { ITEMS } from './items';
+import { ENCHANTS } from './enchanting';
 
 const SLOT_LABELS: Record<EquipmentSlot, string> = {
   weapon: 'Weapon',
@@ -27,18 +28,31 @@ export function describeItemStats(item: ItemDef): string {
   return parts.join(' — ');
 }
 
+// `enchantments` is optional and defaults to none — most callers that
+// don't care about enchantments (e.g. a vendor tooltip) can omit it
+// entirely. Bonuses are additive on top of the item's own statBonuses,
+// applied regardless of which specific item currently sits in that slot
+// (enchantments bind to the SLOT — see gameData/enchanting.ts's doc
+// comment for why).
 export function getEquipmentStatBonuses(
-  equipment: Record<EquipmentSlot, string | null>
+  equipment: Record<EquipmentSlot, string | null>,
+  enchantments: Partial<Record<EquipmentSlot, string>> = {}
 ): Partial<Record<BaseStat, number>> {
   const totals: Partial<Record<BaseStat, number>> = {};
-  for (const itemId of Object.values(equipment)) {
-    if (!itemId) continue;
-    const item = ITEMS[itemId];
-    if (!item?.statBonuses) continue;
-    for (const [stat, value] of Object.entries(item.statBonuses)) {
+  const addBonuses = (bonuses: Partial<Record<BaseStat, number>> | undefined) => {
+    if (!bonuses) return;
+    for (const [stat, value] of Object.entries(bonuses)) {
       const key = stat as BaseStat;
       totals[key] = (totals[key] ?? 0) + (value ?? 0);
     }
+  };
+  for (const itemId of Object.values(equipment)) {
+    if (!itemId) continue;
+    addBonuses(ITEMS[itemId]?.statBonuses);
+  }
+  for (const enchantId of Object.values(enchantments)) {
+    if (!enchantId) continue;
+    addBonuses(ENCHANTS[enchantId]?.statBonuses);
   }
   return totals;
 }

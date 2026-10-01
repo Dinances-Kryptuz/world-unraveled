@@ -82,7 +82,7 @@ service cloud.firestore {
   // firebase/enchanting.ts / firebase/professions.ts, the only paths that
   // write these fields.
   function isValidEnchantments(after) {
-    return !('enchantments' in after) || (after.enchantments is map && after.enchantments.size() <= 7);
+    return !('enchantments' in after) || (after.enchantments is map && after.enchantments.size() <= 8);
   }
 
   function isValidLearnedRecipeIds(after) {

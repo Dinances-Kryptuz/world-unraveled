@@ -1066,4 +1066,27 @@ export const RECIPES: Record<string, Recipe> = {
     colorBreakpoints: { orangeUntil: 209, yellowUntil: 214, greenUntil: 224 },
     source: 'trainer', rarity: 'uncommon', learnedAutomatically: true,
   },
+
+  // ── Blacksmith repairs — converts a damaged dungeon boss drop into its
+  // real, equippable form. An ordinary Recipe (materials in, item out),
+  // not a bespoke repair system — see items.ts's "_damaged" convention
+  // and gameData/types.ts's ItemDef.repairsIntoItemId. requiredSkill
+  // scales with the drop's own tier, keeping Blacksmithing relevant deep
+  // into Expert/Artisan rather than just the early game.
+  repair_overseers_greatmace: {
+    id: 'repair_overseers_greatmace', name: "Repair Overseer's Greatmace", profession: 'smithing', requiredSkill: 140,
+    resultItemId: 'overseers_greatmace', resultQuantity: 1,
+    materials: [{ itemId: 'overseers_greatmace_damaged', quantity: 1 }, { itemId: 'cinderore', quantity: 5 }],
+    craftSeconds: 20, xpAward: 40,
+    colorBreakpoints: { orangeUntil: 149, yellowUntil: 154, greenUntil: 164 },
+    source: 'dungeon_drop', rarity: 'rare', learnedAutomatically: true,
+  },
+  repair_pyraxis_warblade: {
+    id: 'repair_pyraxis_warblade', name: "Repair Pyraxis's Warblade", profession: 'smithing', requiredSkill: 260,
+    resultItemId: 'pyraxis_warblade', resultQuantity: 1,
+    materials: [{ itemId: 'pyraxis_warblade_damaged', quantity: 1 }, { itemId: 'emberforge_ore', quantity: 8 }],
+    craftSeconds: 25, xpAward: 80,
+    colorBreakpoints: { orangeUntil: 269, yellowUntil: 274, greenUntil: 284 },
+    source: 'dungeon_drop', rarity: 'rare', learnedAutomatically: true,
+  },
 };

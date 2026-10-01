@@ -238,12 +238,6 @@ export interface ItemDef {
   // recipe id (see firebase/professions.ts's learnRecipe). Items of this
   // type are never equipped or stacked into a numeric effect.
   teachesRecipeId?: string;
-  // Disenchantable only when set — Enchanting's disenchant action (see
-  // gameData/enchanting.ts) uses this instead of a per-item recipe, since
-  // any equipment item of sufficient level should be disenchantable rather
-  // than needing one handwritten recipe per item.
-  disenchantTier?: 'dust' | 'essence' | 'crystal';
-  disenchantRequiredSkill?: number;
   // Set on a boss/dungeon drop's "_damaged" variant — purely descriptive
   // (an item is actually unequippable because it has no equipSlot at all;
   // see items.ts's damaged-item convention). Points at the real item a

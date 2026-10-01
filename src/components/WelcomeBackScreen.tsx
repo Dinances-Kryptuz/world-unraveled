@@ -51,7 +51,7 @@ export function WelcomeBackScreen({
           : EMPTY_TALENT_TOTALS;
         const buffTotals = evaluateActiveBuffs(character.activeBuffs, now);
         const extraDmgTaken = getExtraDamageTakenPct(character.spec, character.talentPicks);
-        const equipBonuses = getEquipmentStatBonuses(character.equipment);
+        const equipBonuses = getEquipmentStatBonuses(character.equipment, character.enchantments);
         const charMaxHp = maxHp(character.class, character.level, equipBonuses, talentTotals.hpMultPct);
         const startingHp = resolveCurrentHp(character.currentHp, charMaxHp, character.hpCheckpointAt, activity.startedAt);
 
