@@ -272,6 +272,7 @@ export const MONSTERS: Record<string, Monster> = {
       { itemId: 'heavy_cloth', chance: 0.45, minQty: 1, maxQty: 2 },
       { itemId: 'iron_ore', chance: 0.2, minQty: 1, maxQty: 1 },
       { itemId: 'serrated_cleaver', chance: 0.06, minQty: 1, maxQty: 1 },
+      { itemId: 'embertwined_rod', chance: 0.06, minQty: 1, maxQty: 1 },
     ],
     specialAbility: {
       name: 'Brutal Slash',
@@ -403,6 +404,7 @@ export const MONSTERS: Record<string, Monster> = {
       { itemId: 'cinderore', chance: 0.4, minQty: 1, maxQty: 2 },
       { itemId: 'ashwoven_cloth', chance: 0.25, minQty: 1, maxQty: 1 },
       { itemId: 'scavenged_hatchet', chance: 0.06, minQty: 1, maxQty: 1 },
+      { itemId: 'scavenged_focus', chance: 0.06, minQty: 1, maxQty: 1 },
     ],
     specialAbility: {
       name: 'Firebrand Toss',
@@ -539,6 +541,7 @@ export const MONSTERS: Record<string, Monster> = {
     lootTable: [
       { itemId: 'charred_cloth', chance: 0.45, minQty: 1, maxQty: 2 },
       { itemId: 'zealots_blade', chance: 0.06, minQty: 1, maxQty: 1 },
+      { itemId: 'zealots_icon', chance: 0.06, minQty: 1, maxQty: 1 },
     ],
     specialAbility: {
       name: 'Zealous Fervor',
@@ -576,6 +579,8 @@ export const MONSTERS: Record<string, Monster> = {
     combatType: 'magic',
     goldMin: 42,
     goldMax: 66,
+    voidShardsMin: 1,
+    voidShardsMax: 2,
     lootTable: [
       { itemId: 'ashenweave_cloth', chance: 0.4, minQty: 1, maxQty: 2 },
       { itemId: 'heartflame_crystal', chance: 0.06, minQty: 1, maxQty: 1 },
@@ -595,6 +600,8 @@ export const MONSTERS: Record<string, Monster> = {
     combatType: 'magic',
     goldMin: 46,
     goldMax: 72,
+    voidShardsMin: 1,
+    voidShardsMax: 2,
     lootTable: [
       { itemId: 'emberforge_ore', chance: 0.4, minQty: 1, maxQty: 2 },
       { itemId: 'heartflame_crystal', chance: 0.08, minQty: 1, maxQty: 1 },
@@ -614,6 +621,8 @@ export const MONSTERS: Record<string, Monster> = {
     combatType: 'melee',
     goldMin: 50,
     goldMax: 78,
+    voidShardsMin: 1,
+    voidShardsMax: 2,
     lootTable: [
       { itemId: 'emberscale_hide', chance: 0.45, minQty: 1, maxQty: 2 },
       { itemId: 'emberheart_bloom', chance: 0.3, minQty: 1, maxQty: 2 },
@@ -633,9 +642,12 @@ export const MONSTERS: Record<string, Monster> = {
     combatType: 'ranged',
     goldMin: 54,
     goldMax: 84,
+    voidShardsMin: 1,
+    voidShardsMax: 2,
     lootTable: [
       { itemId: 'ashenweave_cloth', chance: 0.4, minQty: 1, maxQty: 2 },
       { itemId: 'harbingers_talon', chance: 0.06, minQty: 1, maxQty: 1 },
+      { itemId: 'harbingers_omen', chance: 0.06, minQty: 1, maxQty: 1 },
     ],
     specialAbility: {
       name: 'Cinder Rain',
@@ -652,6 +664,8 @@ export const MONSTERS: Record<string, Monster> = {
     combatType: 'melee',
     goldMin: 58,
     goldMax: 90,
+    voidShardsMin: 1,
+    voidShardsMax: 2,
     lootTable: [
       { itemId: 'emberforge_ore', chance: 0.4, minQty: 1, maxQty: 2 },
       { itemId: 'sentinels_signet', chance: 0.06, minQty: 1, maxQty: 1 },
@@ -717,6 +731,11 @@ export const MONSTERS: Record<string, Monster> = {
     combatType: 'melee',
     goldMin: 70,
     goldMax: 105,
+    // The dungeon's final boss — a much bigger Void Shard reward than the
+    // open-world Cinderheart Crater monsters above, consistent with a
+    // repeatable dungeon-boss kill being worth more than a trash mob.
+    voidShardsMin: 5,
+    voidShardsMax: 8,
     isBoss: true,
     equippedAbilityIds: ['pyraxis_warcry', 'pyraxis_slam', 'pyraxis_cinderwound'],
     lootTable: [

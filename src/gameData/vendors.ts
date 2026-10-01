@@ -7,6 +7,10 @@
 export interface VendorStockEntry {
   itemId: string;
   price: number;
+  // Absent means gold, the overwhelmingly common case — only Cinderheart
+  // Crater's Void Vendor (below) sells for Void Shards, the endgame
+  // currency earned from that zone's monsters and its dungeon boss.
+  currency?: 'gold' | 'voidShards';
 }
 
 export const VENDOR_STOCK: Record<string, VendorStockEntry[]> = {
@@ -53,5 +57,14 @@ export const VENDOR_STOCK: Record<string, VendorStockEntry[]> = {
     { itemId: 'greater_battle_draught', price: 70 },
     { itemId: 'greater_stoneskin_draught', price: 70 },
     { itemId: 'emberheart_feast', price: 60 },
+    // The Void Vendor — Cinderheart Crater's endgame currency sink. Void
+    // Shards drop from this zone's own monsters and its dungeon boss
+    // (Pyraxis), so this gear is a capstone a character earns by staying
+    // and farming the final zone, not something bought in passing.
+    { itemId: 'voidforged_warblade', price: 40, currency: 'voidShards' },
+    { itemId: 'voidforged_scepter', price: 40, currency: 'voidShards' },
+    { itemId: 'voidforged_chestguard', price: 35, currency: 'voidShards' },
+    { itemId: 'voidforged_vestments', price: 35, currency: 'voidShards' },
+    { itemId: 'voidforged_signet', price: 25, currency: 'voidShards' },
   ],
 };

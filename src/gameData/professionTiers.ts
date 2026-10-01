@@ -15,11 +15,13 @@ export function getProfessionState(
 }
 
 // Central profession metadata: which of the 10 professions exist, their
-// primary/secondary classification (profession-limit rules), their display
-// labels, and the rank system (skill bands, gold costs, and the
-// character-level gate for training each rank — all data, not hardcoded
-// per-profession logic, so adding an 11th profession or changing a level
-// gate never touches the gating functions below).
+// primary/secondary classification (descriptive only — crafting/gathering
+// vs. convenience professions; there is no slot limit on either, by design:
+// a character can know all 10 at once), their display labels, and the rank
+// system (skill bands, gold costs, and the character-level gate for
+// training each rank — all data, not hardcoded per-profession logic, so
+// adding an 11th profession or changing a level gate never touches the
+// gating functions below).
 
 export const ALL_PROFESSION_IDS: ProfessionId[] = [
   'herbalism', 'skinning', 'mining', 'fishing',
@@ -31,7 +33,6 @@ export const PRIMARY_PROFESSIONS: ProfessionId[] = [
   'herbalism', 'skinning', 'mining', 'alchemy', 'leatherworking', 'smithing', 'tailoring', 'enchanting',
 ];
 export const SECONDARY_PROFESSIONS: ProfessionId[] = ['fishing', 'cooking'];
-export const MAX_PRIMARY_PROFESSIONS = 2;
 
 export function isPrimaryProfession(id: ProfessionId): boolean {
   return PRIMARY_PROFESSIONS.includes(id);
@@ -177,8 +178,8 @@ export interface LearnProfessionCheck {
 }
 
 // Pure gating check for learning a profession for the very first time
-// (apprentice rank) — enforces the primary-profession slot cap; secondary
-// professions (Fishing, Cooking) never count against it.
+// (apprentice rank) — no slot limit on how many professions a character can
+// know (primary or secondary); only gold and character level gate it.
 export function checkLearnProfession(
   profession: ProfessionId,
   alreadyKnown: ProfessionId[],
@@ -188,16 +189,6 @@ export function checkLearnProfession(
   const apprentice = PROFESSION_TIERS[0];
   if (alreadyKnown.includes(profession)) {
     return { ok: false, reason: 'Already known.', goldCost: apprentice.goldCost };
-  }
-  if (isPrimaryProfession(profession)) {
-    const knownPrimaryCount = alreadyKnown.filter(isPrimaryProfession).length;
-    if (knownPrimaryCount >= MAX_PRIMARY_PROFESSIONS) {
-      return {
-        ok: false,
-        reason: `You can only know ${MAX_PRIMARY_PROFESSIONS} primary professions at once — abandon one first.`,
-        goldCost: apprentice.goldCost,
-      };
-    }
   }
   const requiredCharacterLevel = requiredCharacterLevelForRank(profession, 'apprentice');
   if (characterLevel < requiredCharacterLevel) {

@@ -52,7 +52,9 @@ service cloud.firestore {
       && data.abilityConditions == {}
       && data.combatPresets == []
       && data.itemCooldowns == {}
-      && isValidNewQuests(data.quests);
+      && isValidNewQuests(data.quests)
+      && data.companions == {}
+      && data.activeCompanionId == null;
   }
 
   function isValidCharacterUpdate(before, after) {
@@ -61,7 +63,7 @@ service cloud.firestore {
       && after.level is number && after.level >= before.level
       && after.xp is number && after.xp >= before.xp
       && after.gold is number && after.gold >= 0
-      && after.voidShards == 0
+      && after.voidShards is number && after.voidShards >= 0
       && isValidEquipment(after.equipment)
       && isValidProfessions(after.professions)
       && isValidEnchantments(after)
@@ -73,7 +75,9 @@ service cloud.firestore {
       && isValidAbilityConditions(after)
       && isValidCombatPresets(after)
       && isValidItemCooldowns(after)
-      && isValidQuests(after);
+      && isValidQuests(after)
+      && isValidCompanions(after)
+      && isValidActiveCompanionId(after);
   }
 
   // Ownership-scoped, not fully value-scoped — same posture as the sibling
@@ -174,6 +178,26 @@ service cloud.firestore {
       && q.active is map && q.active.size() <= 8
       && q.completedIds == []
       && q.dailyCompletedAt == {};
+  }
+
+  // Ownership-scoped, not fully value-scoped — same posture as the sibling
+  // maps above. Full validation (that a companion id is real, that its gear
+  // is something its class can wear) happens in firebase/companions.ts, the
+  // only path that ever writes this field. Capped at the size of the
+  // COMPANIONS roster (gameData/companions.ts) since a character can
+  // recruit each one at most once.
+  function isValidCompanions(after) {
+    return !('companions' in after) || (after.companions is map && after.companions.size() <= 10);
+  }
+
+  // Must be a recruited companion id or null (solo) — but "is this id
+  // actually recruited" is a cross-field check, not something this layer
+  // alone can verify cheaply, so this only bounds the type and leaves full
+  // validation to firebase/companions.ts's setActiveCompanion, same posture
+  // as every other companions field.
+  function isValidActiveCompanionId(after) {
+    return !('activeCompanionId' in after)
+      || after.activeCompanionId == null || after.activeCompanionId is string;
   }
 
   // Ownership-scoped, not fully value-scoped — same posture as

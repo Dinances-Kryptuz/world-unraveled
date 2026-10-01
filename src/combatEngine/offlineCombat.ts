@@ -13,7 +13,15 @@ import type { BuffTotals } from '../gameData/buffs';
 import type { Monster } from '../gameData/types';
 import { characterXpForLevelV2 } from '../gameData/xpTables';
 import { resolveElapsedProgress, COMBAT_OFFLINE_THROTTLE } from '../gameData/activityEngine';
-import { createEncounterState, createPlayerCombatant, advanceCombat, type EncounterSetupInput, type TickContext } from './engine';
+import type { CompanionCombatSetup } from '../gameData/companions';
+import {
+  createEncounterState,
+  createPlayerCombatant,
+  createCompanionCombatant,
+  advanceCombat,
+  type EncounterSetupInput,
+  type TickContext,
+} from './engine';
 import type { CombatState, ConditionGroup } from './types';
 
 export interface OfflineCombatInput {
@@ -32,12 +40,18 @@ export interface OfflineCombatInput {
   savedEquippedAbilityIds: string[];
   savedAbilityConditions: Record<string, ConditionGroup>;
   monster: Monster;
+  // Same as EncounterSetupInput.companion — its `level` is overwritten on
+  // every buildInput() call (including after a mid-simulation level-up) to
+  // track the player's current simulated level, since a companion always
+  // fights at the player's level.
+  companion?: CompanionCombatSetup;
 }
 
 export interface OfflineCombatResult {
   monstersDefeated: number;
   xpGained: number;
   goldGained: number;
+  voidShardsGained: number;
   loot: { itemId: string; quantity: number }[];
   hpAfter: number;
   finalLevel: number;
@@ -75,12 +89,14 @@ export function simulateOfflineCombat(input: OfflineCombatInput): OfflineCombatR
       monster: input.monster,
       savedEquippedAbilityIds: input.savedEquippedAbilityIds,
       savedAbilityConditions: input.savedAbilityConditions,
+      companion: input.companion ? { ...input.companion, level } : undefined,
     };
   }
 
   let level = input.startingLevel;
   let xpTotal = input.startingXp;
   let goldGained = 0;
+  let voidShardsGained = 0;
   let monstersDefeated = 0;
   let forcedRetreat = false;
   const lootTotals: Record<string, number> = {};
@@ -99,6 +115,7 @@ export function simulateOfflineCombat(input: OfflineCombatInput): OfflineCombatR
       monstersDefeated++;
       xpTotal += kill.xpGained;
       goldGained += kill.goldGained;
+      voidShardsGained += kill.voidShardsGained;
       for (const drop of kill.loot) {
         lootTotals[drop.itemId] = (lootTotals[drop.itemId] ?? 0) + drop.quantity;
       }
@@ -122,7 +139,9 @@ export function simulateOfflineCombat(input: OfflineCombatInput): OfflineCombatR
     if (leveledUp) {
       ctx.playerLevel = level;
       const freshMaxHp = maxHp(input.cls, level, input.equipmentBonuses, input.talentTotals.hpMultPct);
-      state.party = [createPlayerCombatant(buildInput(level, freshMaxHp))];
+      const freshParty = [createPlayerCombatant(buildInput(level, freshMaxHp))];
+      if (input.companion) freshParty.push(createCompanionCombatant({ ...input.companion, level }, input.monster));
+      state.party = freshParty;
     }
   }
 
@@ -131,6 +150,7 @@ export function simulateOfflineCombat(input: OfflineCombatInput): OfflineCombatR
     monstersDefeated,
     xpGained: xpTotal - input.startingXp,
     goldGained: Math.round(goldGained),
+    voidShardsGained: Math.round(voidShardsGained),
     loot: Object.entries(lootTotals).map(([itemId, quantity]) => ({ itemId, quantity })),
     hpAfter: player.hp,
     finalLevel: level,

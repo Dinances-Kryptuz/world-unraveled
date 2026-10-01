@@ -17,6 +17,7 @@ import { characterXpForLevelV2 } from './gameData/xpTables';
 import { DEFAULT_ZONE_ID } from './gameData/zones';
 import { VendorScreen } from './components/VendorScreen';
 import { QuestLog } from './components/QuestLog';
+import { CompanionScreen } from './components/CompanionScreen';
 
 function AppContent() {
   const { user, loading: authLoading } = useAuth();
@@ -57,6 +58,7 @@ function AppContent() {
           <strong>{character.name}</strong> — {CLASS_LABELS[character.class]}
           {character.spec ? ` (${SPEC_LABELS[character.spec]})` : ''} — Level {character.level} —{' '}
           {Math.round(character.gold)} gold
+          {character.voidShards > 0 ? ` — ${character.voidShards} Void Shards` : ''}
         </p>
         <p>
           HP: {Math.round(currentHp)} / {Math.round(characterMaxHp)}
@@ -85,6 +87,7 @@ function AppContent() {
       <CombatSetupScreen />
       <InventoryScreen />
       <VendorScreen zoneId={selectedZoneId} />
+      <CompanionScreen zoneId={selectedZoneId} />
       {character.spec && <TalentScreen />}
     </div>
   );

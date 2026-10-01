@@ -12,12 +12,16 @@ export interface ResourcePool {
 }
 
 // Every selector resolves against the SAME CombatState.party/enemies arrays,
-// solo or not. Only the two Phase 1 needs are implemented in targeting.ts —
-// the rest of the party/threat-aware selectors from the design doc (
-// LOWEST_HP_ALLY, HIGHEST_THREAT_ENEMY, ALLY_MISSING_BUFF, etc.) plug into
-// this same union and the same resolver function later without touching
-// anything that calls it.
-export type TargetType = 'SELF' | 'CURRENT_ENEMY';
+// solo or not. LOWEST_HP_ALLY (added for the companion system) is the first
+// of the party-aware selectors from the design doc — the rest
+// (HIGHEST_THREAT_ENEMY, ALLY_MISSING_BUFF, etc.) plug into this same union
+// and the same resolver function later without touching anything that calls
+// it. In solo play LOWEST_HP_ALLY always resolves to the caster itself (a
+// one-member party's only member), so giving every heal spell this target
+// type instead of SELF is a no-op change for every character without a
+// companion active, and starts healing whichever of player/companion
+// actually needs it once one is.
+export type TargetType = 'SELF' | 'CURRENT_ENEMY' | 'LOWEST_HP_ALLY';
 
 // 'buff' covers both buffs and debuffs — it's a timed modifier applied to
 // whoever ability.targetType resolves to, affecting THEIR OWN outgoing/

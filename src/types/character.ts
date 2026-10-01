@@ -50,6 +50,18 @@ export interface QuestState {
   dailyCompletedAt: Record<string, Date>;
 }
 
+// A recruited companion's own gear — same shape/rules as Character.equipment
+// (gameData/companions.ts's emptyCompanionEquipment), drawn from and
+// returned to the player's own shared inventory on equip/unequip (see
+// firebase/companions.ts). A companion id present here means recruited;
+// there is no separate "known companions" list. Companions have no
+// separate level/XP — they always fight at the player's current level (see
+// gameData/companions.ts's resolveActiveCompanionSetup) and no talents, so
+// there's nothing else to persist per companion.
+export interface CompanionState {
+  equipment: Record<EquipmentSlot, string | null>;
+}
+
 export interface Character {
   name: string;
   createdAt: Date;
@@ -107,6 +119,15 @@ export interface Character {
   itemCooldowns: Record<string, Date>;
   // Quest progress — see QuestState above.
   quests: QuestState;
+  // Recruited companions, keyed by CompanionDef.id (gameData/companions.ts)
+  // — present means recruited, same "no entry at all" convention as
+  // professions above. At most one can fight alongside the player at a
+  // time (activeCompanionId below); the rest just sit recruited.
+  companions: Partial<Record<string, CompanionState>>;
+  // Which recruited companion (if any) joins combat — null means solo.
+  // Must be a key already present in `companions` (see
+  // firebase/companions.ts's setActiveCompanion).
+  activeCompanionId: string | null;
 }
 
 export interface Inventory {
