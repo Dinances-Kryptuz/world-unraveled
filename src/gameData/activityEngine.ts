@@ -107,6 +107,12 @@ export interface GatherNodeResult {
   actionsAttempted: number;
   successfulActions: number;
   successChance: number; // for UI display, e.g. "72% success rate"
+  // The orange/yellow/green/grey multiplier already folded into xpGained
+  // above — exposed separately because GatheringScreen.tsx computes its
+  // own whole-items-only xpGained (quantityGained is carried as a
+  // fraction and only "banked" once it crosses a whole item; xpGained
+  // needs the same treatment) rather than using xpGained directly.
+  xpMultiplier: number;
 }
 
 export function resolveGathering(
@@ -151,6 +157,7 @@ export function resolveGathering(
     actionsAttempted,
     successfulActions,
     successChance,
+    xpMultiplier,
   };
 }
 

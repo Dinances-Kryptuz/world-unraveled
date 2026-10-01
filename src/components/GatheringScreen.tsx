@@ -81,7 +81,10 @@ export function GatheringScreen({ node }: { node: GatherNode }) {
     const total = carryRef.current + result.quantityGained;
     const wholeItems = Math.floor(total);
     carryRef.current = total - wholeItems;
-    const xpGained = wholeItems * node.xpPerAction;
+    // Scaled by the node's current color-tier multiplier (see
+    // GatherNodeResult.xpMultiplier's doc comment) — a grey node still
+    // yields the material on every whole item, but 0 skill-up XP.
+    const xpGained = wholeItems * node.xpPerAction * result.xpMultiplier;
 
     anchorRef.current = now;
     setBankedQuantity((prev) => prev + wholeItems);
@@ -151,13 +154,13 @@ export function GatheringScreen({ node }: { node: GatherNode }) {
   const currentSkill = getProfessionState(character.professions, node.profession).level;
   const sinceLastSave = anchorRef.current
     ? resolveGathering(anchorRef.current, new Date(), node, currentSkill)
-    : { quantityGained: 0, xpGained: 0, actionsAttempted: 0, successfulActions: 0, successChance: 0 };
+    : { quantityGained: 0, xpGained: 0, actionsAttempted: 0, successfulActions: 0, successChance: 0, xpMultiplier: 0 };
 
   const previewWhole = Math.floor(carryRef.current + sinceLastSave.quantityGained);
   const displayQuantity = bankedQuantity + previewWhole;
-  const displayXp = bankedXp + previewWhole * node.xpPerAction;
+  const displayXp = bankedXp + previewWhole * node.xpPerAction * sinceLastSave.xpMultiplier;
   const profession = getProfessionState(character.professions, node.profession);
-  const liveXp = profession.xp + previewWhole * node.xpPerAction;
+  const liveXp = profession.xp + previewWhole * node.xpPerAction * sinceLastSave.xpMultiplier;
 
   return (
     <div className="gathering-screen">
