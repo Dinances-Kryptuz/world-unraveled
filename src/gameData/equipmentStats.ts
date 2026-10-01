@@ -10,6 +10,7 @@ const SLOT_LABELS: Record<EquipmentSlot, string> = {
   legs: 'Legs',
   boots: 'Boots',
   ring: 'Ring',
+  tool: 'Tool',
 };
 
 // A one-line summary of what a piece of equipment actually does — slot,

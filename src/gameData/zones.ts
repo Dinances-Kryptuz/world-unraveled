@@ -12,6 +12,7 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     itemId: 'copper_ore',
     xpPerAction: 5,
     secondsPerAction: 8,
+    colorBreakpoints: { orangeUntil: 41, yellowUntil: 56, greenUntil: 71 },
   },
   greenhollow_peacebloom_patch: {
     id: 'greenhollow_peacebloom_patch',
@@ -22,6 +23,7 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     itemId: 'peacebloom',
     xpPerAction: 5,
     secondsPerAction: 8,
+    colorBreakpoints: { orangeUntil: 41, yellowUntil: 56, greenUntil: 71 },
   },
   greenhollow_hunting_grounds: {
     id: 'greenhollow_hunting_grounds',
@@ -32,6 +34,7 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     itemId: 'leather_scraps',
     xpPerAction: 5,
     secondsPerAction: 8,
+    colorBreakpoints: { orangeUntil: 41, yellowUntil: 56, greenUntil: 71 },
   },
 
   stonecrag_tin_vein: {
@@ -43,6 +46,7 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     itemId: 'tin_ore',
     xpPerAction: 9,
     secondsPerAction: 9,
+    colorBreakpoints: { orangeUntil: 50, yellowUntil: 65, greenUntil: 80 },
   },
   stonecrag_sage_patch: {
     id: 'stonecrag_sage_patch',
@@ -53,6 +57,7 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     itemId: 'mountain_sage',
     xpPerAction: 9,
     secondsPerAction: 9,
+    colorBreakpoints: { orangeUntil: 50, yellowUntil: 65, greenUntil: 80 },
   },
   stonecrag_foothill_game: {
     id: 'stonecrag_foothill_game',
@@ -63,6 +68,7 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     itemId: 'coarse_hide',
     xpPerAction: 9,
     secondsPerAction: 9,
+    colorBreakpoints: { orangeUntil: 50, yellowUntil: 65, greenUntil: 80 },
   },
 
   emberfall_iron_vein: {
@@ -74,6 +80,7 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     itemId: 'iron_ore',
     xpPerAction: 13,
     secondsPerAction: 10,
+    colorBreakpoints: { orangeUntil: 65, yellowUntil: 80, greenUntil: 95 },
   },
   emberfall_sunpetal_patch: {
     id: 'emberfall_sunpetal_patch',
@@ -84,6 +91,7 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     itemId: 'sunpetal',
     xpPerAction: 13,
     secondsPerAction: 10,
+    colorBreakpoints: { orangeUntil: 65, yellowUntil: 80, greenUntil: 95 },
   },
   emberfall_ashfang_den: {
     id: 'emberfall_ashfang_den',
@@ -94,6 +102,7 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     itemId: 'scaled_hide',
     xpPerAction: 13,
     secondsPerAction: 10,
+    colorBreakpoints: { orangeUntil: 65, yellowUntil: 80, greenUntil: 95 },
   },
 
   cinderfall_ore_seam: {
@@ -105,6 +114,7 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     itemId: 'cinderore',
     xpPerAction: 17,
     secondsPerAction: 11,
+    colorBreakpoints: { orangeUntil: 70, yellowUntil: 85, greenUntil: 100 },
   },
   cinderfall_emberpetal_patch: {
     id: 'cinderfall_emberpetal_patch',
@@ -115,6 +125,7 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     itemId: 'emberpetal',
     xpPerAction: 17,
     secondsPerAction: 11,
+    colorBreakpoints: { orangeUntil: 70, yellowUntil: 85, greenUntil: 100 },
   },
   cinderfall_ash_burrow: {
     id: 'cinderfall_ash_burrow',
@@ -125,6 +136,7 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     itemId: 'ashhide',
     xpPerAction: 17,
     secondsPerAction: 11,
+    colorBreakpoints: { orangeUntil: 70, yellowUntil: 85, greenUntil: 100 },
   },
 
   molten_scar_brimstone_vein: {
@@ -136,6 +148,7 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     itemId: 'brimstone_ore',
     xpPerAction: 21,
     secondsPerAction: 12,
+    colorBreakpoints: { orangeUntil: 80, yellowUntil: 95, greenUntil: 110 },
   },
   molten_scar_cinderbloom_patch: {
     id: 'molten_scar_cinderbloom_patch',
@@ -146,6 +159,7 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     itemId: 'cinderbloom',
     xpPerAction: 21,
     secondsPerAction: 12,
+    colorBreakpoints: { orangeUntil: 80, yellowUntil: 95, greenUntil: 110 },
   },
   molten_scar_scaleback_den: {
     id: 'molten_scar_scaleback_den',
@@ -156,6 +170,7 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     itemId: 'scaleback_hide',
     xpPerAction: 21,
     secondsPerAction: 12,
+    colorBreakpoints: { orangeUntil: 80, yellowUntil: 95, greenUntil: 110 },
   },
 
   cinderheart_ore_vein: {
@@ -167,6 +182,7 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     itemId: 'emberforge_ore',
     xpPerAction: 25,
     secondsPerAction: 13,
+    colorBreakpoints: { orangeUntil: 88, yellowUntil: 103, greenUntil: 118 },
   },
   cinderheart_bloom_patch: {
     id: 'cinderheart_bloom_patch',
@@ -177,6 +193,7 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     itemId: 'emberheart_bloom',
     xpPerAction: 25,
     secondsPerAction: 13,
+    colorBreakpoints: { orangeUntil: 88, yellowUntil: 103, greenUntil: 118 },
   },
   cinderheart_hide_grounds: {
     id: 'cinderheart_hide_grounds',
@@ -187,6 +204,7 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     itemId: 'emberscale_hide',
     xpPerAction: 25,
     secondsPerAction: 13,
+    colorBreakpoints: { orangeUntil: 88, yellowUntil: 103, greenUntil: 118 },
   },
 };
 

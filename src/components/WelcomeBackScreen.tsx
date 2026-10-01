@@ -11,6 +11,7 @@ import { simulateOfflineCombat } from '../combatEngine/offlineCombat';
 import { evaluateTalents, EMPTY_TALENT_TOTALS } from '../utils/talentEvaluator';
 import { maxHp, resolveCurrentHp } from '../gameData/combatFormulas';
 import { getEquipmentStatBonuses } from '../gameData/equipmentStats';
+import { getProfessionState } from '../gameData/professionTiers';
 import { getInventory } from '../firebase/inventory';
 import { applyCombatResult, setCharacterLevel } from '../firebase/character';
 import type { Character, CurrentActivity } from '../types/character';
@@ -95,7 +96,7 @@ export function WelcomeBackScreen({
         );
       } else if (activity.type === 'gathering') {
         const node = GATHER_NODES[activity.targetId];
-        const currentSkill = character.professions[node.profession].level;
+        const currentSkill = getProfessionState(character.professions, node.profession).level;
         const result = resolveGathering(activity.startedAt, now, node, currentSkill);
         const itemName = ITEMS[node.itemId]?.name ?? node.itemId;
         setSummary(
@@ -105,7 +106,7 @@ export function WelcomeBackScreen({
         );
       } else if (activity.type === 'crafting') {
         const recipe = RECIPES[activity.targetId];
-        const currentSkill = character.professions[recipe.profession].level;
+        const currentSkill = getProfessionState(character.professions, recipe.profession).level;
         const inventory = user ? await getInventory(user.uid) : { items: {} };
         const result = resolveCrafting(
           activity.startedAt,

@@ -3,6 +3,13 @@ import type { ClassId, SpecId } from '../gameData/classStats';
 import type { TalentPicks } from '../gameData/talents';
 import type { ConditionGroup } from '../combatEngine/types';
 
+// `level` IS the profession's 1-300 skill value (naming predates this
+// overhaul — see xpTables.ts's professionXpForLevel, unchanged). `xp` is
+// progress toward the next skill point. A profession the character hasn't
+// learned yet has no entry in Character.professions at all (see
+// firebase/professions.ts's learnProfession) rather than a default row —
+// knowing a profession is itself meaningful state now (primary-slot limit),
+// not just a given.
 export interface ProfessionState {
   level: number;
   xp: number;
@@ -57,7 +64,30 @@ export interface Character {
   hpCheckpointAt: Date;
   respecCount: number;
   equipment: Record<EquipmentSlot, string | null>;
-  professions: Record<ProfessionId, ProfessionState>;
+  // Only professions actually learned (see firebase/professions.ts's
+  // learnProfession) have a key here — Partial, not a full Record, since an
+  // unlearned profession has no state at all, not a level-0 default.
+  professions: Partial<Record<ProfessionId, ProfessionState>>;
+  // Enchantment id per equipment slot — bound to the SLOT, not a unique item
+  // instance (this engine doesn't instance equipment; see gameData/
+  // enchanting.ts's doc comment for why). Re-enchanting a slot overwrites
+  // whatever was there; unequipping does not clear it, matching "enchants
+  // persist on the item" as closely as a non-instanced item model allows.
+  enchantments: Partial<Record<EquipmentSlot, string>>;
+  // Recipe ids learned via a 'recipe' item (Recipe.learnedAutomatically ===
+  // false) — see firebase/professions.ts's learnRecipe. A recipe with
+  // learnedAutomatically === true never appears here; meeting its
+  // requiredSkill/requiredCharacterLevel is enough on its own.
+  learnedRecipeIds: string[];
+  // Max distinct item ids the inventory can hold at once (see
+  // firebase/inventory.ts) — grows permanently when a Tailoring-crafted bag
+  // is used (ConsumableEffect.bagCapacityBonus).
+  bagSlots: number;
+  // Active potion/food buffs, keyed by BuffCategory so applying a second
+  // buff of the same category replaces rather than stacks (see
+  // combatEngine/buffs.ts). Charge-based buffs count down `charges`;
+  // duration-based ones are pruned by `expiresAt`.
+  activeBuffs: Partial<Record<import('../gameData/types').BuffCategory, { itemId: string; charges?: number; expiresAt?: Date }>>;
   currentActivity: CurrentActivity;
   // The player's saved priority list (highest priority first). See
   // combatEngine/progression.ts's effectiveLoadout() — an empty array is a

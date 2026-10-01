@@ -4,6 +4,7 @@ import { useCharacter } from '../hooks/useCharacter';
 import { applyGatheringResult, checkAndApplyProfessionLevelUp, stopActivity, getCharacter, advanceQuests } from '../firebase/character';
 import { resolveGathering } from '../gameData/activityEngine';
 import { professionXpForLevel } from '../gameData/xpTables';
+import { getProfessionState } from '../gameData/professionTiers';
 import { XpBar } from './XpBar';
 import { TickBar } from './TickBar';
 import type { Character } from '../types/character';
@@ -66,7 +67,7 @@ export function GatheringScreen({ node }: { node: GatherNode }) {
     if (!currentUser || !currentCharacter || !anchor) return;
 
     const now = new Date();
-    const currentSkill = currentCharacter.professions[node.profession].level;
+    const currentSkill = getProfessionState(currentCharacter.professions, node.profession).level;
     const result = resolveGathering(anchor, now, node, currentSkill);
 
     if (result.actionsAttempted === 0) return;
@@ -95,7 +96,10 @@ export function GatheringScreen({ node }: { node: GatherNode }) {
       ...c,
       professions: {
         ...c.professions,
-        [node.profession]: { ...c.professions[node.profession], xp: c.professions[node.profession].xp + xpGained },
+        [node.profession]: {
+          ...getProfessionState(c.professions, node.profession),
+          xp: getProfessionState(c.professions, node.profession).xp + xpGained,
+        },
       },
     }));
 
@@ -127,7 +131,10 @@ export function GatheringScreen({ node }: { node: GatherNode }) {
         ...c,
         professions: {
           ...c.professions,
-          [node.profession]: { ...c.professions[node.profession], xp: c.professions[node.profession].xp - xpGained },
+          [node.profession]: {
+            ...getProfessionState(c.professions, node.profession),
+            xp: getProfessionState(c.professions, node.profession).xp - xpGained,
+          },
         },
       }));
     }
@@ -141,7 +148,7 @@ export function GatheringScreen({ node }: { node: GatherNode }) {
 
   if (!character.currentActivity.startedAt) return null;
 
-  const currentSkill = character.professions[node.profession].level;
+  const currentSkill = getProfessionState(character.professions, node.profession).level;
   const sinceLastSave = anchorRef.current
     ? resolveGathering(anchorRef.current, new Date(), node, currentSkill)
     : { quantityGained: 0, xpGained: 0, actionsAttempted: 0, successfulActions: 0, successChance: 0 };
@@ -149,7 +156,7 @@ export function GatheringScreen({ node }: { node: GatherNode }) {
   const previewWhole = Math.floor(carryRef.current + sinceLastSave.quantityGained);
   const displayQuantity = bankedQuantity + previewWhole;
   const displayXp = bankedXp + previewWhole * node.xpPerAction;
-  const profession = character.professions[node.profession];
+  const profession = getProfessionState(character.professions, node.profession);
   const liveXp = profession.xp + previewWhole * node.xpPerAction;
 
   return (

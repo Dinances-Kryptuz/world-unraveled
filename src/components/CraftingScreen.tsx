@@ -5,6 +5,7 @@ import { applyCraftingResult, checkAndApplyProfessionLevelUp, stopActivity, getC
 import { getInventory } from '../firebase/inventory';
 import { resolveCrafting } from '../gameData/activityEngine';
 import { professionXpForLevel } from '../gameData/xpTables';
+import { getProfessionState } from '../gameData/professionTiers';
 import { XpBar } from './XpBar';
 import { TickBar } from './TickBar';
 import type { Character } from '../types/character';
@@ -73,7 +74,7 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
     if (!currentUser || !currentCharacter || !anchor) return;
 
     const now = new Date();
-    const currentSkill = currentCharacter.professions[recipe.profession].level;
+    const currentSkill = getProfessionState(currentCharacter.professions, recipe.profession).level;
     const result = resolveCrafting(
       anchor,
       now,
@@ -114,8 +115,8 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
       professions: {
         ...c.professions,
         [recipe.profession]: {
-          ...c.professions[recipe.profession],
-          xp: c.professions[recipe.profession].xp + result.xpGained,
+          ...getProfessionState(c.professions, recipe.profession),
+          xp: getProfessionState(c.professions, recipe.profession).xp + result.xpGained,
         },
       },
     }));
@@ -149,8 +150,8 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
         professions: {
           ...c.professions,
           [recipe.profession]: {
-            ...c.professions[recipe.profession],
-            xp: c.professions[recipe.profession].xp - result.xpGained,
+            ...getProfessionState(c.professions, recipe.profession),
+            xp: getProfessionState(c.professions, recipe.profession).xp - result.xpGained,
           },
         },
       }));
@@ -165,7 +166,7 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
 
   if (!character.currentActivity.startedAt) return null;
 
-  const profession = character.professions[recipe.profession];
+  const profession = getProfessionState(character.professions, recipe.profession);
 
   return (
     <div className="crafting-screen">

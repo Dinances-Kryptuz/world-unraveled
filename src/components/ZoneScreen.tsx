@@ -13,6 +13,7 @@ import { DungeonScreen } from './DungeonScreen';
 import { WelcomeBackScreen, isLongAbsence } from './WelcomeBackScreen';
 import { SpecSelectionScreen } from './SpecSelectionScreen';
 import { craftingColorTier } from '../gameData/activityEngine';
+import { getProfessionState } from '../gameData/professionTiers';
 import { professionXpForLevel } from '../gameData/xpTables';
 import { XpBar } from './XpBar';
 import { MonsterLootPanel } from './MonsterLootPanel';
@@ -185,7 +186,7 @@ export function ZoneScreen({
         {zone.gatherNodeIds.map((nodeId) => {
           const node = GATHER_NODES[nodeId];
           const professionLabel = node.profession.charAt(0).toUpperCase() + node.profession.slice(1);
-          const skillLevel = character.professions[node.profession].level;
+          const skillLevel = getProfessionState(character.professions, node.profession).level;
           const meetsLevel = skillLevel >= node.requiredLevel;
           return (
             <li key={nodeId}>
@@ -199,7 +200,7 @@ export function ZoneScreen({
       </ul>
 
       {[...recipesByProfession.entries()].map(([professionId, recipes]) => {
-        const professionLevel = character.professions[professionId].level;
+        const professionLevel = getProfessionState(character.professions, professionId).level;
         const professionLabel = professionId.charAt(0).toUpperCase() + professionId.slice(1);
         return (
           <div key={professionId}>

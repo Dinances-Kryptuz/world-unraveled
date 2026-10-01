@@ -5,6 +5,7 @@ import type { ProfessionId, EquipmentSlot } from '../gameData/types';
 import type { ClassId, SpecId } from '../gameData/classStats';
 import type { TalentColumn } from '../gameData/talents';
 import { professionXpForLevel } from '../gameData/xpTables';
+import { maxSkillForUnlockedTier } from '../gameData/professionTiers';
 import { maxHp } from '../gameData/combatFormulas';
 import { canClassEquip } from '../gameData/classStats';
 import { ITEMS } from '../gameData/items';
@@ -13,15 +14,7 @@ import { maxEquippedSlots, unlockedAbilities, effectiveLoadout, MAX_COMBAT_PRESE
 import type { Condition, ConditionGroup, ConditionType, ResourceType } from '../combatEngine/types';
 import { refillActiveQuests, applyQuestEvents, type QuestEvent } from '../gameData/questEngine';
 
-const STARTING_GATHERING_PROFESSIONS: ProfessionId[] = ['skinning', 'mining', 'herbalism'];
-const STARTING_PRODUCTION_PROFESSIONS: ProfessionId[] = ['leatherworking', 'smithing', 'tailoring', 'alchemy'];
-const ALL_V1_PROFESSIONS = [...STARTING_GATHERING_PROFESSIONS, ...STARTING_PRODUCTION_PROFESSIONS];
-
-function defaultProfessions(): Record<ProfessionId, { level: number; xp: number; unlockedTier: 'apprentice' }> {
-  return Object.fromEntries(
-    ALL_V1_PROFESSIONS.map((id) => [id, { level: 1, xp: 0, unlockedTier: 'apprentice' as const }])
-  ) as Record<ProfessionId, { level: number; xp: number; unlockedTier: 'apprentice' }>;
-}
+export const BASE_BAG_SLOTS = 24;
 
 export async function getCharacter(uid: string): Promise<Character | null> {
   const snap = await getDoc(doc(db, 'characters', uid));
@@ -30,10 +23,19 @@ export async function getCharacter(uid: string): Promise<Character | null> {
   const data = snap.data();
   return {
     ...data,
-    // Backfills professions added after this character was created (e.g.
-    // Smithing) so existing characters don't crash on a missing key —
-    // real saved progress always wins over the level-1 default.
-    professions: { ...defaultProfessions(), ...data.professions },
+    // A character with no professions key yet (pre-overhaul save) starts
+    // knowing nothing — same "no choice made yet" convention as
+    // equippedAbilityIds below, not a default grant.
+    professions: data.professions ?? {},
+    enchantments: data.enchantments ?? {},
+    learnedRecipeIds: data.learnedRecipeIds ?? [],
+    bagSlots: data.bagSlots ?? BASE_BAG_SLOTS,
+    activeBuffs: Object.fromEntries(
+      Object.entries(data.activeBuffs ?? {}).map(([category, buff]: [string, any]) => [
+        category,
+        { ...buff, expiresAt: buff.expiresAt ? (buff.expiresAt as Timestamp).toDate() : undefined },
+      ])
+    ),
     // Same backfill idea for equippedAbilityIds, added after some characters
     // already existed — an empty list is itself a valid "no choice made
     // yet" state, so this only matters for a genuinely missing field.
@@ -85,11 +87,11 @@ function starterEquipment(cls: ClassId): Record<EquipmentSlot, string | null> {
     legs: null,
     boots: 'novice_boots',
     ring: null,
+    tool: null,
   };
 }
 
 export async function createCharacter(uid: string, name: string, characterClass: ClassId): Promise<void> {
-  const professions = defaultProfessions();
   const equipment = starterEquipment(characterClass);
   const startingHpBonuses = getEquipmentStatBonuses(equipment);
 
@@ -115,7 +117,13 @@ export async function createCharacter(uid: string, name: string, characterClass:
     hpCheckpointAt: serverTimestamp(),
     respecCount: 0,
     equipment,
-    professions,
+    // Starts knowing no professions at all — see learnProfession in
+    // firebase/professions.ts. Zone 1 has an apprentice trainer for all 10.
+    professions: {},
+    enchantments: {},
+    learnedRecipeIds: [],
+    bagSlots: BASE_BAG_SLOTS,
+    activeBuffs: {},
     currentActivity: { type: null, targetId: null, zoneId: null, startedAt: null },
     equippedAbilityIds: [],
     abilityConditions: {},
@@ -191,17 +199,12 @@ export async function applyGatheringResult(
   result: { xpGained: number; itemId: string; quantity: number }
 ): Promise<void> {
   // Written as a full { level, xp, unlockedTier } replace rather than an
-  // increment() on the .xp sub-path — a profession added after a character
-  // was created (Smithing, Tailoring) may have no professions.<id> key at
-  // all yet in Firestore, and increment() on a missing sub-path creates
-  // only that one field, leaving level/unlockedTier missing and failing
-  // firestore.rules' isValidProfessionState on every write from then on.
-  // getCharacter() always returns a complete default shape for a profession
-  // that isn't in the document yet, so reading through it first guarantees
-  // this write is always a valid, complete profession state.
+  // increment() on the .xp sub-path, for the same read-modify-write safety
+  // every other professions.<id> writer here uses.
   const character = await getCharacter(uid);
   if (!character) return;
   const current = character.professions[profession];
+  if (!current) return; // profession not learned — a stale/malicious client call, not a real state
 
   await updateDoc(doc(db, 'characters', uid), {
     [`professions.${profession}`]: { ...current, xp: current.xp + result.xpGained },
@@ -260,8 +263,14 @@ export async function checkAndApplyProfessionLevelUp(uid: string, profession: Pr
   const character = await getCharacter(uid);
   if (!character) return;
   const state = character.professions[profession];
+  if (!state) return;
+  // Skill can never climb past the ceiling of the CURRENTLY unlocked rank —
+  // the whole point of "visit a trainer to unlock the next rank." A
+  // character sitting exactly at that ceiling just banks xp with no visible
+  // effect until they train up (see professionTiers.ts's checkRankUp).
+  const cap = maxSkillForUnlockedTier(state.unlockedTier);
   let newLevel = state.level;
-  while (state.xp >= professionXpForLevel(newLevel + 1)) {
+  while (newLevel < cap && state.xp >= professionXpForLevel(newLevel + 1)) {
     newLevel++;
   }
   if (newLevel !== state.level) {
@@ -285,6 +294,7 @@ export async function applyCraftingResult(
   const character = await getCharacter(uid);
   if (!character) return;
   const current = character.professions[profession];
+  if (!current) return;
 
   await updateDoc(doc(db, 'characters', uid), {
     [`professions.${profession}`]: { ...current, xp: current.xp + result.xpGained },
