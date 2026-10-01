@@ -11,9 +11,7 @@ body {
 }
 
 #root {
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 24px 16px 64px;
+  min-height: 100vh;
 }
 
 h1 {
@@ -124,21 +122,22 @@ input[type="number"] {
   }
 }
 
+:root {
+  /* Fallback accent before a zone theme is applied (App.tsx sets these
+     inline from gameData/zoneThemes.ts as soon as a character exists) —
+     matches Greenhollow Fields so the very first screen a new character
+     sees isn't an unthemed grey. */
+  --zone-primary: #4a7c3f;
+  --zone-primary-dark: #375d2e;
+  --zone-accent: #8fae6a;
+  --zone-bg-from: #eef3e6;
+  --zone-bg-to: #dce8cc;
+}
+
 .loading-screen {
   padding: 48px 0;
   text-align: center;
   color: #6b6156;
-}
-
-.app-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: #fff;
-  border: 1px solid #e2d9c8;
-  border-radius: 6px;
-  padding: 12px 16px;
-  margin-bottom: 24px;
 }
 
 .zone-screen,
@@ -148,9 +147,7 @@ input[type="number"] {
 .equipment-screen,
 .inventory-screen,
 .welcome-back-screen,
-.character-creation,
-.companion-screen,
-.login-screen {
+.companion-screen {
   background: #fff;
   border: 1px solid #e2d9c8;
   border-radius: 8px;
@@ -167,6 +164,140 @@ input[type="number"] {
 
 .login-screen,
 .character-creation {
+  max-width: 480px;
+  margin: 48px auto;
   text-align: center;
   padding: 48px 24px;
+  background: #fff;
+  border: 1px solid #e2d9c8;
+  border-radius: 8px;
+}
+
+/* ── App shell: persistent sidebar + top bar, content swapped per section ── */
+
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+  background: linear-gradient(180deg, var(--zone-bg-from), var(--zone-bg-to) 480px, #f4f1eb 480px);
+}
+
+.sidebar {
+  flex: 0 0 180px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 10px;
+  background: #2a2420;
+}
+
+.sidebar-item {
+  background: transparent;
+  color: #ddd4c6;
+  text-align: left;
+  border-radius: 5px;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+}
+
+.sidebar-item:hover:not(:disabled) {
+  background: #40392f;
+}
+
+.app-main {
+  flex: 1;
+  min-width: 0;
+  padding: 16px 24px 64px;
+}
+
+.app-content {
+  max-width: 820px;
+}
+
+.top-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  background: #fff;
+  border: 1px solid #e2d9c8;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  max-width: 820px;
+}
+
+.top-bar-identity {
+  flex: 1 1 auto;
+}
+
+.top-bar-stats {
+  display: flex;
+  gap: 14px;
+  font-size: 0.9rem;
+  color: #4a4038;
+}
+
+.top-bar-xp {
+  flex: 1 1 220px;
+}
+
+.top-bar-xp-track {
+  background: #e2d9c8;
+  border-radius: 4px;
+  height: 8px;
+  width: 100%;
+  overflow: hidden;
+}
+
+.top-bar-xp-fill {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+/* ── Zone identity: tabs + themed banner (gameData/zoneThemes.ts) ── */
+
+.zone-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.zone-tab {
+  background: #efe9dd;
+  color: #4a4038;
+}
+
+.zone-tab:hover:not(:disabled) {
+  background: #e2d9c8;
+}
+
+.zone-banner {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid;
+  border-radius: 8px;
+  padding: 18px 20px 16px;
+  margin-bottom: 20px;
+}
+
+.zone-banner-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+}
+
+.zone-banner-body h1 {
+  margin: 6px 0 2px;
+}
+
+.zone-banner-level {
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  opacity: 0.75;
+  margin-bottom: 6px;
 }

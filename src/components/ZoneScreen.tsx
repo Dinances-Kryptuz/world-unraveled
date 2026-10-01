@@ -4,6 +4,7 @@ import { useCharacter } from '../hooks/useCharacter';
 import { startActivity, stopActivity } from '../firebase/character';
 import { ZONES, GATHER_NODES, FISHING_HOLES } from '../gameData/zones';
 import { FishingScreen } from './FishingScreen';
+import { ZoneBanner } from './ZoneBanner';
 import { MONSTERS } from '../gameData/monsters';
 import { RECIPES } from '../gameData/recipes';
 import { DUNGEONS } from '../gameData/dungeons';
@@ -153,16 +154,18 @@ export function ZoneScreen({
 
   return (
     <div className="zone-screen">
-      <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+      <div className="zone-tabs">
         {Object.values(ZONES).map((z) => {
           const unlocked = isZoneUnlocked(z, character.level);
+          const isCurrent = z.id === zone.id;
           return (
             <button
               key={z.id}
+              className="zone-tab"
               onClick={() => unlocked && onSelectZone(z.id)}
               disabled={!unlocked}
               title={unlocked ? undefined : `Unlocks at level ${z.unlockRequirement.type === 'characterLevel' ? z.unlockRequirement.level : '?'}`}
-              style={{ fontWeight: z.id === zone.id ? 700 : 400 }}
+              style={isCurrent ? { background: 'var(--zone-primary)', color: '#fff' } : undefined}
             >
               {z.name}
               {!unlocked && z.unlockRequirement.type === 'characterLevel' ? ` (Lv ${z.unlockRequirement.level})` : ''}
@@ -171,8 +174,7 @@ export function ZoneScreen({
         })}
       </div>
 
-      <h1>{zone.name}</h1>
-      <p>{zone.description}</p>
+      <ZoneBanner zoneId={zone.id} />
       <p>
         <small>
           Enemy composition:{' '}
