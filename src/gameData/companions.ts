@@ -27,6 +27,28 @@ export interface CompanionDef {
   requiredCharacterLevel: number;
 }
 
+// Up to this many companions can fight alongside the player at once — the
+// 4 "party slots" that, with the player, make a full 5-person group. A
+// dungeon requires exactly this many active to enter at all (see
+// REQUIRED_DUNGEON_PARTY_SIZE and DungeonScreen.tsx); open-world combat
+// allows any number from 0 up to this.
+export const MAX_ACTIVE_COMPANIONS = 4;
+
+// Player + MAX_ACTIVE_COMPANIONS — the fixed group size a dungeon expects.
+// Deliberately not just "4 companions" inline everywhere so the one place
+// that means "the whole group" reads as that, not as an unexplained +1.
+export const REQUIRED_DUNGEON_PARTY_SIZE = MAX_ACTIVE_COMPANIONS + 1;
+
+// One companion per spec (all 6 — see classStats.ts's SpecId) so a player
+// can freely build any class/spec composition for their 4 active slots
+// (a second tank, three healers, whatever) rather than being steered
+// toward "the optimal" 1 tank/1 healer/3 DPS mix. All six are recruitable
+// within the first two zones specifically so a brand-new player can
+// assemble a full dungeon group before reaching Greenhollow's own dungeon
+// (Kobold Warrens) — a dungeon simply isn't enterable without one (see
+// REQUIRED_DUNGEON_PARTY_SIZE), so the roster has to be available early,
+// even though that means Ser Aldric (originally an Emberfall Ridge, level
+// 25 recruit) moved down to Stonecrag Foothills at level 12.
 export const COMPANIONS: Record<string, CompanionDef> = {
   wren_the_squire: {
     id: 'wren_the_squire',
@@ -39,13 +61,35 @@ export const COMPANIONS: Record<string, CompanionDef> = {
     recruitGoldCost: 25,
     requiredCharacterLevel: 3,
   },
+  borin_ironhide: {
+    id: 'borin_ironhide',
+    name: 'Borin Ironhide',
+    class: 'warrior',
+    specId: 'warrior_tank',
+    description:
+      'A retired caravan guard who still knows how to plant his feet and take a hit. Draws attacks away from the rest of the group.',
+    recruitZoneId: 'greenhollow_fields',
+    recruitGoldCost: 40,
+    requiredCharacterLevel: 5,
+  },
+  vesper_duskwhisper: {
+    id: 'vesper_duskwhisper',
+    name: 'Vesper Duskwhisper',
+    class: 'priest',
+    specId: 'shadow_priest',
+    description:
+      'A hedge-priest who found the shadow between the prayers more interesting than the prayers themselves. Fights for damage, not healing.',
+    recruitZoneId: 'greenhollow_fields',
+    recruitGoldCost: 40,
+    requiredCharacterLevel: 5,
+  },
   sister_mabel: {
     id: 'sister_mabel',
     name: 'Sister Mabel',
     class: 'priest',
     specId: 'holy_priest',
     description:
-      'A wandering healer who tends the wounded along the foothill trails. Keeps you topped up instead of dealing damage herself.',
+      'A wandering healer who tends the wounded along the foothill trails. Keeps the group topped up instead of dealing damage herself.',
     recruitZoneId: 'stonecrag_foothills',
     recruitGoldCost: 75,
     requiredCharacterLevel: 10,
@@ -56,10 +100,21 @@ export const COMPANIONS: Record<string, CompanionDef> = {
     class: 'paladin',
     specId: 'prot_paladin',
     description:
-      'A disgraced knight working off an old debt on the Ridge. Soaks up punishment rather than dishing it out.',
-    recruitZoneId: 'emberfall_ridge',
-    recruitGoldCost: 200,
-    requiredCharacterLevel: 25,
+      'A disgraced knight working off an old debt in the foothills. Soaks up punishment rather than dishing it out.',
+    recruitZoneId: 'stonecrag_foothills',
+    recruitGoldCost: 90,
+    requiredCharacterLevel: 12,
+  },
+  dame_rosalind: {
+    id: 'dame_rosalind',
+    name: 'Dame Rosalind',
+    class: 'paladin',
+    specId: 'holy_paladin',
+    description:
+      'A traveling knight-healer who took her vows seriously enough to mean them. A second, sturdier kind of support for the group.',
+    recruitZoneId: 'stonecrag_foothills',
+    recruitGoldCost: 90,
+    requiredCharacterLevel: 12,
   },
 };
 
@@ -97,7 +152,7 @@ export function emptyCompanionEquipment(): Record<EquipmentSlot, string | null> 
   return { weapon: null, chest: null, helmet: null, gloves: null, legs: null, boots: null, ring: null, tool: null };
 }
 
-// The shape combatEngine/engine.ts's EncounterSetupInput.companion expects —
+// The shape combatEngine/engine.ts's EncounterSetupInput.companions expects —
 // deliberately duck-typed rather than importing from combatEngine here
 // (gameData has no dependency on combatEngine anywhere else in the
 // codebase; combatEngine depends on gameData, never the reverse, same
@@ -112,23 +167,29 @@ export interface CompanionCombatSetup {
   equipmentBonuses: Partial<Record<BaseStat, number>>;
 }
 
-// Builds the live combat setup for whichever companion is currently active,
-// or undefined if none is recruited/active — callers (CombatScreen/
-// DungeonScreen/WelcomeBackScreen/offlineCombat) just spread this straight
-// into EncounterSetupInput.companion, same pattern as evaluateActiveBuffs.
-export function resolveActiveCompanionSetup(character: Character): CompanionCombatSetup | undefined {
-  const activeId = character.activeCompanionId;
-  if (!activeId) return undefined;
-  const state = character.companions[activeId];
-  const def = COMPANIONS[activeId];
-  if (!state || !def) return undefined;
-  return {
-    id: activeId,
-    name: def.name,
-    cls: def.class,
-    specId: def.specId,
-    specDef: SPECS[def.specId],
-    level: character.level,
-    equipmentBonuses: getEquipmentStatBonuses(state.equipment),
-  };
+// Builds the live combat setup for every currently-active companion (0 to
+// MAX_ACTIVE_COMPANIONS) — callers (CombatScreen/DungeonScreen/
+// WelcomeBackScreen/offlineCombat) just spread this straight into
+// EncounterSetupInput.companions, same pattern as evaluateActiveBuffs. An id
+// in activeCompanionIds that somehow isn't recruited (shouldn't happen —
+// firebase/companions.ts validates on every write) is silently skipped
+// rather than thrown on, same "tolerate, don't crash" posture the rest of
+// this file takes.
+export function resolveActiveCompanionSetups(character: Character): CompanionCombatSetup[] {
+  const setups: CompanionCombatSetup[] = [];
+  for (const activeId of character.activeCompanionIds) {
+    const state = character.companions[activeId];
+    const def = COMPANIONS[activeId];
+    if (!state || !def) continue;
+    setups.push({
+      id: activeId,
+      name: def.name,
+      cls: def.class,
+      specId: def.specId,
+      specDef: SPECS[def.specId],
+      level: character.level,
+      equipmentBonuses: getEquipmentStatBonuses(state.equipment),
+    });
+  }
+  return setups;
 }

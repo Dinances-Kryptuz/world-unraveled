@@ -9,6 +9,7 @@ export const PRE_SPEC_DEFAULT: Omit<SpecDef, 'class' | 'combatType'> = {
   avoidance: 0.05,
   healFrac: 0,
   passiveHealPct: 0,
+  threatWeight: 1,
 };
 
 // Before the level-5 spec choice, there's no SpecDef to read a combatType

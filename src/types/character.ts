@@ -121,13 +121,17 @@ export interface Character {
   quests: QuestState;
   // Recruited companions, keyed by CompanionDef.id (gameData/companions.ts)
   // — present means recruited, same "no entry at all" convention as
-  // professions above. At most one can fight alongside the player at a
-  // time (activeCompanionId below); the rest just sit recruited.
+  // professions above. Up to MAX_ACTIVE_COMPANIONS of them can join combat
+  // at once (activeCompanionIds below); the rest just sit recruited.
   companions: Partial<Record<string, CompanionState>>;
-  // Which recruited companion (if any) joins combat — null means solo.
-  // Must be a key already present in `companions` (see
-  // firebase/companions.ts's setActiveCompanion).
-  activeCompanionId: string | null;
+  // Which recruited companions (0 to MAX_ACTIVE_COMPANIONS, see
+  // gameData/companions.ts) currently fight alongside the player — empty
+  // means solo. Every id here must already be a key in `companions` (see
+  // firebase/companions.ts's addCompanionToParty/removeCompanionFromParty).
+  // A dungeon requires exactly MAX_ACTIVE_COMPANIONS active (a full 5-person
+  // group with the player) to enter at all; open-world combat has no
+  // minimum.
+  activeCompanionIds: string[];
 }
 
 export interface Inventory {

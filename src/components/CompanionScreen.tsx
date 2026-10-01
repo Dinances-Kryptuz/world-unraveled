@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useCharacter } from '../hooks/useCharacter';
-import { recruitCompanion, setActiveCompanion, equipCompanionItem, unequipCompanionItem } from '../firebase/companions';
+import { recruitCompanion, addCompanionToParty, removeCompanionFromParty, equipCompanionItem, unequipCompanionItem } from '../firebase/companions';
 import { subscribeToInventory } from '../firebase/inventory';
-import { COMPANIONS, companionsInZone, checkRecruitCompanion } from '../gameData/companions';
+import { COMPANIONS, companionsInZone, checkRecruitCompanion, MAX_ACTIVE_COMPANIONS, REQUIRED_DUNGEON_PARTY_SIZE } from '../gameData/companions';
 import { CLASS_LABELS, SPEC_LABELS, canClassEquip } from '../gameData/classStats';
 import { ITEMS } from '../gameData/items';
 import type { Inventory } from '../types/character';
@@ -37,9 +37,15 @@ export function CompanionScreen({ zoneId }: { zoneId: string }) {
     await refetch();
   }
 
-  async function handleSetActive(companionId: string | null) {
+  async function handleAddToParty(companionId: string) {
     if (!user) return;
-    await setActiveCompanion(user.uid, companionId);
+    await addCompanionToParty(user.uid, companionId);
+    await refetch();
+  }
+
+  async function handleRemoveFromParty(companionId: string) {
+    if (!user) return;
+    await removeCompanionFromParty(user.uid, companionId);
     await refetch();
   }
 
@@ -85,32 +91,37 @@ export function CompanionScreen({ zoneId }: { zoneId: string }) {
         </>
       )}
 
-      <h3>Your companions</h3>
+      <h3>Your party</h3>
       {recruitedIds.length === 0 ? (
         <p>You haven't recruited any companions yet.</p>
       ) : (
         <>
-          <ul>
-            <li>
-              Fighting alongside you: <strong>{character.activeCompanionId ? COMPANIONS[character.activeCompanionId]?.name : 'nobody (solo)'}</strong>
-              <button onClick={() => handleSetActive(null)} disabled={!character.activeCompanionId}>
-                Fight solo
-              </button>
-            </li>
-          </ul>
+          <p>
+            Party: <strong>You</strong>
+            {character.activeCompanionIds.map((id) => `, ${COMPANIONS[id]?.name ?? id}`).join('')} —{' '}
+            {character.activeCompanionIds.length + 1} / {REQUIRED_DUNGEON_PARTY_SIZE}
+            {character.activeCompanionIds.length === MAX_ACTIVE_COMPANIONS
+              ? ' (full — ready for a dungeon)'
+              : ` (recruit and bring ${MAX_ACTIVE_COMPANIONS - character.activeCompanionIds.length} more to enter a dungeon)`}
+          </p>
           {recruitedIds.map((companionId) => {
             const def = COMPANIONS[companionId];
             const state = character.companions[companionId];
             if (!def || !state) return null;
-            const isActive = character.activeCompanionId === companionId;
+            const isActive = character.activeCompanionIds.includes(companionId);
+            const partyFull = character.activeCompanionIds.length >= MAX_ACTIVE_COMPANIONS;
             return (
               <div key={companionId} className="companion-card">
                 <h4>
                   {def.name} — {CLASS_LABELS[def.class]} ({SPEC_LABELS[def.specId]}), level {character.level}
                 </h4>
-                <button onClick={() => handleSetActive(companionId)} disabled={isActive}>
-                  {isActive ? 'Active' : 'Bring along'}
-                </button>
+                {isActive ? (
+                  <button onClick={() => handleRemoveFromParty(companionId)}>Remove from party</button>
+                ) : (
+                  <button onClick={() => handleAddToParty(companionId)} disabled={partyFull}>
+                    {partyFull ? `Party full (${MAX_ACTIVE_COMPANIONS}/${MAX_ACTIVE_COMPANIONS})` : 'Add to party'}
+                  </button>
+                )}
                 <ul>
                   {SLOT_ORDER.map((slot) => {
                     const equippedId = state.equipment[slot];

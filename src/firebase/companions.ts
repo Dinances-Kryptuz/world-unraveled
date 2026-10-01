@@ -1,7 +1,7 @@
 import { doc, updateDoc, increment } from 'firebase/firestore';
 import { db } from './config';
 import { getCharacter } from './character';
-import { COMPANIONS, checkRecruitCompanion, emptyCompanionEquipment } from '../gameData/companions';
+import { COMPANIONS, checkRecruitCompanion, emptyCompanionEquipment, MAX_ACTIVE_COMPANIONS } from '../gameData/companions';
 import { canClassEquip } from '../gameData/classStats';
 import { ITEMS } from '../gameData/items';
 import type { EquipmentSlot } from '../gameData/types';
@@ -26,17 +26,34 @@ export async function recruitCompanion(uid: string, companionId: string): Promis
   return { success: true };
 }
 
-// null dismisses the active companion (solo again) — otherwise the id must
-// already be recruited. Swapping which companion is active never affects
-// recruitment or either companion's gear.
-export async function setActiveCompanion(uid: string, companionId: string | null): Promise<CompanionActionResult> {
+// Adds one recruited companion to the active party (up to
+// MAX_ACTIVE_COMPANIONS at once) — never affects recruitment or gear.
+export async function addCompanionToParty(uid: string, companionId: string): Promise<CompanionActionResult> {
   const character = await getCharacter(uid);
   if (!character) return { success: false, reason: 'Character not found.' };
-  if (companionId !== null && !character.companions[companionId]) {
-    return { success: false, reason: 'Not recruited.' };
+  if (!character.companions[companionId]) return { success: false, reason: 'Not recruited.' };
+  if (character.activeCompanionIds.includes(companionId)) {
+    return { success: false, reason: 'Already in your party.' };
+  }
+  if (character.activeCompanionIds.length >= MAX_ACTIVE_COMPANIONS) {
+    return { success: false, reason: `Only ${MAX_ACTIVE_COMPANIONS} companions can join you at once.` };
   }
 
-  await updateDoc(doc(db, 'characters', uid), { activeCompanionId: companionId });
+  await updateDoc(doc(db, 'characters', uid), {
+    activeCompanionIds: [...character.activeCompanionIds, companionId],
+  });
+  return { success: true };
+}
+
+// Removing a companion that isn't currently active is a harmless no-op,
+// same "tolerate, don't throw" posture as unequipItem on an empty slot.
+export async function removeCompanionFromParty(uid: string, companionId: string): Promise<CompanionActionResult> {
+  const character = await getCharacter(uid);
+  if (!character) return { success: false, reason: 'Character not found.' };
+
+  await updateDoc(doc(db, 'characters', uid), {
+    activeCompanionIds: character.activeCompanionIds.filter((id) => id !== companionId),
+  });
   return { success: true };
 }
 

@@ -53,10 +53,18 @@ export interface EncounterSetupInput {
   // Keyed by ability id; an ability with no entry (or an empty conditions
   // array) is always usable, same as before this field existed.
   savedAbilityConditions: Record<string, ConditionGroup>;
-  // The player's currently-active recruited companion, if any — see
-  // gameData/companions.ts's resolveActiveCompanionSetup. Absent/undefined
-  // means solo, same as every encounter before companions existed.
-  companion?: CompanionCombatSetup;
+  // The player's currently-active recruited companions (0-4) — see
+  // gameData/companions.ts's resolveActiveCompanionSetups. Empty/absent
+  // means solo, same as every encounter before companions existed. A
+  // dungeon requires exactly MAX_ACTIVE_COMPANIONS (see companions.ts) to
+  // enter at all; open-world combat allows any number including zero.
+  companions?: CompanionCombatSetup[];
+  // Multiplies monster HP (not damage) — used only for dungeon group
+  // content, where a fixed 5-person party would otherwise curb-stomp a
+  // monster whose HP was tuned for one attacker. Undefined/1 (every
+  // open-world fight) leaves monster HP exactly as before this field
+  // existed. See DungeonScreen.tsx for how this is computed.
+  monsterHpMultiplier?: number;
 }
 
 // Folds active-buff stat bonuses (Alchemy stat potions, Cooking's Well Fed)
@@ -159,13 +167,20 @@ function buildMonsterProfile(monster: Monster, playerLevel: number, playerCombat
   };
 }
 
-function createMonsterCombatant(monster: Monster, playerLevel: number, playerCombatType: CombatType, idSuffix: number): Combatant {
+function createMonsterCombatant(
+  monster: Monster,
+  playerLevel: number,
+  playerCombatType: CombatType,
+  idSuffix: number,
+  hpMultiplier: number = 1
+): Combatant {
+  const hp = Math.round(monsterHp(monster.level) * hpMultiplier);
   return {
     id: `enemy-${idSuffix}`,
     name: monster.name,
     isPlayer: false,
-    hp: monsterHp(monster.level),
-    maxHp: monsterHp(monster.level),
+    hp,
+    maxHp: hp,
     isAlive: true,
     resources: {},
     cooldowns: {},
@@ -181,6 +196,7 @@ function createMonsterCombatant(monster: Monster, playerLevel: number, playerCom
     equippedAbilityIds: monster.equippedAbilityIds ?? [],
     basicAttackId: 'monster_basic_attack',
     profile: buildMonsterProfile(monster, playerLevel, playerCombatType),
+    threatWeight: 1,
   };
 }
 
@@ -219,25 +235,24 @@ export function createPlayerCombatant(input: EncounterSetupInput): Combatant {
     abilityConditions: effectiveAbilityConditions(input.level, input.savedAbilityConditions),
     basicAttackId: BASIC_ATTACK_BY_CLASS[input.cls],
     profile: buildPlayerProfile(input),
+    threatWeight: input.specDef.threatWeight,
   };
 }
 
 // A companion always uses its class's default ability loadout
 // (effectiveLoadout with an empty saved choice — see progression.ts's own
 // "sensible default" fallback) rather than a player-editable one; there's
-// no companion Combat Setup screen in this V1. Placed in state.party AFTER
-// the player, which matters: targeting.ts's CURRENT_ENEMY resolves to
-// "first alive combatant on the opposing side," so as long as the player
-// is alive a monster's attacks always land on party[0] (the player) first —
-// the companion only draws enemy attacks once the player has died, a simple
-// stand-in for real threat/tanking that needs no changes to targeting.ts.
+// no companion Combat Setup screen in this V1. Who an enemy actually
+// attacks among a multi-member party is decided by targeting.ts's weighted
+// pick (classStats.ts's SpecDef.threatWeight) — a tank-spec companion (or
+// player) draws fire disproportionately, not just "whoever's listed first."
 export function createCompanionCombatant(companion: CompanionCombatSetup, monster: Monster): Combatant {
   const loadout = effectiveLoadout(companion.cls, companion.specId, companion.level, []);
   const intStat = statAtLevel(companion.cls, 'INT', companion.level) + (companion.equipmentBonuses.INT ?? 0);
   const companionMaxHp = computeMaxHp(companion.cls, companion.level, companion.equipmentBonuses, 0);
 
   return {
-    id: 'companion',
+    id: `companion-${companion.id}`,
     name: companion.name,
     isPlayer: false,
     hp: companionMaxHp,
@@ -252,15 +267,20 @@ export function createCompanionCombatant(companion: CompanionCombatSetup, monste
     equippedAbilityIds: loadout,
     basicAttackId: BASIC_ATTACK_BY_CLASS[companion.cls],
     profile: buildCompanionProfile(companion, monster),
+    threatWeight: companion.specDef.threatWeight,
   };
 }
 
 export function createEncounterState(input: EncounterSetupInput): CombatState {
   const party = [createPlayerCombatant(input)];
-  if (input.companion) party.push(createCompanionCombatant(input.companion, input.monster));
+  for (const companion of input.companions ?? []) {
+    party.push(createCompanionCombatant(companion, input.monster));
+  }
   return {
     party,
-    enemies: [createMonsterCombatant(input.monster, input.level, input.specDef.combatType, 1)],
+    enemies: [
+      createMonsterCombatant(input.monster, input.level, input.specDef.combatType, 1, input.monsterHpMultiplier),
+    ],
     timeElapsed: 0,
   };
 }

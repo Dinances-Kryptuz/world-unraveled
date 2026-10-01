@@ -4,9 +4,11 @@ import { useCharacter } from '../hooks/useCharacter';
 import { startActivity, stopActivity } from '../firebase/character';
 import { ZONES, GATHER_NODES, FISHING_HOLES } from '../gameData/zones';
 import { FishingScreen } from './FishingScreen';
+import { ZoneBanner } from './ZoneBanner';
 import { MONSTERS } from '../gameData/monsters';
 import { RECIPES } from '../gameData/recipes';
 import { DUNGEONS } from '../gameData/dungeons';
+import { MAX_ACTIVE_COMPANIONS, REQUIRED_DUNGEON_PARTY_SIZE } from '../gameData/companions';
 import { CombatScreen } from './CombatScreen';
 import { GatheringScreen } from './GatheringScreen';
 import { CraftingScreen } from './CraftingScreen';
@@ -152,16 +154,18 @@ export function ZoneScreen({
 
   return (
     <div className="zone-screen">
-      <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+      <div className="zone-tabs">
         {Object.values(ZONES).map((z) => {
           const unlocked = isZoneUnlocked(z, character.level);
+          const isCurrent = z.id === zone.id;
           return (
             <button
               key={z.id}
+              className="zone-tab"
               onClick={() => unlocked && onSelectZone(z.id)}
               disabled={!unlocked}
               title={unlocked ? undefined : `Unlocks at level ${z.unlockRequirement.type === 'characterLevel' ? z.unlockRequirement.level : '?'}`}
-              style={{ fontWeight: z.id === zone.id ? 700 : 400 }}
+              style={isCurrent ? { background: 'var(--zone-primary)', color: '#fff' } : undefined}
             >
               {z.name}
               {!unlocked && z.unlockRequirement.type === 'characterLevel' ? ` (Lv ${z.unlockRequirement.level})` : ''}
@@ -170,8 +174,7 @@ export function ZoneScreen({
         })}
       </div>
 
-      <h1>{zone.name}</h1>
-      <p>{zone.description}</p>
+      <ZoneBanner zoneId={zone.id} />
       <p>
         <small>
           Enemy composition:{' '}
@@ -202,22 +205,33 @@ export function ZoneScreen({
 
       {Object.values(DUNGEONS)
         .filter((d) => d.zoneId === zone.id)
-        .map((dungeon) => (
-          <div key={dungeon.id}>
-            <h2>Dungeons</h2>
-            <ul>
-              <li>
-                <div>
-                  <strong>{dungeon.name}</strong> (Lv {dungeon.levelRange[0]}–{dungeon.levelRange[1]}) —{' '}
-                  {dungeon.description}
-                  <br />
-                  <small>{dungeon.stages.length} stages, ending in a boss</small>
-                </div>
-                <button onClick={() => handleEnterDungeon(dungeon.id)}>Enter</button>
-              </li>
-            </ul>
-          </div>
-        ))}
+        .map((dungeon) => {
+          const partySize = character.activeCompanionIds.length + 1;
+          const readyForDungeon = character.activeCompanionIds.length === MAX_ACTIVE_COMPANIONS;
+          return (
+            <div key={dungeon.id}>
+              <h2>Dungeons</h2>
+              <ul>
+                <li>
+                  <div>
+                    <strong>{dungeon.name}</strong> (Lv {dungeon.levelRange[0]}–{dungeon.levelRange[1]}) —{' '}
+                    {dungeon.description}
+                    <br />
+                    <small>{dungeon.stages.length} stages, ending in a boss</small>
+                    <br />
+                    <small>
+                      Requires a full party of {REQUIRED_DUNGEON_PARTY_SIZE} — you have {partySize}/
+                      {REQUIRED_DUNGEON_PARTY_SIZE} (see Companions below to recruit and add more)
+                    </small>
+                  </div>
+                  <button onClick={() => handleEnterDungeon(dungeon.id)} disabled={!readyForDungeon}>
+                    Enter
+                  </button>
+                </li>
+              </ul>
+            </div>
+          );
+        })}
 
       <h2>Gathering</h2>
       <ul>
