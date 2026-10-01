@@ -210,6 +210,7 @@ export interface Zone {
   unlockRequirement: UnlockRequirement;
   monsterIds: string[];
   gatherNodeIds: string[];
+  fishingHoleIds: string[];
 }
 
 export interface ItemDef {

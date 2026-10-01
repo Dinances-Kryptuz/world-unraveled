@@ -678,7 +678,7 @@ export const MONSTERS: Record<string, Monster> = {
     lootTable: [
       { itemId: 'ashwoven_cloth', chance: 0.5, minQty: 2, maxQty: 3 },
       { itemId: 'cindercore_shard', chance: 0.35, minQty: 1, maxQty: 2 },
-      { itemId: 'overseers_greatmace', chance: 0.15, minQty: 1, maxQty: 1 },
+      { itemId: 'overseers_greatmace_damaged', chance: 0.15, minQty: 1, maxQty: 1 },
     ],
     specialAbility: {
       name: 'The Last Overseer',
@@ -722,7 +722,7 @@ export const MONSTERS: Record<string, Monster> = {
     lootTable: [
       { itemId: 'ashenweave_cloth', chance: 0.5, minQty: 2, maxQty: 3 },
       { itemId: 'emberlords_ash', chance: 0.4, minQty: 1, maxQty: 2 },
-      { itemId: 'pyraxis_warblade', chance: 0.15, minQty: 1, maxQty: 1 },
+      { itemId: 'pyraxis_warblade_damaged', chance: 0.15, minQty: 1, maxQty: 1 },
     ],
     specialAbility: {
       name: 'Warden of the Cinderheart',

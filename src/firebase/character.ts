@@ -138,7 +138,7 @@ export async function createCharacter(uid: string, name: string, characterClass:
 
 export async function startActivity(
   uid: string,
-  activity: { type: 'combat' | 'gathering' | 'crafting'; targetId: string; zoneId: string }
+  activity: { type: 'combat' | 'gathering' | 'crafting' | 'fishing'; targetId: string; zoneId: string }
 ): Promise<void> {
   await updateDoc(doc(db, 'characters', uid), {
     currentActivity: {

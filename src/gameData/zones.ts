@@ -1,6 +1,45 @@
-import type { Zone, GatherNode } from './types';
+import type { Zone, GatherNode, FishingHole } from './types';
 
 export const DEFAULT_ZONE_ID = 'greenhollow_fields';
+
+// One fishing hole per zone, each yielding that zone's fish (see items.ts).
+// Deliberately a flat ~65% catch chance per cast with no "requiredLevel"
+// skill gate at all — Fishing has no character-level requirement to START
+// at any rank (see professionTiers.ts), and resolveFishing's own
+// fishingSkillupChance curve (not catch chance) is what makes higher skill
+// meaningfully slower to grind, per the design brief.
+export const FISHING_HOLES: Record<string, FishingHole> = {
+  greenhollow_fishing_hole: {
+    id: 'greenhollow_fishing_hole', name: 'Greenhollow Stream', zoneId: 'greenhollow_fields',
+    requiredLevel: 1, lootTable: [{ itemId: 'brook_trout', chance: 0.65, minQty: 1, maxQty: 2 }],
+    xpPerCatch: 5, secondsPerAction: 10,
+  },
+  stonecrag_fishing_hole: {
+    id: 'stonecrag_fishing_hole', name: 'Stonecrag Tarn', zoneId: 'stonecrag_foothills',
+    requiredLevel: 1, lootTable: [{ itemId: 'mountain_char', chance: 0.65, minQty: 1, maxQty: 2 }],
+    xpPerCatch: 9, secondsPerAction: 11,
+  },
+  emberfall_fishing_hole: {
+    id: 'emberfall_fishing_hole', name: 'Emberfall Hot Spring', zoneId: 'emberfall_ridge',
+    requiredLevel: 1, lootTable: [{ itemId: 'ember_eel', chance: 0.65, minQty: 1, maxQty: 2 }],
+    xpPerCatch: 13, secondsPerAction: 12,
+  },
+  cinderfall_fishing_hole: {
+    id: 'cinderfall_fishing_hole', name: 'Cinderfall Flooded Hall', zoneId: 'cinderfall_depths',
+    requiredLevel: 1, lootTable: [{ itemId: 'ashfin_carp', chance: 0.65, minQty: 1, maxQty: 2 }],
+    xpPerCatch: 17, secondsPerAction: 13,
+  },
+  molten_scar_fishing_hole: {
+    id: 'molten_scar_fishing_hole', name: 'Molten Scar Cooling Pool', zoneId: 'molten_scar',
+    requiredLevel: 1, lootTable: [{ itemId: 'magma_darter', chance: 0.65, minQty: 1, maxQty: 2 }],
+    xpPerCatch: 21, secondsPerAction: 14,
+  },
+  cinderheart_fishing_hole: {
+    id: 'cinderheart_fishing_hole', name: 'Cinderheart Ember Pool', zoneId: 'cinderheart_crater',
+    requiredLevel: 1, lootTable: [{ itemId: 'emberheart_koi', chance: 0.65, minQty: 1, maxQty: 2 }],
+    xpPerCatch: 25, secondsPerAction: 15,
+  },
+};
 
 export const GATHER_NODES: Record<string, GatherNode> = {
   greenhollow_copper_vein: {
@@ -13,6 +52,7 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     xpPerAction: 5,
     secondsPerAction: 8,
     colorBreakpoints: { orangeUntil: 41, yellowUntil: 56, greenUntil: 71 },
+    requiredToolType: 'mining_pick',
   },
   greenhollow_peacebloom_patch: {
     id: 'greenhollow_peacebloom_patch',
@@ -35,6 +75,7 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     xpPerAction: 5,
     secondsPerAction: 8,
     colorBreakpoints: { orangeUntil: 41, yellowUntil: 56, greenUntil: 71 },
+    requiredToolType: 'skinning_knife',
   },
 
   stonecrag_tin_vein: {
@@ -47,6 +88,7 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     xpPerAction: 9,
     secondsPerAction: 9,
     colorBreakpoints: { orangeUntil: 50, yellowUntil: 65, greenUntil: 80 },
+    requiredToolType: 'mining_pick',
   },
   stonecrag_sage_patch: {
     id: 'stonecrag_sage_patch',
@@ -69,6 +111,7 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     xpPerAction: 9,
     secondsPerAction: 9,
     colorBreakpoints: { orangeUntil: 50, yellowUntil: 65, greenUntil: 80 },
+    requiredToolType: 'skinning_knife',
   },
 
   emberfall_iron_vein: {
@@ -81,6 +124,7 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     xpPerAction: 13,
     secondsPerAction: 10,
     colorBreakpoints: { orangeUntil: 65, yellowUntil: 80, greenUntil: 95 },
+    requiredToolType: 'mining_pick',
   },
   emberfall_sunpetal_patch: {
     id: 'emberfall_sunpetal_patch',
@@ -103,6 +147,7 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     xpPerAction: 13,
     secondsPerAction: 10,
     colorBreakpoints: { orangeUntil: 65, yellowUntil: 80, greenUntil: 95 },
+    requiredToolType: 'skinning_knife',
   },
 
   cinderfall_ore_seam: {
@@ -115,6 +160,7 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     xpPerAction: 17,
     secondsPerAction: 11,
     colorBreakpoints: { orangeUntil: 70, yellowUntil: 85, greenUntil: 100 },
+    requiredToolType: 'mining_pick',
   },
   cinderfall_emberpetal_patch: {
     id: 'cinderfall_emberpetal_patch',
@@ -137,6 +183,7 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     xpPerAction: 17,
     secondsPerAction: 11,
     colorBreakpoints: { orangeUntil: 70, yellowUntil: 85, greenUntil: 100 },
+    requiredToolType: 'skinning_knife',
   },
 
   molten_scar_brimstone_vein: {
@@ -149,6 +196,7 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     xpPerAction: 21,
     secondsPerAction: 12,
     colorBreakpoints: { orangeUntil: 80, yellowUntil: 95, greenUntil: 110 },
+    requiredToolType: 'mining_pick',
   },
   molten_scar_cinderbloom_patch: {
     id: 'molten_scar_cinderbloom_patch',
@@ -171,6 +219,7 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     xpPerAction: 21,
     secondsPerAction: 12,
     colorBreakpoints: { orangeUntil: 80, yellowUntil: 95, greenUntil: 110 },
+    requiredToolType: 'skinning_knife',
   },
 
   cinderheart_ore_vein: {
@@ -183,6 +232,7 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     xpPerAction: 25,
     secondsPerAction: 13,
     colorBreakpoints: { orangeUntil: 88, yellowUntil: 103, greenUntil: 118 },
+    requiredToolType: 'mining_pick',
   },
   cinderheart_bloom_patch: {
     id: 'cinderheart_bloom_patch',
@@ -205,6 +255,7 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     xpPerAction: 25,
     secondsPerAction: 13,
     colorBreakpoints: { orangeUntil: 88, yellowUntil: 103, greenUntil: 118 },
+    requiredToolType: 'skinning_knife',
   },
 };
 
@@ -218,6 +269,7 @@ export const ZONES: Record<string, Zone> = {
     unlockRequirement: { type: 'none' },
     monsterIds: ['greenhorn_boar', 'forest_wolf', 'wild_kobold', 'thornback_hare'],
     gatherNodeIds: ['greenhollow_copper_vein', 'greenhollow_peacebloom_patch', 'greenhollow_hunting_grounds'],
+    fishingHoleIds: ['greenhollow_fishing_hole'],
   },
 
   stonecrag_foothills: {
@@ -229,6 +281,7 @@ export const ZONES: Record<string, Zone> = {
     unlockRequirement: { type: 'characterLevel', level: 8 },
     monsterIds: ['ridge_jackal', 'craggy_goat', 'rubble_crawler', 'highland_bandit', 'crag_wolf_alpha'],
     gatherNodeIds: ['stonecrag_tin_vein', 'stonecrag_sage_patch', 'stonecrag_foothill_game'],
+    fishingHoleIds: ['stonecrag_fishing_hole'],
   },
 
   emberfall_ridge: {
@@ -240,6 +293,7 @@ export const ZONES: Record<string, Zone> = {
     unlockRequirement: { type: 'characterLevel', level: 25 },
     monsterIds: ['cinder_wolf', 'ashwing_bat', 'molten_crawler', 'ridgeback_marauder', 'scorched_drake'],
     gatherNodeIds: ['emberfall_iron_vein', 'emberfall_sunpetal_patch', 'emberfall_ashfang_den'],
+    fishingHoleIds: ['emberfall_fishing_hole'],
   },
 
   cinderfall_depths: {
@@ -251,6 +305,7 @@ export const ZONES: Record<string, Zone> = {
     unlockRequirement: { type: 'characterLevel', level: 30 },
     monsterIds: ['ash_wraith', 'cinder_scavenger', 'ashforge_golem', 'ember_stalker', 'ruin_marauder'],
     gatherNodeIds: ['cinderfall_ore_seam', 'cinderfall_emberpetal_patch', 'cinderfall_ash_burrow'],
+    fishingHoleIds: ['cinderfall_fishing_hole'],
   },
 
   molten_scar: {
@@ -262,6 +317,7 @@ export const ZONES: Record<string, Zone> = {
     unlockRequirement: { type: 'characterLevel', level: 40 },
     monsterIds: ['cultist_adept', 'living_ember', 'scaleback_drake', 'cultist_zealot', 'magma_hound'],
     gatherNodeIds: ['molten_scar_brimstone_vein', 'molten_scar_cinderbloom_patch', 'molten_scar_scaleback_den'],
+    fishingHoleIds: ['molten_scar_fishing_hole'],
   },
 
   cinderheart_crater: {
@@ -273,5 +329,6 @@ export const ZONES: Record<string, Zone> = {
     unlockRequirement: { type: 'characterLevel', level: 48 },
     monsterIds: ['emberlord_cultist', 'flamewalker', 'charhide_behemoth', 'ashfall_harbinger', 'emberguard_sentinel'],
     gatherNodeIds: ['cinderheart_ore_vein', 'cinderheart_bloom_patch', 'cinderheart_hide_grounds'],
+    fishingHoleIds: ['cinderheart_fishing_hole'],
   },
 };

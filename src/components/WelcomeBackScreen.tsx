@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useCharacter } from '../hooks/useCharacter';
-import { resolveGathering, resolveCrafting, LIVE_SESSION_THRESHOLD_SECONDS } from '../gameData/activityEngine';
+import { resolveGathering, resolveCrafting, resolveFishing, LIVE_SESSION_THRESHOLD_SECONDS } from '../gameData/activityEngine';
 import { MONSTERS } from '../gameData/monsters';
-import { GATHER_NODES } from '../gameData/zones';
+import { GATHER_NODES, FISHING_HOLES } from '../gameData/zones';
 import { RECIPES } from '../gameData/recipes';
 import { ITEMS } from '../gameData/items';
 import { resolveSpecDef, getExtraDamageTakenPct } from '../gameData/combatProfileWithTalents';
@@ -118,6 +118,19 @@ export function WelcomeBackScreen({
         );
         setSummary(
           `While you were away, you crafted ${result.itemsCrafted} ${recipe.name}, earning ${result.xpGained} XP.`
+        );
+      } else if (activity.type === 'fishing') {
+        const hole = FISHING_HOLES[activity.targetId];
+        const currentSkill = getProfessionState(character.professions, 'fishing').level;
+        const result = resolveFishing(activity.startedAt, now, hole, currentSkill);
+        const caughtDescription = result.catches
+          .filter((c) => c.quantity >= 1)
+          .map((c) => `${Math.floor(c.quantity)} ${ITEMS[c.itemId]?.name ?? c.itemId}`)
+          .join(', ');
+        setSummary(
+          caughtDescription
+            ? `While you were away, you caught ${caughtDescription}.`
+            : 'While you were away, the fish weren’t biting.'
         );
       } else {
         setSummary('Welcome back!');

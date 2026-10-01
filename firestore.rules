@@ -42,7 +42,11 @@ service cloud.firestore {
       && data.gold == 0
       && data.voidShards == 0
       && isValidNewEquipment(data.equipment)
-      && isValidNewProfessions(data.professions)
+      && data.professions == {}
+      && data.enchantments == {}
+      && data.learnedRecipeIds == []
+      && data.bagSlots == 24
+      && data.activeBuffs == {}
       && data.currentActivity.type == null
       && data.equippedAbilityIds == []
       && data.abilityConditions == {}
@@ -60,13 +64,42 @@ service cloud.firestore {
       && after.voidShards == 0
       && isValidEquipment(after.equipment)
       && isValidProfessions(after.professions)
-      && professionsNeverDecrease(before.professions, after.professions)
+      && isValidEnchantments(after)
+      && isValidLearnedRecipeIds(after)
+      && isValidBagSlots(after)
+      && isValidActiveBuffs(after)
       && isValidActivity(after.currentActivity)
       && isValidEquippedAbilityIds(after)
       && isValidAbilityConditions(after)
       && isValidCombatPresets(after)
       && isValidItemCooldowns(after)
       && isValidQuests(after);
+  }
+
+  // Ownership-scoped, not fully value-scoped — same posture as the sibling
+  // maps below. Full validation (that an enchantment id is real, that a
+  // disenchant/repair actually consumed the right materials) happens in
+  // firebase/enchanting.ts / firebase/professions.ts, the only paths that
+  // write these fields.
+  function isValidEnchantments(after) {
+    return !('enchantments' in after) || (after.enchantments is map && after.enchantments.size() <= 7);
+  }
+
+  function isValidLearnedRecipeIds(after) {
+    return !('learnedRecipeIds' in after) || (after.learnedRecipeIds is list && after.learnedRecipeIds.size() <= 300);
+  }
+
+  // Only ever grows via a Tailoring-crafted bag (see
+  // firebase/consumables.ts) — bounded well above anything reachable so a
+  // genuine bag-capacity ceiling is never mistaken for a rules bug.
+  function isValidBagSlots(after) {
+    return !('bagSlots' in after) || (after.bagSlots is number && after.bagSlots >= 24 && after.bagSlots <= 500);
+  }
+
+  // Capped at 5 — the number of BuffCategory values (gameData/types.ts) —
+  // since at most one buff per category can ever be active at once.
+  function isValidActiveBuffs(after) {
+    return !('activeBuffs' in after) || (after.activeBuffs is map && after.activeBuffs.size() <= 5);
   }
 
   // Same "may not exist yet on an old character" treatment as Smithing/
@@ -155,78 +188,53 @@ service cloud.firestore {
   // combat/gather/craft autosave — a real, production-blocking bug, not an
   // emulator artifact.
   function isValidEquipment(e) {
-    return e is map && e.keys().hasOnly(['weapon','chest','helmet','gloves','legs','boots','ring']);
+    return e is map && e.keys().hasOnly(['weapon','chest','helmet','gloves','legs','boots','ring','tool']);
   }
 
   // weapon/chest/boots may already be filled at creation — createCharacter()
   // grants a small class-appropriate starter kit there (see gameData/items.ts's
   // "Starter gear" section) so a level-1 character isn't fighting bare-handed.
-  // The remaining slots (helmet/gloves/legs/ring) the starter kit never
+  // The remaining slots (helmet/gloves/legs/ring/tool) the starter kit never
   // touches, so those must still be empty on a genuinely new character.
   function isValidNewEquipment(e) {
     return isValidEquipment(e)
-      && e.helmet == null && e.gloves == null && e.legs == null && e.ring == null;
+      && e.helmet == null && e.gloves == null && e.legs == null && e.ring == null && e.tool == null;
   }
 
   function isValidProfessionState(p) {
     return p.keys().hasOnly(['level','xp','unlockedTier'])
       && p.level is number && p.level >= 1
       && p.xp is number && p.xp >= 0
-      && p.unlockedTier in ['apprentice','journeyman','expert','artisan','master'];
+      && p.unlockedTier in ['apprentice','journeyman','expert','artisan'];
   }
 
-  // Smithing/Tailoring were added after this app's first characters existed,
-  // so an old character's professions map may genuinely be missing those
-  // keys in Firestore until the first action that touches them creates it
-  // (see defaultProfessions()/getCharacter() in firebase/character.ts,
-  // which backfill it client-side but don't write it back proactively).
-  // hasOnly bounds what keys CAN exist; each profession is only required to
-  // be a valid state IF it's present, so an old document without them still
-  // passes every other check.
+  // A character now starts knowing NO professions at all (see
+  // firebase/professions.ts's learnProfession) — professions is only ever
+  // populated by explicit, server-validated learn/abandon/rank-up calls, so
+  // this is ownership-scoped (bounds + per-entry shape) rather than
+  // requiring any specific key to exist, same posture as
+  // isValidCombatPresets/isValidItemCooldowns/isValidQuests above. A
+  // profession can also be REMOVED (abandonProfession resets it entirely),
+  // so there's deliberately no "never decreases" invariant here — re-
+  // learning after abandoning always restarts at level 1 anyway.
   function isValidProfessions(profs) {
-    return profs.keys().hasOnly(['skinning','mining','herbalism','leatherworking','smithing','tailoring','alchemy'])
-      && isValidProfessionState(profs.skinning)
-      && isValidProfessionState(profs.mining)
-      && isValidProfessionState(profs.herbalism)
-      && isValidProfessionState(profs.leatherworking)
+    return profs is map
+      && profs.size() <= 10
+      && profs.keys().hasOnly(['herbalism','skinning','mining','fishing','alchemy','leatherworking','smithing','tailoring','enchanting','cooking'])
+      && (!('herbalism' in profs) || isValidProfessionState(profs.herbalism))
+      && (!('skinning' in profs) || isValidProfessionState(profs.skinning))
+      && (!('mining' in profs) || isValidProfessionState(profs.mining))
+      && (!('fishing' in profs) || isValidProfessionState(profs.fishing))
+      && (!('alchemy' in profs) || isValidProfessionState(profs.alchemy))
+      && (!('leatherworking' in profs) || isValidProfessionState(profs.leatherworking))
       && (!('smithing' in profs) || isValidProfessionState(profs.smithing))
       && (!('tailoring' in profs) || isValidProfessionState(profs.tailoring))
-      && (!('alchemy' in profs) || isValidProfessionState(profs.alchemy));
-  }
-
-  // Unlike isValidProfessions, new-character creation always writes the
-  // full defaultProfessions() map, so all seven are required unconditionally.
-  function isValidNewProfessions(profs) {
-    return isValidProfessions(profs)
-      && profs.skinning.level == 1 && profs.skinning.xp == 0 && profs.skinning.unlockedTier == 'apprentice'
-      && profs.mining.level == 1 && profs.mining.xp == 0 && profs.mining.unlockedTier == 'apprentice'
-      && profs.herbalism.level == 1 && profs.herbalism.xp == 0 && profs.herbalism.unlockedTier == 'apprentice'
-      && profs.leatherworking.level == 1 && profs.leatherworking.xp == 0 && profs.leatherworking.unlockedTier == 'apprentice'
-      && profs.smithing.level == 1 && profs.smithing.xp == 0 && profs.smithing.unlockedTier == 'apprentice'
-      && profs.tailoring.level == 1 && profs.tailoring.xp == 0 && profs.tailoring.unlockedTier == 'apprentice'
-      && profs.alchemy.level == 1 && profs.alchemy.xp == 0 && profs.alchemy.unlockedTier == 'apprentice';
-  }
-
-  function professionsNeverDecrease(before, after) {
-    return professionNeverDecreased(before, after, 'skinning')
-      && professionNeverDecreased(before, after, 'mining')
-      && professionNeverDecreased(before, after, 'herbalism')
-      && professionNeverDecreased(before, after, 'leatherworking')
-      && professionNeverDecreased(before, after, 'smithing')
-      && professionNeverDecreased(before, after, 'tailoring')
-      && professionNeverDecreased(before, after, 'alchemy');
-  }
-
-  // A profession that doesn't exist yet in "before" (an old character that
-  // hasn't touched it) trivially can't have decreased. One that exists in
-  // "before" must still exist in "after" and never drop in level/xp.
-  function professionNeverDecreased(before, after, key) {
-    return !(key in before)
-      || (key in after && after[key].level >= before[key].level && after[key].xp >= before[key].xp);
+      && (!('enchanting' in profs) || isValidProfessionState(profs.enchanting))
+      && (!('cooking' in profs) || isValidProfessionState(profs.cooking));
   }
 
   function isValidActivity(a) {
-    return a.type in [null, 'combat', 'gathering', 'crafting']
+    return a.type in [null, 'combat', 'gathering', 'crafting', 'fishing']
       && (a.targetId == null || a.targetId is string)
       && (a.zoneId == null || a.zoneId is string)
       && (a.startedAt == null || a.startedAt is timestamp);

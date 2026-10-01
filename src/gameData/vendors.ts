@@ -15,5 +15,33 @@ export const VENDOR_STOCK: Record<string, VendorStockEntry[]> = {
     { itemId: 'health_potion', price: 10 },
     { itemId: 'bread', price: 5 },
     { itemId: 'orange_juice', price: 6 },
+    { itemId: 'rusty_mining_pick', price: 5 },
+    { itemId: 'worn_skinning_knife', price: 5 },
+    { itemId: 'simple_fishing_rod', price: 5 },
+  ],
+  stonecrag_foothills: [
+    { itemId: 'sturdy_mining_pick', price: 15 },
+    { itemId: 'honed_skinning_knife', price: 15 },
+    { itemId: 'reinforced_fishing_rod', price: 15 },
+  ],
+  emberfall_ridge: [
+    { itemId: 'embertempered_pick', price: 35 },
+    { itemId: 'embertempered_skinning_knife', price: 35 },
+    { itemId: 'embercured_fishing_rod', price: 35 },
+  ],
+  cinderfall_depths: [
+    { itemId: 'dwarven_mining_pick', price: 70 },
+    { itemId: 'dwarven_skinning_knife', price: 70 },
+    { itemId: 'dwarven_fishing_rod', price: 70 },
+  ],
+  molten_scar: [
+    { itemId: 'brimstone_pick', price: 120 },
+    { itemId: 'brimstone_skinning_knife', price: 120 },
+    { itemId: 'brimstone_fishing_rod', price: 120 },
+  ],
+  cinderheart_crater: [
+    { itemId: 'emberforged_pick', price: 180 },
+    { itemId: 'emberforged_skinning_knife', price: 180 },
+    { itemId: 'emberforged_fishing_rod', price: 180 },
   ],
 };

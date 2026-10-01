@@ -948,4 +948,168 @@ export const ITEMS: Record<string, ItemDef> = {
     description: 'The warblade of Pyraxis, Warden of the Cinderheart — forged in fire older than the world above.',
     stackable: true, equipSlot: 'weapon', statBonuses: { STR: 18, STA: 5 }, sellValue: 140,
   },
+
+  // ── Damaged dungeon boss drops — unequippable (no equipSlot) until a
+  // Blacksmith repairs them into the real item above. See recipes.ts's
+  // "Repairs" section and monsters.ts's ashen_overseer/pyraxis lootTables,
+  // which drop these instead of the finished item directly.
+  overseers_greatmace_damaged: {
+    id: 'overseers_greatmace_damaged', name: "Overseer's Greatmace (Damaged)", type: 'material',
+    description: 'The Overseer’s greatmace, cracked and ash-choked from the fight that won it. A skilled Blacksmith could restore it.',
+    stackable: true, repairsIntoItemId: 'overseers_greatmace', sellValue: 20,
+  },
+  pyraxis_warblade_damaged: {
+    id: 'pyraxis_warblade_damaged', name: "Pyraxis's Warblade (Damaged)", type: 'material',
+    description: 'Pyraxis’s warblade, its edge shattered and its fire gone cold. Only an Artisan Blacksmith could reforge it.',
+    stackable: true, repairsIntoItemId: 'pyraxis_warblade', sellValue: 35,
+  },
+
+  // ── Profession tools — equipSlot 'tool', one tier per zone, sold by each
+  // zone's vendor. gatherBonusPct is deliberately modest (see the design
+  // brief: "do not allow tools to become an enormous source of power").
+  rusty_mining_pick: {
+    id: 'rusty_mining_pick', name: 'Rusty Mining Pick', type: 'equipment',
+    description: 'A basic mining pick, nicked and pitted but serviceable.',
+    stackable: true, equipSlot: 'tool', toolType: 'mining_pick', gatherBonusPct: 0, sellValue: 2,
+  },
+  sturdy_mining_pick: {
+    id: 'sturdy_mining_pick', name: 'Sturdy Mining Pick', type: 'equipment',
+    description: 'A well-balanced pick that bites deeper with less effort.',
+    stackable: true, equipSlot: 'tool', toolType: 'mining_pick', gatherBonusPct: 2, sellValue: 8,
+  },
+  embertempered_pick: {
+    id: 'embertempered_pick', name: 'Ember-Tempered Pick', type: 'equipment',
+    description: 'Quenched in Emberfall’s heat, its head barely dulls.',
+    stackable: true, equipSlot: 'tool', toolType: 'mining_pick', gatherBonusPct: 4, sellValue: 18,
+  },
+  dwarven_mining_pick: {
+    id: 'dwarven_mining_pick', name: 'Dwarven Mining Pick', type: 'equipment',
+    description: 'Dwarven-forged and perfectly weighted, recovered from Cinderfall’s ruined forges.',
+    stackable: true, equipSlot: 'tool', toolType: 'mining_pick', gatherBonusPct: 6, sellValue: 35,
+  },
+  brimstone_pick: {
+    id: 'brimstone_pick', name: 'Brimstone Pick', type: 'equipment',
+    description: 'Its head is cast from cooled brimstone, hard enough to crack any seam in the Scar.',
+    stackable: true, equipSlot: 'tool', toolType: 'mining_pick', gatherBonusPct: 8, sellValue: 60,
+  },
+  emberforged_pick: {
+    id: 'emberforged_pick', name: 'Emberforged Pick', type: 'equipment',
+    description: 'Forged at the world’s molten heart — the finest mining pick there is.',
+    stackable: true, equipSlot: 'tool', toolType: 'mining_pick', gatherBonusPct: 10, sellValue: 95,
+  },
+
+  worn_skinning_knife: {
+    id: 'worn_skinning_knife', name: 'Worn Skinning Knife', type: 'equipment',
+    description: 'A basic skinning knife with a dull but functional edge.',
+    stackable: true, equipSlot: 'tool', toolType: 'skinning_knife', gatherBonusPct: 0, sellValue: 2,
+  },
+  honed_skinning_knife: {
+    id: 'honed_skinning_knife', name: 'Honed Skinning Knife', type: 'equipment',
+    description: 'Freshly honed, it parts hide cleanly from flesh.',
+    stackable: true, equipSlot: 'tool', toolType: 'skinning_knife', gatherBonusPct: 2, sellValue: 8,
+  },
+  embertempered_skinning_knife: {
+    id: 'embertempered_skinning_knife', name: 'Ember-Tempered Skinning Knife', type: 'equipment',
+    description: 'Tempered in Emberfall’s forges, it holds an edge far longer.',
+    stackable: true, equipSlot: 'tool', toolType: 'skinning_knife', gatherBonusPct: 4, sellValue: 18,
+  },
+  dwarven_skinning_knife: {
+    id: 'dwarven_skinning_knife', name: 'Dwarven Skinning Knife', type: 'equipment',
+    description: 'A dwarven blade recovered from Cinderfall, still razor-true.',
+    stackable: true, equipSlot: 'tool', toolType: 'skinning_knife', gatherBonusPct: 6, sellValue: 35,
+  },
+  brimstone_skinning_knife: {
+    id: 'brimstone_skinning_knife', name: 'Brimstone Skinning Knife', type: 'equipment',
+    description: 'Its blade is quenched brimstone-black and never seems to dull.',
+    stackable: true, equipSlot: 'tool', toolType: 'skinning_knife', gatherBonusPct: 8, sellValue: 60,
+  },
+  emberforged_skinning_knife: {
+    id: 'emberforged_skinning_knife', name: 'Emberforged Skinning Knife', type: 'equipment',
+    description: 'Forged at the world’s molten heart — the finest skinning knife there is.',
+    stackable: true, equipSlot: 'tool', toolType: 'skinning_knife', gatherBonusPct: 10, sellValue: 95,
+  },
+
+  simple_fishing_rod: {
+    id: 'simple_fishing_rod', name: 'Simple Fishing Rod', type: 'equipment',
+    description: 'A plain rod cut from a sapling branch — good enough to start.',
+    stackable: true, equipSlot: 'tool', toolType: 'fishing_rod', gatherBonusPct: 0, sellValue: 2,
+  },
+  reinforced_fishing_rod: {
+    id: 'reinforced_fishing_rod', name: 'Reinforced Fishing Rod', type: 'equipment',
+    description: 'Reinforced with wire-wrapped joints for a sturdier cast.',
+    stackable: true, equipSlot: 'tool', toolType: 'fishing_rod', gatherBonusPct: 2, sellValue: 8,
+  },
+  embercured_fishing_rod: {
+    id: 'embercured_fishing_rod', name: 'Ember-Cured Fishing Rod', type: 'equipment',
+    description: 'Cured over Emberfall’s fissures until the wood turned iron-hard.',
+    stackable: true, equipSlot: 'tool', toolType: 'fishing_rod', gatherBonusPct: 4, sellValue: 18,
+  },
+  dwarven_fishing_rod: {
+    id: 'dwarven_fishing_rod', name: 'Dwarven Fishing Rod', type: 'equipment',
+    description: 'A dwarven angler’s rod, recovered intact from Cinderfall’s flooded lower halls.',
+    stackable: true, equipSlot: 'tool', toolType: 'fishing_rod', gatherBonusPct: 6, sellValue: 35,
+  },
+  brimstone_fishing_rod: {
+    id: 'brimstone_fishing_rod', name: 'Brimstone Fishing Rod', type: 'equipment',
+    description: 'Its line is woven from heat-cured brimstone fiber, strong enough for anything the Scar’s pools hold.',
+    stackable: true, equipSlot: 'tool', toolType: 'fishing_rod', gatherBonusPct: 8, sellValue: 60,
+  },
+  emberforged_fishing_rod: {
+    id: 'emberforged_fishing_rod', name: 'Emberforged Fishing Rod', type: 'equipment',
+    description: 'Forged at the world’s molten heart — the finest fishing rod there is.',
+    stackable: true, equipSlot: 'tool', toolType: 'fishing_rod', gatherBonusPct: 10, sellValue: 95,
+  },
+
+  // ── Fish — Fishing's primary yield, feeding Cooking. One common fish per
+  // zone, scaling in value and in the Cooking recipes that use them.
+  brook_trout: {
+    id: 'brook_trout', name: 'Brook Trout', type: 'material',
+    description: 'A common trout pulled from Greenhollow’s streams.',
+    stackable: true, sellValue: 2,
+  },
+  mountain_char: {
+    id: 'mountain_char', name: 'Mountain Char', type: 'material',
+    description: 'A cold-water fish from Stonecrag’s highland pools.',
+    stackable: true, sellValue: 4,
+  },
+  ember_eel: {
+    id: 'ember_eel', name: 'Ember Eel', type: 'material',
+    description: 'An eel that thrives in Emberfall’s heat-warmed waters.',
+    stackable: true, sellValue: 7,
+  },
+  ashfin_carp: {
+    id: 'ashfin_carp', name: 'Ashfin Carp', type: 'material',
+    description: 'A pale carp found in Cinderfall’s flooded depths.',
+    stackable: true, sellValue: 10,
+  },
+  magma_darter: {
+    id: 'magma_darter', name: 'Magma Darter', type: 'material',
+    description: 'A quick, heat-blooded fish that darts through the Scar’s cooler pools.',
+    stackable: true, sellValue: 14,
+  },
+  emberheart_koi: {
+    id: 'emberheart_koi', name: 'Emberheart Koi', type: 'material',
+    description: 'A striking, ember-scaled koi found only at the world’s molten heart.',
+    stackable: true, sellValue: 20,
+  },
+
+  // ── Enchanting materials — produced by Disenchanting (see
+  // gameData/enchanting.ts), consumed by enchant recipes. Three tiers
+  // scale with the disenchanted item's own level, same convention as
+  // every other material tier in this game.
+  arcane_dust: {
+    id: 'arcane_dust', name: 'Arcane Dust', type: 'material',
+    description: 'A fine, faintly glowing dust left over from disenchanting lesser equipment.',
+    stackable: true, sellValue: 3,
+  },
+  arcane_essence: {
+    id: 'arcane_essence', name: 'Arcane Essence', type: 'material',
+    description: 'A condensed mote of magical residue, disenchanted from mid-tier equipment.',
+    stackable: true, sellValue: 9,
+  },
+  arcane_crystal: {
+    id: 'arcane_crystal', name: 'Arcane Crystal', type: 'material',
+    description: 'A hardened crystal of pure enchanting power, disenchanted only from the finest equipment.',
+    stackable: true, sellValue: 25,
+  },
 };
