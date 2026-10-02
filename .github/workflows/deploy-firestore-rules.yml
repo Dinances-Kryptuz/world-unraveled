@@ -1,24 +1,27 @@
 name: Deploy Firestore rules
 
-# Keeps the live Firebase project's security rules in sync with this repo
-# automatically — without this, editing firestore.rules here (even merging
-# it to main) has NO effect on the real game until someone manually runs
-# `firebase deploy --only firestore:rules`. That gap is what caused
-# training certain professions to fail with a Firestore "insufficient
+# Keeps the live Firebase project's security rules in sync with this repo —
+# without this, editing firestore.rules here (even merging it to main) has
+# NO effect on the real game until someone deploys it. That gap is what
+# caused training certain professions to fail with a Firestore "insufficient
 # permissions" error even though the rules in this repo were already
 # correct: they'd just never been pushed to the live project.
 #
-# Requires one manual one-time setup step (can't be done from a CI run):
-# a repo secret named FIREBASE_SERVICE_ACCOUNT holding a Firebase service
-# account JSON key with Firestore rules deploy permission. Generate one at
+# Deliberately manual-trigger-only for now (no automatic push trigger) — the
+# project is currently deploying rules changes by hand (copy/pasting
+# firestore.rules into the Firebase console), so an automatic run here would
+# just fail on every push touching this file (no FIREBASE_SERVICE_ACCOUNT
+# secret configured yet) and show up as a confusing red X. Flip this back to
+# running on push once that secret exists, by adding a `push:` trigger back
+# alongside workflow_dispatch below.
+#
+# To actually run this (via the Actions tab's "Run workflow" button), it
+# first needs a one-time setup step: a repo secret named
+# FIREBASE_SERVICE_ACCOUNT holding a Firebase service account JSON key with
+# Firestore rules deploy permission. Generate one at
 # https://console.firebase.google.com/project/_/settings/serviceaccounts/adminsdk
 # then add it at Settings > Secrets and variables > Actions in this repo.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'firestore.rules'
-      - 'firestore.indexes.json'
   workflow_dispatch: {}
 
 jobs:
