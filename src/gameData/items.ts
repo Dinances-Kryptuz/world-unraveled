@@ -1385,4 +1385,79 @@ export const ITEMS: Record<string, ItemDef> = {
     description: 'A ring cut from crystallized Void Shard — equally at home on any hand.',
     stackable: true, equipSlot: 'ring', statBonuses: { STR: 5, STA: 8, INT: 5, SPI: 5 }, sellValue: 110,
   },
+
+  // ── Second gather-node materials — a 2nd Mining/Herbalism/Skinning node
+  // per zone (see zones.ts's GATHER_NODES) so each gathering profession has
+  // more than one thing to gather per zone. Same requiredLevel/sellValue
+  // tier as that zone's original node; a few are also woven into existing
+  // recipes as an added ingredient for more varied material lists (see
+  // recipes.ts).
+  granite_chunk: {
+    id: 'granite_chunk', name: 'Granite Chunk', type: 'material',
+    description: 'A rough chunk of granite, pried from an outcrop.', stackable: true, sellValue: 1,
+  },
+  wildroot: {
+    id: 'wildroot', name: 'Wildroot', type: 'material',
+    description: 'A gnarled root with a sharp, earthy smell.', stackable: true, sellValue: 1,
+  },
+  rabbit_pelt: {
+    id: 'rabbit_pelt', name: 'Rabbit Pelt', type: 'material',
+    description: 'A small, soft pelt from the warrens.', stackable: true, sellValue: 1,
+  },
+  flint: {
+    id: 'flint', name: 'Flint', type: 'material',
+    description: 'A hard, flaking stone found among the foothill scree.', stackable: true, sellValue: 2,
+  },
+  frostcap: {
+    id: 'frostcap', name: 'Frostcap', type: 'material',
+    description: 'A pale mushroom that stays cold to the touch.', stackable: true, sellValue: 2,
+  },
+  jackal_fur: {
+    id: 'jackal_fur', name: 'Jackal Fur', type: 'material',
+    description: 'Coarse fur, still carrying the jackal’s musk.', stackable: true, sellValue: 2,
+  },
+  sulfur_chunk: {
+    id: 'sulfur_chunk', name: 'Sulfur Chunk', type: 'material',
+    description: 'A yellow, acrid chunk pried from a steaming vein.', stackable: true, sellValue: 3,
+  },
+  emberleaf: {
+    id: 'emberleaf', name: 'Emberleaf', type: 'material',
+    description: 'A leaf that stays warm long after picking.', stackable: true, sellValue: 3,
+  },
+  cinderwolf_pelt: {
+    id: 'cinderwolf_pelt', name: 'Cinderwolf Pelt', type: 'material',
+    description: 'A singed pelt, still faintly warm.', stackable: true, sellValue: 3,
+  },
+  shadowore: {
+    id: 'shadowore', name: 'Shadowore', type: 'material',
+    description: 'A dark, light-swallowing ore found only in collapsed tunnels.', stackable: true, sellValue: 4,
+  },
+  ashroot: {
+    id: 'ashroot', name: 'Ashroot', type: 'material',
+    description: 'A root grown entirely through packed ash.', stackable: true, sellValue: 4,
+  },
+  scavenger_hide: {
+    id: 'scavenger_hide', name: 'Scavenger Hide', type: 'material',
+    description: 'Mangy hide from a ruin-dwelling scavenger.', stackable: true, sellValue: 4,
+  },
+  scorchweed: {
+    id: 'scorchweed', name: 'Scorchweed', type: 'material',
+    description: 'A wiry weed that thrives in scorched ground.', stackable: true, sellValue: 5,
+  },
+  scaleback_scale: {
+    id: 'scaleback_scale', name: 'Scaleback Scale', type: 'material',
+    description: 'A single overlapping scale, still warm.', stackable: true, sellValue: 5,
+  },
+  starforge_ore: {
+    id: 'starforge_ore', name: 'Starforge Ore', type: 'material',
+    description: 'Ore flecked with something that glints like starlight.', stackable: true, sellValue: 6,
+  },
+  heartbloom: {
+    id: 'heartbloom', name: 'Heartbloom', type: 'material',
+    description: 'A flower that pulses faintly, warm as a heartbeat.', stackable: true, sellValue: 6,
+  },
+  emberscale_claw: {
+    id: 'emberscale_claw', name: 'Emberscale Claw', type: 'material',
+    description: 'A curved claw, still sharp enough to work.', stackable: true, sellValue: 6,
+  },
 };

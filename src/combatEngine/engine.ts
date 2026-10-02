@@ -219,10 +219,7 @@ const MONSTER_BASIC_ATTACK: Ability = {
 };
 
 export function createPlayerCombatant(input: EncounterSetupInput): Combatant {
-  const disabledSet = new Set(input.disabledAbilityIds ?? []);
-  const loadout = effectiveLoadout(input.cls, input.specId, input.level, input.savedEquippedAbilityIds).filter(
-    (id) => !disabledSet.has(id)
-  );
+  const loadout = effectiveLoadout(input.cls, input.specId, input.level, input.savedEquippedAbilityIds);
   const mergedBonuses = mergeStatBonuses(input.equipmentBonuses, input.buffTotals.statBonuses);
   const intStat = statAtLevel(input.cls, 'INT', input.level) + (mergedBonuses.INT ?? 0);
   const playerMaxHp = computeMaxHp(input.cls, input.level, mergedBonuses, input.talentTotals.hpMultPct);
@@ -242,6 +239,7 @@ export function createPlayerCombatant(input: EncounterSetupInput): Combatant {
     actionReadyIn: ATTACK_INTERVAL_SECONDS,
     equippedAbilityIds: loadout,
     abilityConditions: effectiveAbilityConditions(input.level, input.savedAbilityConditions),
+    disabledAbilityIds: input.disabledAbilityIds,
     basicAttackId: BASIC_ATTACK_BY_CLASS[input.cls],
     profile: buildPlayerProfile(input),
     threatWeight: input.specDef.threatWeight,

@@ -17,6 +17,7 @@ export function pickAbility(
   abilitiesById: Record<string, Ability>
 ): { ability: Ability; targetId: string } | null {
   for (const id of combatant.equippedAbilityIds) {
+    if (combatant.disabledAbilityIds?.includes(id)) continue;
     const ability = abilitiesById[id];
     if (!ability) continue;
     const result = tryResolve(state, combatant, ability, combatant.abilityConditions?.[id]);

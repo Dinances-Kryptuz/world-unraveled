@@ -108,6 +108,12 @@ export interface Combatant {
   // never have it, and a player who's never opened the conditions editor
   // simply has no entry for a given ability (treated as "always usable").
   abilityConditions?: Record<string, ConditionGroup>;
+  // Equipped ability ids the player has paused from the AUTOMATIC priority
+  // walk (see priority.ts's pickAbility, which skips these) — deliberately
+  // NOT removed from equippedAbilityIds itself, so the ability still shows
+  // its manual-use button in AbilityBar and can still be cast by hand via
+  // tryManualUseAbility. "Auto-cast off" means "I'll decide," not "gone."
+  disabledAbilityIds?: string[];
   basicAttackId: string;
   profile: CasterProfile;
   // Relative chance of being picked when an enemy's CURRENT_ENEMY resolves

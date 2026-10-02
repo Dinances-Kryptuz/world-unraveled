@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useCharacter } from '../hooks/useCharacter';
 import { startActivity, stopActivity } from '../firebase/character';
+import { payDungeonCompanionFee } from '../firebase/companions';
 import { ZONES } from '../gameData/zones';
 import { ZoneBanner } from './ZoneBanner';
 import { MONSTERS } from '../gameData/monsters';
 import { DUNGEONS } from '../gameData/dungeons';
-import { MAX_ACTIVE_COMPANIONS, REQUIRED_DUNGEON_PARTY_SIZE } from '../gameData/companions';
+import { MAX_ACTIVE_COMPANIONS, REQUIRED_DUNGEON_PARTY_SIZE, dungeonCompanionFee } from '../gameData/companions';
 import { resolveSpecDef } from '../gameData/combatProfileWithTalents';
 import { MonsterLootPanel } from './MonsterLootPanel';
 import { MonsterLevelBadge, CombatTypeBadge } from './MonsterLevelBadge';
@@ -27,6 +28,8 @@ export function ZoneScreen({
   const { user } = useAuth();
   const { character, refetch } = useCharacter();
   const [expandedMonsterId, setExpandedMonsterId] = useState<string | null>(null);
+  const [feeError, setFeeError] = useState<string | null>(null);
+  const [entering, setEntering] = useState(false);
   const zone = ZONES[selectedZoneId];
 
   async function handleFight(monsterId: string) {
@@ -39,11 +42,25 @@ export function ZoneScreen({
   // DungeonScreen's own doc comment) — entering one just clears whatever
   // regular activity was running so it doesn't keep "elapsing" underneath
   // the run; App.tsx's activeDungeonId state decides which screen renders.
+  // The companion wage (see gameData/companions.ts's dungeonCompanionFee) is
+  // charged here, up front, before the run starts — failing to pay blocks
+  // entry entirely rather than letting the party in for free.
   async function handleEnterDungeon(dungeonId: string) {
     if (!user) return;
-    await stopActivity(user.uid);
-    await refetch();
-    onEnterDungeon(dungeonId);
+    setFeeError(null);
+    setEntering(true);
+    try {
+      const feeResult = await payDungeonCompanionFee(user.uid);
+      if (!feeResult.success) {
+        setFeeError(feeResult.reason ?? 'Could not pay your party.');
+        return;
+      }
+      await stopActivity(user.uid);
+      await refetch();
+      onEnterDungeon(dungeonId);
+    } finally {
+      setEntering(false);
+    }
   }
 
   if (!character) return null;
@@ -86,6 +103,8 @@ export function ZoneScreen({
         .map((dungeon) => {
           const partySize = character.activeCompanionIds.length + 1;
           const readyForDungeon = character.activeCompanionIds.length === MAX_ACTIVE_COMPANIONS;
+          const fee = dungeonCompanionFee(character.level, character.activeCompanionIds.length);
+          const canAffordFee = character.gold >= fee;
           return (
             <div key={dungeon.id}>
               <h2>Dungeons</h2>
@@ -101,10 +120,14 @@ export function ZoneScreen({
                       Requires a full party of {REQUIRED_DUNGEON_PARTY_SIZE} — you have {partySize}/
                       {REQUIRED_DUNGEON_PARTY_SIZE} (see Companions below to recruit and add more)
                     </small>
+                    <br />
+                    <small>Your party charges {fee} gold up front for this run (you have {Math.floor(character.gold)}).</small>
                   </div>
-                  <button onClick={() => handleEnterDungeon(dungeon.id)} disabled={!readyForDungeon}>
-                    Enter
+                  <button onClick={() => handleEnterDungeon(dungeon.id)} disabled={!readyForDungeon || !canAffordFee || entering}>
+                    {entering ? 'Entering…' : 'Enter'}
                   </button>
+                  {readyForDungeon && !canAffordFee && <p className="error">Need {fee} gold to pay your party first.</p>}
+                  {feeError && <p className="error">{feeError}</p>}
                 </li>
               </ul>
             </div>

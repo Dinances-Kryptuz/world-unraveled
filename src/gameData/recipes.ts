@@ -23,7 +23,10 @@ export const RECIPES: Record<string, Recipe> = {
     requiredSkill: 1,
     resultItemId: 'leather_boots',
     resultQuantity: 1,
-    materials: [{ itemId: 'light_leather', quantity: 4 }],
+    materials: [
+      { itemId: 'light_leather', quantity: 4 },
+      { itemId: 'rabbit_pelt', quantity: 2 },
+    ],
     craftSeconds: 8,
     xpAward: 12,
     colorBreakpoints: { orangeUntil: 9, yellowUntil: 14, greenUntil: 24 },
@@ -59,6 +62,7 @@ export const RECIPES: Record<string, Recipe> = {
     materials: [
       { itemId: 'light_leather', quantity: 6 },
       { itemId: 'linen_cloth', quantity: 3 },
+      { itemId: 'jackal_fur', quantity: 2 },
     ],
     craftSeconds: 14,
     xpAward: 22,
@@ -71,7 +75,7 @@ export const RECIPES: Record<string, Recipe> = {
   copper_bar: {
     id: 'copper_bar',
     name: 'Copper Bar',
-    profession: 'smithing',
+    profession: 'mining',
     requiredSkill: 1,
     resultItemId: 'copper_bar',
     resultQuantity: 1,
@@ -90,7 +94,10 @@ export const RECIPES: Record<string, Recipe> = {
     requiredSkill: 3,
     resultItemId: 'copper_chestguard',
     resultQuantity: 1,
-    materials: [{ itemId: 'copper_bar', quantity: 4 }],
+    materials: [
+      { itemId: 'copper_bar', quantity: 4 },
+      { itemId: 'granite_chunk', quantity: 2 },
+    ],
     craftSeconds: 10,
     xpAward: 14,
     colorBreakpoints: { orangeUntil: 12, yellowUntil: 17, greenUntil: 27 },
@@ -116,7 +123,7 @@ export const RECIPES: Record<string, Recipe> = {
   bronze_bar: {
     id: 'bronze_bar',
     name: 'Bronze Bar',
-    profession: 'smithing',
+    profession: 'mining',
     requiredSkill: 10,
     resultItemId: 'bronze_bar',
     resultQuantity: 1,
@@ -138,7 +145,10 @@ export const RECIPES: Record<string, Recipe> = {
     requiredSkill: 12,
     resultItemId: 'bronze_sword',
     resultQuantity: 1,
-    materials: [{ itemId: 'bronze_bar', quantity: 4 }],
+    materials: [
+      { itemId: 'bronze_bar', quantity: 4 },
+      { itemId: 'flint', quantity: 2 },
+    ],
     craftSeconds: 16,
     xpAward: 26,
     colorBreakpoints: { orangeUntil: 21, yellowUntil: 26, greenUntil: 36 },
@@ -332,7 +342,10 @@ export const RECIPES: Record<string, Recipe> = {
     requiredSkill: 1,
     resultItemId: 'minor_healing_draught',
     resultQuantity: 1,
-    materials: [{ itemId: 'peacebloom', quantity: 3 }],
+    materials: [
+      { itemId: 'peacebloom', quantity: 3 },
+      { itemId: 'wildroot', quantity: 1 },
+    ],
     craftSeconds: 6,
     xpAward: 6,
     colorBreakpoints: { orangeUntil: 10, yellowUntil: 15, greenUntil: 25 },
@@ -362,7 +375,10 @@ export const RECIPES: Record<string, Recipe> = {
     requiredSkill: 12,
     resultItemId: 'sage_healing_potion',
     resultQuantity: 1,
-    materials: [{ itemId: 'mountain_sage', quantity: 3 }],
+    materials: [
+      { itemId: 'mountain_sage', quantity: 3 },
+      { itemId: 'frostcap', quantity: 1 },
+    ],
     craftSeconds: 10,
     xpAward: 16,
     colorBreakpoints: { orangeUntil: 21, yellowUntil: 26, greenUntil: 36 },
@@ -377,7 +393,10 @@ export const RECIPES: Record<string, Recipe> = {
     requiredSkill: 25,
     resultItemId: 'sunpetal_elixir',
     resultQuantity: 1,
-    materials: [{ itemId: 'sunpetal', quantity: 4 }],
+    materials: [
+      { itemId: 'sunpetal', quantity: 4 },
+      { itemId: 'emberleaf', quantity: 2 },
+    ],
     craftSeconds: 12,
     xpAward: 22,
     colorBreakpoints: { orangeUntil: 34, yellowUntil: 39, greenUntil: 49 },
@@ -390,7 +409,7 @@ export const RECIPES: Record<string, Recipe> = {
   iron_bar: {
     id: 'iron_bar',
     name: 'Iron Bar',
-    profession: 'smithing',
+    profession: 'mining',
     requiredSkill: 25,
     resultItemId: 'iron_bar',
     resultQuantity: 1,
@@ -409,7 +428,10 @@ export const RECIPES: Record<string, Recipe> = {
     requiredSkill: 28,
     resultItemId: 'iron_chestguard',
     resultQuantity: 1,
-    materials: [{ itemId: 'iron_bar', quantity: 5 }],
+    materials: [
+      { itemId: 'iron_bar', quantity: 5 },
+      { itemId: 'sulfur_chunk', quantity: 2 },
+    ],
     craftSeconds: 14,
     xpAward: 24,
     colorBreakpoints: { orangeUntil: 37, yellowUntil: 42, greenUntil: 52 },
@@ -485,7 +507,10 @@ export const RECIPES: Record<string, Recipe> = {
   scaled_gloves: {
     id: 'scaled_gloves', name: 'Scaled Gloves', profession: 'leatherworking', requiredSkill: 26,
     resultItemId: 'scaled_gloves', resultQuantity: 1,
-    materials: [{ itemId: 'scaled_leather', quantity: 3 }],
+    materials: [
+      { itemId: 'scaled_leather', quantity: 3 },
+      { itemId: 'cinderwolf_pelt', quantity: 2 },
+    ],
     craftSeconds: 14, xpAward: 24,
     colorBreakpoints: { orangeUntil: 35, yellowUntil: 40, greenUntil: 50 },
     source: 'trainer',
@@ -565,7 +590,7 @@ export const RECIPES: Record<string, Recipe> = {
 
   // ── Cinderfall Depths ──────────────────────────────────────────────────
   cinder_steel_bar: {
-    id: 'cinder_steel_bar', name: 'Cinder Steel Bar', profession: 'smithing', requiredSkill: 30,
+    id: 'cinder_steel_bar', name: 'Cinder Steel Bar', profession: 'mining', requiredSkill: 30,
     resultItemId: 'cinder_steel_bar', resultQuantity: 1,
     materials: [{ itemId: 'cinderore', quantity: 2 }],
     craftSeconds: 9, xpAward: 18,
@@ -577,7 +602,10 @@ export const RECIPES: Record<string, Recipe> = {
   cinderplate_chestguard: {
     id: 'cinderplate_chestguard', name: 'Cinderplate Chestguard', profession: 'smithing', requiredSkill: 33,
     resultItemId: 'cinderplate_chestguard', resultQuantity: 1,
-    materials: [{ itemId: 'cinder_steel_bar', quantity: 5 }],
+    materials: [
+      { itemId: 'cinder_steel_bar', quantity: 5 },
+      { itemId: 'shadowore', quantity: 2 },
+    ],
     craftSeconds: 15, xpAward: 26,
     colorBreakpoints: { orangeUntil: 42, yellowUntil: 47, greenUntil: 57 },
     source: 'trainer',
@@ -597,7 +625,10 @@ export const RECIPES: Record<string, Recipe> = {
   ashhide_leather: {
     id: 'ashhide_leather', name: 'Ashhide Leather', profession: 'leatherworking', requiredSkill: 30,
     resultItemId: 'ashhide_leather', resultQuantity: 1,
-    materials: [{ itemId: 'ashhide', quantity: 5 }],
+    materials: [
+      { itemId: 'ashhide', quantity: 5 },
+      { itemId: 'scavenger_hide', quantity: 2 },
+    ],
     craftSeconds: 8, xpAward: 15,
     colorBreakpoints: { orangeUntil: 39, yellowUntil: 44, greenUntil: 54 },
     source: 'trainer',
@@ -697,7 +728,10 @@ export const RECIPES: Record<string, Recipe> = {
   emberpetal_tonic: {
     id: 'emberpetal_tonic', name: 'Emberpetal Tonic', profession: 'alchemy', requiredSkill: 30,
     resultItemId: 'emberpetal_tonic', resultQuantity: 1,
-    materials: [{ itemId: 'emberpetal', quantity: 4 }],
+    materials: [
+      { itemId: 'emberpetal', quantity: 4 },
+      { itemId: 'ashroot', quantity: 2 },
+    ],
     craftSeconds: 13, xpAward: 24,
     colorBreakpoints: { orangeUntil: 39, yellowUntil: 44, greenUntil: 54 },
     source: 'trainer',
@@ -707,7 +741,7 @@ export const RECIPES: Record<string, Recipe> = {
 
   // ── The Molten Scar ────────────────────────────────────────────────────
   brimstone_bar: {
-    id: 'brimstone_bar', name: 'Brimstone Bar', profession: 'smithing', requiredSkill: 40,
+    id: 'brimstone_bar', name: 'Brimstone Bar', profession: 'mining', requiredSkill: 40,
     resultItemId: 'brimstone_bar', resultQuantity: 1,
     materials: [{ itemId: 'brimstone_ore', quantity: 2 }],
     craftSeconds: 10, xpAward: 20,
@@ -719,7 +753,10 @@ export const RECIPES: Record<string, Recipe> = {
   brimstone_plate: {
     id: 'brimstone_plate', name: 'Brimstone Plate', profession: 'smithing', requiredSkill: 43,
     resultItemId: 'brimstone_plate', resultQuantity: 1,
-    materials: [{ itemId: 'brimstone_bar', quantity: 5 }],
+    materials: [
+      { itemId: 'brimstone_bar', quantity: 5 },
+      { itemId: 'obsidian_shard', quantity: 1 },
+    ],
     craftSeconds: 16, xpAward: 28,
     colorBreakpoints: { orangeUntil: 52, yellowUntil: 57, greenUntil: 67 },
     source: 'trainer',
@@ -739,7 +776,10 @@ export const RECIPES: Record<string, Recipe> = {
   scaleback_leather: {
     id: 'scaleback_leather', name: 'Scaleback Leather', profession: 'leatherworking', requiredSkill: 40,
     resultItemId: 'scaleback_leather', resultQuantity: 1,
-    materials: [{ itemId: 'scaleback_hide', quantity: 5 }],
+    materials: [
+      { itemId: 'scaleback_hide', quantity: 5 },
+      { itemId: 'scaleback_scale', quantity: 2 },
+    ],
     craftSeconds: 9, xpAward: 17,
     colorBreakpoints: { orangeUntil: 49, yellowUntil: 54, greenUntil: 64 },
     source: 'trainer',
@@ -839,7 +879,10 @@ export const RECIPES: Record<string, Recipe> = {
   cinderbloom_elixir: {
     id: 'cinderbloom_elixir', name: 'Cinderbloom Elixir', profession: 'alchemy', requiredSkill: 40,
     resultItemId: 'cinderbloom_elixir', resultQuantity: 1,
-    materials: [{ itemId: 'cinderbloom', quantity: 4 }],
+    materials: [
+      { itemId: 'cinderbloom', quantity: 4 },
+      { itemId: 'scorchweed', quantity: 2 },
+    ],
     craftSeconds: 14, xpAward: 26,
     colorBreakpoints: { orangeUntil: 49, yellowUntil: 54, greenUntil: 64 },
     source: 'trainer',
@@ -849,7 +892,7 @@ export const RECIPES: Record<string, Recipe> = {
 
   // ── Cinderheart Crater ─────────────────────────────────────────────────
   emberforged_bar: {
-    id: 'emberforged_bar', name: 'Emberforged Bar', profession: 'smithing', requiredSkill: 48,
+    id: 'emberforged_bar', name: 'Emberforged Bar', profession: 'mining', requiredSkill: 48,
     resultItemId: 'emberforged_bar', resultQuantity: 1,
     materials: [{ itemId: 'emberforge_ore', quantity: 2 }],
     craftSeconds: 11, xpAward: 22,
@@ -861,7 +904,10 @@ export const RECIPES: Record<string, Recipe> = {
   emberforged_chestguard: {
     id: 'emberforged_chestguard', name: 'Emberforged Chestguard', profession: 'smithing', requiredSkill: 51,
     resultItemId: 'emberforged_chestguard', resultQuantity: 1,
-    materials: [{ itemId: 'emberforged_bar', quantity: 5 }],
+    materials: [
+      { itemId: 'emberforged_bar', quantity: 5 },
+      { itemId: 'starforge_ore', quantity: 2 },
+    ],
     craftSeconds: 17, xpAward: 30,
     colorBreakpoints: { orangeUntil: 60, yellowUntil: 65, greenUntil: 75 },
     source: 'trainer',
@@ -881,7 +927,10 @@ export const RECIPES: Record<string, Recipe> = {
   emberscale_leather: {
     id: 'emberscale_leather', name: 'Emberscale Leather', profession: 'leatherworking', requiredSkill: 48,
     resultItemId: 'emberscale_leather', resultQuantity: 1,
-    materials: [{ itemId: 'emberscale_hide', quantity: 5 }],
+    materials: [
+      { itemId: 'emberscale_hide', quantity: 5 },
+      { itemId: 'emberscale_claw', quantity: 2 },
+    ],
     craftSeconds: 10, xpAward: 19,
     colorBreakpoints: { orangeUntil: 57, yellowUntil: 62, greenUntil: 72 },
     source: 'trainer',
@@ -981,7 +1030,10 @@ export const RECIPES: Record<string, Recipe> = {
   emberheart_potion: {
     id: 'emberheart_potion', name: 'Emberheart Potion', profession: 'alchemy', requiredSkill: 48,
     resultItemId: 'emberheart_potion', resultQuantity: 1,
-    materials: [{ itemId: 'emberheart_bloom', quantity: 4 }],
+    materials: [
+      { itemId: 'emberheart_bloom', quantity: 4 },
+      { itemId: 'heartbloom', quantity: 2 },
+    ],
     craftSeconds: 15, xpAward: 28,
     colorBreakpoints: { orangeUntil: 57, yellowUntil: 62, greenUntil: 72 },
     source: 'trainer',

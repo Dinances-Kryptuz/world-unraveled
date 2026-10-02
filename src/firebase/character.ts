@@ -12,7 +12,13 @@ import { ITEMS } from '../gameData/items';
 import { getEquipmentStatBonuses } from '../gameData/equipmentStats';
 import { maxEquippedSlots, unlockedAbilities, effectiveLoadout, MAX_COMBAT_PRESETS } from '../combatEngine/progression';
 import type { Condition, ConditionGroup, ConditionType, ResourceType } from '../combatEngine/types';
-import { refillActiveQuests, applyQuestEvents, type QuestEvent } from '../gameData/questEngine';
+import {
+  refillActiveQuests,
+  applyQuestEvents,
+  completeQuestInState,
+  acceptQuestInState,
+  type QuestEvent,
+} from '../gameData/questEngine';
 
 export const BASE_BAG_SLOTS = 24;
 
@@ -251,13 +257,21 @@ export async function applyGatheringResult(
 // see CombatScreen/DungeonScreen/GatheringScreen/CraftingScreen. Takes the
 // caller's already-loaded `character` rather than re-fetching, since every
 // call site already has a fresh one in hand.
-export async function advanceQuests(
-  uid: string,
-  character: Character,
-  events: QuestEvent[]
-): Promise<{ rewards: { xp: number; gold: number; items: { itemId: string; quantity: number }[] }; completedQuestNames: string[] }> {
-  if (events.length === 0) return { rewards: { xp: 0, gold: 0, items: [] }, completedQuestNames: [] };
-  const result = applyQuestEvents(character, events, new Date());
+export async function advanceQuests(uid: string, character: Character, events: QuestEvent[]): Promise<void> {
+  if (events.length === 0) return;
+  const active = applyQuestEvents(character, events);
+  await updateDoc(doc(db, 'characters', uid), { 'quests.active': active });
+}
+
+// The player's explicit "Complete Quest" click — see questEngine.ts's
+// completeQuestInState for the validation (quest is active and every
+// objective is actually met; never trust the client alone).
+export async function completeQuest(uid: string, questId: string): Promise<{ success: boolean; reason?: string }> {
+  const character = await getCharacter(uid);
+  if (!character) return { success: false, reason: 'Character not found.' };
+
+  const result = completeQuestInState(character, questId, new Date());
+  if (!result) return { success: false, reason: 'That quest isn’t ready to complete.' };
 
   const characterUpdate: Record<string, unknown> = { quests: result.quests };
   if (result.rewards.xp) characterUpdate.xp = increment(result.rewards.xp);
@@ -272,18 +286,21 @@ export async function advanceQuests(
     await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), inventoryUpdates);
   }
 
-  return { rewards: result.rewards, completedQuestNames: result.completedQuestNames };
+  return { success: true };
 }
 
-// Manual "check for new quests" — lets a player pull in a just-expired
-// daily or a chain successor without needing to complete some unrelated
-// action first. Only ever adds to `active`; never touches completedIds or
-// dailyCompletedAt, so it can't affect cooldowns or chain state.
-export async function refreshQuestBoard(uid: string): Promise<void> {
+// The player's explicit "Accept Quest" click — see questEngine.ts's
+// acceptQuestInState for the validation (a free active slot, and the quest
+// is actually available to this character right now).
+export async function acceptQuest(uid: string, questId: string): Promise<{ success: boolean; reason?: string }> {
   const character = await getCharacter(uid);
-  if (!character) return;
-  const active = refillActiveQuests(character, new Date());
-  await updateDoc(doc(db, 'characters', uid), { 'quests.active': active });
+  if (!character) return { success: false, reason: 'Character not found.' };
+
+  const quests = acceptQuestInState(character, questId, new Date());
+  if (!quests) return { success: false, reason: 'That quest can’t be accepted right now.' };
+
+  await updateDoc(doc(db, 'characters', uid), { quests });
+  return { success: true };
 }
 
 export async function checkAndApplyProfessionLevelUp(uid: string, profession: ProfessionId): Promise<void> {
