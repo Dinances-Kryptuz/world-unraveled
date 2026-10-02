@@ -47,8 +47,13 @@ export async function getCharacter(uid: string): Promise<Character | null> {
     equippedAbilityIds: data.equippedAbilityIds ?? [],
     // Same backfill idea again, for the Phase 3 conditions system.
     abilityConditions: data.abilityConditions ?? {},
+    // Same backfill idea again, for the per-ability auto-cast toggle.
+    disabledAbilityIds: data.disabledAbilityIds ?? [],
     // Same backfill idea again, for the Phase 7 presets system.
-    combatPresets: data.combatPresets ?? [],
+    combatPresets: (data.combatPresets ?? []).map((preset: CombatPreset) => ({
+      ...preset,
+      disabledAbilityIds: preset.disabledAbilityIds ?? [],
+    })),
     // Same backfill idea again, for consumable item cooldowns — each value
     // is a Firestore Timestamp on disk, converted to a Date here same as
     // every other timestamp field this function returns.
@@ -142,6 +147,7 @@ export async function createCharacter(uid: string, name: string, characterClass:
     currentActivity: { type: null, targetId: null, zoneId: null, startedAt: null },
     equippedAbilityIds: [],
     abilityConditions: {},
+    disabledAbilityIds: [],
     combatPresets: [],
     itemCooldowns: {},
     quests: { active: initialActiveQuests, completedIds: [], dailyCompletedAt: {} },
@@ -419,7 +425,8 @@ function sanitizeConditionGroup(group: unknown): ConditionGroup | null {
 export async function saveCombatSetup(
   uid: string,
   abilityIds: string[],
-  abilityConditionsInput: Record<string, unknown>
+  abilityConditionsInput: Record<string, unknown>,
+  disabledAbilityIdsInput: string[] = []
 ): Promise<void> {
   const character = await getCharacter(uid);
   if (!character) return;
@@ -436,7 +443,11 @@ export async function saveCombatSetup(
     if (sanitized) abilityConditions[abilityId] = sanitized;
   }
 
-  await updateDoc(doc(db, 'characters', uid), { equippedAbilityIds: validatedIds, abilityConditions });
+  // Only an actually-equipped ability can be toggled off — same ownership
+  // check as abilityConditions above.
+  const disabledAbilityIds = disabledAbilityIdsInput.filter((id) => equippedSet.has(id));
+
+  await updateDoc(doc(db, 'characters', uid), { equippedAbilityIds: validatedIds, abilityConditions, disabledAbilityIds });
 }
 
 function generatePresetId(): string {
@@ -469,12 +480,14 @@ export async function saveCombatPreset(uid: string, name: string): Promise<{ suc
   for (const id of activeAbilityIds) {
     if (character.abilityConditions[id]) activeConditions[id] = character.abilityConditions[id];
   }
+  const activeDisabled = character.disabledAbilityIds.filter((id) => activeAbilityIds.includes(id));
 
   const preset: CombatPreset = {
     id: generatePresetId(),
     name: trimmedName,
     equippedAbilityIds: activeAbilityIds,
     abilityConditions: activeConditions,
+    disabledAbilityIds: activeDisabled,
   };
 
   await updateDoc(doc(db, 'characters', uid), {
@@ -501,7 +514,7 @@ export async function activateCombatPreset(uid: string, presetId: string): Promi
   if (!character) return { success: false, reason: 'Character not found.' };
   const preset = character.combatPresets.find((p) => p.id === presetId);
   if (!preset) return { success: false, reason: 'Preset not found.' };
-  await saveCombatSetup(uid, preset.equippedAbilityIds, preset.abilityConditions);
+  await saveCombatSetup(uid, preset.equippedAbilityIds, preset.abilityConditions, preset.disabledAbilityIds);
   return { success: true };
 }
 

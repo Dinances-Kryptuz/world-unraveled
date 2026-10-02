@@ -212,6 +212,39 @@ input[type="number"] {
   padding: 10px 12px 2px;
 }
 
+.sidebar-profession-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 12px;
+}
+
+.sidebar-profession-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+}
+
+.sidebar-profession-level {
+  color: #ab9f8c;
+  font-size: 0.78rem;
+}
+
+.sidebar-profession-bar-track {
+  background: #40392f;
+  border-radius: 3px;
+  height: 5px;
+  width: 100%;
+  overflow: hidden;
+}
+
+.sidebar-profession-bar-fill {
+  background: #c9a15a;
+  height: 100%;
+}
+
 .app-main {
   flex: 1;
   min-width: 0;

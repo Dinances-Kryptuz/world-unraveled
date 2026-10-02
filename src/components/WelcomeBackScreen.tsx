@@ -70,6 +70,7 @@ export function WelcomeBackScreen({
           startingHp,
           savedEquippedAbilityIds: character.equippedAbilityIds,
           savedAbilityConditions: character.abilityConditions,
+          disabledAbilityIds: character.disabledAbilityIds,
           monster,
           // Companions only fight in dungeons — idle/offline catch-up is
           // always open-world solo, same as live open-world combat.

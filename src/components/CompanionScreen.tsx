@@ -3,9 +3,10 @@ import { useAuth } from '../hooks/useAuth';
 import { useCharacter } from '../hooks/useCharacter';
 import { recruitCompanion, addCompanionToParty, removeCompanionFromParty, equipCompanionItem, unequipCompanionItem } from '../firebase/companions';
 import { subscribeToInventory } from '../firebase/inventory';
-import { COMPANIONS, companionsInZone, checkRecruitCompanion, MAX_ACTIVE_COMPANIONS, REQUIRED_DUNGEON_PARTY_SIZE } from '../gameData/companions';
+import { COMPANIONS, checkRecruitCompanion, MAX_ACTIVE_COMPANIONS, REQUIRED_DUNGEON_PARTY_SIZE } from '../gameData/companions';
 import { CLASS_LABELS, SPEC_LABELS, canClassEquip } from '../gameData/classStats';
 import { ITEMS } from '../gameData/items';
+import { ZONES } from '../gameData/zones';
 import type { Inventory } from '../types/character';
 import type { EquipmentSlot } from '../gameData/types';
 
@@ -16,7 +17,7 @@ function formatStatBonuses(statBonuses: Partial<Record<string, number>> | undefi
   return parts.length > 0 ? ` (${parts.join(', ')})` : '';
 }
 
-export function CompanionScreen({ zoneId }: { zoneId: string }) {
+export function CompanionScreen() {
   const { user } = useAuth();
   const { character, refetch } = useCharacter();
   const [inventory, setInventory] = useState<Inventory | null>(null);
@@ -28,7 +29,13 @@ export function CompanionScreen({ zoneId }: { zoneId: string }) {
 
   if (!character || !inventory) return null;
 
-  const recruitable = companionsInZone(zoneId);
+  // The full roster, not just the current zone's — recruiting was never
+  // actually zone-gated server-side (see firebase/companions.ts's
+  // recruitCompanion, which only checks level/gold), so filtering this list
+  // by zone just made companions like the Mage pair hard to find unless you
+  // happened to be standing in Stonecrag Foothills or Emberfall Ridge when
+  // you checked. Sorted by level requirement so earlier recruits lead.
+  const recruitable = Object.values(COMPANIONS).sort((a, b) => a.requiredCharacterLevel - b.requiredCharacterLevel);
   // Sorted by the roster's own fixed order (gameData/companions.ts), not
   // Object.keys(character.companions) — Firestore doesn't guarantee a
   // map's key order survives a dot-path update to one of its nested
@@ -77,15 +84,17 @@ export function CompanionScreen({ zoneId }: { zoneId: string }) {
 
       {recruitable.length > 0 && (
         <>
-          <h3>Recruit here</h3>
+          <h3>Recruit</h3>
           <ul>
             {recruitable.map((def) => {
               const check = checkRecruitCompanion(def.id, recruitedIds, character.level, character.gold);
               const alreadyRecruited = recruitedIds.includes(def.id);
+              const zoneName = ZONES[def.recruitZoneId]?.name ?? def.recruitZoneId;
               return (
                 <li key={def.id}>
                   <strong>{def.name}</strong> — {CLASS_LABELS[def.class]} ({SPEC_LABELS[def.specId]}).{' '}
-                  {def.description} Costs {def.recruitGoldCost} gold, requires level {def.requiredCharacterLevel}.
+                  {def.description} Found in {zoneName}. Costs {def.recruitGoldCost} gold, requires level{' '}
+                  {def.requiredCharacterLevel}.
                   <button onClick={() => handleRecruit(def.id)} disabled={!check.ok || alreadyRecruited}>
                     {alreadyRecruited ? 'Recruited' : check.ok ? 'Recruit' : check.reason}
                   </button>
