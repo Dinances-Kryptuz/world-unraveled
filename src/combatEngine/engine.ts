@@ -53,6 +53,12 @@ export interface EncounterSetupInput {
   // Keyed by ability id; an ability with no entry (or an empty conditions
   // array) is always usable, same as before this field existed.
   savedAbilityConditions: Record<string, ConditionGroup>;
+  // Equipped abilities the player has manually paused (Character.
+  // disabledAbilityIds) — removed from the loadout before combat ever sees
+  // it, same effect as not having equipped them, without losing their
+  // saved slot/conditions in the Combat Setup screen. Undefined/empty
+  // behaves exactly as before this field existed.
+  disabledAbilityIds?: string[];
   // The player's currently-active recruited companions (0-4) — see
   // gameData/companions.ts's resolveActiveCompanionSetups. Empty/absent
   // means solo, same as every encounter before companions existed. A
@@ -213,7 +219,10 @@ const MONSTER_BASIC_ATTACK: Ability = {
 };
 
 export function createPlayerCombatant(input: EncounterSetupInput): Combatant {
-  const loadout = effectiveLoadout(input.cls, input.specId, input.level, input.savedEquippedAbilityIds);
+  const disabledSet = new Set(input.disabledAbilityIds ?? []);
+  const loadout = effectiveLoadout(input.cls, input.specId, input.level, input.savedEquippedAbilityIds).filter(
+    (id) => !disabledSet.has(id)
+  );
   const mergedBonuses = mergeStatBonuses(input.equipmentBonuses, input.buffTotals.statBonuses);
   const intStat = statAtLevel(input.cls, 'INT', input.level) + (mergedBonuses.INT ?? 0);
   const playerMaxHp = computeMaxHp(input.cls, input.level, mergedBonuses, input.talentTotals.hpMultPct);

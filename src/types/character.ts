@@ -35,6 +35,10 @@ export interface CombatPreset {
   name: string;
   equippedAbilityIds: string[];
   abilityConditions: Record<string, ConditionGroup>;
+  // Equipped-but-paused ability ids, same meaning as Character.disabledAbilityIds
+  // below — captured per-preset so switching presets also restores which of
+  // its abilities were toggled off.
+  disabledAbilityIds: string[];
 }
 
 // Quest state — see gameData/questEngine.ts for how this is read/written.
@@ -110,6 +114,13 @@ export interface Character {
   // combatEngine/conditions.ts. An ability with no entry here has no
   // conditions and is always usable, same as before this field existed.
   abilityConditions: Record<string, ConditionGroup>;
+  // Equipped ability ids the player has manually paused — a toggle,
+  // independent of conditions, to mute a spell from the auto-cast priority
+  // walk entirely without unequipping it (which would also drop its saved
+  // conditions). An id here is skipped by combatEngine/priority.ts's
+  // pickAbility the same as if it weren't equipped at all; the basic attack
+  // fallback is never affected. Absence (the common case) means "enabled."
+  disabledAbilityIds: string[];
   // Saved combat loadout/condition snapshots — see CombatPreset above.
   combatPresets: CombatPreset[];
   // Last-used timestamp per consumable item id (Timestamp on write, always

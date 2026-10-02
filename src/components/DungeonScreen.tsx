@@ -147,6 +147,7 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
       monster: currentMonsterRef.current,
       savedEquippedAbilityIds: c.equippedAbilityIds,
       savedAbilityConditions: c.abilityConditions,
+      disabledAbilityIds: c.disabledAbilityIds,
       companions,
       // A dungeon is fixed-size group content (REQUIRED_DUNGEON_PARTY_SIZE,
       // enforced before the player can even enter — see ZoneScreen.tsx) —

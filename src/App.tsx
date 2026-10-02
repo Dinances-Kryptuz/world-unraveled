@@ -15,9 +15,7 @@ import { FishingScreen } from './components/FishingScreen';
 import { CraftingScreen } from './components/CraftingScreen';
 import { DungeonScreen } from './components/DungeonScreen';
 import { WelcomeBackScreen, isLongAbsence } from './components/WelcomeBackScreen';
-import { GatheringProfessionsScreen } from './components/professions/GatheringProfessionsScreen';
-import { FishingProfessionsScreen } from './components/professions/FishingProfessionsScreen';
-import { CraftingProfessionsScreen } from './components/professions/CraftingProfessionsScreen';
+import { ProfessionScreen } from './components/professions/ProfessionScreen';
 import { maxHp, resolveCurrentHp } from './gameData/combatFormulas';
 import { getEquipmentStatBonuses } from './gameData/equipmentStats';
 import { evaluateTalents, EMPTY_TALENT_TOTALS } from './utils/talentEvaluator';
@@ -30,7 +28,9 @@ import { QuestLog } from './components/QuestLog';
 import { CompanionScreen } from './components/CompanionScreen';
 import { Sidebar, type AppSection } from './components/Sidebar';
 import { TopBar } from './components/TopBar';
+import { ALL_PROFESSION_IDS } from './gameData/professionTiers';
 import type { Character } from './types/character';
+import type { ProfessionId } from './gameData/types';
 
 // Wraps the sidebar + top bar shell around whatever's in the content area —
 // shared by both the normal per-section view and every "live activity"
@@ -43,6 +43,8 @@ function AppShell({
   onSelectSection,
   selectedZoneId,
   onSelectZone,
+  selectedProfessionId,
+  onSelectProfession,
   children,
 }: {
   character: Character;
@@ -50,6 +52,8 @@ function AppShell({
   onSelectSection: (s: AppSection) => void;
   selectedZoneId: string;
   onSelectZone: (zoneId: string) => void;
+  selectedProfessionId: ProfessionId;
+  onSelectProfession: (id: ProfessionId) => void;
   children: ReactNode;
 }) {
   const equipBonuses = getEquipmentStatBonuses(character.equipment, character.enchantments);
@@ -65,7 +69,14 @@ function AppShell({
 
   return (
     <div className="app-shell" style={zoneThemeStyle(selectedZoneId) as CSSProperties}>
-      <Sidebar active={section} onSelect={onSelectSection} showTalents={!!character.spec} />
+      <Sidebar
+        active={section}
+        onSelect={onSelectSection}
+        showTalents={!!character.spec}
+        character={character}
+        selectedProfessionId={selectedProfessionId}
+        onSelectProfession={onSelectProfession}
+      />
       <div className="app-main">
         <TopBar
           character={character}
@@ -87,6 +98,7 @@ function AppContent() {
   const { user, loading: authLoading } = useAuth();
   const { character, loading: characterLoading } = useCharacter();
   const [selectedZoneId, setSelectedZoneId] = useState(DEFAULT_ZONE_ID);
+  const [selectedProfessionId, setSelectedProfessionId] = useState<ProfessionId>(ALL_PROFESSION_IDS[0]);
   const [activeSection, setActiveSection] = useState<AppSection>('adventure');
   const [activeDungeonId, setActiveDungeonId] = useState<string | null>(null);
   const [dismissedWelcomeBack, setDismissedWelcomeBack] = useState(false);
@@ -121,6 +133,8 @@ function AppContent() {
     onSelectSection: setActiveSection,
     selectedZoneId,
     onSelectZone: setSelectedZoneId,
+    selectedProfessionId,
+    onSelectProfession: setSelectedProfessionId,
   };
 
   // A "live activity" (combat/gathering/fishing/crafting, or a dungeon run)
@@ -195,11 +209,9 @@ function AppContent() {
       {section === 'combatSetup' && <CombatSetupScreen />}
       {section === 'equipment' && <EquipmentScreen />}
       {section === 'inventory' && <InventoryScreen />}
-      {section === 'companions' && <CompanionScreen zoneId={selectedZoneId} />}
+      {section === 'companions' && <CompanionScreen />}
       {section === 'shop' && <VendorScreen zoneId={selectedZoneId} />}
-      {section === 'professionsGathering' && <GatheringProfessionsScreen zoneId={selectedZoneId} />}
-      {section === 'professionsFishing' && <FishingProfessionsScreen zoneId={selectedZoneId} />}
-      {section === 'professionsCrafting' && <CraftingProfessionsScreen zoneId={selectedZoneId} />}
+      {section === 'profession' && <ProfessionScreen professionId={selectedProfessionId} zoneId={selectedZoneId} />}
       {section === 'talents' && character.spec && <TalentScreen />}
       {section === 'quests' && <QuestLog />}
     </AppShell>

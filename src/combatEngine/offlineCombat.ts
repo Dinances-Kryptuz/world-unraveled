@@ -39,6 +39,7 @@ export interface OfflineCombatInput {
   startingHp: number;
   savedEquippedAbilityIds: string[];
   savedAbilityConditions: Record<string, ConditionGroup>;
+  disabledAbilityIds: string[];
   monster: Monster;
   // Same as EncounterSetupInput.companions — each one's `level` is
   // overwritten on every buildInput() call (including after a
@@ -89,6 +90,7 @@ export function simulateOfflineCombat(input: OfflineCombatInput): OfflineCombatR
       monster: input.monster,
       savedEquippedAbilityIds: input.savedEquippedAbilityIds,
       savedAbilityConditions: input.savedAbilityConditions,
+      disabledAbilityIds: input.disabledAbilityIds,
       companions: input.companions?.map((c) => ({ ...c, level })),
     };
   }

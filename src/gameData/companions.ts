@@ -146,10 +146,6 @@ export const COMPANIONS: Record<string, CompanionDef> = {
   },
 };
 
-export function companionsInZone(zoneId: string): CompanionDef[] {
-  return Object.values(COMPANIONS).filter((c) => c.recruitZoneId === zoneId);
-}
-
 export interface RecruitCompanionCheck {
   ok: boolean;
   reason?: string;

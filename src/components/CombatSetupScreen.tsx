@@ -22,9 +22,19 @@ const RESOURCE_LABELS: Record<ResourceType, string> = {
   holyPower: 'Holy Power',
 };
 
-function AbilityRow({ ability, controls, footer }: { ability: Ability; controls: React.ReactNode; footer?: React.ReactNode }) {
+function AbilityRow({
+  ability,
+  controls,
+  footer,
+  dimmed,
+}: {
+  ability: Ability;
+  controls: React.ReactNode;
+  footer?: React.ReactNode;
+  dimmed?: boolean;
+}) {
   return (
-    <li style={{ marginBottom: 10 }}>
+    <li style={{ marginBottom: 10, opacity: dimmed ? 0.55 : 1 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
         <div>
           <strong>{ability.name}</strong> — {ability.description}
@@ -135,6 +145,7 @@ export function CombatSetupScreen() {
   const { character, refetch } = useCharacter();
   const [pending, setPending] = useState<string[]>([]);
   const [pendingConditions, setPendingConditions] = useState<Record<string, ConditionGroup>>({});
+  const [pendingDisabled, setPendingDisabled] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
   const [presetName, setPresetName] = useState('');
   const [presetBusyId, setPresetBusyId] = useState<string | null>(null);
@@ -148,6 +159,7 @@ export function CombatSetupScreen() {
   const basic = cls ? basicAttackFor(cls) : null;
 
   const abilityConditionsKey = JSON.stringify(character?.abilityConditions ?? {});
+  const disabledAbilityIdsKey = (character?.disabledAbilityIds ?? []).join(',');
 
   useEffect(() => {
     if (!character || !character.class) return;
@@ -158,8 +170,9 @@ export function CombatSetupScreen() {
       if (character.abilityConditions[id]) conditions[id] = character.abilityConditions[id];
     }
     setPendingConditions(conditions);
+    setPendingDisabled(new Set(character.disabledAbilityIds.filter((id) => loadout.includes(id))));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [character?.class, character?.level, character?.equippedAbilityIds.join(','), abilityConditionsKey]);
+  }, [character?.class, character?.level, character?.equippedAbilityIds.join(','), abilityConditionsKey, disabledAbilityIdsKey]);
 
   if (!character || !cls) return null;
 
@@ -182,6 +195,21 @@ export function CombatSetupScreen() {
       if (!(id in prev)) return prev;
       const next = { ...prev };
       delete next[id];
+      return next;
+    });
+    setPendingDisabled((prev) => {
+      if (!prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+  }
+
+  function toggleDisabled(id: string) {
+    setPendingDisabled((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   }
@@ -244,7 +272,7 @@ export function CombatSetupScreen() {
     if (!user) return;
     setSaving(true);
     try {
-      await saveCombatSetup(user.uid, pending, pendingConditions);
+      await saveCombatSetup(user.uid, pending, pendingConditions, [...pendingDisabled]);
       await refetch();
     } finally {
       setSaving(false);
@@ -259,7 +287,8 @@ export function CombatSetupScreen() {
   function isPresetActive(preset: CombatPreset): boolean {
     return (
       JSON.stringify(preset.equippedAbilityIds) === JSON.stringify(savedLoadout) &&
-      JSON.stringify(preset.abilityConditions) === JSON.stringify(savedConditions)
+      JSON.stringify(preset.abilityConditions) === JSON.stringify(savedConditions) &&
+      JSON.stringify([...preset.disabledAbilityIds].sort()) === JSON.stringify([...savedDisabled].sort())
     );
   }
 
@@ -310,9 +339,11 @@ export function CombatSetupScreen() {
   for (const id of savedLoadout) {
     if (character.abilityConditions[id]) savedConditions[id] = character.abilityConditions[id];
   }
+  const savedDisabled = character.disabledAbilityIds.filter((id) => savedLoadout.includes(id));
   const dirty =
     JSON.stringify(pending) !== JSON.stringify(savedLoadout) ||
-    JSON.stringify(pendingConditions) !== JSON.stringify(savedConditions);
+    JSON.stringify(pendingConditions) !== JSON.stringify(savedConditions) ||
+    JSON.stringify([...pendingDisabled].sort()) !== JSON.stringify([...savedDisabled].sort());
 
   return (
     <div className="combat-setup-screen">
@@ -325,7 +356,9 @@ export function CombatSetupScreen() {
         {canUseConditions
           ? " An ability with a condition is skipped (falling through to the next one) unless that condition is met."
           : ` Conditions unlock at level ${CONDITIONS_UNLOCK_LEVEL}.`}{' '}
-        {basic?.name} is always available as a free, unconditional fallback and never takes a slot.
+        {basic?.name} is always available as a free, unconditional fallback and never takes a slot. Uncheck an
+        equipped ability's "Auto-cast" box to pause it without unequipping it (it stays slotted with its conditions
+        saved, it just won't be used until you re-check it).
       </p>
 
       <h3>
@@ -338,12 +371,17 @@ export function CombatSetupScreen() {
           {pending.map((id, index) => {
             const ability = unlocked.find((a) => a.id === id);
             if (!ability) return null;
+            const isDisabled = pendingDisabled.has(id);
             return (
               <AbilityRow
                 key={id}
                 ability={ability}
+                dimmed={isDisabled}
                 controls={
                   <div>
+                    <label style={{ marginRight: 8, fontSize: '0.85rem' }}>
+                      <input type="checkbox" checked={!isDisabled} onChange={() => toggleDisabled(id)} /> Auto-cast
+                    </label>
                     {canReorder && (
                       <>
                         <button onClick={() => move(index, -1)} disabled={index === 0}>

@@ -118,6 +118,7 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
       monster,
       savedEquippedAbilityIds: c.equippedAbilityIds,
       savedAbilityConditions: c.abilityConditions,
+      disabledAbilityIds: c.disabledAbilityIds,
       // Companions only fight in dungeons (see DungeonScreen.tsx) — open-
       // world combat is always solo, per an explicit product decision: a
       // companion that tagged along on ordinary zone grinding made "bring

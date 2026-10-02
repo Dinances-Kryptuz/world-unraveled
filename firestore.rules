@@ -50,6 +50,7 @@ service cloud.firestore {
       && data.currentActivity.type == null
       && data.equippedAbilityIds == []
       && data.abilityConditions == {}
+      && data.disabledAbilityIds == []
       && data.combatPresets == []
       && data.itemCooldowns == {}
       && isValidNewQuests(data.quests)
@@ -73,6 +74,7 @@ service cloud.firestore {
       && isValidActivity(after.currentActivity)
       && isValidEquippedAbilityIds(after)
       && isValidAbilityConditions(after)
+      && isValidDisabledAbilityIds(after)
       && isValidCombatPresets(after)
       && isValidItemCooldowns(after)
       && isValidQuests(after)
@@ -126,6 +128,16 @@ service cloud.firestore {
   function isValidAbilityConditions(after) {
     return !('abilityConditions' in after)
       || (after.abilityConditions is map && after.abilityConditions.size() <= 5);
+  }
+
+  // Same "may not exist yet on an old character" treatment and ownership-
+  // scoped posture as isValidEquippedAbilityIds — full validation that an id
+  // here is actually equipped happens in firebase/character.ts's
+  // saveCombatSetup before the write is even sent. Bounded the same as
+  // equippedAbilityIds (at most 5 slots, so at most 5 can be toggled off).
+  function isValidDisabledAbilityIds(after) {
+    return !('disabledAbilityIds' in after)
+      || (after.disabledAbilityIds is list && after.disabledAbilityIds.size() <= 5);
   }
 
   // Same "may not exist yet on an old character" treatment and the same
