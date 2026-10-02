@@ -46,8 +46,43 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
   }
 
   if (!character) return null;
+  const char = character;
 
-  const known = !!character.professions[professionId];
+  const known = !!char.professions[professionId];
+  const professionLevel = getProfessionState(char.professions, professionId).level;
+  const recipesForProfession = Object.values(RECIPES).filter((recipe) => recipe.profession === professionId);
+
+  function renderRecipeList() {
+    return (
+      <ul>
+        {recipesForProfession
+          .filter((recipe) => canUseRecipe(char, recipe))
+          .map((recipe) => {
+            const meetsSkill = professionLevel >= recipe.requiredSkill;
+            const meetsLevel = !recipe.requiredCharacterLevel || char.level >= recipe.requiredCharacterLevel;
+            const canCraft = meetsSkill && meetsLevel;
+            const tier = craftingColorTier(professionLevel, recipe.requiredSkill, recipe.colorBreakpoints);
+            const resultItem = ITEMS[recipe.resultItemId];
+            return (
+              <li key={recipe.id}>
+                <span
+                  style={{ color: TIER_COLORS[tier], fontWeight: 700, cursor: 'help' }}
+                  title={resultItem ? describeItemStats(resultItem) : undefined}
+                >
+                  {recipe.name}
+                </span>{' '}
+                (requires skill {recipe.requiredSkill}
+                {recipe.requiredCharacterLevel ? `, Lv ${recipe.requiredCharacterLevel}` : ''}) — materials:{' '}
+                {recipe.materials.map((m) => `${m.quantity}x ${ITEMS[m.itemId]?.name ?? m.itemId}`).join(', ')}
+                <button onClick={() => handleCraft(recipe.id)} disabled={!canCraft}>
+                  {canCraft ? 'Craft' : !meetsLevel ? `Need Lv ${recipe.requiredCharacterLevel}` : `Need skill ${recipe.requiredSkill}`}
+                </button>
+              </li>
+            );
+          })}
+      </ul>
+    );
+  }
 
   return (
     <div className="zone-screen">
@@ -66,9 +101,8 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
                   </li>
                 );
               }
-              const skillLevel = getProfessionState(character.professions, professionId).level;
-              const meetsLevel = skillLevel >= node.requiredLevel;
-              const tier = craftingColorTier(skillLevel, node.requiredLevel, node.colorBreakpoints);
+              const meetsLevel = professionLevel >= node.requiredLevel;
+              const tier = craftingColorTier(professionLevel, node.requiredLevel, node.colorBreakpoints);
               const equippedTool = character.equipment.tool ? ITEMS[character.equipment.tool] : null;
               const hasRequiredTool = !node.requiredToolType || equippedTool?.toolType === node.requiredToolType;
               const canGather = meetsLevel && hasRequiredTool;
@@ -86,6 +120,20 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
             <p>No {label} nodes in {zone.name}.</p>
           )}
         </ul>
+      )}
+
+      {/* Smelting lives here rather than under Blacksmithing — turning ore
+          into bars is a Mining skill in its own right (gated on Mining
+          skill, grants Mining XP); Blacksmithing recipes then consume those
+          bars like any other material. Only Mining currently has any
+          recipes tagged to it, so this renders for no other gathering
+          profession. */}
+      {category === 'gathering' && recipesForProfession.length > 0 && (
+        <>
+          <h3>Smelting</h3>
+          {!known && <p>You don't know {label} yet — learn it below.</p>}
+          {known && renderRecipeList()}
+        </>
       )}
 
       {category === 'fishing' && (
@@ -117,36 +165,7 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
       {category === 'production' && (
         <>
           {!known && <p>You don't know {label} yet — learn it below.</p>}
-          {known && (
-            <ul>
-              {Object.values(RECIPES)
-                .filter((recipe) => recipe.profession === professionId && canUseRecipe(character, recipe))
-                .map((recipe) => {
-                  const professionLevel = getProfessionState(character.professions, professionId).level;
-                  const meetsSkill = professionLevel >= recipe.requiredSkill;
-                  const meetsLevel = !recipe.requiredCharacterLevel || character.level >= recipe.requiredCharacterLevel;
-                  const canCraft = meetsSkill && meetsLevel;
-                  const tier = craftingColorTier(professionLevel, recipe.requiredSkill, recipe.colorBreakpoints);
-                  const resultItem = ITEMS[recipe.resultItemId];
-                  return (
-                    <li key={recipe.id}>
-                      <span
-                        style={{ color: TIER_COLORS[tier], fontWeight: 700, cursor: 'help' }}
-                        title={resultItem ? describeItemStats(resultItem) : undefined}
-                      >
-                        {recipe.name}
-                      </span>{' '}
-                      (requires skill {recipe.requiredSkill}
-                      {recipe.requiredCharacterLevel ? `, Lv ${recipe.requiredCharacterLevel}` : ''}) — materials:{' '}
-                      {recipe.materials.map((m) => `${m.quantity}x ${ITEMS[m.itemId]?.name ?? m.itemId}`).join(', ')}
-                      <button onClick={() => handleCraft(recipe.id)} disabled={!canCraft}>
-                        {canCraft ? 'Craft' : !meetsLevel ? `Need Lv ${recipe.requiredCharacterLevel}` : `Need skill ${recipe.requiredSkill}`}
-                      </button>
-                    </li>
-                  );
-                })}
-            </ul>
-          )}
+          {known && renderRecipeList()}
         </>
       )}
 

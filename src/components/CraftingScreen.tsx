@@ -166,18 +166,33 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
 
   if (!character.currentActivity.startedAt) return null;
 
+  // Live preview of progress since the last autosave, recomputed every
+  // render tick (same pattern as GatheringScreen's sinceLastSave) — without
+  // this, "This session" only updated once per 10-second autosave, jumping
+  // by however many items completed in that window all at once (visibly
+  // "crafted 2 leather" in one lump) instead of counting up smoothly as
+  // each one actually finishes. Crafting and gathering now share this same
+  // per-second live-preview cadence.
+  const currentSkill = getProfessionState(character.professions, recipe.profession).level;
+  const sinceLastSave = anchorRef.current
+    ? resolveCrafting(anchorRef.current, new Date(), recipe, currentSkill, materialsRef.current, recipe.colorBreakpoints)
+    : { itemsCrafted: 0, xpGained: 0, materialsConsumed: [] };
+
+  const displayCrafted = bankedCrafted + sinceLastSave.itemsCrafted;
+  const displayXp = bankedXp + sinceLastSave.xpGained;
   const profession = getProfessionState(character.professions, recipe.profession);
+  const liveXp = profession.xp + sinceLastSave.xpGained;
 
   return (
     <div className="crafting-screen">
       <h2>Crafting: {recipe.name}</h2>
       {!outOfMaterials && <TickBar seconds={recipe.craftSeconds} color="#6b4f2a" label="Crafting" />}
       <p>
-        This session: {bankedCrafted} crafted, +{bankedXp} XP
+        This session: {displayCrafted} crafted, +{Math.round(displayXp)} XP
       </p>
       <XpBar
         level={profession.level}
-        xp={profession.xp}
+        xp={liveXp}
         curve={professionXpForLevel}
         label={recipe.profession.charAt(0).toUpperCase() + recipe.profession.slice(1)}
       />

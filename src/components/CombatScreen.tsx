@@ -257,15 +257,7 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
           questEvents.push({ type: 'use_ability', abilityId, count });
         }
         if (questEvents.length > 0) {
-          const questResult = await advanceQuests(currentUser.uid, fresh, questEvents);
-          if (questResult.completedQuestNames.length > 0) {
-            setLog((prev) =>
-              [
-                ...questResult.completedQuestNames.map((name) => ({ message: `Quest complete: ${name}!`, kind: 'status' as const })),
-                ...prev,
-              ].slice(0, MAX_LOG_LINES)
-            );
-          }
+          await advanceQuests(currentUser.uid, fresh, questEvents);
         }
       }
 

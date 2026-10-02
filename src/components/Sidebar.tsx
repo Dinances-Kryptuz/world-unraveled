@@ -26,9 +26,6 @@ const TOP_ITEMS: SidebarItem[] = [
   { id: 'inventory', label: 'Inventory' },
   { id: 'companions', label: 'Companions' },
   { id: 'shop', label: 'Shop' },
-];
-
-const BOTTOM_ITEMS: SidebarItem[] = [
   { id: 'talents', label: 'Talents' },
   { id: 'quests', label: 'Quests' },
 ];
@@ -115,7 +112,7 @@ export function Sidebar({
 }) {
   return (
     <nav className="sidebar">
-      {TOP_ITEMS.map((item) => (
+      {TOP_ITEMS.filter((item) => item.id !== 'talents' || showTalents).map((item) => (
         <NavButton key={item.id} item={item} active={active} onSelect={onSelect} />
       ))}
       <div className="sidebar-heading">Professions</div>
@@ -131,9 +128,6 @@ export function Sidebar({
             onSelect('profession');
           }}
         />
-      ))}
-      {BOTTOM_ITEMS.filter((item) => item.id !== 'talents' || showTalents).map((item) => (
-        <NavButton key={item.id} item={item} active={active} onSelect={onSelect} />
       ))}
     </nav>
   );

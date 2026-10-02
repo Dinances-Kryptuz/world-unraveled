@@ -39,6 +39,18 @@ export const MAX_ACTIVE_COMPANIONS = 4;
 // that means "the whole group" reads as that, not as an unexplained +1.
 export const REQUIRED_DUNGEON_PARTY_SIZE = MAX_ACTIVE_COMPANIONS + 1;
 
+// Gold sink: companions ask for a wage before a dungeon run, scaling with
+// the player's level (so it stays meaningful instead of trivial at high
+// level) and headcount (bringing the full 4-person party costs more than a
+// partial one in open-world content, though only a full party can actually
+// enter a dungeon at all). Paid once per run, up front — see
+// firebase/companions.ts's payDungeonCompanionFee.
+export const COMPANION_WAGE_PER_LEVEL = 2;
+
+export function dungeonCompanionFee(characterLevel: number, companionCount: number): number {
+  return companionCount * characterLevel * COMPANION_WAGE_PER_LEVEL;
+}
+
 // One companion per spec (all 6 — see classStats.ts's SpecId) so a player
 // can freely build any class/spec composition for their 4 active slots
 // (a second tank, three healers, whatever) rather than being steered

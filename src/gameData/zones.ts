@@ -264,6 +264,101 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     colorBreakpoints: { orangeUntil: 88, yellowUntil: 103, greenUntil: 118 },
     requiredToolType: 'skinning_knife',
   },
+
+  // ── A 2nd node per gathering profession per zone — same requiredLevel/
+  // xpPerAction/secondsPerAction/colorBreakpoints as that zone's original
+  // node (so difficulty/pacing is unchanged), just a different material, so
+  // each gathering profession has more than one thing to find per zone.
+  greenhollow_granite_outcrop: {
+    id: 'greenhollow_granite_outcrop', name: 'Granite Outcrop', profession: 'mining', zoneId: 'greenhollow_fields',
+    requiredLevel: 1, itemId: 'granite_chunk', xpPerAction: 5, secondsPerAction: 8,
+    colorBreakpoints: { orangeUntil: 41, yellowUntil: 56, greenUntil: 71 }, requiredToolType: 'mining_pick',
+  },
+  greenhollow_wildroot_cluster: {
+    id: 'greenhollow_wildroot_cluster', name: 'Wildroot Cluster', profession: 'herbalism', zoneId: 'greenhollow_fields',
+    requiredLevel: 1, itemId: 'wildroot', xpPerAction: 5, secondsPerAction: 8,
+    colorBreakpoints: { orangeUntil: 41, yellowUntil: 56, greenUntil: 71 },
+  },
+  greenhollow_rabbit_warren: {
+    id: 'greenhollow_rabbit_warren', name: 'Rabbit Warren', profession: 'skinning', zoneId: 'greenhollow_fields',
+    requiredLevel: 1, itemId: 'rabbit_pelt', xpPerAction: 5, secondsPerAction: 8,
+    colorBreakpoints: { orangeUntil: 41, yellowUntil: 56, greenUntil: 71 }, requiredToolType: 'skinning_knife',
+  },
+  stonecrag_flint_deposit: {
+    id: 'stonecrag_flint_deposit', name: 'Flint Deposit', profession: 'mining', zoneId: 'stonecrag_foothills',
+    requiredLevel: 10, itemId: 'flint', xpPerAction: 9, secondsPerAction: 9,
+    colorBreakpoints: { orangeUntil: 50, yellowUntil: 65, greenUntil: 80 }, requiredToolType: 'mining_pick',
+  },
+  stonecrag_frostcap_patch: {
+    id: 'stonecrag_frostcap_patch', name: 'Frostcap Patch', profession: 'herbalism', zoneId: 'stonecrag_foothills',
+    requiredLevel: 10, itemId: 'frostcap', xpPerAction: 9, secondsPerAction: 9,
+    colorBreakpoints: { orangeUntil: 50, yellowUntil: 65, greenUntil: 80 },
+  },
+  stonecrag_jackal_den: {
+    id: 'stonecrag_jackal_den', name: 'Jackal Den', profession: 'skinning', zoneId: 'stonecrag_foothills',
+    requiredLevel: 10, itemId: 'jackal_fur', xpPerAction: 9, secondsPerAction: 9,
+    colorBreakpoints: { orangeUntil: 50, yellowUntil: 65, greenUntil: 80 }, requiredToolType: 'skinning_knife',
+  },
+  emberfall_sulfur_vein: {
+    id: 'emberfall_sulfur_vein', name: 'Sulfur Vein', profession: 'mining', zoneId: 'emberfall_ridge',
+    requiredLevel: 25, itemId: 'sulfur_chunk', xpPerAction: 13, secondsPerAction: 10,
+    colorBreakpoints: { orangeUntil: 65, yellowUntil: 80, greenUntil: 95 }, requiredToolType: 'mining_pick',
+  },
+  emberfall_emberleaf_patch: {
+    id: 'emberfall_emberleaf_patch', name: 'Emberleaf Patch', profession: 'herbalism', zoneId: 'emberfall_ridge',
+    requiredLevel: 25, itemId: 'emberleaf', xpPerAction: 13, secondsPerAction: 10,
+    colorBreakpoints: { orangeUntil: 65, yellowUntil: 80, greenUntil: 95 },
+  },
+  emberfall_wolfrun_thicket: {
+    id: 'emberfall_wolfrun_thicket', name: 'Wolfrun Thicket', profession: 'skinning', zoneId: 'emberfall_ridge',
+    requiredLevel: 25, itemId: 'cinderwolf_pelt', xpPerAction: 13, secondsPerAction: 10,
+    colorBreakpoints: { orangeUntil: 65, yellowUntil: 80, greenUntil: 95 }, requiredToolType: 'skinning_knife',
+  },
+  cinderfall_shadowore_seam: {
+    id: 'cinderfall_shadowore_seam', name: 'Shadowore Seam', profession: 'mining', zoneId: 'cinderfall_depths',
+    requiredLevel: 30, itemId: 'shadowore', xpPerAction: 17, secondsPerAction: 11,
+    colorBreakpoints: { orangeUntil: 70, yellowUntil: 85, greenUntil: 100 }, requiredToolType: 'mining_pick',
+  },
+  cinderfall_ashroot_patch: {
+    id: 'cinderfall_ashroot_patch', name: 'Ashroot Patch', profession: 'herbalism', zoneId: 'cinderfall_depths',
+    requiredLevel: 30, itemId: 'ashroot', xpPerAction: 17, secondsPerAction: 11,
+    colorBreakpoints: { orangeUntil: 70, yellowUntil: 85, greenUntil: 100 },
+  },
+  cinderfall_scavenger_den: {
+    id: 'cinderfall_scavenger_den', name: 'Scavenger Den', profession: 'skinning', zoneId: 'cinderfall_depths',
+    requiredLevel: 30, itemId: 'scavenger_hide', xpPerAction: 17, secondsPerAction: 11,
+    colorBreakpoints: { orangeUntil: 70, yellowUntil: 85, greenUntil: 100 }, requiredToolType: 'skinning_knife',
+  },
+  molten_scar_obsidian_vein: {
+    id: 'molten_scar_obsidian_vein', name: 'Obsidian Vein', profession: 'mining', zoneId: 'molten_scar',
+    requiredLevel: 40, itemId: 'obsidian_shard', xpPerAction: 21, secondsPerAction: 12,
+    colorBreakpoints: { orangeUntil: 80, yellowUntil: 95, greenUntil: 110 }, requiredToolType: 'mining_pick',
+  },
+  molten_scar_scorchweed_patch: {
+    id: 'molten_scar_scorchweed_patch', name: 'Scorchweed Patch', profession: 'herbalism', zoneId: 'molten_scar',
+    requiredLevel: 40, itemId: 'scorchweed', xpPerAction: 21, secondsPerAction: 12,
+    colorBreakpoints: { orangeUntil: 80, yellowUntil: 95, greenUntil: 110 },
+  },
+  molten_scar_scaleback_nest: {
+    id: 'molten_scar_scaleback_nest', name: 'Scaleback Nest', profession: 'skinning', zoneId: 'molten_scar',
+    requiredLevel: 40, itemId: 'scaleback_scale', xpPerAction: 21, secondsPerAction: 12,
+    colorBreakpoints: { orangeUntil: 80, yellowUntil: 95, greenUntil: 110 }, requiredToolType: 'skinning_knife',
+  },
+  cinderheart_starforge_vein: {
+    id: 'cinderheart_starforge_vein', name: 'Starforge Vein', profession: 'mining', zoneId: 'cinderheart_crater',
+    requiredLevel: 48, itemId: 'starforge_ore', xpPerAction: 25, secondsPerAction: 13,
+    colorBreakpoints: { orangeUntil: 88, yellowUntil: 103, greenUntil: 118 }, requiredToolType: 'mining_pick',
+  },
+  cinderheart_heartbloom_patch: {
+    id: 'cinderheart_heartbloom_patch', name: 'Heartbloom Patch', profession: 'herbalism', zoneId: 'cinderheart_crater',
+    requiredLevel: 48, itemId: 'heartbloom', xpPerAction: 25, secondsPerAction: 13,
+    colorBreakpoints: { orangeUntil: 88, yellowUntil: 103, greenUntil: 118 },
+  },
+  cinderheart_emberscale_nest: {
+    id: 'cinderheart_emberscale_nest', name: 'Emberscale Nest', profession: 'skinning', zoneId: 'cinderheart_crater',
+    requiredLevel: 48, itemId: 'emberscale_claw', xpPerAction: 25, secondsPerAction: 13,
+    colorBreakpoints: { orangeUntil: 88, yellowUntil: 103, greenUntil: 118 }, requiredToolType: 'skinning_knife',
+  },
 };
 
 export const ZONES: Record<string, Zone> = {
@@ -275,7 +370,10 @@ export const ZONES: Record<string, Zone> = {
     levelRange: [1, 15],
     unlockRequirement: { type: 'none' },
     monsterIds: ['greenhorn_boar', 'forest_wolf', 'wild_kobold', 'thornback_hare'],
-    gatherNodeIds: ['greenhollow_copper_vein', 'greenhollow_peacebloom_patch', 'greenhollow_hunting_grounds'],
+    gatherNodeIds: [
+      'greenhollow_copper_vein', 'greenhollow_peacebloom_patch', 'greenhollow_hunting_grounds',
+      'greenhollow_granite_outcrop', 'greenhollow_wildroot_cluster', 'greenhollow_rabbit_warren',
+    ],
     fishingHoleIds: ['greenhollow_fishing_hole'],
   },
 
@@ -287,7 +385,10 @@ export const ZONES: Record<string, Zone> = {
     levelRange: [8, 25],
     unlockRequirement: { type: 'characterLevel', level: 8 },
     monsterIds: ['ridge_jackal', 'craggy_goat', 'rubble_crawler', 'highland_bandit', 'crag_wolf_alpha'],
-    gatherNodeIds: ['stonecrag_tin_vein', 'stonecrag_sage_patch', 'stonecrag_foothill_game'],
+    gatherNodeIds: [
+      'stonecrag_tin_vein', 'stonecrag_sage_patch', 'stonecrag_foothill_game',
+      'stonecrag_flint_deposit', 'stonecrag_frostcap_patch', 'stonecrag_jackal_den',
+    ],
     fishingHoleIds: ['stonecrag_fishing_hole'],
   },
 
@@ -299,7 +400,10 @@ export const ZONES: Record<string, Zone> = {
     levelRange: [25, 40],
     unlockRequirement: { type: 'characterLevel', level: 25 },
     monsterIds: ['cinder_wolf', 'ashwing_bat', 'molten_crawler', 'ridgeback_marauder', 'scorched_drake'],
-    gatherNodeIds: ['emberfall_iron_vein', 'emberfall_sunpetal_patch', 'emberfall_ashfang_den'],
+    gatherNodeIds: [
+      'emberfall_iron_vein', 'emberfall_sunpetal_patch', 'emberfall_ashfang_den',
+      'emberfall_sulfur_vein', 'emberfall_emberleaf_patch', 'emberfall_wolfrun_thicket',
+    ],
     fishingHoleIds: ['emberfall_fishing_hole'],
   },
 
@@ -311,7 +415,10 @@ export const ZONES: Record<string, Zone> = {
     levelRange: [30, 44],
     unlockRequirement: { type: 'characterLevel', level: 30 },
     monsterIds: ['ash_wraith', 'cinder_scavenger', 'ashforge_golem', 'ember_stalker', 'ruin_marauder'],
-    gatherNodeIds: ['cinderfall_ore_seam', 'cinderfall_emberpetal_patch', 'cinderfall_ash_burrow'],
+    gatherNodeIds: [
+      'cinderfall_ore_seam', 'cinderfall_emberpetal_patch', 'cinderfall_ash_burrow',
+      'cinderfall_shadowore_seam', 'cinderfall_ashroot_patch', 'cinderfall_scavenger_den',
+    ],
     fishingHoleIds: ['cinderfall_fishing_hole'],
   },
 
@@ -323,7 +430,10 @@ export const ZONES: Record<string, Zone> = {
     levelRange: [40, 54],
     unlockRequirement: { type: 'characterLevel', level: 40 },
     monsterIds: ['cultist_adept', 'living_ember', 'scaleback_drake', 'cultist_zealot', 'magma_hound'],
-    gatherNodeIds: ['molten_scar_brimstone_vein', 'molten_scar_cinderbloom_patch', 'molten_scar_scaleback_den'],
+    gatherNodeIds: [
+      'molten_scar_brimstone_vein', 'molten_scar_cinderbloom_patch', 'molten_scar_scaleback_den',
+      'molten_scar_obsidian_vein', 'molten_scar_scorchweed_patch', 'molten_scar_scaleback_nest',
+    ],
     fishingHoleIds: ['molten_scar_fishing_hole'],
   },
 
@@ -335,7 +445,10 @@ export const ZONES: Record<string, Zone> = {
     levelRange: [48, 60],
     unlockRequirement: { type: 'characterLevel', level: 48 },
     monsterIds: ['emberlord_cultist', 'flamewalker', 'charhide_behemoth', 'ashfall_harbinger', 'emberguard_sentinel'],
-    gatherNodeIds: ['cinderheart_ore_vein', 'cinderheart_bloom_patch', 'cinderheart_hide_grounds'],
+    gatherNodeIds: [
+      'cinderheart_ore_vein', 'cinderheart_bloom_patch', 'cinderheart_hide_grounds',
+      'cinderheart_starforge_vein', 'cinderheart_heartbloom_patch', 'cinderheart_emberscale_nest',
+    ],
     fishingHoleIds: ['cinderheart_fishing_hole'],
   },
 };

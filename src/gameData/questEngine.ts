@@ -20,7 +20,7 @@ function isZoneUnlockedForQuests(zoneId: string, characterLevel: number): boolea
   return zone.unlockRequirement.type === 'none' || characterLevel >= zone.unlockRequirement.level;
 }
 
-function isQuestAvailable(
+export function isQuestAvailable(
   quest: QuestDef,
   character: Pick<Character, 'class' | 'spec' | 'level' | 'quests' | 'professions'>,
   now: Date
@@ -47,11 +47,18 @@ function isQuestAvailable(
   return !character.quests.completedIds.includes(quest.id);
 }
 
-// Priority order for filling empty active-quest slots: zone chains first
-// (the primary "what do I do next" signal for a new player), then class,
-// then profession, then daily — dailies only show up once there's room.
+// Priority order for listing available quests: zone chains first (the
+// primary "what do I do next" signal for a new player), then class, then
+// profession, then daily.
 const CATEGORY_PRIORITY: Record<QuestDef['category'], number> = { zone: 0, class: 1, profession: 2, daily: 3 };
 
+// Used ONCE, to seed a brand-new character's starting board (see
+// firebase/character.ts's createCharacter) — auto-filling makes sense there
+// since there's no "quest giver" screen to visit first. After creation, a
+// freed active slot stays empty until the player explicitly accepts
+// something (see acceptQuestInState below) rather than auto-refilling,
+// per explicit design direction: completing a quest should never silently
+// hand you the next one.
 export function refillActiveQuests(
   character: Pick<Character, 'class' | 'spec' | 'level' | 'quests' | 'professions'>,
   now: Date
@@ -60,9 +67,7 @@ export function refillActiveQuests(
   let slotsLeft = MAX_ACTIVE_QUESTS - Object.keys(active).length;
   if (slotsLeft <= 0) return active;
 
-  const candidates = Object.values(QUESTS)
-    .filter((q) => isQuestAvailable(q, character, now))
-    .sort((a, b) => CATEGORY_PRIORITY[a.category] - CATEGORY_PRIORITY[b.category]);
+  const candidates = availableQuests(character, now);
 
   for (const q of candidates) {
     if (slotsLeft <= 0) break;
@@ -70,6 +75,20 @@ export function refillActiveQuests(
     slotsLeft--;
   }
   return active;
+}
+
+// Every quest the player COULD accept right now (not already active, meets
+// level/class/spec/zone/profession/prerequisite/cooldown gates) — what the
+// Quest Log's "Available" list offers, one Accept click at a time, instead
+// of the old auto-fill. Pure and client-computable; no Firestore round trip
+// needed just to see what's available.
+export function availableQuests(
+  character: Pick<Character, 'class' | 'spec' | 'level' | 'quests' | 'professions'>,
+  now: Date
+): QuestDef[] {
+  return Object.values(QUESTS)
+    .filter((q) => isQuestAvailable(q, character, now))
+    .sort((a, b) => CATEGORY_PRIORITY[a.category] - CATEGORY_PRIORITY[b.category]);
 }
 
 function objectiveProgressDelta(obj: QuestObjective, event: QuestEvent): number {
@@ -100,30 +119,18 @@ function objectiveProgressDelta(obj: QuestObjective, event: QuestEvent): number 
   }
 }
 
-export interface QuestApplyResult {
-  quests: QuestState;
-  rewards: { xp: number; gold: number; items: { itemId: string; quantity: number }[] };
-  completedQuestNames: string[];
-}
-
-// Applies a batch of progress events to every active quest, completing any
-// that reach all their objective targets, granting rewards, and refilling
-// freed-up slots (which can immediately pull in a just-unlocked chain
-// successor) — all in one pass. Doesn't touch Firestore; see
-// firebase/quests.ts.
+// Bumps progress on every active quest for a batch of events, clamped at
+// each objective's target. Does NOT complete a quest on its own, even once
+// every objective is met — see isQuestReadyToComplete/completeQuestInState
+// below. Completion is now an explicit player action (clicking "Complete
+// Quest" in the Quest Log), per explicit design direction: a quest reaching
+// its target shouldn't silently grant rewards and vanish from the board.
 export function applyQuestEvents(
-  character: Pick<Character, 'class' | 'spec' | 'level' | 'quests' | 'professions'>,
-  events: QuestEvent[],
-  now: Date
-): QuestApplyResult {
+  character: Pick<Character, 'quests'>,
+  events: QuestEvent[]
+): Record<string, number[]> {
   const active: Record<string, number[]> = {};
   for (const [id, progress] of Object.entries(character.quests.active)) active[id] = [...progress];
-  const completedIds = [...character.quests.completedIds];
-  const dailyCompletedAt = { ...character.quests.dailyCompletedAt };
-  let xp = 0;
-  let gold = 0;
-  const items: { itemId: string; quantity: number }[] = [];
-  const completedQuestNames: string[] = [];
 
   if (events.length > 0) {
     for (const questId of Object.keys(active)) {
@@ -138,34 +145,74 @@ export function applyQuestEvents(
           progress[i] = Math.min(obj.count, progress[i] + objectiveProgressDelta(obj, event));
         });
       }
-      const isComplete = quest.objectives.every((obj, i) => progress[i] >= obj.count);
-      if (isComplete) {
-        delete active[questId];
-        if (!completedIds.includes(questId)) completedIds.push(questId);
-        if (quest.repeatable) dailyCompletedAt[questId] = now;
-        xp += quest.rewards.xp ?? 0;
-        gold += quest.rewards.gold ?? 0;
-        if (quest.rewards.itemId && quest.rewards.itemQuantity) {
-          items.push({ itemId: quest.rewards.itemId, quantity: quest.rewards.itemQuantity });
-        }
-        completedQuestNames.push(quest.name);
-      }
     }
   }
 
-  // Always top up the active board after processing events — covers not
-  // just a newly-completed quest's chain successor, but also e.g. a zone
-  // that became unlocked by a level-up moments earlier. A freshly-added
-  // quest starts at 0 and only progresses on the NEXT event batch, never
-  // retroactively from this one.
-  const refilled = refillActiveQuests({ ...character, quests: { active, completedIds, dailyCompletedAt } }, now);
-  for (const [id, progress] of Object.entries(refilled)) {
-    if (!(id in active)) active[id] = progress;
-  }
+  return active;
+}
+
+export function isQuestReadyToComplete(quest: QuestDef, progress: number[]): boolean {
+  return quest.objectives.every((obj, i) => progress[i] >= obj.count);
+}
+
+export interface CompleteQuestResult {
+  quests: QuestState;
+  rewards: { xp: number; gold: number; items: { itemId: string; quantity: number }[] };
+  questName: string;
+}
+
+// The player's explicit "Complete Quest" action — validates the quest is
+// actually active and every objective is met (never trust the client alone;
+// same posture as every other gated write in firebase/*.ts), then grants
+// rewards and moves it to completedIds. Returns null on any invalid attempt
+// (unknown quest, not active, or not actually finished yet) for the caller
+// to turn into a no-op.
+export function completeQuestInState(
+  character: Pick<Character, 'quests'>,
+  questId: string,
+  now: Date
+): CompleteQuestResult | null {
+  const quest = QUESTS[questId];
+  const progress = character.quests.active[questId];
+  if (!quest || !progress || !isQuestReadyToComplete(quest, progress)) return null;
+
+  const active = { ...character.quests.active };
+  delete active[questId];
+  const completedIds = character.quests.completedIds.includes(questId)
+    ? character.quests.completedIds
+    : [...character.quests.completedIds, questId];
+  const dailyCompletedAt = { ...character.quests.dailyCompletedAt };
+  if (quest.repeatable) dailyCompletedAt[questId] = now;
 
   return {
     quests: { active, completedIds, dailyCompletedAt },
-    rewards: { xp, gold, items },
-    completedQuestNames,
+    rewards: {
+      xp: quest.rewards.xp ?? 0,
+      gold: quest.rewards.gold ?? 0,
+      items:
+        quest.rewards.itemId && quest.rewards.itemQuantity
+          ? [{ itemId: quest.rewards.itemId, quantity: quest.rewards.itemQuantity }]
+          : [],
+    },
+    questName: quest.name,
+  };
+}
+
+// The player's explicit "Accept Quest" action — adds one specific quest to
+// the active board (if there's a free slot and it's actually available to
+// this character right now). Returns null on any invalid attempt for the
+// caller to turn into a no-op, same posture as completeQuestInState.
+export function acceptQuestInState(
+  character: Pick<Character, 'class' | 'spec' | 'level' | 'quests' | 'professions'>,
+  questId: string,
+  now: Date
+): QuestState | null {
+  if (Object.keys(character.quests.active).length >= MAX_ACTIVE_QUESTS) return null;
+  const quest = QUESTS[questId];
+  if (!quest || !isQuestAvailable(quest, character, now)) return null;
+
+  return {
+    ...character.quests,
+    active: { ...character.quests.active, [questId]: quest.objectives.map(() => 0) },
   };
 }

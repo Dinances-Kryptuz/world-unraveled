@@ -19,6 +19,7 @@ export function AbilityBar({ player, onUse }: { player: Combatant; onUse: (abili
         const pool = ability.resourceType ? player.resources[ability.resourceType] : undefined;
         const affordable = !ability.resourceType || (pool !== undefined && pool.current >= (ability.resourceCost ?? 0));
         const disabled = cooldown > 0 || !affordable;
+        const autoCastOff = player.disabledAbilityIds?.includes(abilityId) ?? false;
         const cdPct =
           ability.cooldownSeconds > 0
             ? Math.max(0, Math.min(100, ((ability.cooldownSeconds - cooldown) / ability.cooldownSeconds) * 100))
@@ -28,10 +29,16 @@ export function AbilityBar({ player, onUse }: { player: Combatant; onUse: (abili
             <button
               onClick={() => onUse(abilityId)}
               disabled={disabled}
-              title={cooldown <= 0 && !affordable ? `Not enough ${RESOURCE_LABELS[ability.resourceType!] ?? ability.resourceType}` : undefined}
-              style={{ width: '100%' }}
+              title={
+                cooldown <= 0 && !affordable
+                  ? `Not enough ${RESOURCE_LABELS[ability.resourceType!] ?? ability.resourceType}`
+                  : autoCastOff
+                    ? 'Auto-cast is off for this ability — use it manually here.'
+                    : undefined
+              }
+              style={{ width: '100%', opacity: autoCastOff ? 0.7 : 1 }}
             >
-              {cooldown > 0 ? `${ability.name} (${Math.ceil(cooldown)}s)` : ability.name}
+              {cooldown > 0 ? `${ability.name} (${Math.ceil(cooldown)}s)` : autoCastOff ? `${ability.name} (manual)` : ability.name}
             </button>
             {ability.cooldownSeconds > 0 && (
               <div style={{ background: '#e2d9c8', borderRadius: 3, height: 4, width: '100%', marginTop: 3, overflow: 'hidden' }}>

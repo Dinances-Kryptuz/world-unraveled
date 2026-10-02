@@ -149,14 +149,30 @@ export function FishingScreen({ hole }: { hole: FishingHole }) {
   const currentSkill = getProfessionState(character.professions, 'fishing').level;
   const skillupChance = fishingSkillupChance(currentSkill);
 
+  // Live preview since the last autosave, recomputed every render tick —
+  // same pattern as GatheringScreen/CraftingScreen, so "This session" counts
+  // up smoothly instead of jumping in a lump every autosave interval.
+  const equippedTool = character.equipment.tool ? ITEMS[character.equipment.tool] : null;
+  const toolBonusPct = equippedTool?.toolType === 'fishing_rod' ? equippedTool.gatherBonusPct ?? 0 : 0;
+  const sinceLastSave = anchorRef.current
+    ? resolveFishing(anchorRef.current, new Date(), hole, currentSkill, toolBonusPct)
+    : { catches: [], skillupsGained: 0, actionsAttempted: 0, catchChance: 0 };
+
+  const displayCatches: Record<string, number> = { ...bankedCatches };
+  for (const c of sinceLastSave.catches) {
+    const previewQty = (catchCarryRef.current[c.itemId] ?? 0) + c.quantity;
+    if (previewQty > 0) displayCatches[c.itemId] = (displayCatches[c.itemId] ?? 0) + previewQty;
+  }
+  const displaySkillups = bankedSkillups + skillupCarryRef.current + sinceLastSave.skillupsGained;
+
   return (
     <div className="fishing-screen">
       <h2>Fishing: {hole.name}</h2>
       <TickBar seconds={hole.secondsPerAction} color="#2a5a6b" label="Casting" />
       <p>Skill-up chance per catch at your skill: {(skillupChance * 100).toFixed(0)}%</p>
       <p>
-        This session: {Object.entries(bankedCatches).map(([id, qty]) => `${qty}x ${ITEMS[id]?.name ?? id}`).join(', ') || 'nothing yet'},{' '}
-        +{bankedSkillups} skill
+        This session: {Object.entries(displayCatches).map(([id, qty]) => `${Math.floor(qty)}x ${ITEMS[id]?.name ?? id}`).join(', ') || 'nothing yet'},{' '}
+        +{Math.floor(displaySkillups)} skill
       </p>
       <p>Fishing skill: {currentSkill}</p>
       <button onClick={handleStop}>Stop</button>

@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useCharacter } from '../hooks/useCharacter';
-import { refreshQuestBoard } from '../firebase/character';
-import { QUESTS, type QuestCategory, type QuestDef, type QuestObjective } from '../gameData/quests';
+import { completeQuest, acceptQuest } from '../firebase/character';
+import { availableQuests, isQuestReadyToComplete } from '../gameData/questEngine';
+import { QUESTS, MAX_ACTIVE_QUESTS, type QuestCategory, type QuestDef, type QuestObjective } from '../gameData/quests';
 import { MONSTERS } from '../gameData/monsters';
 import { ITEMS } from '../gameData/items';
 import { abilitiesById } from '../combatEngine/engine';
@@ -48,7 +49,7 @@ function describeReward(quest: QuestDef): string {
 export function QuestLog() {
   const { user } = useAuth();
   const { character, refetch } = useCharacter();
-  const [refreshing, setRefreshing] = useState(false);
+  const [busyId, setBusyId] = useState<string | null>(null);
 
   if (!character) return null;
 
@@ -60,40 +61,84 @@ export function QuestLog() {
       return order[a.quest.category] - order[b.quest.category];
     });
 
-  async function handleRefresh() {
+  const available = availableQuests(character, new Date());
+  const atCap = activeQuests.length >= MAX_ACTIVE_QUESTS;
+
+  async function handleComplete(questId: string) {
     if (!user) return;
-    setRefreshing(true);
+    setBusyId(questId);
     try {
-      await refreshQuestBoard(user.uid);
+      await completeQuest(user.uid, questId);
       await refetch();
     } finally {
-      setRefreshing(false);
+      setBusyId(null);
+    }
+  }
+
+  async function handleAccept(questId: string) {
+    if (!user) return;
+    setBusyId(questId);
+    try {
+      await acceptQuest(user.uid, questId);
+      await refetch();
+    } finally {
+      setBusyId(null);
     }
   }
 
   return (
     <div className="quest-log">
       <h2>
-        Quests ({activeQuests.length} / 8)
-        <button onClick={handleRefresh} disabled={refreshing} style={{ marginLeft: 8 }}>
-          {refreshing ? 'Checking…' : 'Check for new quests'}
-        </button>
+        Quests ({activeQuests.length} / {MAX_ACTIVE_QUESTS})
       </h2>
       {activeQuests.length === 0 ? (
-        <p>No active quests right now — check back after leveling up or finishing what you have.</p>
+        <p>No active quests right now — accept one below.</p>
       ) : (
         <ul style={{ listStyle: 'none', paddingLeft: 0 }}>
-          {activeQuests.map(({ quest, progress }) => (
-            <li key={quest.id} style={{ marginBottom: 10 }}>
+          {activeQuests.map(({ quest, progress }) => {
+            const ready = isQuestReadyToComplete(quest, progress);
+            return (
+              <li key={quest.id} style={{ marginBottom: 10 }}>
+                <div>
+                  <strong>{quest.name}</strong> <small>({CATEGORY_LABELS[quest.category]})</small>
+                  {ready && (
+                    <button onClick={() => handleComplete(quest.id)} disabled={busyId !== null} style={{ marginLeft: 8 }}>
+                      {busyId === quest.id ? 'Completing…' : 'Complete Quest'}
+                    </button>
+                  )}
+                </div>
+                <div>{quest.description}</div>
+                <ul style={{ paddingLeft: 18, margin: '4px 0' }}>
+                  {quest.objectives.map((obj, i) => (
+                    <li key={i}>
+                      {describeObjective(obj)}: {Math.min(progress[i], obj.count)} / {obj.count}
+                    </li>
+                  ))}
+                </ul>
+                <small>Reward: {describeReward(quest)}</small>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      <h3>Available</h3>
+      {available.length === 0 ? (
+        <p>Nothing new to accept right now — check back after leveling up, learning a profession, or finishing what you have.</p>
+      ) : (
+        <ul style={{ listStyle: 'none', paddingLeft: 0 }}>
+          {available.map((quest) => (
+            <li key={quest.id} style={{ marginBottom: 10, opacity: atCap ? 0.6 : 1 }}>
               <div>
                 <strong>{quest.name}</strong> <small>({CATEGORY_LABELS[quest.category]})</small>
+                <button onClick={() => handleAccept(quest.id)} disabled={busyId !== null || atCap} style={{ marginLeft: 8 }}>
+                  {busyId === quest.id ? 'Accepting…' : atCap ? 'Board full' : 'Accept'}
+                </button>
               </div>
               <div>{quest.description}</div>
               <ul style={{ paddingLeft: 18, margin: '4px 0' }}>
                 {quest.objectives.map((obj, i) => (
-                  <li key={i}>
-                    {describeObjective(obj)}: {Math.min(progress[i], obj.count)} / {obj.count}
-                  </li>
+                  <li key={i}>{describeObjective(obj)}: 0 / {obj.count}</li>
                 ))}
               </ul>
               <small>Reward: {describeReward(quest)}</small>

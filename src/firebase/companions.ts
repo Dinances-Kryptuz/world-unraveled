@@ -1,7 +1,7 @@
 import { doc, updateDoc, increment } from 'firebase/firestore';
 import { db } from './config';
 import { getCharacter } from './character';
-import { COMPANIONS, checkRecruitCompanion, emptyCompanionEquipment, MAX_ACTIVE_COMPANIONS } from '../gameData/companions';
+import { COMPANIONS, checkRecruitCompanion, emptyCompanionEquipment, MAX_ACTIVE_COMPANIONS, dungeonCompanionFee } from '../gameData/companions';
 import { canClassEquip } from '../gameData/classStats';
 import { ITEMS } from '../gameData/items';
 import type { EquipmentSlot } from '../gameData/types';
@@ -90,6 +90,32 @@ export async function equipCompanionItem(
   await updateDoc(doc(db, 'characters', uid), {
     [`companions.${companionId}.equipment.${slot}`]: itemId,
   });
+}
+
+export interface DungeonFeeResult {
+  success: boolean;
+  reason?: string;
+  costPaid?: number;
+}
+
+// Charges the companion wage for one dungeon run, computed server-side from
+// the character's OWN level/active-party size (never trusted from the
+// caller) — same "don't trust the client's math" posture as
+// checkRecruitCompanion/checkLearnProfession elsewhere in this file/
+// professions.ts. Called right before a dungeon run starts; failing it
+// (not enough gold) should block entry entirely.
+export async function payDungeonCompanionFee(uid: string): Promise<DungeonFeeResult> {
+  const character = await getCharacter(uid);
+  if (!character) return { success: false, reason: 'Character not found.' };
+
+  const fee = dungeonCompanionFee(character.level, character.activeCompanionIds.length);
+  if (fee === 0) return { success: true, costPaid: 0 };
+  if (character.gold < fee) {
+    return { success: false, reason: `Your party needs ${fee} gold up front for this run (you have ${Math.floor(character.gold)}).` };
+  }
+
+  await updateDoc(doc(db, 'characters', uid), { gold: increment(-fee) });
+  return { success: true, costPaid: fee };
 }
 
 export async function unequipCompanionItem(uid: string, companionId: string, slot: EquipmentSlot): Promise<void> {
