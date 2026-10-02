@@ -116,6 +116,34 @@ export const COMPANIONS: Record<string, CompanionDef> = {
     recruitGoldCost: 90,
     requiredCharacterLevel: 12,
   },
+  // Mage is a preview of a future expansion — not a playable class yet
+  // (see classStats.ts), but its two companions are real, functional party
+  // members today. Placed a tier later than the core six and zone-themed
+  // (frost in the cold foothills, fire on the volcanic ridge) so finding
+  // them feels like stumbling onto something ahead of its time rather than
+  // just more of the same roster.
+  thessaly_frostbind: {
+    id: 'thessaly_frostbind',
+    name: 'Thessaly Frostbind',
+    class: 'mage',
+    specId: 'mage_frost',
+    description:
+      'A hedge-wizard practicing a discipline no hall has formally taught yet. Wears the enemy down with cold that lingers.',
+    recruitZoneId: 'stonecrag_foothills',
+    recruitGoldCost: 100,
+    requiredCharacterLevel: 15,
+  },
+  pyra_emberwild: {
+    id: 'pyra_emberwild',
+    name: 'Pyra Emberwild',
+    class: 'mage',
+    specId: 'mage_fire',
+    description:
+      'A fire-touched researcher drawn to the ridge by the heat itself. Burns down a single target fast and hard.',
+    recruitZoneId: 'emberfall_ridge',
+    recruitGoldCost: 150,
+    requiredCharacterLevel: 25,
+  },
 };
 
 export function companionsInZone(zoneId: string): CompanionDef[] {

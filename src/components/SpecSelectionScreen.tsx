@@ -10,6 +10,11 @@ const SPEC_INFO: Record<SpecId, { label: string; blurb: string }> = {
   holy_priest: { label: 'Holy', blurb: 'The best pure healer. Low damage, extremely hard to kill.' },
   prot_paladin: { label: 'Protection', blurb: 'A hybrid tank — less durable than a Warrior Tank, but hits harder.' },
   holy_paladin: { label: 'Holy', blurb: 'A battle healer — more durable and offensive than Holy Priest.' },
+  // Mage is companion-only (classStats.ts) — no character ever has class
+  // 'mage', so this screen (gated on character.class) never actually shows
+  // these. Present only so SPEC_INFO stays a true Record over every SpecId.
+  mage_fire: { label: 'Fire', blurb: 'Single-target burst damage.' },
+  mage_frost: { label: 'Frost', blurb: 'Sustained, spread-out damage.' },
 };
 
 export function SpecSelectionScreen() {

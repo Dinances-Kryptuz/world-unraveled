@@ -20,6 +20,10 @@ export function initialResources(cls: ClassId, level: number, intStat: number): 
         holyPower: { current: 0, max: 5 },
       };
     }
+    case 'mage': {
+      const max = manaMax(level, intStat);
+      return { mana: { current: max, max } };
+    }
   }
 }
 
@@ -38,6 +42,8 @@ export function resourcesForClass(cls: ClassId): ResourceType[] {
       return ['mana'];
     case 'paladin':
       return ['mana', 'holyPower'];
+    case 'mage':
+      return ['mana'];
   }
 }
 
