@@ -13,7 +13,6 @@ import { maxHp, resolveCurrentHp } from '../gameData/combatFormulas';
 import { getEquipmentStatBonuses } from '../gameData/equipmentStats';
 import { getProfessionState } from '../gameData/professionTiers';
 import { evaluateActiveBuffs } from '../gameData/buffs';
-import { resolveActiveCompanionSetups } from '../gameData/companions';
 import { getInventory } from '../firebase/inventory';
 import { applyCombatResult, setCharacterLevel } from '../firebase/character';
 import type { Character, CurrentActivity } from '../types/character';
@@ -72,7 +71,8 @@ export function WelcomeBackScreen({
           savedEquippedAbilityIds: character.equippedAbilityIds,
           savedAbilityConditions: character.abilityConditions,
           monster,
-          companions: resolveActiveCompanionSetups(character),
+          // Companions only fight in dungeons — idle/offline catch-up is
+          // always open-world solo, same as live open-world combat.
         });
 
         if (user) {

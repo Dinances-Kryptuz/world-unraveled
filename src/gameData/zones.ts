@@ -2,6 +2,13 @@ import type { Zone, GatherNode, FishingHole } from './types';
 
 export const DEFAULT_ZONE_ID = 'greenhollow_fields';
 
+// Shared by the zone selector (now in TopBar.tsx, visible from every page —
+// see App.tsx) and anywhere else that needs to know if a zone is reachable
+// yet, not just ZoneScreen.
+export function isZoneUnlocked(zone: Zone, characterLevel: number): boolean {
+  return zone.unlockRequirement.type === 'none' || characterLevel >= zone.unlockRequirement.level;
+}
+
 // One fishing hole per zone, each yielding that zone's fish (see items.ts).
 // Deliberately a flat ~65% catch chance per cast with no "requiredLevel"
 // skill gate at all — Fishing has no character-level requirement to START

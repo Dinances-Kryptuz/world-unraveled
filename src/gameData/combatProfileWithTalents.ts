@@ -19,6 +19,9 @@ const PRE_SPEC_COMBAT_TYPE: Record<ClassId, CombatType> = {
   warrior: 'melee',
   paladin: 'melee',
   priest: 'magic',
+  // Unreachable for a real player (no character ever has class 'mage' —
+  // see classStats.ts) — present only so this stays a true Record.
+  mage: 'magic',
 };
 
 export function resolveSpecDef(cls: ClassId, spec: SpecId | null): SpecDef {

@@ -11,6 +11,13 @@ export const TALENT_TREES: Record<SpecId, TalentTree> = {
   holy_priest: HOLY_PRIEST_TALENTS,
   prot_paladin: PROT_PALADIN_TALENTS,
   holy_paladin: HOLY_PALADIN_TALENTS,
+  // Mage is companion-only (see classStats.ts) — no player ever picks a
+  // talent for it, and companions don't use the talent system at all
+  // (combatEngine/engine.ts's createCompanionCombatant has no talent
+  // input). Empty rather than omitted so this map stays a true Record over
+  // every SpecId.
+  mage_fire: [],
+  mage_frost: [],
 };
 
 export { WARRIOR_DPS_EXTRA_DMG_TAKEN_AT_60 };

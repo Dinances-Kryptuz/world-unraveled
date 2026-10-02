@@ -1,14 +1,22 @@
 import type { ArmorType, ItemDef } from './types';
 import type { CombatType } from './combatTriangle';
 
-export type ClassId = 'warrior' | 'priest' | 'paladin';
+// 'mage' is companion-only for now — not one of CharacterCreationScreen's
+// CLASS_OPTIONS, so no player character ever has class === 'mage' and
+// SpecSelectionScreen (which filters SPECS by character.class) never
+// surfaces mage_fire/mage_frost to a player either. A future expansion may
+// make it player-playable; until then it only exists to give the
+// companion roster a 4th class (see gameData/companions.ts).
+export type ClassId = 'warrior' | 'priest' | 'paladin' | 'mage';
 export type SpecId =
   | 'warrior_dps'
   | 'warrior_tank'
   | 'shadow_priest'
   | 'holy_priest'
   | 'prot_paladin'
-  | 'holy_paladin';
+  | 'holy_paladin'
+  | 'mage_fire'
+  | 'mage_frost';
 
 export type BaseStat = 'STR' | 'STA' | 'INT' | 'SPI';
 
@@ -20,12 +28,18 @@ export const CLASS_GROWTH: Record<ClassId, Record<BaseStat, number>> = {
   warrior: { STR: 1.2, STA: 1.0, INT: 0.2, SPI: 0.2 },
   priest: { STR: 0.2, STA: 0.5, INT: 1.2, SPI: 1.0 },
   paladin: { STR: 0.8, STA: 1.0, INT: 0.6, SPI: 0.6 },
+  // A pure caster DPS class with no healing spec — all the INT a Priest
+  // gets, none of the SPI (nothing of Mage's ever reads SPI), and the
+  // thinnest STA of any class (a Priest at least has healing to offset
+  // being squishy; a Mage companion leans on the group's tank instead).
+  mage: { STR: 0.2, STA: 0.4, INT: 1.4, SPI: 0.1 },
 };
 
 export const PRIMARY_STAT: Record<ClassId, BaseStat> = {
   warrior: 'STR',
   priest: 'INT',
   paladin: 'STR',
+  mage: 'INT',
 };
 
 export interface SpecDef {
@@ -60,6 +74,13 @@ export const SPECS: Record<SpecId, SpecDef> = {
   holy_priest: { class: 'priest', damageCoef: 0.4, survivabilityCoef: 1.0, avoidance: 0.05, healFrac: 0.35, passiveHealPct: 0.044, combatType: 'magic', threatWeight: 1 },
   prot_paladin: { class: 'paladin', damageCoef: 0.75, survivabilityCoef: 1.5, avoidance: 0.1, healFrac: 0.0, passiveHealPct: 0.006, combatType: 'melee', threatWeight: 4 },
   holy_paladin: { class: 'paladin', damageCoef: 0.5, survivabilityCoef: 1.0, avoidance: 0.05, healFrac: 0.3, passiveHealPct: 0.022, combatType: 'magic', threatWeight: 1 },
+  // Both Mage specs are matched to the other pure-DPS casters (Shadow
+  // Priest's own 1.0/0.8) rather than given a raw-number edge — they
+  // differentiate through their ability kits (combatEngine/abilities.ts),
+  // not a bigger coefficient. Mage has no survivability or threat tools of
+  // its own, so it leans on a tank companion more than Shadow Priest does.
+  mage_fire: { class: 'mage', damageCoef: 1.0, survivabilityCoef: 0.75, avoidance: 0.05, healFrac: 0.0, passiveHealPct: 0.0, combatType: 'magic', threatWeight: 1 },
+  mage_frost: { class: 'mage', damageCoef: 1.0, survivabilityCoef: 0.75, avoidance: 0.05, healFrac: 0.0, passiveHealPct: 0.0, combatType: 'magic', threatWeight: 1 },
 };
 
 export function statAtLevel(cls: ClassId, stat: BaseStat, level: number): number {
@@ -70,6 +91,7 @@ export const CLASS_LABELS: Record<ClassId, string> = {
   warrior: 'Warrior',
   priest: 'Priest',
   paladin: 'Paladin',
+  mage: 'Mage',
 };
 
 // Which armor types each class can equip. Priest is cloth-only; the two
@@ -81,6 +103,7 @@ export const ALLOWED_ARMOR_TYPES: Record<ClassId, ArmorType[]> = {
   warrior: ['cloth', 'leather', 'mail', 'plate'],
   paladin: ['cloth', 'leather', 'mail', 'plate'],
   priest: ['cloth'],
+  mage: ['cloth'],
 };
 
 export function canClassEquip(cls: ClassId, item: Pick<ItemDef, 'armorType'>): boolean {
@@ -94,4 +117,6 @@ export const SPEC_LABELS: Record<SpecId, string> = {
   holy_priest: 'Holy',
   prot_paladin: 'Protection',
   holy_paladin: 'Holy',
+  mage_fire: 'Fire',
+  mage_frost: 'Frost',
 };

@@ -379,10 +379,139 @@ export const ABILITIES: Record<string, Ability> = {
     targetType: 'SELF',
     effects: [{ type: 'buff', damageDealtPct: 30, durationSeconds: 10 }],
   },
+
+  // ── Mage (companion-only — see classStats.ts) ────────────────────────
+  // Both specs are pure DPS with no heal/tank tools of their own, so the
+  // shared kit leans on control/mitigation instead: a self-ward, an
+  // interrupt-flavored bolt (same "no effect against non-casting enemies
+  // yet" caveat as Shield Bash), and a CC. Fire and Frost differentiate
+  // entirely through their spec kit below rather than a raw-number edge
+  // (see classStats.ts's SpecDef comment) — Fire goes all-in on single
+  // massive hits, Frost deals its damage as a lingering effect. Frost's
+  // "AoE" identity is aspirational: this engine only ever has one enemy
+  // combatant active at a time, so there's no real area-effect target to
+  // hit yet — Blizzard reads as "would also hit everything else here" and
+  // is written to slot in without changes once multi-enemy fights exist.
+  mage_arcane_bolt: {
+    id: 'mage_arcane_bolt',
+    name: 'Arcane Bolt',
+    class: 'mage',
+    description: 'A basic Arcane damage spell.',
+    unlockLevel: 1,
+    cooldownSeconds: 0,
+    targetType: 'CURRENT_ENEMY',
+    isBasicAttack: true,
+    effects: [{ type: 'damage', power: 1.0 }],
+  },
+  mage_frostbite: {
+    id: 'mage_frostbite',
+    name: 'Frostbite',
+    class: 'mage',
+    description: 'A lingering chill that damages the enemy over time.',
+    unlockLevel: 1,
+    resourceType: 'mana',
+    resourceCost: 15,
+    cooldownSeconds: 12,
+    targetType: 'CURRENT_ENEMY',
+    effects: [{ type: 'dot', power: 0.4, durationSeconds: 12, tickSeconds: 4 }],
+  },
+  mage_ice_barrier: {
+    id: 'mage_ice_barrier',
+    name: 'Ice Barrier',
+    class: 'mage',
+    description: 'A ward of ice, reducing damage taken for a short time.',
+    unlockLevel: 5,
+    resourceType: 'mana',
+    resourceCost: 20,
+    cooldownSeconds: 20,
+    targetType: 'SELF',
+    effects: [{ type: 'buff', damageTakenPct: -25, durationSeconds: 8 }],
+  },
+  mage_counterspell: {
+    id: 'mage_counterspell',
+    name: 'Counterspell',
+    class: 'mage',
+    description: 'A bolt of raw magic meant to interrupt spellcasting. (No effect against non-casting enemies yet.)',
+    unlockLevel: 10,
+    resourceType: 'mana',
+    resourceCost: 15,
+    cooldownSeconds: 10,
+    targetType: 'CURRENT_ENEMY',
+    effects: [{ type: 'damage', power: 1.1 }],
+  },
+  mage_polymorph: {
+    id: 'mage_polymorph',
+    name: 'Polymorph',
+    class: 'mage',
+    description: 'Transforms the enemy, leaving it unable to act for a few seconds.',
+    unlockLevel: 10,
+    resourceType: 'mana',
+    resourceCost: 20,
+    cooldownSeconds: 20,
+    targetType: 'CURRENT_ENEMY',
+    effects: [{ type: 'stun', durationSeconds: 4 }],
+  },
+
+  mage_fire_fireball: {
+    id: 'mage_fire_fireball',
+    name: 'Fireball',
+    class: 'mage',
+    spec: 'mage_fire',
+    description: 'A powerful bolt of fire — the core of a Fire Mage’s single-target burst.',
+    unlockLevel: 15,
+    cooldownSeconds: 8,
+    resourceType: 'mana',
+    resourceCost: 30,
+    targetType: 'CURRENT_ENEMY',
+    effects: [{ type: 'damage', power: 1.8 }],
+  },
+  mage_fire_pyroblast: {
+    id: 'mage_fire_pyroblast',
+    name: 'Pyroblast',
+    class: 'mage',
+    spec: 'mage_fire',
+    description: 'A devastating gout of flame — the hardest single hit a Mage has. Long cooldown.',
+    unlockLevel: 30,
+    cooldownSeconds: 20,
+    resourceType: 'mana',
+    resourceCost: 40,
+    targetType: 'CURRENT_ENEMY',
+    effects: [{ type: 'damage', power: 2.8 }],
+  },
+  mage_frost_blizzard: {
+    id: 'mage_frost_blizzard',
+    name: 'Blizzard',
+    class: 'mage',
+    spec: 'mage_frost',
+    description: 'A storm of ice that lingers over the battlefield, continuing to damage the enemy — would hit every enemy at once in a real group fight.',
+    unlockLevel: 15,
+    cooldownSeconds: 15,
+    resourceType: 'mana',
+    resourceCost: 30,
+    targetType: 'CURRENT_ENEMY',
+    effects: [{ type: 'dot', power: 0.5, durationSeconds: 15, tickSeconds: 3 }],
+  },
+  mage_frost_deep_freeze: {
+    id: 'mage_frost_deep_freeze',
+    name: 'Deep Freeze',
+    class: 'mage',
+    spec: 'mage_frost',
+    description: 'Encases the enemy in ice, dealing damage and freezing them in place for a few seconds.',
+    unlockLevel: 30,
+    cooldownSeconds: 25,
+    resourceType: 'mana',
+    resourceCost: 35,
+    targetType: 'CURRENT_ENEMY',
+    effects: [
+      { type: 'damage', power: 1.3 },
+      { type: 'stun', durationSeconds: 3 },
+    ],
+  },
 };
 
 export const BASIC_ATTACK_BY_CLASS: Record<string, string> = {
   warrior: 'warrior_strike',
   priest: 'priest_smite',
   paladin: 'paladin_judgment',
+  mage: 'mage_arcane_bolt',
 };

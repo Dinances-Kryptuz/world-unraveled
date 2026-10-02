@@ -29,7 +29,12 @@ export function CompanionScreen({ zoneId }: { zoneId: string }) {
   if (!character || !inventory) return null;
 
   const recruitable = companionsInZone(zoneId);
-  const recruitedIds = Object.keys(character.companions);
+  // Sorted by the roster's own fixed order (gameData/companions.ts), not
+  // Object.keys(character.companions) — Firestore doesn't guarantee a
+  // map's key order survives a dot-path update to one of its nested
+  // fields (equipCompanionItem writes `companions.<id>.equipment.<slot>`),
+  // so that order could silently shuffle on every gear change otherwise.
+  const recruitedIds = Object.keys(COMPANIONS).filter((id) => character.companions[id]);
 
   async function handleRecruit(companionId: string) {
     if (!user) return;

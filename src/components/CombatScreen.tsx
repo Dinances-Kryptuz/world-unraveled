@@ -9,7 +9,6 @@ import { ITEMS } from '../gameData/items';
 import { resolveSpecDef, getExtraDamageTakenPct } from '../gameData/combatProfileWithTalents';
 import { evaluateTalents, EMPTY_TALENT_TOTALS } from '../utils/talentEvaluator';
 import { evaluateActiveBuffs } from '../gameData/buffs';
-import { resolveActiveCompanionSetups } from '../gameData/companions';
 import { maxHp, resolveCurrentHp, ATTACK_INTERVAL_SECONDS } from '../gameData/combatFormulas';
 import { getEquipmentStatBonuses } from '../gameData/equipmentStats';
 import { characterXpForLevelV2 } from '../gameData/xpTables';
@@ -119,7 +118,11 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
       monster,
       savedEquippedAbilityIds: c.equippedAbilityIds,
       savedAbilityConditions: c.abilityConditions,
-      companions: resolveActiveCompanionSetups(c),
+      // Companions only fight in dungeons (see DungeonScreen.tsx) — open-
+      // world combat is always solo, per an explicit product decision: a
+      // companion that tagged along on ordinary zone grinding made "bring
+      // your crew" feel the same everywhere instead of being the thing
+      // that makes a dungeon's full-group requirement meaningful.
     };
   }
 
@@ -346,7 +349,6 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
 
   const state = combatStateRef.current;
   const player = state.party.find((p) => p.isPlayer)!;
-  const companions = state.party.filter((p) => !p.isPlayer);
   const enemy = state.enemies[0];
 
   return (
@@ -360,18 +362,6 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
           <StatBar label="You" current={player.hp} max={player.maxHp} color={hpBarColor((player.hp / player.maxHp) * 100)} />
           <ResourceBars combatant={player} />
           <StatusBadges combatant={player} />
-
-          {companions.map((companion) => (
-            <div key={companion.id}>
-              <StatBar
-                label={companion.name}
-                current={companion.hp}
-                max={companion.maxHp}
-                color={hpBarColor((companion.hp / companion.maxHp) * 100)}
-              />
-              <StatusBadges combatant={companion} />
-            </div>
-          ))}
 
           <StatBar label={enemy.name} current={enemy.hp} max={enemy.maxHp} color={hpBarColor((enemy.hp / enemy.maxHp) * 100)} />
           <StatusBadges combatant={enemy} />
