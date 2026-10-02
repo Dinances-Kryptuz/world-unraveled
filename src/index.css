@@ -178,7 +178,7 @@ input[type="number"] {
 .app-shell {
   display: flex;
   min-height: 100vh;
-  background: linear-gradient(180deg, var(--zone-bg-from), var(--zone-bg-to) 480px, #f4f1eb 480px);
+  background: #f4f1eb;
 }
 
 .sidebar {
@@ -218,8 +218,8 @@ input[type="number"] {
   align-items: center;
   flex-wrap: wrap;
   gap: 16px;
-  background: #fff;
-  border: 1px solid #e2d9c8;
+  background: linear-gradient(135deg, #fff, var(--zone-bg-to));
+  border: 1px solid var(--zone-primary);
   border-radius: 6px;
   padding: 12px 16px;
   margin-bottom: 20px;
