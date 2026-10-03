@@ -10,6 +10,7 @@ import { XpBar } from './XpBar';
 import { TickBar } from './TickBar';
 import { ItemSlot } from './ItemSlot';
 import { ITEMS } from '../gameData/items';
+import { notify } from '../utils/notifications';
 import type { Character } from '../types/character';
 import type { User } from 'firebase/auth';
 import type { Recipe } from '../gameData/types';
@@ -115,6 +116,14 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
     goldRef.current -= result.goldSpent;
     setBankedCrafted((prev) => prev + result.itemsCrafted);
     setBankedXp((prev) => prev + result.xpGained);
+
+    if (currentCharacter.notificationsEnabled) {
+      const resultQty = recipe.resultQuantity * result.itemsCrafted;
+      notify(`${ITEMS[recipe.resultItemId]?.name ?? recipe.resultItemId} crafted`, [
+        `${resultQty}x ${ITEMS[recipe.resultItemId]?.name ?? recipe.resultItemId}`,
+        `+${Math.round(result.xpGained)} XP`,
+      ]);
+    }
     // Bump the shared profession xp now, in the same tick as the banked
     // session totals above, so the XpBar right below doesn't visibly lag
     // behind the "This session" line on this same screen.

@@ -5,7 +5,6 @@ import type { ProfessionId } from '../gameData/types';
 
 export type AppSection =
   | 'adventure'
-  | 'combatSetup'
   | 'equipment'
   | 'inventory'
   | 'bank'
@@ -15,6 +14,7 @@ export type AppSection =
   | 'shop'
   | 'talents'
   | 'quests'
+  | 'settings'
   | 'profession';
 
 interface SidebarItem {
@@ -22,9 +22,11 @@ interface SidebarItem {
   label: string;
 }
 
+// Combat Setup used to be its own top-level entry here — it now lives as a
+// tab inside Settings (gameplay-loadout preferences, not a thing you flip
+// between mid-adventure the way the other sections are).
 const TOP_ITEMS: SidebarItem[] = [
   { id: 'adventure', label: 'Adventure' },
-  { id: 'combatSetup', label: 'Combat Setup' },
   { id: 'equipment', label: 'Equipment' },
   { id: 'inventory', label: 'Inventory' },
   { id: 'bank', label: 'Bank' },
@@ -34,9 +36,20 @@ const TOP_ITEMS: SidebarItem[] = [
   { id: 'shop', label: 'Shop' },
   { id: 'talents', label: 'Talents' },
   { id: 'quests', label: 'Quests' },
+  { id: 'settings', label: 'Settings' },
 ];
 
-function NavButton({ item, active, onSelect }: { item: SidebarItem; active: AppSection; onSelect: (s: AppSection) => void }) {
+function NavButton({
+  item,
+  active,
+  onSelect,
+  showActivityDot,
+}: {
+  item: SidebarItem;
+  active: AppSection;
+  onSelect: (s: AppSection) => void;
+  showActivityDot: boolean;
+}) {
   return (
     <button
       className="sidebar-item"
@@ -44,6 +57,9 @@ function NavButton({ item, active, onSelect }: { item: SidebarItem; active: AppS
       style={active === item.id ? { background: 'var(--zone-primary)', color: '#fff' } : undefined}
     >
       {item.label}
+      {showActivityDot && (
+        <span className="sidebar-activity-dot" title="An activity is still running here" />
+      )}
     </button>
   );
 }
@@ -108,6 +124,7 @@ export function Sidebar({
   character,
   selectedProfessionId,
   onSelectProfession,
+  activityRunningInBackground,
 }: {
   active: AppSection;
   onSelect: (section: AppSection) => void;
@@ -115,11 +132,22 @@ export function Sidebar({
   character: Character;
   selectedProfessionId: ProfessionId;
   onSelectProfession: (id: ProfessionId) => void;
+  // True when a combat/gathering/fishing/crafting/dungeon session is live
+  // but the player has navigated away from Adventure to look at something
+  // else — shows a small dot on the Adventure tab so it's obvious there's
+  // something still running back there (see App.tsx's activityNode).
+  activityRunningInBackground: boolean;
 }) {
   return (
     <nav className="sidebar">
       {TOP_ITEMS.filter((item) => item.id !== 'talents' || showTalents).map((item) => (
-        <NavButton key={item.id} item={item} active={active} onSelect={onSelect} />
+        <NavButton
+          key={item.id}
+          item={item}
+          active={active}
+          onSelect={onSelect}
+          showActivityDot={item.id === 'adventure' && active !== 'adventure' && activityRunningInBackground}
+        />
       ))}
       <div className="sidebar-heading">Professions</div>
       {ALL_PROFESSION_IDS.map((id) => (

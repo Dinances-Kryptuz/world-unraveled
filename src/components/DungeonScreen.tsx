@@ -6,6 +6,7 @@ import { subscribeToInventory } from '../firebase/inventory';
 import { recordConsumableUse, remainingCooldownSeconds, consumeBuffCharges } from '../firebase/consumables';
 import { DUNGEONS } from '../gameData/dungeons';
 import { MONSTERS } from '../gameData/monsters';
+import { notify } from '../utils/notifications';
 import { ITEMS } from '../gameData/items';
 import { resolveSpecDef, getExtraDamageTakenPct } from '../gameData/combatProfileWithTalents';
 import { evaluateTalents, EMPTY_TALENT_TOTALS } from '../utils/talentEvaluator';
@@ -141,6 +142,18 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
     return resolveSpecDef(c.class, c.spec).combatType;
   }
 
+  function notifyKills(kills: KillReward[]) {
+    if (!characterRef.current?.notificationsEnabled) return;
+    for (const kill of kills) {
+      const lootLines = kill.loot.map((drop) => `${drop.quantity}x ${ITEMS[drop.itemId]?.name ?? drop.itemId}`);
+      notify(`${MONSTERS[kill.monsterId]?.name ?? 'Monster'} defeated`, [
+        `+${Math.round(kill.xpGained)} XP`,
+        ...(kill.goldGained > 0 ? [`+${Math.round(kill.goldGained)} Gold`] : []),
+        ...lootLines,
+      ]);
+    }
+  }
+
   // How many enemies the CURRENT stage should field — only a dungeon's own
   // 'multi_target' stages ever field more than one, and even then never the
   // boss stage: the final fight is always a single capstone encounter, not
@@ -238,6 +251,7 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
       };
       const result = advanceCombat(combatStateRef.current, ctx, 1);
       pendingKillsRef.current.push(...result.kills);
+      notifyKills(result.kills);
       mergeQuestSignals(pendingQuestSignalsRef.current, result.questSignals);
       for (const event of result.events) {
         if (event.kind === 'damage_out') pendingBuffTriggersRef.current.offensive_action++;
@@ -385,6 +399,7 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
     const result = tryManualUseAbility(state, 'player', abilityId, ctx);
     if (!result) return;
     pendingKillsRef.current.push(...result.kills);
+    notifyKills(result.kills);
     mergeQuestSignals(pendingQuestSignalsRef.current, result.questSignals);
     for (const event of result.events) {
       if (event.kind === 'damage_out') pendingBuffTriggersRef.current.offensive_action++;

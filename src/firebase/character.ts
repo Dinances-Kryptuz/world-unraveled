@@ -108,6 +108,9 @@ export async function getCharacter(uid: string): Promise<Character | null> {
     dungeonClears: data.dungeonClears ?? {},
     collectedItemIds: data.collectedItemIds ?? [],
     unlockedAchievementIds: data.unlockedAchievementIds ?? [],
+    // Same backfill idea again, for the notification toggle — an old
+    // character read before this field existed defaults to on.
+    notificationsEnabled: data.notificationsEnabled ?? true,
     // Same backfill idea again, for the quest system — an old character
     // without this field just starts with an empty board and picks up its
     // first quests the next time it completes a trackable action (or via
@@ -199,6 +202,7 @@ export async function createCharacter(uid: string, name: string, characterClass:
     dungeonClears: {},
     collectedItemIds: [],
     unlockedAchievementIds: [],
+    notificationsEnabled: true,
     currentZoneId: DEFAULT_ZONE_ID,
     travel: null,
   };
@@ -612,4 +616,8 @@ export async function respecTalents(uid: string): Promise<{ success: boolean; re
     respecCount: increment(1),
   });
   return { success: true };
+}
+
+export async function setNotificationsEnabled(uid: string, enabled: boolean): Promise<void> {
+  await updateDoc(doc(db, 'characters', uid), { notificationsEnabled: enabled });
 }
