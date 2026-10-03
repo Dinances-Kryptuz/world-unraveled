@@ -103,9 +103,10 @@ export const MONSTER_ABILITIES: Record<string, Ability> = {
     name: 'Cinderlash',
     class: 'warrior',
     unlockLevel: 1,
-    description: 'A whip of molten cinders that leaves a smoldering wound.',
+    description: 'A wave of molten cinders that leaves a smoldering wound on the whole party.',
     cooldownSeconds: 12,
     targetType: 'CURRENT_ENEMY',
+    aoe: true,
     effects: [{ type: 'dot', power: 0.4, durationSeconds: 12, tickSeconds: 3 }],
   },
 

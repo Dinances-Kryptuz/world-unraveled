@@ -152,6 +152,19 @@ export interface Dungeon {
   // content" convention as an open-world monster, just as a fixed gauntlet
   // instead of one monster respawning as itself.
   stages: string[];
+  // The combat shape of this dungeon's non-boss stages — 'single_target'
+  // (the default: one tankier, harder-hitting enemy per stage, exactly how
+  // every dungeon behaved before this field existed), 'multi_target'
+  // (several weaker enemies per stage at once — see encounterSize), or
+  // 'dot_heavy' (single enemy per stage, but its kit applies DOTs to the
+  // whole party — see an aoe dot ability in monsterAbilities.ts, no separate
+  // engine support needed). The final boss stage is always fought as
+  // single_target regardless of this field (see DungeonScreen.tsx) — a
+  // dungeon's last fight is its capstone encounter, not another wave.
+  combatType?: 'single_target' | 'multi_target' | 'dot_heavy';
+  // How many enemies spawn per non-boss stage for a 'multi_target' dungeon.
+  // Ignored (treated as 1) for every other combatType.
+  encounterSize?: number;
 }
 
 export interface GatherNode {

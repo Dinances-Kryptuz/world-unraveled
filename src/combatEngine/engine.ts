@@ -71,6 +71,10 @@ export interface EncounterSetupInput {
   // open-world fight) leaves monster HP exactly as before this field
   // existed. See DungeonScreen.tsx for how this is computed.
   monsterHpMultiplier?: number;
+  // How many enemies to start the encounter with — 1 everywhere except a
+  // 'multi_target' dungeon stage (see TickContext.encounterSize, which this
+  // feeds into alongside it for the respawn/wave-advance step).
+  encounterSize?: number;
 }
 
 // Folds active-buff stat bonuses (Alchemy stat potions, Cooking's Well Fed)
@@ -191,6 +195,7 @@ function createMonsterCombatant(
     resources: {},
     cooldowns: {},
     dots: [],
+    hots: [],
     buffs: [],
     stunnedSeconds: 0,
     actionReadyIn: ATTACK_INTERVAL_SECONDS,
@@ -204,6 +209,23 @@ function createMonsterCombatant(
     profile: buildMonsterProfile(monster, playerLevel, playerCombatType),
     threatWeight: 1,
   };
+}
+
+// Spawns a whole wave of `count` enemies at once — 1 for every existing
+// fight, more for a 'multi_target' dungeon stage (see TickContext.
+// encounterSize). Each gets a random id suffix rather than a shared
+// counter, same convention the single-enemy respawn path already used, so
+// ids stay unique without the engine needing to track a running count.
+function spawnEnemyWave(
+  monster: Monster,
+  playerLevel: number,
+  playerCombatType: CombatType,
+  count: number,
+  hpMultiplier: number = 1
+): Combatant[] {
+  return Array.from({ length: Math.max(1, count) }, () =>
+    createMonsterCombatant(monster, playerLevel, playerCombatType, Math.random(), hpMultiplier)
+  );
 }
 
 const MONSTER_BASIC_ATTACK: Ability = {
@@ -234,6 +256,7 @@ export function createPlayerCombatant(input: EncounterSetupInput): Combatant {
     resources: initialResources(input.cls, input.level, intStat),
     cooldowns: {},
     dots: [],
+    hots: [],
     buffs: [],
     stunnedSeconds: 0,
     actionReadyIn: ATTACK_INTERVAL_SECONDS,
@@ -268,6 +291,7 @@ export function createCompanionCombatant(companion: CompanionCombatSetup, monste
     resources: initialResources(companion.cls, companion.level, intStat),
     cooldowns: {},
     dots: [],
+    hots: [],
     buffs: [],
     stunnedSeconds: 0,
     actionReadyIn: ATTACK_INTERVAL_SECONDS,
@@ -285,9 +309,13 @@ export function createEncounterState(input: EncounterSetupInput): CombatState {
   }
   return {
     party,
-    enemies: [
-      createMonsterCombatant(input.monster, input.level, input.specDef.combatType, 1, input.monsterHpMultiplier),
-    ],
+    enemies: spawnEnemyWave(
+      input.monster,
+      input.level,
+      input.specDef.combatType,
+      input.encounterSize ?? 1,
+      input.monsterHpMultiplier
+    ),
     timeElapsed: 0,
   };
 }
@@ -374,15 +402,27 @@ export interface TickContext {
   monster: Monster;
   playerLevel: number;
   playerCombatType: CombatType;
-  // Dungeon stage progression hook (Phase 8) — called right before an
-  // enemy respawn to decide what respawns next. Omitted, the enemy just
-  // respawns as `monster` again forever (every non-dungeon fight). When
-  // present, the engine also updates `monster` to match so the rest of
-  // this same tick (and the next one) sees the new stage as current —
-  // callers needing to react to a stage change (UI, session counters)
-  // should compare the monster before/after a tick that produced a kill,
-  // not poll this mid-tick.
+  // Dungeon stage progression hook (Phase 8) — called once the WHOLE current
+  // wave (every Combatant in state.enemies) is dead, to decide what the next
+  // wave is. Omitted, a fresh wave just respawns as `monster` again forever
+  // (every non-dungeon fight). When present, the engine also updates
+  // `monster` to match so the rest of this same tick (and the next one)
+  // sees the new stage as current — callers needing to react to a stage
+  // change (UI, session counters) should compare the monster before/after a
+  // tick that produced a kill, not poll this mid-tick.
   nextMonster?: (justDefeated: Monster) => Monster;
+  // How many enemies make up one wave — 1 for every existing fight (open
+  // world, and every dungeon stage so far). A 'multi_target' dungeon stage
+  // sets this higher (see dungeons.ts's Dungeon.encounterSize) so a wave is
+  // several weaker enemies fought simultaneously instead of one tankier one;
+  // the wave only advances once every one of them is dead (see the
+  // respawn/advance step below), not per individual kill.
+  encounterSize?: number;
+  // HP multiplier applied to each monster spawned in a wave (dungeon group
+  // scaling — see DungeonScreen.tsx) — read at spawn/respawn time so a
+  // multi-enemy wave isn't just the single-enemy HP multiplied by headcount
+  // again on top of already being split across more bodies.
+  monsterHpMultiplier?: number;
 }
 
 export function advanceCombat(state: CombatState, ctx: TickContext, deltaSeconds: number): TickResult {
@@ -402,8 +442,13 @@ export function advanceCombat(state: CombatState, ctx: TickContext, deltaSeconds
     }
     regenResources(c.resources, deltaSeconds);
     tickDots(c, deltaSeconds, ctx, events, kills);
+    tickHots(c, deltaSeconds, events);
     c.buffs = c.buffs.filter((b) => (b.remainingSeconds -= deltaSeconds) > 0);
     if (c.stunnedSeconds > 0) c.stunnedSeconds = Math.max(0, c.stunnedSeconds - deltaSeconds);
+    if (c.forcedTargetSeconds && c.forcedTargetSeconds > 0) {
+      c.forcedTargetSeconds = Math.max(0, c.forcedTargetSeconds - deltaSeconds);
+      if (c.forcedTargetSeconds === 0) c.forcedTargetId = undefined;
+    }
     // passiveHealPct (Holy Priest/Paladin's out-of-the-box sustain, plus a
     // small amount baked into every healing spec) was computed onto every
     // profile since Phase 1 but never actually applied here — a real gap,
@@ -434,12 +479,22 @@ export function advanceCombat(state: CombatState, ctx: TickContext, deltaSeconds
     }
   }
 
-  // 3. Respawn any dead enemy so the fight continues, and note player death.
-  state.enemies = state.enemies.map((e) => {
-    if (e.isAlive) return e;
+  // 3. Once the WHOLE current wave is dead, spawn a fresh one (advancing the
+  // dungeon stage first if ctx.nextMonster is set) — and note player death.
+  // Waiting for every enemy rather than respawning each dead slot
+  // independently is what makes a multi_target dungeon's 2-3-enemy wave
+  // advance exactly once when the last of them falls, instead of calling
+  // nextMonster (and skipping ahead) once per simultaneous death.
+  if (state.enemies.length > 0 && state.enemies.every((e) => !e.isAlive)) {
     if (ctx.nextMonster) ctx.monster = ctx.nextMonster(ctx.monster);
-    return createMonsterCombatant(ctx.monster, ctx.playerLevel, ctx.playerCombatType, Math.random());
-  });
+    state.enemies = spawnEnemyWave(
+      ctx.monster,
+      ctx.playerLevel,
+      ctx.playerCombatType,
+      ctx.encounterSize ?? 1,
+      ctx.monsterHpMultiplier
+    );
+  }
   const player = state.party.find((p) => p.isPlayer);
   if (player && !player.isAlive) playerDied = true;
 
@@ -469,6 +524,26 @@ function tickDots(c: Combatant, deltaSeconds: number, ctx: TickContext, events: 
   c.dots = c.dots.filter((dot) => dot.remainingSeconds > 0);
 }
 
+// Mirrors tickDots but healing — no death check needed since a HOT can't
+// drop anyone's HP. Doesn't feed questSignals.healingDone, matching how
+// tickDots' damage never fed a "damage dealt" quest signal either — both
+// are scoped to direct-effect quest tracking only.
+function tickHots(c: Combatant, deltaSeconds: number, events: CombatEvent[]): void {
+  for (const hot of c.hots) {
+    hot.remainingSeconds -= deltaSeconds;
+    hot.timeSinceLastTick += deltaSeconds;
+    while (hot.timeSinceLastTick >= hot.tickSeconds && c.isAlive) {
+      hot.timeSinceLastTick -= hot.tickSeconds;
+      const amount = Math.round(hot.healPerTick);
+      if (amount > 0 && c.hp < c.maxHp) {
+        c.hp = Math.min(c.maxHp, c.hp + amount);
+        events.push({ message: `${c.name} is healed by a lingering effect.`, kind: 'heal' });
+      }
+    }
+  }
+  c.hots = c.hots.filter((hot) => hot.remainingSeconds > 0);
+}
+
 // Executes one ability use: pays its cost, starts its cooldown, resolves
 // every effect it declares. This is the ONLY place effects are interpreted —
 // both AI-driven and manual ability use call this, so they can never diverge.
@@ -488,8 +563,14 @@ export function useAbility(
     questSignals.abilityUseCounts[ability.id] = (questSignals.abilityUseCounts[ability.id] ?? 0) + 1;
   }
 
-  const target = [...state.party, ...state.enemies].find((c) => c.id === targetId);
-  if (!target) return;
+  const resolvedTarget = [...state.party, ...state.enemies].find((c) => c.id === targetId);
+  if (!resolvedTarget) return;
+
+  // aoe broadens the single resolveTarget() pick to every alive combatant on
+  // that same side — targetType still decides WHICH side (enemies for
+  // CURRENT_ENEMY, party for LOWEST_HP_ALLY), aoe just decides "one or all."
+  const resolvedSide = state.enemies.some((c) => c.id === resolvedTarget.id) ? state.enemies : state.party;
+  const targets = ability.aoe ? resolvedSide.filter((c) => c.isAlive) : [resolvedTarget];
 
   const levelDiff = ctx.monster.level - ctx.playerLevel;
   // source.profile.accuracy is 1 + any hit-chance buff bonus (see
@@ -500,89 +581,116 @@ export function useAbility(
     : 1;
 
   for (const effect of ability.effects) {
-    switch (effect.type) {
-      case 'damage': {
-        const { hit, amount } = computeEffectDamage(source, target, effect.power ?? 1, levelGapAccuracy);
-        if (!hit) {
-          events.push({ message: `${source.name} uses ${ability.name} on ${target.name}, but it misses.`, kind: 'miss' });
+    for (const target of targets) {
+      switch (effect.type) {
+        case 'damage': {
+          const { hit, amount } = computeEffectDamage(source, target, effect.power ?? 1, levelGapAccuracy);
+          if (!hit) {
+            events.push({ message: `${source.name} uses ${ability.name} on ${target.name}, but it misses.`, kind: 'miss' });
+            break;
+          }
+          target.hp = Math.max(0, target.hp - amount);
+          // healFrac (Shadow Priest's "sustain from the damage you deal," per
+          // its own spec blurb) was computed onto the profile since Phase 1
+          // but never actually paid out here — same gap as passiveHealPct
+          // above. Only direct damage feeds it; a dot's damage is spread out
+          // and already snapshots the source's damageCoef below, so folding
+          // healFrac into every tick too would double-count the same "damage
+          // dealt" against a single self-heal budget for no real benefit.
+          if (source.profile.healFrac > 0 && source.isAlive) {
+            const before = source.hp;
+            source.hp = Math.min(source.maxHp, source.hp + amount * source.profile.healFrac);
+            if (source.isPlayer) questSignals.healingDone += source.hp - before;
+          }
+          // Rage, fixed: Warriors previously had no way to generate it
+          // besides Charge's flat resourceGain, making their resource feel
+          // broken rather than "bursty." Now any damaging ability grants
+          // rage to a rage-pool source for dealing it, and to a rage-pool
+          // target for TAKING it — a tank parked in front of a boss builds
+          // meaningfully faster than one who isn't, same as the real thing.
+          if (source.resources.rage) gain(source.resources, 'rage', Math.max(1, Math.round(amount * 0.05)));
+          if (target.resources.rage) gain(target.resources, 'rage', Math.max(1, Math.round(amount * 0.1)));
+          events.push({
+            message: `${source.name} uses ${ability.name} on ${target.name} for ${amount} damage.`,
+            kind: target.isPlayer ? 'damage_in' : 'damage_out',
+          });
+          if (target.hp <= 0 && target.isAlive) {
+            target.isAlive = false;
+            events.push({ message: `${target.name} is defeated!`, kind: 'death' });
+            if (!target.isPlayer) kills.push(rollKillReward(ctx.monster, levelDiff));
+          }
           break;
         }
-        target.hp = Math.max(0, target.hp - amount);
-        // healFrac (Shadow Priest's "sustain from the damage you deal," per
-        // its own spec blurb) was computed onto the profile since Phase 1
-        // but never actually paid out here — same gap as passiveHealPct
-        // above. Only direct damage feeds it; a dot's damage is spread out
-        // and already snapshots the source's damageCoef below, so folding
-        // healFrac into every tick too would double-count the same "damage
-        // dealt" against a single self-heal budget for no real benefit.
-        if (source.profile.healFrac > 0 && source.isAlive) {
-          const before = source.hp;
-          source.hp = Math.min(source.maxHp, source.hp + amount * source.profile.healFrac);
-          if (source.isPlayer) questSignals.healingDone += source.hp - before;
+        case 'dot': {
+          target.dots.push({
+            abilityId: ability.id,
+            remainingSeconds: effect.durationSeconds ?? 0,
+            tickSeconds: effect.tickSeconds ?? 1,
+            timeSinceLastTick: 0,
+            // Snapshots the source's current damage buffs at cast time, same
+            // as a direct hit — matches how a temporary buff like Battle Cry
+            // is expected to affect a dot cast while it's active, without
+            // needing to re-evaluate the source's buffs on every future tick.
+            hitPerTick: source.profile.normalizedHit * (effect.power ?? 0.3) * source.profile.damageCoef * buffDamageDealtMult(source),
+          });
+          events.push({ message: `${source.name} afflicts ${target.name} with ${ability.name}.`, kind: 'status' });
+          break;
         }
-        events.push({
-          message: `${source.name} uses ${ability.name} on ${target.name} for ${amount} damage.`,
-          kind: target.isPlayer ? 'damage_in' : 'damage_out',
-        });
-        if (target.hp <= 0 && target.isAlive) {
-          target.isAlive = false;
-          events.push({ message: `${target.name} is defeated!`, kind: 'death' });
-          if (!target.isPlayer) kills.push(rollKillReward(ctx.monster, levelDiff));
+        case 'hot': {
+          target.hots.push({
+            abilityId: ability.id,
+            remainingSeconds: effect.durationSeconds ?? 0,
+            tickSeconds: effect.tickSeconds ?? 1,
+            timeSinceLastTick: 0,
+            healPerTick: source.profile.normalizedHit * (effect.power ?? 0.3) * source.profile.damageCoef * buffDamageDealtMult(source),
+          });
+          events.push({ message: `${source.name} places ${ability.name} on ${target.name}.`, kind: 'status' });
+          break;
         }
-        break;
-      }
-      case 'dot': {
-        target.dots.push({
-          abilityId: ability.id,
-          remainingSeconds: effect.durationSeconds ?? 0,
-          tickSeconds: effect.tickSeconds ?? 1,
-          timeSinceLastTick: 0,
-          // Snapshots the source's current damage buffs at cast time, same
-          // as a direct hit — matches how a temporary buff like Battle Cry
-          // is expected to affect a dot cast while it's active, without
-          // needing to re-evaluate the source's buffs on every future tick.
-          hitPerTick: source.profile.normalizedHit * (effect.power ?? 0.3) * source.profile.damageCoef * buffDamageDealtMult(source),
-        });
-        events.push({ message: `${source.name} afflicts ${target.name} with ${ability.name}.`, kind: 'status' });
-        break;
-      }
-      case 'resourceGain':
-        gain(source.resources, effect.resource, effect.amount);
-        break;
-      case 'heal': {
-        // buffDamageDealtMult is deliberately reused here rather than adding
-        // a separate "healing done" buff field — a buff that boosts
-        // "damage dealt" (Divine Favor) reads naturally as boosting outgoing
-        // effect power in general, healing included.
-        const healAmount = Math.round(
-          source.profile.normalizedHit * (effect.power ?? 1) * source.profile.damageCoef * buffDamageDealtMult(source)
-        );
-        const hpBefore = target.hp;
-        target.hp = Math.min(target.maxHp, target.hp + healAmount);
-        if (source.isPlayer) questSignals.healingDone += target.hp - hpBefore;
-        events.push({ message: `${source.name} uses ${ability.name} on ${target.name}, healing for ${healAmount}.`, kind: 'heal' });
-        break;
-      }
-      case 'buff': {
-        target.buffs.push({
-          abilityId: ability.id,
-          remainingSeconds: effect.durationSeconds ?? 0,
-          damageDealtPct: effect.damageDealtPct ?? 0,
-          damageTakenPct: effect.damageTakenPct ?? 0,
-        });
-        const verb = (effect.damageDealtPct ?? 0) < 0 || (effect.damageTakenPct ?? 0) < 0 ? 'afflicts' : 'buffs';
-        events.push({ message: `${source.name} ${verb} ${target.name} with ${ability.name}.`, kind: 'status' });
-        break;
-      }
-      case 'stun': {
-        target.stunnedSeconds = Math.max(target.stunnedSeconds, effect.durationSeconds ?? 0);
-        events.push({ message: `${source.name} stuns ${target.name} with ${ability.name}.`, kind: 'status' });
-        break;
-      }
-      case 'dispel': {
-        target.dots = [];
-        events.push({ message: `${source.name} uses ${ability.name} on ${target.name}.`, kind: 'status' });
-        break;
+        case 'resourceGain':
+          gain(source.resources, effect.resource, effect.amount);
+          break;
+        case 'heal': {
+          // buffDamageDealtMult is deliberately reused here rather than adding
+          // a separate "healing done" buff field — a buff that boosts
+          // "damage dealt" (Divine Favor) reads naturally as boosting outgoing
+          // effect power in general, healing included.
+          const healAmount = Math.round(
+            source.profile.normalizedHit * (effect.power ?? 1) * source.profile.damageCoef * buffDamageDealtMult(source)
+          );
+          const hpBefore = target.hp;
+          target.hp = Math.min(target.maxHp, target.hp + healAmount);
+          if (source.isPlayer) questSignals.healingDone += target.hp - hpBefore;
+          events.push({ message: `${source.name} uses ${ability.name} on ${target.name}, healing for ${healAmount}.`, kind: 'heal' });
+          break;
+        }
+        case 'buff': {
+          target.buffs.push({
+            abilityId: ability.id,
+            remainingSeconds: effect.durationSeconds ?? 0,
+            damageDealtPct: effect.damageDealtPct ?? 0,
+            damageTakenPct: effect.damageTakenPct ?? 0,
+          });
+          const verb = (effect.damageDealtPct ?? 0) < 0 || (effect.damageTakenPct ?? 0) < 0 ? 'afflicts' : 'buffs';
+          events.push({ message: `${source.name} ${verb} ${target.name} with ${ability.name}.`, kind: 'status' });
+          break;
+        }
+        case 'stun': {
+          target.stunnedSeconds = Math.max(target.stunnedSeconds, effect.durationSeconds ?? 0);
+          events.push({ message: `${source.name} stuns ${target.name} with ${ability.name}.`, kind: 'status' });
+          break;
+        }
+        case 'taunt': {
+          target.forcedTargetId = source.id;
+          target.forcedTargetSeconds = Math.max(target.forcedTargetSeconds ?? 0, effect.durationSeconds ?? 0);
+          events.push({ message: `${source.name} taunts ${target.name} with ${ability.name}.`, kind: 'status' });
+          break;
+        }
+        case 'dispel': {
+          target.dots = [];
+          events.push({ message: `${source.name} uses ${ability.name} on ${target.name}.`, kind: 'status' });
+          break;
+        }
       }
     }
   }

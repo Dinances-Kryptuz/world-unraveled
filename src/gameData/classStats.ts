@@ -81,7 +81,10 @@ export const SPECS: Record<SpecId, SpecDef> = {
   // heal-ability power, not this coefficient, so this doesn't meaningfully
   // change how either spec heals once grouped.
   holy_priest: { class: 'priest', damageCoef: 1.05, survivabilityCoef: 1.0, avoidance: 0.05, healFrac: 0.35, passiveHealPct: 0.044, combatType: 'magic', threatWeight: 1 },
-  prot_paladin: { class: 'paladin', damageCoef: 0.75, survivabilityCoef: 1.5, avoidance: 0.1, healFrac: 0.0, passiveHealPct: 0.006, combatType: 'melee', threatWeight: 4 },
+  // survivabilityCoef deliberately lower than Warrior Tank's 1.5 — Prot
+  // Paladin is the AOE-threat tank (see Consecration in abilities.ts), not
+  // the one you want soaking a boss's biggest single hits.
+  prot_paladin: { class: 'paladin', damageCoef: 0.75, survivabilityCoef: 1.3, avoidance: 0.1, healFrac: 0.0, passiveHealPct: 0.006, combatType: 'melee', threatWeight: 4 },
   holy_paladin: { class: 'paladin', damageCoef: 0.85, survivabilityCoef: 1.0, avoidance: 0.05, healFrac: 0.3, passiveHealPct: 0.022, combatType: 'magic', threatWeight: 1 },
   // Both Mage specs are matched to the other pure-DPS casters (Shadow
   // Priest's own 1.0/0.8) rather than given a raw-number edge — they

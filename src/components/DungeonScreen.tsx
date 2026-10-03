@@ -125,6 +125,22 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
     return resolveSpecDef(c.class, c.spec).combatType;
   }
 
+  // How many enemies the CURRENT stage should field — only a dungeon's own
+  // 'multi_target' stages ever field more than one, and even then never the
+  // boss stage: the final fight is always a single capstone encounter, not
+  // another wave, regardless of what the trash stages do.
+  function currentEncounterSize(): number {
+    if (dungeon.combatType !== 'multi_target' || currentMonsterRef.current.isBoss) return 1;
+    return dungeon.encounterSize ?? 2;
+  }
+
+  // Divides the existing party-size HP scaling across the wave instead of
+  // multiplying it again on top — a 2-enemy wave's TOTAL hp should be
+  // comparable to a single-enemy wave's at the same party size, not double it.
+  function currentMonsterHpMultiplier(companionCount: number): number {
+    return (1 + companionCount) / currentEncounterSize();
+  }
+
   function buildEncounterInput(c: Character): EncounterSetupInput {
     const specDef = resolveSpecDef(c.class, c.spec);
     const talentTotals = c.spec ? evaluateTalents(c.spec, c.talentPicks).totals : EMPTY_TALENT_TOTALS;
@@ -156,8 +172,11 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
       // touching the per-hit damage formulas open-world combat already
       // relies on. Monster HP is otherwise purely a function of its level
       // (see combatFormulas.ts's monsterHp), so this has to happen here
-      // rather than by inventing a per-monster "group HP" field.
-      monsterHpMultiplier: 1 + companions.length,
+      // rather than by inventing a per-monster "group HP" field. Divided
+      // across the wave for a multi_target stage — see
+      // currentMonsterHpMultiplier.
+      monsterHpMultiplier: currentMonsterHpMultiplier(companions.length),
+      encounterSize: currentEncounterSize(),
     };
   }
 
@@ -182,11 +201,14 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
     const interval = setInterval(() => {
       if (retreatedRef.current || !combatStateRef.current) return;
 
+      const companionCount = combatStateRef.current.party.length - 1;
       const ctx: TickContext = {
         monster: currentMonsterRef.current,
         playerLevel: characterRef.current?.level ?? character.level,
         playerCombatType: currentPlayerCombatType(),
         nextMonster,
+        encounterSize: currentEncounterSize(),
+        monsterHpMultiplier: currentMonsterHpMultiplier(companionCount),
       };
       const result = advanceCombat(combatStateRef.current, ctx, 1);
       pendingKillsRef.current.push(...result.kills);
@@ -327,6 +349,8 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
       playerLevel: characterRef.current?.level ?? character.level,
       playerCombatType: currentPlayerCombatType(),
       nextMonster,
+      encounterSize: currentEncounterSize(),
+      monsterHpMultiplier: currentMonsterHpMultiplier(state.party.length - 1),
     };
     const result = tryManualUseAbility(state, 'player', abilityId, ctx);
     if (!result) return;
@@ -378,7 +402,6 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
   const state = combatStateRef.current;
   const player = state.party.find((p) => p.isPlayer)!;
   const companions = state.party.filter((p) => !p.isPlayer);
-  const enemy = state.enemies[0];
   const monster = currentMonsterRef.current;
   const stageLabel = `Stage ${stageIndexRef.current + 1} / ${dungeon.stages.length}${monster.isBoss ? ' — Boss' : ''}`;
 
@@ -411,8 +434,17 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
             </div>
           ))}
 
-          <StatBar label={enemy.name} current={enemy.hp} max={enemy.maxHp} color={hpBarColor((enemy.hp / enemy.maxHp) * 100)} />
-          <StatusBadges combatant={enemy} />
+          {state.enemies.map((enemy, i) => (
+            <div key={enemy.id}>
+              <StatBar
+                label={state.enemies.length > 1 ? `${enemy.name} ${i + 1}` : enemy.name}
+                current={enemy.hp}
+                max={enemy.maxHp}
+                color={hpBarColor((enemy.hp / enemy.maxHp) * 100)}
+              />
+              <StatusBadges combatant={enemy} />
+            </div>
+          ))}
 
           <TickBar seconds={ATTACK_INTERVAL_SECONDS} color="#6b4f2a" label="Attack rhythm" />
 

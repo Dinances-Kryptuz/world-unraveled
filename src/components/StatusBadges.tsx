@@ -23,8 +23,15 @@ export function StatusBadges({ combatant }: { combatant: Combatant }) {
     const name = abilities[dot.abilityId]?.name ?? dot.abilityId;
     badges.push({ key: `dot-${i}-${dot.abilityId}`, label: `${name} (${Math.ceil(dot.remainingSeconds)}s)`, harmful: true });
   });
+  combatant.hots.forEach((hot, i) => {
+    const name = abilities[hot.abilityId]?.name ?? hot.abilityId;
+    badges.push({ key: `hot-${i}-${hot.abilityId}`, label: `${name} (${Math.ceil(hot.remainingSeconds)}s)`, harmful: false });
+  });
   if (combatant.stunnedSeconds > 0) {
     badges.push({ key: 'stun', label: `Stunned (${Math.ceil(combatant.stunnedSeconds)}s)`, harmful: true });
+  }
+  if (combatant.forcedTargetSeconds && combatant.forcedTargetSeconds > 0) {
+    badges.push({ key: 'taunted', label: `Taunted (${Math.ceil(combatant.forcedTargetSeconds)}s)`, harmful: true });
   }
   if (badges.length === 0) return null;
   return (
