@@ -191,6 +191,12 @@ export interface Character {
   // way as collectedItemIds above) it never comes out, even if the
   // underlying condition (e.g. a gold total) later stops being true.
   unlockedAchievementIds: string[];
+  // Player preference, toggled from SettingsScreen — gates the toast
+  // notifications in components/Notifications.tsx (loot/XP on a kill, an
+  // item finishing in a profession). Defaults to true; an old character
+  // read before this field existed backfills to true (see getCharacter),
+  // same "opt-out, not opt-in" posture as every other preference toggle.
+  notificationsEnabled: boolean;
 }
 
 export interface Inventory {

@@ -155,6 +155,7 @@ service cloud.firestore {
       && data.dungeonClears == {}
       && data.collectedItemIds == []
       && data.unlockedAchievementIds == []
+      && data.notificationsEnabled == true
       && data.currentZoneId == 'greenhollow_fields'
       && data.travel == null;
   }
@@ -207,7 +208,8 @@ service cloud.firestore {
       && isValidActiveAltSlots(after)
       && isValidDungeonClears(after)
       && isValidCollectedItemIds(after)
-      && isValidUnlockedAchievementIds(after);
+      && isValidUnlockedAchievementIds(after)
+      && isValidNotificationsEnabled(after);
   }
 
   // Same "may not exist yet on an old character" treatment and expression-
@@ -232,6 +234,10 @@ service cloud.firestore {
   // above, the only path that writes this field.
   function isValidUnlockedAchievementIds(after) {
     return !('unlockedAchievementIds' in after) || after.unlockedAchievementIds is list;
+  }
+
+  function isValidNotificationsEnabled(after) {
+    return !('notificationsEnabled' in after) || after.notificationsEnabled is bool;
   }
 
   // Same "may not exist yet on an old character" treatment and ownership-

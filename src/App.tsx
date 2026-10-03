@@ -9,7 +9,6 @@ import { EquipmentScreen } from './components/EquipmentScreen';
 import { InventoryScreen } from './components/InventoryScreen';
 import { BankScreen } from './components/BankScreen';
 import { TalentScreen } from './components/TalentScreen';
-import { CombatSetupScreen } from './components/CombatSetupScreen';
 import { CombatScreen } from './components/CombatScreen';
 import { GatheringScreen } from './components/GatheringScreen';
 import { FishingScreen } from './components/FishingScreen';
@@ -29,12 +28,14 @@ import { QuestLog } from './components/QuestLog';
 import { CompanionScreen } from './components/CompanionScreen';
 import { CharacterSelectScreen } from './components/CharacterSelectScreen';
 import { CollectionScreen } from './components/CollectionScreen';
+import { SettingsScreen } from './components/SettingsScreen';
 import { TravelScreen } from './components/TravelScreen';
 import { startTravel } from './firebase/travel';
 import { Sidebar, type AppSection } from './components/Sidebar';
 import { TopBar } from './components/TopBar';
 import { ZoneBackdrop } from './components/ZoneBackdrop';
 import { BugReportButton } from './components/BugReportButton';
+import { NotificationToasts } from './components/NotificationToasts';
 import { ALL_PROFESSION_IDS } from './gameData/professionTiers';
 import type { Character } from './types/character';
 import type { ProfessionId } from './gameData/types';
@@ -51,6 +52,7 @@ function AppShell({
   onRequestTravel,
   selectedProfessionId,
   onSelectProfession,
+  hasActiveDungeon,
   children,
 }: {
   character: Character;
@@ -59,6 +61,7 @@ function AppShell({
   onRequestTravel: (zoneId: string) => void;
   selectedProfessionId: ProfessionId;
   onSelectProfession: (id: ProfessionId) => void;
+  hasActiveDungeon: boolean;
   children: ReactNode;
 }) {
   const equipBonuses = getEquipmentStatBonuses(character.equipment, character.enchantments);
@@ -82,6 +85,7 @@ function AppShell({
         character={character}
         selectedProfessionId={selectedProfessionId}
         onSelectProfession={onSelectProfession}
+        activityRunningInBackground={character.currentActivity.type !== null || hasActiveDungeon}
       />
       <div className="app-main">
         <TopBar
@@ -156,6 +160,11 @@ function AppContent() {
     onRequestTravel: handleRequestTravel,
     selectedProfessionId,
     onSelectProfession: setSelectedProfessionId,
+    // Dungeon state is local React state (activeDungeonId), not on
+    // `character`, so it's passed through separately — combined with
+    // character.currentActivity inside AppShell to decide whether the
+    // sidebar's Adventure tab needs its "still running" dot.
+    hasActiveDungeon: !!activeDungeonId,
   };
 
   // A flight in progress takes over the content area before anything else
@@ -170,21 +179,6 @@ function AppContent() {
     );
   }
 
-  // A "live activity" (combat/gathering/fishing/crafting, or a dungeon run)
-  // takes over the content area regardless of which sidebar section is
-  // selected — there's only ever one of these happening at a time, and it
-  // wouldn't make sense to let a player navigate to e.g. Equipment and lose
-  // sight of a fight in progress. DungeonScreen's state lives here (not in
-  // ZoneScreen, which just reports "enter this dungeon" up) for the same
-  // reason: it needs to keep rendering no matter what section is active.
-  if (activeDungeonId) {
-    return (
-      <AppShell {...shellProps}>
-        <DungeonScreen dungeonId={activeDungeonId} onExit={() => setActiveDungeonId(null)} />
-      </AppShell>
-    );
-  }
-
   const activity = character.currentActivity;
   const showWelcomeBack = !dismissedWelcomeBack && activity.type !== null && isLongAbsence(activity);
   if (showWelcomeBack) {
@@ -195,51 +189,33 @@ function AppContent() {
     );
   }
 
-  if (activity.type === 'combat' && activity.targetId) {
-    return (
-      <AppShell {...shellProps}>
-        <CombatScreen monsterId={activity.targetId} />
-      </AppShell>
-    );
-  }
-
-  if (activity.type === 'gathering' && activity.targetId) {
-    const node = GATHER_NODES[activity.targetId];
-    if (node) {
-      return (
-        <AppShell {...shellProps}>
-          <GatheringScreen node={node} />
-        </AppShell>
-      );
-    }
-  }
-
-  if (activity.type === 'fishing' && activity.targetId) {
-    const hole = FISHING_HOLES[activity.targetId];
-    if (hole) {
-      return (
-        <AppShell {...shellProps}>
-          <FishingScreen hole={hole} />
-        </AppShell>
-      );
-    }
-  }
-
-  if (activity.type === 'crafting' && activity.targetId) {
-    const recipe = RECIPES[activity.targetId];
-    if (recipe) {
-      return (
-        <AppShell {...shellProps}>
-          <CraftingScreen recipe={recipe} />
-        </AppShell>
-      );
-    }
+  // A "live activity" (combat/gathering/fishing/crafting, or a dungeon run)
+  // stays mounted and ticking even when the player switches to a different
+  // sidebar section — its pane is just hidden via CSS unless section is
+  // 'adventure' (below), rather than unmounted, so its interval/in-memory
+  // state (current monster HP, resource bars, a gathering session's carried
+  // fractional progress, …) survives navigating to Equipment or Settings
+  // and back instead of resetting. DungeonScreen's state lives here (not in
+  // ZoneScreen, which just reports "enter this dungeon" up) for the same
+  // reason.
+  let activityNode: ReactNode = null;
+  if (activeDungeonId) {
+    activityNode = <DungeonScreen dungeonId={activeDungeonId} onExit={() => setActiveDungeonId(null)} />;
+  } else if (activity.type === 'combat' && activity.targetId) {
+    activityNode = <CombatScreen monsterId={activity.targetId} />;
+  } else if (activity.type === 'gathering' && activity.targetId && GATHER_NODES[activity.targetId]) {
+    activityNode = <GatheringScreen node={GATHER_NODES[activity.targetId]} />;
+  } else if (activity.type === 'fishing' && activity.targetId && FISHING_HOLES[activity.targetId]) {
+    activityNode = <FishingScreen hole={FISHING_HOLES[activity.targetId]} />;
+  } else if (activity.type === 'crafting' && activity.targetId && RECIPES[activity.targetId]) {
+    activityNode = <CraftingScreen recipe={RECIPES[activity.targetId]} />;
   }
 
   return (
     <AppShell {...shellProps}>
-      {section === 'adventure' && <ZoneScreen selectedZoneId={character.currentZoneId} onEnterDungeon={setActiveDungeonId} />}
-      {section === 'combatSetup' && <CombatSetupScreen />}
+      <div style={{ display: section === 'adventure' ? 'block' : 'none' }}>
+        {activityNode ?? <ZoneScreen selectedZoneId={character.currentZoneId} onEnterDungeon={setActiveDungeonId} />}
+      </div>
       {section === 'equipment' && <EquipmentScreen />}
       {section === 'inventory' && <InventoryScreen />}
       {section === 'bank' && <BankScreen />}
@@ -250,6 +226,7 @@ function AppContent() {
       {section === 'profession' && <ProfessionScreen professionId={selectedProfessionId} zoneId={character.currentZoneId} />}
       {section === 'talents' && character.spec && <TalentScreen />}
       {section === 'quests' && <QuestLog />}
+      {section === 'settings' && <SettingsScreen />}
     </AppShell>
   );
 }
@@ -261,6 +238,7 @@ export default function App() {
         <AppContent />
       </CharacterProvider>
       <BugReportButton />
+      <NotificationToasts />
     </AuthProvider>
   );
 }

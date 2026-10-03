@@ -36,6 +36,7 @@ import { ResourceBars } from './ResourceBars';
 import { AbilityBar } from './AbilityBar';
 import { ConsumablesBar } from './ConsumablesBar';
 import { CombatLog } from './CombatLog';
+import { notify } from '../utils/notifications';
 
 const AUTOSAVE_INTERVAL_SECONDS = 10;
 const MAX_LOG_LINES = 30;
@@ -152,6 +153,16 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
       const ctx: TickContext = { monster, playerLevel: characterRef.current?.level ?? character.level, playerCombatType: currentPlayerCombatType() };
       const result = advanceCombat(combatStateRef.current, ctx, 1);
       pendingKillsRef.current.push(...result.kills);
+      if (characterRef.current?.notificationsEnabled) {
+        for (const kill of result.kills) {
+          const lootLines = kill.loot.map((drop) => `${drop.quantity}x ${ITEMS[drop.itemId]?.name ?? drop.itemId}`);
+          notify(`${monster.name} defeated`, [
+            `+${Math.round(kill.xpGained)} XP`,
+            ...(kill.goldGained > 0 ? [`+${Math.round(kill.goldGained)} Gold`] : []),
+            ...lootLines,
+          ]);
+        }
+      }
       mergeQuestSignals(pendingQuestSignalsRef.current, result.questSignals);
       for (const event of result.events) {
         if (event.kind === 'damage_out') pendingBuffTriggersRef.current.offensive_action++;

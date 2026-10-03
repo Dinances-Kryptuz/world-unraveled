@@ -6,6 +6,7 @@ import { stopActivity, getCharacter, advanceQuests } from '../firebase/character
 import { resolveFishing, fishingSkillupChance } from '../gameData/activityEngine';
 import { getProfessionState } from '../gameData/professionTiers';
 import { ITEMS } from '../gameData/items';
+import { notify } from '../utils/notifications';
 import { TickBar } from './TickBar';
 import type { Character } from '../types/character';
 import type { User } from 'firebase/auth';
@@ -100,6 +101,12 @@ export function FishingScreen({ hole }: { hole: FishingHole }) {
     setBankedSkillups((prev) => prev + wholeSkillups);
 
     if (Object.keys(wholeCatches).length === 0 && wholeSkillups === 0) return;
+
+    if (currentCharacter.notificationsEnabled) {
+      for (const [itemId, quantity] of Object.entries(wholeCatches)) {
+        notify(`${ITEMS[itemId]?.name ?? itemId} caught`, [`${quantity}x ${ITEMS[itemId]?.name ?? itemId}`]);
+      }
+    }
 
     applyOptimisticUpdate((c) => ({
       ...c,

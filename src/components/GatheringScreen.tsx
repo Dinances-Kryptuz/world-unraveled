@@ -5,6 +5,8 @@ import { applyGatheringResult, checkAndApplyProfessionLevelUp, stopActivity, get
 import { resolveGathering } from '../gameData/activityEngine';
 import { professionXpForLevel } from '../gameData/xpTables';
 import { getProfessionState } from '../gameData/professionTiers';
+import { ITEMS } from '../gameData/items';
+import { notify } from '../utils/notifications';
 import { XpBar } from './XpBar';
 import { TickBar } from './TickBar';
 import type { Character } from '../types/character';
@@ -91,6 +93,13 @@ export function GatheringScreen({ node }: { node: GatherNode }) {
     setBankedXp((prev) => prev + xpGained);
 
     if (wholeItems === 0) return; // nothing crossed a whole item yet, nothing to save
+
+    if (currentCharacter.notificationsEnabled) {
+      notify(`${ITEMS[node.itemId]?.name ?? node.itemId} gathered`, [
+        `${wholeItems}x ${ITEMS[node.itemId]?.name ?? node.itemId}`,
+        `+${Math.round(xpGained)} XP`,
+      ]);
+    }
 
     // Bump the shared profession xp now, in the same tick as the banked
     // session totals above, so the Professions bar doesn't lag behind the

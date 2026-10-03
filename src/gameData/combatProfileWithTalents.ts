@@ -3,12 +3,22 @@ import { SPECS } from './classStats';
 import type { CombatType } from './combatTriangle';
 import { WARRIOR_DPS_EXTRA_DMG_TAKEN_AT_60, type TalentPicks } from './talents';
 
+// Buffed from the original 0.85/1.0/0.05/0 — a simulation against the real
+// combat formulas found the pre-spec stretch (levels 1-4) took ~58-60 hours
+// of continuous play to clear, with ~90% of that being HP-regen downtime
+// rather than actual fighting (pre-spec characters could barely survive
+// anything but the single weakest monster in Greenhollow Fields). These
+// values bring it to ~18-20 hours with combat and rest time roughly
+// balanced — still a real early-game stretch, just not one that buries the
+// class-identity payoff (spec choice unlocks at 5) under a rest-timer slog.
+// Scoped to only the first 4 levels, so it doesn't touch the calibrated
+// 1-60 curve or any spec's own tuned numbers.
 export const PRE_SPEC_DEFAULT: Omit<SpecDef, 'class' | 'combatType'> = {
-  damageCoef: 0.85,
-  survivabilityCoef: 1.0,
-  avoidance: 0.05,
+  damageCoef: 1.05,
+  survivabilityCoef: 1.6,
+  avoidance: 0.08,
   healFrac: 0,
-  passiveHealPct: 0,
+  passiveHealPct: 0.012,
   threatWeight: 1,
 };
 
