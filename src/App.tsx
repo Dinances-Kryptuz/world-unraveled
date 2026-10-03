@@ -34,6 +34,7 @@ import { startTravel } from './firebase/travel';
 import { Sidebar, type AppSection } from './components/Sidebar';
 import { TopBar } from './components/TopBar';
 import { ZoneBackdrop } from './components/ZoneBackdrop';
+import { BugReportButton } from './components/BugReportButton';
 import { ALL_PROFESSION_IDS } from './gameData/professionTiers';
 import type { Character } from './types/character';
 import type { ProfessionId } from './gameData/types';
@@ -259,6 +260,7 @@ export default function App() {
       <CharacterProvider>
         <AppContent />
       </CharacterProvider>
+      <BugReportButton />
     </AuthProvider>
   );
 }
