@@ -33,6 +33,7 @@ import type { User } from 'firebase/auth';
 import { TickBar } from './TickBar';
 import { StatBar, hpBarColor } from './StatBar';
 import { MonsterLevelBadge } from './MonsterLevelBadge';
+import { MonsterPortrait } from './MonsterPortrait';
 import { StatusBadges } from './StatusBadges';
 import { ResourceBars } from './ResourceBars';
 import { AbilityBar } from './AbilityBar';
@@ -447,6 +448,7 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
 
       {!retreated && (
         <>
+          <MonsterPortrait monsterId={monster.id} isBoss={monster.isBoss} />
           <StatBar label="You" current={player.hp} max={player.maxHp} color={hpBarColor((player.hp / player.maxHp) * 100)} />
           <ResourceBars combatant={player} />
           <StatusBadges combatant={player} />

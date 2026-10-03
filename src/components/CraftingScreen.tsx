@@ -8,6 +8,8 @@ import { professionXpForLevel } from '../gameData/xpTables';
 import { getProfessionState } from '../gameData/professionTiers';
 import { XpBar } from './XpBar';
 import { TickBar } from './TickBar';
+import { ItemSlot } from './ItemSlot';
+import { ITEMS } from '../gameData/items';
 import type { Character } from '../types/character';
 import type { User } from 'firebase/auth';
 import type { Recipe } from '../gameData/types';
@@ -191,9 +193,26 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
   const profession = getProfessionState(character.professions, recipe.profession);
   const liveXp = profession.xp + sinceLastSave.xpGained;
 
+  const resultItem = ITEMS[recipe.resultItemId];
+
   return (
     <div className="crafting-screen">
       <h2>Crafting: {recipe.name}</h2>
+      <div className="item-row-main" style={{ marginBottom: 12 }}>
+        {resultItem && <ItemSlot item={resultItem} />}
+        <div className="item-grid" style={{ flex: 1 }}>
+          {recipe.materials.map((m) => {
+            const material = ITEMS[m.itemId];
+            if (!material) return null;
+            return (
+              <div key={m.itemId} className="loot-entry">
+                <ItemSlot item={material} quantity={materialsRef.current[m.itemId] ?? 0} />
+                <small>need {m.quantity}</small>
+              </div>
+            );
+          })}
+        </div>
+      </div>
       {!outOfMaterials && <TickBar seconds={recipe.craftSeconds} color="#6b4f2a" label="Crafting" />}
       <p>
         This session: {displayCrafted} crafted, +{Math.round(displayXp)} XP

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ITEMS } from '../gameData/items';
 import { remainingCooldownSeconds } from '../firebase/consumables';
+import { ItemSlot } from './ItemSlot';
 import type { Character } from '../types/character';
 
 // Shown in the Inventory screen (out of combat, allowMana=false — mana has
@@ -33,7 +34,7 @@ export function ConsumablesBar({
   if (consumables.length === 0) return null;
 
   return (
-    <div style={{ marginTop: 8, marginBottom: 8 }}>
+    <div className="item-grid">
       {consumables.map((item) => {
         const effect = item.consumableEffect!;
         const manaOnly = effect.healAmount === undefined && effect.manaAmount !== undefined;
@@ -41,16 +42,15 @@ export function ConsumablesBar({
         const blockedOutOfCombat = manaOnly && !allowMana;
         const quantity = inventoryItems[item.id] ?? 0;
         return (
-          <button
-            key={item.id}
-            onClick={() => onUse(item.id)}
-            disabled={remaining > 0 || blockedOutOfCombat}
-            title={blockedOutOfCombat ? 'Only usable in combat' : item.description}
-            style={{ marginRight: 8, marginBottom: 8 }}
-          >
-            {item.name} x{quantity}
-            {remaining > 0 ? ` (${Math.ceil(remaining)}s)` : ''}
-          </button>
+          <div key={item.id} className="loot-entry">
+            <ItemSlot
+              item={item}
+              quantity={quantity}
+              onClick={() => onUse(item.id)}
+              disabled={remaining > 0 || blockedOutOfCombat}
+            />
+            {remaining > 0 && <small>{Math.ceil(remaining)}s</small>}
+          </div>
         );
       })}
     </div>

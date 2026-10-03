@@ -5,6 +5,7 @@ import { subscribeToInventory } from '../firebase/inventory';
 import { subscribeToBank, depositItem, withdrawItem, buyBankSlot } from '../firebase/bank';
 import { nextBankSlotCost, MAX_BANK_SLOTS } from '../gameData/bank';
 import { ITEMS } from '../gameData/items';
+import { ItemSlot } from './ItemSlot';
 import type { Inventory } from '../types/character';
 
 function sortedEntries(inv: Inventory) {
@@ -85,12 +86,18 @@ export function BankScreen() {
             <p>Nothing to deposit.</p>
           ) : (
             <ul>
-              {sortedEntries(inventory).map(([itemId, quantity]) => (
-                <li key={itemId}>
-                  {ITEMS[itemId]?.name ?? itemId}: {quantity}
-                  <button onClick={() => handleDeposit(itemId, quantity)}>Deposit all</button>
-                </li>
-              ))}
+              {sortedEntries(inventory).map(([itemId, quantity]) => {
+                const item = ITEMS[itemId];
+                return (
+                  <li key={itemId}>
+                    <div className="item-row-main">
+                      {item ? <ItemSlot item={item} quantity={quantity} /> : null}
+                      <span>{item?.name ?? itemId}</span>
+                    </div>
+                    <button onClick={() => handleDeposit(itemId, quantity)}>Deposit all</button>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>
@@ -101,12 +108,18 @@ export function BankScreen() {
             <p>Empty so far.</p>
           ) : (
             <ul>
-              {sortedEntries(bank).map(([itemId, quantity]) => (
-                <li key={itemId}>
-                  {ITEMS[itemId]?.name ?? itemId}: {quantity}
-                  <button onClick={() => handleWithdraw(itemId, quantity)}>Withdraw all</button>
-                </li>
-              ))}
+              {sortedEntries(bank).map(([itemId, quantity]) => {
+                const item = ITEMS[itemId];
+                return (
+                  <li key={itemId}>
+                    <div className="item-row-main">
+                      {item ? <ItemSlot item={item} quantity={quantity} /> : null}
+                      <span>{item?.name ?? itemId}</span>
+                    </div>
+                    <button onClick={() => handleWithdraw(itemId, quantity)}>Withdraw all</button>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>

@@ -4,6 +4,7 @@ import { useCharacter } from '../hooks/useCharacter';
 import { reconcileCollectionAndAchievements } from '../firebase/achievements';
 import { ACHIEVEMENTS } from '../gameData/achievements';
 import { ITEMS } from '../gameData/items';
+import { ItemSlot } from './ItemSlot';
 import type { EquipmentSlot } from '../gameData/types';
 
 const SLOT_ORDER: EquipmentSlot[] = ['weapon', 'chest', 'helmet', 'gloves', 'legs', 'boots', 'ring', 'tool'];
@@ -85,16 +86,18 @@ export function CollectionScreen() {
             return (
               <div key={slot}>
                 <h3>{SLOT_LABELS[slot]}</h3>
-                <ul>
+                <div className="item-grid">
                   {itemsInSlot.map((item) => {
                     const found = collectedSet.has(item.id);
-                    return (
-                      <li key={item.id} style={{ opacity: found ? 1 : 0.4 }}>
-                        {found ? item.name : '??? (not yet found)'}
-                      </li>
+                    return found ? (
+                      <ItemSlot key={item.id} item={item} />
+                    ) : (
+                      <div key={item.id} className="item-slot item-slot-mystery" title="Not yet found">
+                        <span className="item-slot-icon">❓</span>
+                      </div>
                     );
                   })}
-                </ul>
+                </div>
               </div>
             );
           })}

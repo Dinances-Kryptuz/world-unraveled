@@ -9,15 +9,11 @@ import type { RosterSlotSummary } from '../gameData/characterSlots';
 import { CLASS_LABELS, SPEC_LABELS, canClassEquip, type ClassId, type SpecId } from '../gameData/classStats';
 import { ITEMS } from '../gameData/items';
 import { ZONES } from '../gameData/zones';
+import { ItemSlot } from './ItemSlot';
 import type { Inventory } from '../types/character';
 import type { EquipmentSlot } from '../gameData/types';
 
 const SLOT_ORDER: EquipmentSlot[] = ['weapon', 'chest', 'helmet', 'gloves', 'legs', 'boots', 'ring'];
-
-function formatStatBonuses(statBonuses: Partial<Record<string, number>> | undefined): string {
-  const parts = Object.entries(statBonuses ?? {}).map(([stat, val]) => `+${val} ${stat}`);
-  return parts.length > 0 ? ` (${parts.join(', ')})` : '';
-}
 
 export function CompanionScreen() {
   const { user } = useAuth();
@@ -206,7 +202,12 @@ export function CompanionScreen() {
                     const equippedItem = equippedId ? ITEMS[equippedId] : null;
                     return (
                       <li key={slot}>
-                        {slot}: {equippedItem ? `${equippedItem.name}${formatStatBonuses(equippedItem.statBonuses)}` : '(empty)'}
+                        <div className="item-row-main">
+                          {equippedItem ? <ItemSlot item={equippedItem} /> : <div className="item-slot item-slot-empty" />}
+                          <span>
+                            {slot}: {equippedItem ? equippedItem.name : '(empty)'}
+                          </span>
+                        </div>
                         {equippedItem && <button onClick={() => handleUnequip(companionId, slot)}>Unequip</button>}
                       </li>
                     );
@@ -224,8 +225,10 @@ export function CompanionScreen() {
                         const allowed = canClassEquip(def.class, item);
                         return (
                           <li key={itemId}>
-                            {item.name}
-                            {formatStatBonuses(item.statBonuses)} x{quantity}
+                            <div className="item-row-main">
+                              <ItemSlot item={item} quantity={quantity} />
+                              <span>{item.name}</span>
+                            </div>
                             <button onClick={() => handleEquip(companionId, item.equipSlot!, itemId)} disabled={!allowed}>
                               {allowed ? 'Equip' : `${item.armorType} — not usable`}
                             </button>
