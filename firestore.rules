@@ -128,6 +128,9 @@ service cloud.firestore {
       && data.companions == {}
       && data.activeCompanionIds == []
       && data.activeAltSlots == []
+      && data.dungeonClears == {}
+      && data.collectedItemIds == []
+      && data.unlockedAchievementIds == []
       && data.currentZoneId == 'greenhollow_fields'
       && data.travel == null;
   }
@@ -177,7 +180,34 @@ service cloud.firestore {
       && isValidActiveCompanionIds(after)
       && isValidCurrentZoneId(after)
       && isValidTravel(after)
-      && isValidActiveAltSlots(after);
+      && isValidActiveAltSlots(after)
+      && isValidDungeonClears(after)
+      && isValidCollectedItemIds(after)
+      && isValidUnlockedAchievementIds(after);
+  }
+
+  // Same "may not exist yet on an old character" treatment and expression-
+  // budget-conscious posture as isValidCurrentZoneId above — full
+  // validation (that a dungeon id is real, that the count only ever
+  // increments) happens in firebase/character.ts's applyCombatResult, the
+  // only path that writes this field.
+  function isValidDungeonClears(after) {
+    return !('dungeonClears' in after) || after.dungeonClears is map;
+  }
+
+  // Same treatment — full validation (that an id is a real equipment item,
+  // that the list only ever grows) happens in
+  // firebase/achievements.ts's reconcileCollectionAndAchievements, the only
+  // path that writes this field.
+  function isValidCollectedItemIds(after) {
+    return !('collectedItemIds' in after) || after.collectedItemIds is list;
+  }
+
+  // Same treatment — full validation (that an id is a real achievement,
+  // that the list only ever grows) happens in the same reconcile function
+  // above, the only path that writes this field.
+  function isValidUnlockedAchievementIds(after) {
+    return !('unlockedAchievementIds' in after) || after.unlockedAchievementIds is list;
   }
 
   // Same "may not exist yet on an old character" treatment and ownership-

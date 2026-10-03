@@ -171,6 +171,26 @@ export interface Character {
   // having arrived and travel as already null, with no separate "complete
   // the flight" write needed.
   travel: TravelState | null;
+  // Lifetime full-clear count per dungeon id — distinct from DungeonScreen's
+  // own session-only fullClears display state, which resets on reload. The
+  // only thing in Character that isn't otherwise derivable from existing
+  // fields, so it's the one new counter Phase 5's achievements
+  // (gameData/achievements.ts) needed; everything else they check is a
+  // plain snapshot of already-persisted state.
+  dungeonClears: Record<string, number>;
+  // Every equipment item id ever seen in this character's inventory or
+  // bank — permanent, never shrinks even if the item is later sold,
+  // disenchanted, or deposited/withdrawn. Reconciled lazily whenever the
+  // Collection Log screen is open (see components/CollectionScreen.tsx),
+  // not eagerly at every loot/craft/purchase call site — an item that's
+  // insta-sold before the log is ever opened while held is the one gap this
+  // accepts, a reasonable tradeoff for a completionist side feature.
+  collectedItemIds: string[];
+  // Permanent, monotonic — once an id is added here (see
+  // gameData/achievements.ts's checkNewlyUnlocked, reconciled the same lazy
+  // way as collectedItemIds above) it never comes out, even if the
+  // underlying condition (e.g. a gold total) later stops being true.
+  unlockedAchievementIds: string[];
 }
 
 export interface Inventory {

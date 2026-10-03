@@ -75,6 +75,11 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
   const stageIndexRef = useRef(0);
   const currentMonsterRef = useRef<Monster>(MONSTERS[dungeon.stages[0]]);
   const fullClearsRef = useRef(0);
+  // Persisted via the next autosave (see Character.dungeonClears) — unlike
+  // fullClearsRef/bankedTotals above, which are this SESSION's count and
+  // reset on reload, this feeds the lifetime total Phase 5's achievements
+  // (gameData/achievements.ts) check against.
+  const pendingDungeonClearsRef = useRef(0);
   const pendingLogRef = useRef<CombatEvent[]>([]);
 
   const combatStateRef = useRef<CombatState | null>(null);
@@ -115,6 +120,7 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
     if (justDefeated.isBoss) {
       fullClearsRef.current++;
       setFullClears(fullClearsRef.current);
+      pendingDungeonClearsRef.current++;
       pendingLogRef.current.push({
         message: `You cleared ${dungeon.name}! Looping back to the first stage.`,
         kind: 'status',
@@ -200,6 +206,7 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
     pendingBuffTriggersRef.current = { offensive_action: 0, damage_taken: 0 };
     stageIndexRef.current = 0;
     fullClearsRef.current = 0;
+    pendingDungeonClearsRef.current = 0;
     currentMonsterRef.current = MONSTERS[dungeon.stages[0]];
     combatStateRef.current = null;
     let cancelled = false;
@@ -273,6 +280,8 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
     pendingKillsRef.current = [];
     pendingQuestSignalsRef.current = { healingDone: 0, abilityUseCounts: {} };
     pendingBuffTriggersRef.current = { offensive_action: 0, damage_taken: 0 };
+    const dungeonClearsGained = pendingDungeonClearsRef.current;
+    pendingDungeonClearsRef.current = 0;
     if (hasBuffTriggers) void consumeBuffCharges(currentUser.uid, characterRef.current ?? character, buffTriggers);
 
     const xpGained = Math.round(kills.reduce((sum, k) => sum + k.xpGained, 0));
@@ -301,6 +310,7 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
         voidShardsGained,
         loot: lootToSave,
         hpAfter: player.hp,
+        dungeonCleared: dungeonClearsGained > 0 ? { dungeonId, count: dungeonClearsGained } : undefined,
       });
 
       const fresh = await getCharacter(currentUser.uid);

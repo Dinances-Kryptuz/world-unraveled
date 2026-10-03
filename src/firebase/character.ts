@@ -104,6 +104,10 @@ export async function getCharacter(uid: string): Promise<Character | null> {
     activeCompanionIds: data.activeCompanionIds ?? (data.activeCompanionId ? [data.activeCompanionId] : []),
     // Same backfill idea again, for Phase 4's alt recruiting.
     activeAltSlots: data.activeAltSlots ?? [],
+    // Same backfill idea again, for Phase 5's achievements/collection log.
+    dungeonClears: data.dungeonClears ?? {},
+    collectedItemIds: data.collectedItemIds ?? [],
+    unlockedAchievementIds: data.unlockedAchievementIds ?? [],
     // Same backfill idea again, for the quest system — an old character
     // without this field just starts with an empty board and picks up its
     // first quests the next time it completes a trackable action (or via
@@ -192,6 +196,9 @@ export async function createCharacter(uid: string, name: string, characterClass:
     companions: {},
     activeCompanionIds: [],
     activeAltSlots: [],
+    dungeonClears: {},
+    collectedItemIds: [],
+    unlockedAchievementIds: [],
     currentZoneId: DEFAULT_ZONE_ID,
     travel: null,
   };
@@ -229,6 +236,11 @@ export async function applyCombatResult(
     voidShardsGained?: number;
     loot: { itemId: string; quantity: number }[];
     hpAfter?: number;
+    // Set only by DungeonScreen's autosave, only on a tick that cleared at
+    // least one full dungeon run — the lifetime total Phase 5's achievements
+    // (gameData/achievements.ts) check against, distinct from DungeonScreen's
+    // own session-only fullClears display state.
+    dungeonCleared?: { dungeonId: string; count: number };
   }
 ): Promise<void> {
   const characterUpdate: Record<string, unknown> = {
@@ -242,6 +254,9 @@ export async function applyCombatResult(
   if (result.hpAfter !== undefined) {
     characterUpdate.currentHp = result.hpAfter;
     characterUpdate.hpCheckpointAt = serverTimestamp();
+  }
+  if (result.dungeonCleared) {
+    characterUpdate[`dungeonClears.${result.dungeonCleared.dungeonId}`] = increment(result.dungeonCleared.count);
   }
   await updateDoc(doc(db, 'characters', uid), characterUpdate);
 
