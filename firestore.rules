@@ -28,6 +28,16 @@ service cloud.firestore {
         allow update: if request.auth != null && request.auth.uid == uid && request.resource.data.keys().hasOnly(['items']);
         allow delete: if false;
       }
+
+      // Same shape/rules as inventory above — a separate, larger storage
+      // pool (gameData/bank.ts's nextBankSlotCost gates how big) rather than
+      // a different document shape.
+      match /bank/{docId} {
+        allow read: if request.auth != null && request.auth.uid == uid;
+        allow create: if request.auth != null && request.auth.uid == uid && request.resource.data.keys().hasOnly(['items']);
+        allow update: if request.auth != null && request.auth.uid == uid && request.resource.data.keys().hasOnly(['items']);
+        allow delete: if false;
+      }
     }
 
     match /{document=**} {
@@ -46,6 +56,7 @@ service cloud.firestore {
       && data.enchantments == {}
       && data.learnedRecipeIds == []
       && data.bagSlots == 24
+      && data.bankSlots == 4
       && data.activeBuffs == {}
       && data.currentActivity.type == null
       && data.equippedAbilityIds == []
@@ -70,6 +81,7 @@ service cloud.firestore {
       && isValidEnchantments(after)
       && isValidLearnedRecipeIds(after)
       && isValidBagSlots(after)
+      && isValidBankSlots(after)
       && isValidActiveBuffs(after)
       && isValidActivity(after.currentActivity)
       && isValidEquippedAbilityIds(after)
@@ -100,6 +112,13 @@ service cloud.firestore {
   // genuine bag-capacity ceiling is never mistaken for a rules bug.
   function isValidBagSlots(after) {
     return !('bagSlots' in after) || (after.bagSlots is number && after.bagSlots >= 24 && after.bagSlots <= 500);
+  }
+
+  // Bounded 4-124 — see gameData/bank.ts's BASE_BANK_SLOTS/MAX_BANK_SLOTS.
+  // Full validation (gold actually spent, one slot at a time) happens in
+  // firebase/bank.ts's buyBankSlot, the only path that increases this.
+  function isValidBankSlots(after) {
+    return !('bankSlots' in after) || (after.bankSlots is number && after.bankSlots >= 4 && after.bankSlots <= 124);
   }
 
   // Capped at 7 — the number of BuffCategory values (gameData/types.ts) —

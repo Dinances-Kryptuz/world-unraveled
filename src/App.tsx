@@ -7,6 +7,7 @@ import { SpecSelectionScreen } from './components/SpecSelectionScreen';
 import { ZoneScreen } from './components/ZoneScreen';
 import { EquipmentScreen } from './components/EquipmentScreen';
 import { InventoryScreen } from './components/InventoryScreen';
+import { BankScreen } from './components/BankScreen';
 import { TalentScreen } from './components/TalentScreen';
 import { CombatSetupScreen } from './components/CombatSetupScreen';
 import { CombatScreen } from './components/CombatScreen';
@@ -209,6 +210,7 @@ function AppContent() {
       {section === 'combatSetup' && <CombatSetupScreen />}
       {section === 'equipment' && <EquipmentScreen />}
       {section === 'inventory' && <InventoryScreen />}
+      {section === 'bank' && <BankScreen />}
       {section === 'companions' && <CompanionScreen />}
       {section === 'shop' && <VendorScreen zoneId={selectedZoneId} />}
       {section === 'profession' && <ProfessionScreen professionId={selectedProfessionId} zoneId={selectedZoneId} />}

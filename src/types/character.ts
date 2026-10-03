@@ -99,6 +99,11 @@ export interface Character {
   // firebase/inventory.ts) — grows permanently when a Tailoring-crafted bag
   // is used (ConsumableEffect.bagCapacityBonus).
   bagSlots: number;
+  // Max distinct item ids the bank (characters/{uid}/bank/main, see
+  // firebase/bank.ts) can hold at once — a separate, larger storage pool
+  // bought slot-by-slot with gold (gameData/bank.ts's nextBankSlotCost),
+  // unlike bagSlots which only ever grows from a crafted item.
+  bankSlots: number;
   // Active potion/food buffs, keyed by BuffCategory so applying a second
   // buff of the same category replaces rather than stacks (see
   // combatEngine/buffs.ts). Charge-based buffs count down `charges`;

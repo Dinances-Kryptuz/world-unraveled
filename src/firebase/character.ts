@@ -6,6 +6,7 @@ import type { ClassId, SpecId } from '../gameData/classStats';
 import type { TalentColumn } from '../gameData/talents';
 import { professionXpForLevel } from '../gameData/xpTables';
 import { maxSkillForUnlockedTier } from '../gameData/professionTiers';
+import { BASE_BANK_SLOTS } from '../gameData/bank';
 import { maxHp } from '../gameData/combatFormulas';
 import { canClassEquip } from '../gameData/classStats';
 import { ITEMS } from '../gameData/items';
@@ -36,6 +37,7 @@ export async function getCharacter(uid: string): Promise<Character | null> {
     enchantments: data.enchantments ?? {},
     learnedRecipeIds: data.learnedRecipeIds ?? [],
     bagSlots: data.bagSlots ?? BASE_BAG_SLOTS,
+    bankSlots: data.bankSlots ?? BASE_BANK_SLOTS,
     // A charge-based buff has no expiresAt in Firestore at all — omitting
     // the key entirely (rather than setting it to `undefined`) matters
     // because this object gets spread again later (consumeBuffCharges),
@@ -149,6 +151,7 @@ export async function createCharacter(uid: string, name: string, characterClass:
     enchantments: {},
     learnedRecipeIds: [],
     bagSlots: BASE_BAG_SLOTS,
+    bankSlots: BASE_BANK_SLOTS,
     activeBuffs: {},
     currentActivity: { type: null, targetId: null, zoneId: null, startedAt: null },
     equippedAbilityIds: [],
@@ -163,6 +166,7 @@ export async function createCharacter(uid: string, name: string, characterClass:
 
   await setDoc(doc(db, 'characters', uid), character);
   await setDoc(doc(db, 'characters', uid, 'inventory', 'main'), { items: {} });
+  await setDoc(doc(db, 'characters', uid, 'bank', 'main'), { items: {} });
 }
 
 export async function startActivity(
@@ -332,6 +336,7 @@ export async function applyCraftingResult(
     resultItemId: string;
     resultQuantity: number;
     materialsConsumed: { itemId: string; quantity: number }[];
+    goldSpent?: number;
   }
 ): Promise<void> {
   // See the matching comment in applyGatheringResult — same fix, same reason.
@@ -340,9 +345,11 @@ export async function applyCraftingResult(
   const current = character.professions[profession];
   if (!current) return;
 
-  await updateDoc(doc(db, 'characters', uid), {
+  const characterUpdate: Record<string, unknown> = {
     [`professions.${profession}`]: { ...current, xp: current.xp + result.xpGained },
-  });
+  };
+  if (result.goldSpent) characterUpdate.gold = increment(-result.goldSpent);
+  await updateDoc(doc(db, 'characters', uid), characterUpdate);
 
   const inventoryUpdates: Record<string, unknown> = {
     [`items.${result.resultItemId}`]: increment(result.resultQuantity),

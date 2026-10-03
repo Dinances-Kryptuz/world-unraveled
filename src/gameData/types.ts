@@ -272,6 +272,12 @@ export interface Recipe {
   resultItemId: string;
   resultQuantity: number;
   materials: { itemId: string; quantity: number }[];
+  // Gold consumed per item crafted, in addition to materials — undefined/0
+  // for the overwhelming majority of recipes (materials alone). Currently
+  // only set on the Blacksmith repair recipes (see the "Blacksmith
+  // repairs" section below), which need gold on top of zone-tier-matched
+  // materials to turn a damaged dungeon drop back into its real form.
+  goldCost?: number;
   craftSeconds: number;
   xpAward: number;
   // Skill at/below orangeUntil = 100% XP (skill-up chance), up to

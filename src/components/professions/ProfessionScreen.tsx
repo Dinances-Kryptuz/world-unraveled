@@ -60,7 +60,8 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
           .map((recipe) => {
             const meetsSkill = professionLevel >= recipe.requiredSkill;
             const meetsLevel = !recipe.requiredCharacterLevel || char.level >= recipe.requiredCharacterLevel;
-            const canCraft = meetsSkill && meetsLevel;
+            const meetsGold = !recipe.goldCost || char.gold >= recipe.goldCost;
+            const canCraft = meetsSkill && meetsLevel && meetsGold;
             const tier = craftingColorTier(professionLevel, recipe.requiredSkill, recipe.colorBreakpoints);
             const resultItem = ITEMS[recipe.resultItemId];
             return (
@@ -74,8 +75,15 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
                 (requires skill {recipe.requiredSkill}
                 {recipe.requiredCharacterLevel ? `, Lv ${recipe.requiredCharacterLevel}` : ''}) — materials:{' '}
                 {recipe.materials.map((m) => `${m.quantity}x ${ITEMS[m.itemId]?.name ?? m.itemId}`).join(', ')}
+                {recipe.goldCost ? ` + ${recipe.goldCost} gold` : ''}
                 <button onClick={() => handleCraft(recipe.id)} disabled={!canCraft}>
-                  {canCraft ? 'Craft' : !meetsLevel ? `Need Lv ${recipe.requiredCharacterLevel}` : `Need skill ${recipe.requiredSkill}`}
+                  {canCraft
+                    ? 'Craft'
+                    : !meetsLevel
+                      ? `Need Lv ${recipe.requiredCharacterLevel}`
+                      : !meetsSkill
+                        ? `Need skill ${recipe.requiredSkill}`
+                        : `Need ${recipe.goldCost} gold`}
                 </button>
               </li>
             );

@@ -39,16 +39,19 @@ export const MAX_ACTIVE_COMPANIONS = 4;
 // that means "the whole group" reads as that, not as an unexplained +1.
 export const REQUIRED_DUNGEON_PARTY_SIZE = MAX_ACTIVE_COMPANIONS + 1;
 
-// Gold sink: companions ask for a wage before a dungeon run, scaling with
-// the player's level (so it stays meaningful instead of trivial at high
-// level) and headcount (bringing the full 4-person party costs more than a
-// partial one in open-world content, though only a full party can actually
-// enter a dungeon at all). Paid once per run, up front — see
-// firebase/companions.ts's payDungeonCompanionFee.
-export const COMPANION_WAGE_PER_LEVEL = 2;
+// Gold sink: companions ask for a wage before a dungeon run, paid once per
+// entry (see firebase/companions.ts's payDungeonCompanionFee) — scaling
+// with headcount AND, quadratically, with the dungeon's own zone tier
+// (gameData/zones.ts's ZONE_TIER), so an endgame dungeon costs dramatically
+// more than an early one rather than merely tracking character level (a
+// level-60 character farming the FIRST dungeon shouldn't pay endgame
+// prices just for being high level). Tier 6 costs 36x tier 1 at the same
+// headcount — deliberately steep, since this is meant to be a real sink at
+// the top of the game, not a flat tax everywhere.
+export const COMPANION_WAGE_BASE = 20;
 
-export function dungeonCompanionFee(characterLevel: number, companionCount: number): number {
-  return companionCount * characterLevel * COMPANION_WAGE_PER_LEVEL;
+export function dungeonCompanionFee(zoneTier: number, companionCount: number): number {
+  return companionCount * zoneTier * zoneTier * COMPANION_WAGE_BASE;
 }
 
 // One companion per spec (all 6 — see classStats.ts's SpecId) so a player

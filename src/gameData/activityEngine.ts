@@ -1,40 +1,23 @@
-// The single resolver used by combat, gathering, skinning, and crafting.
-// There is still no stored "online/offline" flag anywhere — the resolver
-// decides which rate regime to use purely from the SIZE of the elapsed gap
-// since activityStartedAt:
+// The single resolver used by combat, gathering, skinning, fishing, and
+// crafting. Offline progress is worth exactly as much as live progress,
+// per real hour — no throttle, no diminishing-returns tier — up to a flat
+// 24-hour cap; time away beyond that cap is simply not credited at all
+// (not even at a reduced rate). This replaced an earlier two-regime model
+// (live at full rate, offline compressed by a ~38-45x throttle) that made
+// offline progress nearly worthless — a 24-hour absence credited only
+// around half an hour of live-equivalent progress, which didn't fit this
+// being an idle game players check in on rather than leave a tab open in
+// 24/7. There is still no stored "online/offline" flag anywhere — this
+// resolver only ever looks at the SIZE of the elapsed gap since
+// activityStartedAt, it just no longer treats a long gap any differently
+// from a short one except for the cap.
 //
-//   - A short gap (<= LIVE_SESSION_THRESHOLD_SECONDS) means the player is
-//     actively here. During an active session the client periodically
-//     autosaves and resets activityStartedAt, so a "live" resolution never
-//     sees a gap bigger than one autosave interval. This regime uses the
-//     TRUE per-action time (real monster/node stats) — the pace the player
-//     actually watches happen.
-//
-//   - A long gap means the player was away (tab closed, or just never
-//     autosaved that recently). This regime applies an OFFLINE_THROTTLE on
-//     top of the true per-action time before running it through the same
-//     24h-cap / 12h-tier efficiency curve as before. This keeps a 24-hour
-//     absence from producing thousands of kills while still rewarding
-//     longer absences more than short ones.
-//
-// This intentionally reverses the earlier "one rate for everything" design —
-// the two target numbers (10-22s live fight vs. 100-200 kills/24h) are only
-// reconcilable with two rate regimes. Throttle factors below are tuned to
-// land roughly in the requested ranges across all 4 V1 monsters/nodes; treat
-// them as a first pass, not final balance.
+// LIVE_SESSION_THRESHOLD_SECONDS no longer affects any rate — it's kept
+// only for WelcomeBackScreen's "were you away long enough to show a
+// summary" check, a UI question, not a math one.
 
 export const OFFLINE_CAP_HOURS = 24;
-export const FULL_EFFICIENCY_HOURS = 12;
-export const REDUCED_EFFICIENCY_RATE = 0.75;
-
-// Gaps at or under this are treated as "still live" — real-time pace, no throttle.
-export const LIVE_SESSION_THRESHOLD_SECONDS = 300; // 5 minutes
-
-// Multiplies true per-action seconds when resolving an away-gap.
-// Tuned against V1's 4 monsters/2 nodes to land near 100-200 kills and
-// 100-300 gathered resources per 24h (see /gameData sanity checks).
-export const COMBAT_OFFLINE_THROTTLE = 38;
-export const GATHERING_OFFLINE_THROTTLE = 45; // Mining, Herbalism, Skinning — flat per-action nodes
+export const LIVE_SESSION_THRESHOLD_SECONDS = 300; // 5 minutes — UI-only, see above
 
 // Gathering-node failure chance: at exactly the node's required skill level,
 // there's a real chance of coming away empty-handed on a given action. That
@@ -61,40 +44,27 @@ export function gatheringSuccessChance(currentSkill: number, requiredLevel: numb
 }
 
 export interface ResolvedProgress {
-  effectiveHours: number; // hours of progress actually credited, after caps/efficiency
+  effectiveHours: number; // hours of progress actually credited — raw elapsed, capped at 24h
   rawElapsedHours: number; // true wall-clock hours elapsed, uncapped (for display only)
-  cappedAtMax: boolean; // true if the player exceeded the 24h cap
-  isLiveSession: boolean; // true if this gap was small enough to use the untouched live rate
+  cappedAtMax: boolean; // true if the player exceeded the 24h cap (anything beyond it is lost, not reduced-rate)
 }
 
 /**
- * Converts raw elapsed time into "effective hours" of progress. If the gap is
- * small (a live session), returns the raw elapsed time uncapped/unthrottled —
- * the tiered cap only matters for genuine absences.
+ * Converts raw elapsed time into "effective hours" of progress — a flat 1:1
+ * credit of real time up to the 24-hour cap, same rate whether the player is
+ * actively watching or was away. Time beyond 24 hours is simply not
+ * credited at all (not reduced-rate, just gone) — this is the only limiter
+ * on offline progress now.
  */
 export function resolveElapsedProgress(startedAt: Date, now: Date): ResolvedProgress {
   const rawElapsedSeconds = Math.max(0, (now.getTime() - startedAt.getTime()) / 1000);
   const rawElapsedHours = rawElapsedSeconds / 3600;
-
-  if (rawElapsedSeconds <= LIVE_SESSION_THRESHOLD_SECONDS) {
-    return {
-      effectiveHours: rawElapsedHours,
-      rawElapsedHours,
-      cappedAtMax: false,
-      isLiveSession: true,
-    };
-  }
-
-  const cappedHours = Math.min(rawElapsedHours, OFFLINE_CAP_HOURS);
-  const fullHours = Math.min(cappedHours, FULL_EFFICIENCY_HOURS);
-  const reducedHours = Math.max(0, cappedHours - FULL_EFFICIENCY_HOURS);
-  const effectiveHours = fullHours + reducedHours * REDUCED_EFFICIENCY_RATE;
+  const effectiveHours = Math.min(rawElapsedHours, OFFLINE_CAP_HOURS);
 
   return {
     effectiveHours,
     rawElapsedHours,
     cappedAtMax: rawElapsedHours >= OFFLINE_CAP_HOURS,
-    isLiveSession: false,
   };
 }
 
@@ -130,11 +100,7 @@ export function resolveGathering(
 ): GatherNodeResult {
   const progress = resolveElapsedProgress(startedAt, now);
   const effectiveSeconds = progress.effectiveHours * 3600;
-  const secondsPerAction = progress.isLiveSession
-    ? node.secondsPerAction
-    : node.secondsPerAction * GATHERING_OFFLINE_THROTTLE;
-
-  const actionsAttempted = Math.floor(effectiveSeconds / secondsPerAction);
+  const actionsAttempted = Math.floor(effectiveSeconds / node.secondsPerAction);
   const successChance = Math.min(1, gatheringSuccessChance(currentSkill, node.requiredLevel) + toolBonusPct / 100);
     // Deliberately NOT rounded — with roughly one action per autosave chunk,
   // rounding here would make the fail chance resolve the same way every
@@ -197,8 +163,7 @@ export function resolveFishing(
 ): FishingResult {
   const progress = resolveElapsedProgress(startedAt, now);
   const effectiveSeconds = progress.effectiveHours * 3600;
-  const secondsPerAction = progress.isLiveSession ? hole.secondsPerAction : hole.secondsPerAction * GATHERING_OFFLINE_THROTTLE;
-  const actionsAttempted = Math.floor(effectiveSeconds / secondsPerAction);
+  const actionsAttempted = Math.floor(effectiveSeconds / hole.secondsPerAction);
 
   const toolBonus = toolBonusPct / 100;
   const skillupChance = fishingSkillupChance(currentSkill);
@@ -266,6 +231,7 @@ export interface CraftingResult {
   itemsCrafted: number;
   xpGained: number;
   materialsConsumed: { itemId: string; quantity: number }[];
+  goldSpent: number;
 }
 
 export function resolveCrafting(
@@ -276,10 +242,12 @@ export function resolveCrafting(
     craftSeconds: number;
     xpAward: number;
     materials: { itemId: string; quantity: number }[];
+    goldCost?: number;
   },
   currentSkill: number,
   availableMaterialQuantities: Record<string, number>,
-  colorBreakpoints: { orangeUntil: number; yellowUntil: number; greenUntil: number }
+  colorBreakpoints: { orangeUntil: number; yellowUntil: number; greenUntil: number },
+  availableGold = Infinity
 ): CraftingResult {
   const progress = resolveElapsedProgress(startedAt, now);
   const effectiveSeconds = progress.effectiveHours * 3600;
@@ -291,8 +259,9 @@ export function resolveCrafting(
       Math.floor((availableMaterialQuantities[m.itemId] ?? 0) / m.quantity)
     )
   );
+  const goldLimitedCrafts = recipe.goldCost ? Math.floor(availableGold / recipe.goldCost) : Infinity;
 
-  const itemsCrafted = Math.max(0, Math.min(timeLimitedCrafts, materialLimitedCrafts));
+  const itemsCrafted = Math.max(0, Math.min(timeLimitedCrafts, materialLimitedCrafts, goldLimitedCrafts));
 
   const tier = craftingColorTier(currentSkill, recipe.requiredSkill, colorBreakpoints);
   const xpMultiplier = PROFESSION_XP_MULTIPLIER_BY_TIER[tier];
@@ -300,6 +269,7 @@ export function resolveCrafting(
   return {
     itemsCrafted,
     xpGained: Math.round(itemsCrafted * recipe.xpAward * xpMultiplier),
+    goldSpent: itemsCrafted * (recipe.goldCost ?? 0),
     materialsConsumed: recipe.materials.map((m) => ({
       itemId: m.itemId,
       quantity: m.quantity * itemsCrafted,

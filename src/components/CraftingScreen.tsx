@@ -30,6 +30,7 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
   const [outOfMaterials, setOutOfMaterials] = useState(false);
   const anchorRef = useRef<Date | null>(character.currentActivity.startedAt);
   const materialsRef = useRef<Record<string, number>>({});
+  const goldRef = useRef(character.gold);
 
   const characterRef = useRef<Character | null>(character);
   const userRef = useRef<User | null>(user);
@@ -45,6 +46,7 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
     setBankedXp(0);
     setOutOfMaterials(false);
     anchorRef.current = character.currentActivity.startedAt;
+    goldRef.current = character.gold;
     if (user) {
       getInventory(user.uid).then((inv) => {
         materialsRef.current = { ...inv.items };
@@ -81,14 +83,16 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
       recipe,
       currentSkill,
       materialsRef.current,
-      recipe.colorBreakpoints
+      recipe.colorBreakpoints,
+      goldRef.current
     );
 
     if (result.itemsCrafted === 0) {
       const hasEnoughMaterials = recipe.materials.every(
         (m) => (materialsRef.current[m.itemId] ?? 0) >= m.quantity
       );
-      if (!hasEnoughMaterials) {
+      const hasEnoughGold = !recipe.goldCost || goldRef.current >= recipe.goldCost;
+      if (!hasEnoughMaterials || !hasEnoughGold) {
         // Just show the message and stop trying — don't end the activity
         // automatically, or the screen unmounts before it can be read.
         // The player stops manually with the Stop button whenever they want.
@@ -99,12 +103,14 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
 
     const previousAnchor = anchor;
     const previousMaterials = { ...materialsRef.current };
+    const previousGold = goldRef.current;
 
     anchorRef.current = now;
     for (const consumed of result.materialsConsumed) {
       materialsRef.current[consumed.itemId] =
         (materialsRef.current[consumed.itemId] ?? 0) - consumed.quantity;
     }
+    goldRef.current -= result.goldSpent;
     setBankedCrafted((prev) => prev + result.itemsCrafted);
     setBankedXp((prev) => prev + result.xpGained);
     // Bump the shared profession xp now, in the same tick as the banked
@@ -127,6 +133,7 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
         resultItemId: recipe.resultItemId,
         resultQuantity: recipe.resultQuantity * result.itemsCrafted,
         materialsConsumed: result.materialsConsumed,
+        goldSpent: result.goldSpent,
       });
       await checkAndApplyProfessionLevelUp(currentUser.uid, recipe.profession);
 
@@ -143,6 +150,7 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
       console.error('Crafting autosave failed, will retry next cycle:', err);
       anchorRef.current = previousAnchor;
       materialsRef.current = previousMaterials;
+      goldRef.current = previousGold;
       setBankedCrafted((prev) => prev - result.itemsCrafted);
       setBankedXp((prev) => prev - result.xpGained);
       applyOptimisticUpdate((c) => ({
@@ -175,8 +183,8 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
   // per-second live-preview cadence.
   const currentSkill = getProfessionState(character.professions, recipe.profession).level;
   const sinceLastSave = anchorRef.current
-    ? resolveCrafting(anchorRef.current, new Date(), recipe, currentSkill, materialsRef.current, recipe.colorBreakpoints)
-    : { itemsCrafted: 0, xpGained: 0, materialsConsumed: [] };
+    ? resolveCrafting(anchorRef.current, new Date(), recipe, currentSkill, materialsRef.current, recipe.colorBreakpoints, goldRef.current)
+    : { itemsCrafted: 0, xpGained: 0, materialsConsumed: [], goldSpent: 0 };
 
   const displayCrafted = bankedCrafted + sinceLastSave.itemsCrafted;
   const displayXp = bankedXp + sinceLastSave.xpGained;
@@ -196,7 +204,7 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
         curve={professionXpForLevel}
         label={recipe.profession.charAt(0).toUpperCase() + recipe.profession.slice(1)}
       />
-      {outOfMaterials && <p>Out of materials — stopped.</p>}
+      {outOfMaterials && <p>Out of materials{recipe.goldCost ? ' or gold' : ''} — stopped.</p>}
       <button onClick={handleStop}>Stop</button>
     </div>
   );
