@@ -8,6 +8,7 @@ import { ZoneBanner } from './ZoneBanner';
 import { MONSTERS } from '../gameData/monsters';
 import { DUNGEONS } from '../gameData/dungeons';
 import { MAX_ACTIVE_COMPANIONS, REQUIRED_DUNGEON_PARTY_SIZE, dungeonCompanionFee } from '../gameData/companions';
+import { ZONE_TIER } from '../gameData/zones';
 import { resolveSpecDef } from '../gameData/combatProfileWithTalents';
 import { MonsterLootPanel } from './MonsterLootPanel';
 import { MonsterLevelBadge, CombatTypeBadge } from './MonsterLevelBadge';
@@ -50,7 +51,7 @@ export function ZoneScreen({
     setFeeError(null);
     setEntering(true);
     try {
-      const feeResult = await payDungeonCompanionFee(user.uid);
+      const feeResult = await payDungeonCompanionFee(user.uid, dungeonId);
       if (!feeResult.success) {
         setFeeError(feeResult.reason ?? 'Could not pay your party.');
         return;
@@ -101,9 +102,13 @@ export function ZoneScreen({
       {Object.values(DUNGEONS)
         .filter((d) => d.zoneId === zone.id)
         .map((dungeon) => {
-          const partySize = character.activeCompanionIds.length + 1;
-          const readyForDungeon = character.activeCompanionIds.length === MAX_ACTIVE_COMPANIONS;
-          const fee = dungeonCompanionFee(character.level, character.activeCompanionIds.length);
+          const groupHeadcount = character.activeCompanionIds.length + character.activeAltSlots.length;
+          const partySize = groupHeadcount + 1;
+          const readyForDungeon = groupHeadcount === MAX_ACTIVE_COMPANIONS;
+          // Only hired companions charge a wage — a recruited alt is your
+          // own character, not an NPC you're paying to show up (see
+          // gameData/characterSlots.ts's doc comment on activeAltSlots).
+          const fee = dungeonCompanionFee(ZONE_TIER[dungeon.zoneId] ?? 1, character.activeCompanionIds.length);
           const canAffordFee = character.gold >= fee;
           return (
             <div key={dungeon.id}>

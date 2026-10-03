@@ -13,6 +13,16 @@ export function characterXpForLevelV2(level: number): number {
   return 4000 * Math.pow(level, 2.6);
 }
 
+// The level cap — every zone/dungeon/ability in the game is built against
+// this ceiling (Cinderheart Sanctum's own level range tops out here). Not
+// enforced by characterXpForLevelV2 itself (the curve is happy to keep
+// extrapolating past it); callers that turn accumulated xp into a level
+// (CombatScreen/DungeonScreen's autosave, offlineCombat's catch-up sim) stop
+// incrementing here instead. Also the trigger for Phase 4's character-slot
+// unlocks (see firebase/characterSlots.ts) — "hit max level" means reaching
+// this number.
+export const MAX_CHARACTER_LEVEL = 60;
+
 /**
  * Total cumulative XP required to REACH a given profession level (1–300 eventually,
  * V1 content only exercises roughly 1–30 given Greenhollow Fields' scope).

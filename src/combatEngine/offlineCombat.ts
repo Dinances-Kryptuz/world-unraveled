@@ -11,8 +11,8 @@ import { maxHp } from '../gameData/combatFormulas';
 import type { TalentBonusTotals } from '../utils/talentEvaluator';
 import type { BuffTotals } from '../gameData/buffs';
 import type { Monster } from '../gameData/types';
-import { characterXpForLevelV2 } from '../gameData/xpTables';
-import { resolveElapsedProgress, COMBAT_OFFLINE_THROTTLE } from '../gameData/activityEngine';
+import { characterXpForLevelV2, MAX_CHARACTER_LEVEL } from '../gameData/xpTables';
+import { resolveElapsedProgress } from '../gameData/activityEngine';
 import type { CompanionCombatSetup } from '../gameData/companions';
 import {
   createEncounterState,
@@ -61,20 +61,18 @@ export interface OfflineCombatResult {
 }
 
 const TICK_SECONDS = 1;
-// Belt-and-suspenders only — the throttled combat-time budget for even the
-// full 24h offline cap works out to well under an hour of simulated combat
-// seconds, so this should never actually bind.
+// Belt-and-suspenders only — the 24h offline cap bounds combatSecondsBudget
+// to 86,400 seconds, comfortably under this.
 const MAX_TICKS = 200_000;
 
 export function simulateOfflineCombat(input: OfflineCombatInput): OfflineCombatResult {
   const progress = resolveElapsedProgress(input.startedAt, input.now);
-  // Same relationship as the old model's secondsPerKill = timeToKill *
-  // THROTTLE: dividing the available time budget by the throttle up front
-  // and then running it at real pace produces the same expected kill count,
-  // while letting the real engine (misses, buffs, dots, healFrac, actual
-  // equipped abilities) determine what happens within that budget instead
-  // of a hand-derived DPS formula.
-  const combatSecondsBudget = (progress.effectiveHours * 3600) / COMBAT_OFFLINE_THROTTLE;
+  // Offline time is worth exactly as much as live time (see
+  // activityEngine.ts's resolveElapsedProgress doc comment) — the budget is
+  // just the capped elapsed time itself, run through the real engine
+  // (misses, buffs, dots, healFrac, actual equipped abilities) instead of a
+  // hand-derived DPS formula.
+  const combatSecondsBudget = progress.effectiveHours * 3600;
 
   function buildInput(level: number, currentHp: number): EncounterSetupInput {
     return {
@@ -134,7 +132,7 @@ export function simulateOfflineCombat(input: OfflineCombatInput): OfflineCombatR
     // HP, same as live combat never resets the enemy on a mid-fight level
     // up either.
     let leveledUp = false;
-    while (xpTotal >= characterXpForLevelV2(level + 1)) {
+    while (level < MAX_CHARACTER_LEVEL && xpTotal >= characterXpForLevelV2(level + 1)) {
       level++;
       leveledUp = true;
     }

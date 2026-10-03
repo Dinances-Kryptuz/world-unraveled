@@ -30,21 +30,26 @@ export type TargetType = 'SELF' | 'CURRENT_ENEMY' | 'LOWEST_HP_ALLY';
 // is Intimidating Shout — same mechanic, no separate debuff type needed.
 // 'stun' and 'dispel' are real early CC/utility tools; 'absorb' (Power Word:
 // Shield's real design) isn't built yet — see abilities.ts for what stands
-// in for it until then.
-export type EffectType = 'damage' | 'heal' | 'dot' | 'resourceGain' | 'buff' | 'stun' | 'dispel';
+// in for it until then. 'hot' is 'dot' but healing (Renew) — kept as its
+// own type rather than a negative-power dot since it ticks on a parallel
+// Combatant.hots list that never has to run the "can this kill you" check
+// tickDots does. 'taunt' forces the target to attack the caster for a
+// duration (see Combatant.forcedTargetId) — Warrior Tank's single-target
+// Taunt and Prot Paladin's AOE Consecration (via ability.aoe) both use it.
+export type EffectType = 'damage' | 'heal' | 'hot' | 'dot' | 'resourceGain' | 'buff' | 'stun' | 'dispel' | 'taunt';
 
 export interface AbilityEffect {
   type: EffectType;
-  // Damage/heal/dot power is a multiplier of the caster's "normalized hit"
-  // (see engine.ts's computeCasterProfile) — the same quantity the old
+  // Damage/heal/dot/hot power is a multiplier of the caster's "normalized
+  // hit" (see engine.ts's computeCasterProfile) — the same quantity the old
   // aggregate combat model scaled its DPS number from, so ability numbers
   // stay balanced against existing level/gear/talent math instead of using
   // a freshly invented scale.
   power?: number;
   resource?: ResourceType;
   amount?: number; // flat resource amount, for resourceGain
-  durationSeconds?: number; // for dot, buff, stun
-  tickSeconds?: number; // for dot
+  durationSeconds?: number; // for dot, hot, buff, stun, taunt
+  tickSeconds?: number; // for dot, hot
   damageDealtPct?: number; // for buff — added on top of the target's damageCoef
   damageTakenPct?: number; // for buff — added on top of the target's damageTakenMult
 }
@@ -68,6 +73,14 @@ export interface Ability {
   // as the priority list's implicit fallback (every example rotation in the
   // design doc ends in one of these).
   isBasicAttack?: boolean;
+  // When true, every effect applies to ALL alive combatants on the
+  // resolved target's side (every enemy for a CURRENT_ENEMY-targeted
+  // ability, every party member for LOWEST_HP_ALLY) instead of just the one
+  // resolveTarget() picked — targetType still decides WHICH side, this just
+  // broadens "one" to "all." Shared by Paladin Tank's AOE threat, Shadow
+  // Priest's weak multi-dot, Holy Priest's AOE heal, and any monster
+  // ability meant to hit the whole party at once.
+  aoe?: boolean;
 }
 
 export interface ActiveDot {
@@ -76,6 +89,16 @@ export interface ActiveDot {
   tickSeconds: number;
   timeSinceLastTick: number;
   hitPerTick: number;
+}
+
+// Mirrors ActiveDot exactly, just healing instead of damaging — see
+// engine.ts's tickHots.
+export interface ActiveHot {
+  abilityId: string;
+  remainingSeconds: number;
+  tickSeconds: number;
+  timeSinceLastTick: number;
+  healPerTick: number;
 }
 
 export interface ActiveBuff {
@@ -100,8 +123,15 @@ export interface Combatant {
   resources: Partial<Record<ResourceType, ResourcePool>>;
   cooldowns: Record<string, number>; // abilityId -> seconds remaining
   dots: ActiveDot[];
+  hots: ActiveHot[];
   buffs: ActiveBuff[];
   stunnedSeconds: number; // > 0 means this combatant cannot act (but cooldowns/dots/resources still tick)
+  // Set by a 'taunt' effect — while forcedTargetSeconds > 0 and the named
+  // combatant is still alive, this combatant's CURRENT_ENEMY resolution
+  // (targeting.ts) returns that target directly instead of its normal
+  // weighted-threat pick. Decays like stunnedSeconds, in the main tick loop.
+  forcedTargetId?: string;
+  forcedTargetSeconds?: number;
   actionReadyIn: number; // seconds until this combatant's next action
   equippedAbilityIds: string[]; // priority order, highest first; empty for monsters
   // Keyed by ability id, matching equippedAbilityIds. Optional — monsters

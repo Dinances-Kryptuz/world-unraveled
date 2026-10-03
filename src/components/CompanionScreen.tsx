@@ -2,32 +2,56 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useCharacter } from '../hooks/useCharacter';
 import { recruitCompanion, addCompanionToParty, removeCompanionFromParty, equipCompanionItem, unequipCompanionItem } from '../firebase/companions';
+import { getAccount, listRosterSummaries, addAltToParty, removeAltFromParty } from '../firebase/characterSlots';
 import { subscribeToInventory } from '../firebase/inventory';
 import { COMPANIONS, checkRecruitCompanion, MAX_ACTIVE_COMPANIONS, REQUIRED_DUNGEON_PARTY_SIZE } from '../gameData/companions';
-import { CLASS_LABELS, SPEC_LABELS, canClassEquip } from '../gameData/classStats';
+import type { RosterSlotSummary } from '../gameData/characterSlots';
+import { CLASS_LABELS, SPEC_LABELS, canClassEquip, type ClassId, type SpecId } from '../gameData/classStats';
 import { ITEMS } from '../gameData/items';
 import { ZONES } from '../gameData/zones';
+import { ItemSlot } from './ItemSlot';
 import type { Inventory } from '../types/character';
 import type { EquipmentSlot } from '../gameData/types';
 
 const SLOT_ORDER: EquipmentSlot[] = ['weapon', 'chest', 'helmet', 'gloves', 'legs', 'boots', 'ring'];
 
-function formatStatBonuses(statBonuses: Partial<Record<string, number>> | undefined): string {
-  const parts = Object.entries(statBonuses ?? {}).map(([stat, val]) => `+${val} ${stat}`);
-  return parts.length > 0 ? ` (${parts.join(', ')})` : '';
-}
-
 export function CompanionScreen() {
   const { user } = useAuth();
   const { character, refetch } = useCharacter();
   const [inventory, setInventory] = useState<Inventory | null>(null);
+  const [roster, setRoster] = useState<RosterSlotSummary[]>([]);
 
   useEffect(() => {
     if (!user) return;
     return subscribeToInventory(user.uid, setInventory);
   }, [user]);
 
+  async function loadRoster() {
+    if (!user) return;
+    const account = await getAccount(user.uid);
+    setRoster(await listRosterSummaries(user.uid, account));
+  }
+
+  useEffect(() => {
+    void loadRoster();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
   if (!character || !inventory) return null;
+
+  const groupHeadcount = character.activeCompanionIds.length + character.activeAltSlots.length;
+
+  async function handleAddAltToParty(slot: number) {
+    if (!user || !character) return;
+    const result = await addAltToParty(user.uid, slot, character);
+    if (result.success) await refetch();
+  }
+
+  async function handleRemoveAltFromParty(slot: number) {
+    if (!user || !character) return;
+    await removeAltFromParty(user.uid, slot, character);
+    await refetch();
+  }
 
   // The full roster, not just the current zone's — recruiting was never
   // actually zone-gated server-side (see firebase/companions.ts's
@@ -105,25 +129,61 @@ export function CompanionScreen() {
         </>
       )}
 
+      {roster.length > 0 && (
+        <>
+          <h3>Your Characters</h3>
+          <p>
+            <small>
+              Recruiting one of your own characters into the party is free (no wage), and it fights with its own
+              real gear, spec, and talents — better than a hired companion at the same job.
+            </small>
+          </p>
+          <ul>
+            {roster.map((r) => {
+              const isActive = character.activeAltSlots.includes(r.slot);
+              const partyFull = groupHeadcount >= MAX_ACTIVE_COMPANIONS;
+              return (
+                <li key={r.slot}>
+                  <strong>{r.name}</strong> — {CLASS_LABELS[r.class as ClassId]}
+                  {r.spec ? ` (${SPEC_LABELS[r.spec as SpecId]})` : ''}, level {r.level}
+                  {isActive ? (
+                    <button onClick={() => handleRemoveAltFromParty(r.slot)}>Remove from party</button>
+                  ) : (
+                    <button onClick={() => handleAddAltToParty(r.slot)} disabled={partyFull}>
+                      {partyFull ? 'Party full' : 'Add to party'}
+                    </button>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </>
+      )}
+
       <h3>Your party</h3>
-      {recruitedIds.length === 0 ? (
+      {recruitedIds.length === 0 && roster.length === 0 ? (
         <p>You haven't recruited any companions yet.</p>
       ) : (
         <>
           <p>
             Party: <strong>You</strong>
-            {character.activeCompanionIds.map((id) => `, ${COMPANIONS[id]?.name ?? id}`).join('')} —{' '}
-            {character.activeCompanionIds.length + 1} / {REQUIRED_DUNGEON_PARTY_SIZE}
-            {character.activeCompanionIds.length === MAX_ACTIVE_COMPANIONS
+            {character.activeCompanionIds.map((id) => `, ${COMPANIONS[id]?.name ?? id}`).join('')}
+            {character.activeAltSlots
+              .map((slot) => roster.find((r) => r.slot === slot))
+              .filter((r): r is RosterSlotSummary => !!r)
+              .map((r) => `, ${r.name}`)
+              .join('')} —{' '}
+            {groupHeadcount + 1} / {REQUIRED_DUNGEON_PARTY_SIZE}
+            {groupHeadcount === MAX_ACTIVE_COMPANIONS
               ? ' (full — ready for a dungeon)'
-              : ` (recruit and bring ${MAX_ACTIVE_COMPANIONS - character.activeCompanionIds.length} more to enter a dungeon)`}
+              : ` (recruit and bring ${MAX_ACTIVE_COMPANIONS - groupHeadcount} more to enter a dungeon)`}
           </p>
           {recruitedIds.map((companionId) => {
             const def = COMPANIONS[companionId];
             const state = character.companions[companionId];
             if (!def || !state) return null;
             const isActive = character.activeCompanionIds.includes(companionId);
-            const partyFull = character.activeCompanionIds.length >= MAX_ACTIVE_COMPANIONS;
+            const partyFull = groupHeadcount >= MAX_ACTIVE_COMPANIONS;
             return (
               <div key={companionId} className="companion-card">
                 <h4>
@@ -142,7 +202,12 @@ export function CompanionScreen() {
                     const equippedItem = equippedId ? ITEMS[equippedId] : null;
                     return (
                       <li key={slot}>
-                        {slot}: {equippedItem ? `${equippedItem.name}${formatStatBonuses(equippedItem.statBonuses)}` : '(empty)'}
+                        <div className="item-row-main">
+                          {equippedItem ? <ItemSlot item={equippedItem} /> : <div className="item-slot item-slot-empty" />}
+                          <span>
+                            {slot}: {equippedItem ? equippedItem.name : '(empty)'}
+                          </span>
+                        </div>
                         {equippedItem && <button onClick={() => handleUnequip(companionId, slot)}>Unequip</button>}
                       </li>
                     );
@@ -160,8 +225,10 @@ export function CompanionScreen() {
                         const allowed = canClassEquip(def.class, item);
                         return (
                           <li key={itemId}>
-                            {item.name}
-                            {formatStatBonuses(item.statBonuses)} x{quantity}
+                            <div className="item-row-main">
+                              <ItemSlot item={item} quantity={quantity} />
+                              <span>{item.name}</span>
+                            </div>
                             <button onClick={() => handleEquip(companionId, item.equipSlot!, itemId)} disabled={!allowed}>
                               {allowed ? 'Equip' : `${item.armorType} — not usable`}
                             </button>

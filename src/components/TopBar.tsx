@@ -1,15 +1,17 @@
 import { signOut } from '../firebase/auth';
 import { CLASS_LABELS, SPEC_LABELS } from '../gameData/classStats';
 import { ZONES, isZoneUnlocked } from '../gameData/zones';
+import { travelMinutes } from '../gameData/travel';
 import type { Character } from '../types/character';
 
 // The one thing visible no matter which sidebar section is open — who you
 // are, your HP, your XP progress, and which zone you're currently "in."
 // The zone selector lives here (not just on the Adventure page) because
 // Professions and Shop are both zone-scoped too (gathering nodes, the
-// fishing hole, trainers, and vendor stock are all per-zone) — without a
-// zone switcher reachable from those pages, there'd be no way to check a
-// different zone's shop without detouring back through Adventure first.
+// fishing hole, trainers, and vendor stock are all per-zone). Clicking a
+// different zone no longer switches instantly — it requests a flight (see
+// gameData/travel.ts); App.tsx takes over the content area with
+// TravelScreen for the duration, same as any other live activity.
 export function TopBar({
   character,
   currentHp,
@@ -17,7 +19,6 @@ export function TopBar({
   xpIntoLevel,
   xpNeededForLevel,
   xpProgressPct,
-  selectedZoneId,
   onSelectZone,
 }: {
   character: Character;
@@ -26,9 +27,9 @@ export function TopBar({
   xpIntoLevel: number;
   xpNeededForLevel: number;
   xpProgressPct: number;
-  selectedZoneId: string;
   onSelectZone: (zoneId: string) => void;
 }) {
+  const traveling = !!character.travel;
   return (
     <div className="top-bar">
       <div className="top-bar-main">
@@ -60,18 +61,29 @@ export function TopBar({
       <div className="zone-tabs top-bar-zone-tabs">
         {Object.values(ZONES).map((z) => {
           const unlocked = isZoneUnlocked(z, character.level);
-          const isCurrent = z.id === selectedZoneId;
+          const isCurrent = z.id === character.currentZoneId;
+          const minutes = isCurrent ? 0 : travelMinutes(character.currentZoneId, z.id);
+          const clickable = unlocked && !isCurrent && !traveling;
+          let title: string | undefined;
+          if (!unlocked) {
+            title = `Unlocks at level ${z.unlockRequirement.type === 'characterLevel' ? z.unlockRequirement.level : '?'}`;
+          } else if (traveling) {
+            title = 'Already in the air';
+          } else if (!isCurrent) {
+            title = `${minutes} minute flight`;
+          }
           return (
             <button
               key={z.id}
               className="zone-tab"
-              onClick={() => unlocked && onSelectZone(z.id)}
-              disabled={!unlocked}
-              title={unlocked ? undefined : `Unlocks at level ${z.unlockRequirement.type === 'characterLevel' ? z.unlockRequirement.level : '?'}`}
+              onClick={() => clickable && onSelectZone(z.id)}
+              disabled={!clickable}
+              title={title}
               style={isCurrent ? { background: 'var(--zone-primary)', color: '#fff' } : undefined}
             >
               {z.name}
               {!unlocked && z.unlockRequirement.type === 'characterLevel' ? ` (Lv ${z.unlockRequirement.level})` : ''}
+              {unlocked && !isCurrent ? ` (${minutes}m)` : ''}
             </button>
           );
         })}

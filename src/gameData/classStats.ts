@@ -71,9 +71,21 @@ export const SPECS: Record<SpecId, SpecDef> = {
   warrior_dps: { class: 'warrior', damageCoef: 1.0, survivabilityCoef: 1.0, avoidance: 0.05, healFrac: 0.0, passiveHealPct: 0.0, combatType: 'melee', threatWeight: 1 },
   warrior_tank: { class: 'warrior', damageCoef: 0.75, survivabilityCoef: 1.5, avoidance: 0.1, healFrac: 0.0, passiveHealPct: 0.0, combatType: 'melee', threatWeight: 4 },
   shadow_priest: { class: 'priest', damageCoef: 1.0, survivabilityCoef: 0.8, avoidance: 0.05, healFrac: 0.35, passiveHealPct: 0.018, combatType: 'magic', threatWeight: 1 },
-  holy_priest: { class: 'priest', damageCoef: 0.4, survivabilityCoef: 1.0, avoidance: 0.05, healFrac: 0.35, passiveHealPct: 0.044, combatType: 'magic', threatWeight: 1 },
-  prot_paladin: { class: 'paladin', damageCoef: 0.75, survivabilityCoef: 1.5, avoidance: 0.1, healFrac: 0.0, passiveHealPct: 0.006, combatType: 'melee', threatWeight: 4 },
-  holy_paladin: { class: 'paladin', damageCoef: 0.5, survivabilityCoef: 1.0, avoidance: 0.05, healFrac: 0.3, passiveHealPct: 0.022, combatType: 'magic', threatWeight: 1 },
+  // Raised from the original Pass 1 values (0.4 / 0.5) — a live-simulation
+  // sweep across all 6 specs found Holy Priest/Holy Paladin took 2-2.5x
+  // longer than every other spec to solo-level (near-zero personal damage
+  // is fine once a group covers it, but punishing before a player can even
+  // afford/recruit a group). Raised enough to land within the same ~450-550
+  // real-hour band as the other 4 specs' solo leveling pace — group healing
+  // throughput is governed by healFrac/passiveHealPct and each spec's own
+  // heal-ability power, not this coefficient, so this doesn't meaningfully
+  // change how either spec heals once grouped.
+  holy_priest: { class: 'priest', damageCoef: 1.05, survivabilityCoef: 1.0, avoidance: 0.05, healFrac: 0.35, passiveHealPct: 0.044, combatType: 'magic', threatWeight: 1 },
+  // survivabilityCoef deliberately lower than Warrior Tank's 1.5 — Prot
+  // Paladin is the AOE-threat tank (see Consecration in abilities.ts), not
+  // the one you want soaking a boss's biggest single hits.
+  prot_paladin: { class: 'paladin', damageCoef: 0.75, survivabilityCoef: 1.3, avoidance: 0.1, healFrac: 0.0, passiveHealPct: 0.006, combatType: 'melee', threatWeight: 4 },
+  holy_paladin: { class: 'paladin', damageCoef: 0.85, survivabilityCoef: 1.0, avoidance: 0.05, healFrac: 0.3, passiveHealPct: 0.022, combatType: 'magic', threatWeight: 1 },
   // Both Mage specs are matched to the other pure-DPS casters (Shadow
   // Priest's own 1.0/0.8) rather than given a raw-number edge — they
   // differentiate through their ability kits (combatEngine/abilities.ts),

@@ -18,19 +18,29 @@ export const DUNGEONS: Record<string, Dungeon> = {
   stonecrag_depths: {
     id: 'stonecrag_depths',
     name: 'Stonecrag Depths',
-    description: 'A network of caves beneath the foothills, home to the wolf pack’s Alpha Warlord.',
+    description: 'A network of caves beneath the foothills, home to the wolf pack’s Alpha Warlord — its tunnels thick with packs of lesser wolves rather than lone threats.',
     zoneId: 'stonecrag_foothills',
     levelRange: [16, 24],
     stages: ['craggy_goat', 'rubble_crawler', 'highland_bandit', 'alpha_warlord'],
+    // A pack dungeon: its trash stages field 2 weaker enemies at once instead
+    // of one tankier one (good AOE-tank/AOE-threat proving ground for Prot
+    // Paladin) — the Alpha Warlord boss stage is still a single hard-hitting
+    // fight (see DungeonScreen.tsx's boss-stage override).
+    combatType: 'multi_target',
+    encounterSize: 2,
   },
   sundered_forge: {
     id: 'sundered_forge',
     name: 'The Sundered Forge',
     description:
-      'An old dwarven forge cracked open by the mountain’s fire, now claimed by a self-styled Forgemaster and the brutes who serve him.',
+      'An old dwarven forge cracked open by the mountain’s fire, now claimed by a self-styled Forgemaster and the brutes who serve him — the forge air itself scorches anyone who lingers.',
     zoneId: 'emberfall_ridge',
     levelRange: [36, 40],
     stages: ['molten_crawler', 'ridgeback_marauder', 'scorched_drake', 'forgemaster_kaldrun'],
+    // Kaldrun's Cinderlash now hits the whole party at once (see
+    // monsterAbilities.ts) — a real test of a healer's AOE-heal tools
+    // (Holy Priest's Circle of Healing) versus pure single-target throughput.
+    combatType: 'dot_heavy',
   },
   buried_foundry: {
     id: 'buried_foundry',

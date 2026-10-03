@@ -2,6 +2,7 @@ import type { EquipmentSlot, ProfessionId, ActivityType, ProfessionTierName } fr
 import type { ClassId, SpecId } from '../gameData/classStats';
 import type { TalentPicks } from '../gameData/talents';
 import type { ConditionGroup } from '../combatEngine/types';
+import type { TravelState } from '../gameData/travel';
 
 // `level` IS the profession's 1-300 skill value (naming predates this
 // overhaul — see xpTables.ts's professionXpForLevel, unchanged). `xp` is
@@ -99,6 +100,11 @@ export interface Character {
   // firebase/inventory.ts) — grows permanently when a Tailoring-crafted bag
   // is used (ConsumableEffect.bagCapacityBonus).
   bagSlots: number;
+  // Max distinct item ids the bank (characters/{uid}/bank/main, see
+  // firebase/bank.ts) can hold at once — a separate, larger storage pool
+  // bought slot-by-slot with gold (gameData/bank.ts's nextBankSlotCost),
+  // unlike bagSlots which only ever grows from a crafted item.
+  bankSlots: number;
   // Active potion/food buffs, keyed by BuffCategory so applying a second
   // buff of the same category replaces rather than stacks (see
   // combatEngine/buffs.ts). Charge-based buffs count down `charges`;
@@ -143,6 +149,48 @@ export interface Character {
   // group with the player) to enter at all; open-world combat has no
   // minimum.
   activeCompanionIds: string[];
+  // Which of the account's OTHER character slots (gameData/characterSlots.ts)
+  // are currently recruited into this character's dungeon party, alongside
+  // activeCompanionIds — combined, the two lists are capped at
+  // MAX_ACTIVE_COMPANIONS (see ZoneScreen.tsx's dungeon-entry gate). Unlike a
+  // hired companion, a recruited alt fights with its OWN real gear, spec,
+  // and talents (see gameData/companions.ts's buildAltCombatSetup) and asks
+  // no wage — it's your own character, not an NPC. Cleared whenever that
+  // slot stops existing in the roster (switching INTO it, or creating a new
+  // character over it) — see firebase/characterSlots.ts.
+  activeAltSlots: number[];
+  // The zone the character is physically standing in — gates which zone's
+  // Adventure/Shop/Professions/trainers a player can actually use (see
+  // gameData/travel.ts). Switching this requires a flight (below), unlike
+  // the old purely client-side "selected zone" this replaced.
+  currentZoneId: string;
+  // An in-progress flight, or null when not traveling — see
+  // gameData/travel.ts's TravelState and firebase/travel.ts's startTravel.
+  // Resolved lazily (see firebase/character.ts's getCharacter): once
+  // arrivesAt has passed, the next read reports currentZoneId as already
+  // having arrived and travel as already null, with no separate "complete
+  // the flight" write needed.
+  travel: TravelState | null;
+  // Lifetime full-clear count per dungeon id — distinct from DungeonScreen's
+  // own session-only fullClears display state, which resets on reload. The
+  // only thing in Character that isn't otherwise derivable from existing
+  // fields, so it's the one new counter Phase 5's achievements
+  // (gameData/achievements.ts) needed; everything else they check is a
+  // plain snapshot of already-persisted state.
+  dungeonClears: Record<string, number>;
+  // Every equipment item id ever seen in this character's inventory or
+  // bank — permanent, never shrinks even if the item is later sold,
+  // disenchanted, or deposited/withdrawn. Reconciled lazily whenever the
+  // Collection Log screen is open (see components/CollectionScreen.tsx),
+  // not eagerly at every loot/craft/purchase call site — an item that's
+  // insta-sold before the log is ever opened while held is the one gap this
+  // accepts, a reasonable tradeoff for a completionist side feature.
+  collectedItemIds: string[];
+  // Permanent, monotonic — once an id is added here (see
+  // gameData/achievements.ts's checkNewlyUnlocked, reconciled the same lazy
+  // way as collectedItemIds above) it never comes out, even if the
+  // underlying condition (e.g. a gold total) later stops being true.
+  unlockedAchievementIds: string[];
 }
 
 export interface Inventory {

@@ -5,6 +5,7 @@ import { sellItem, buyItem } from '../firebase/vendor';
 import { subscribeToInventory } from '../firebase/inventory';
 import { ITEMS } from '../gameData/items';
 import { VENDOR_STOCK } from '../gameData/vendors';
+import { ItemSlot } from './ItemSlot';
 import type { Inventory } from '../types/character';
 
 function parseQuantity(raw: string | undefined, max: number): number {
@@ -75,7 +76,12 @@ export function VendorScreen({ zoneId }: { zoneId: string }) {
               const canAffordQty = balance >= price * qty;
               return (
                 <li key={itemId}>
-                  {item?.name ?? itemId} ({price} {label} each)
+                  <div className="item-row-main">
+                    {item ? <ItemSlot item={item} /> : null}
+                    <span>
+                      {item?.name ?? itemId} ({price} {label} each)
+                    </span>
+                  </div>
                   <button onClick={() => handleBuy(itemId, price, 1, currency)} disabled={isBusy || !canAffordOne}>
                     Buy 1
                   </button>
@@ -110,7 +116,12 @@ export function VendorScreen({ zoneId }: { zoneId: string }) {
             const qty = parseQuantity(sellQty[itemId], quantity);
             return (
               <li key={itemId}>
-                {name} x{quantity} ({unitValue} gold each)
+                <div className="item-row-main">
+                  {item ? <ItemSlot item={item} quantity={quantity} /> : null}
+                  <span>
+                    {name} ({unitValue} gold each)
+                  </span>
+                </div>
                 <button onClick={() => handleSell(itemId, 1, unitValue)} disabled={isBusy}>
                   Sell 1
                 </button>

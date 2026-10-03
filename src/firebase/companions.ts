@@ -4,6 +4,8 @@ import { getCharacter } from './character';
 import { COMPANIONS, checkRecruitCompanion, emptyCompanionEquipment, MAX_ACTIVE_COMPANIONS, dungeonCompanionFee } from '../gameData/companions';
 import { canClassEquip } from '../gameData/classStats';
 import { ITEMS } from '../gameData/items';
+import { DUNGEONS } from '../gameData/dungeons';
+import { ZONE_TIER } from '../gameData/zones';
 import type { EquipmentSlot } from '../gameData/types';
 
 export interface CompanionActionResult {
@@ -99,16 +101,18 @@ export interface DungeonFeeResult {
 }
 
 // Charges the companion wage for one dungeon run, computed server-side from
-// the character's OWN level/active-party size (never trusted from the
-// caller) — same "don't trust the client's math" posture as
-// checkRecruitCompanion/checkLearnProfession elsewhere in this file/
-// professions.ts. Called right before a dungeon run starts; failing it
+// the dungeon's own zone tier and the character's OWN active-party size
+// (never trusted from the caller) — same "don't trust the client's math"
+// posture as checkRecruitCompanion/checkLearnProfession elsewhere in this
+// file/professions.ts. Called right before a dungeon run starts; failing it
 // (not enough gold) should block entry entirely.
-export async function payDungeonCompanionFee(uid: string): Promise<DungeonFeeResult> {
+export async function payDungeonCompanionFee(uid: string, dungeonId: string): Promise<DungeonFeeResult> {
   const character = await getCharacter(uid);
   if (!character) return { success: false, reason: 'Character not found.' };
+  const dungeon = DUNGEONS[dungeonId];
+  if (!dungeon) return { success: false, reason: 'Unknown dungeon.' };
 
-  const fee = dungeonCompanionFee(character.level, character.activeCompanionIds.length);
+  const fee = dungeonCompanionFee(ZONE_TIER[dungeon.zoneId] ?? 1, character.activeCompanionIds.length);
   if (fee === 0) return { success: true, costPaid: 0 };
   if (character.gold < fee) {
     return { success: false, reason: `Your party needs ${fee} gold up front for this run (you have ${Math.floor(character.gold)}).` };

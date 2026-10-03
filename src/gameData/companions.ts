@@ -3,6 +3,8 @@ import { SPECS } from './classStats';
 import type { BaseStat } from './classStats';
 import type { EquipmentSlot } from './types';
 import { getEquipmentStatBonuses } from './equipmentStats';
+import { evaluateTalents, EMPTY_TALENT_TOTALS, type TalentBonusTotals } from '../utils/talentEvaluator';
+import type { TalentPicks } from './talents';
 import type { Character } from '../types/character';
 
 // A companion is a second, AI-controlled party member: its own class/fixed
@@ -39,16 +41,19 @@ export const MAX_ACTIVE_COMPANIONS = 4;
 // that means "the whole group" reads as that, not as an unexplained +1.
 export const REQUIRED_DUNGEON_PARTY_SIZE = MAX_ACTIVE_COMPANIONS + 1;
 
-// Gold sink: companions ask for a wage before a dungeon run, scaling with
-// the player's level (so it stays meaningful instead of trivial at high
-// level) and headcount (bringing the full 4-person party costs more than a
-// partial one in open-world content, though only a full party can actually
-// enter a dungeon at all). Paid once per run, up front — see
-// firebase/companions.ts's payDungeonCompanionFee.
-export const COMPANION_WAGE_PER_LEVEL = 2;
+// Gold sink: companions ask for a wage before a dungeon run, paid once per
+// entry (see firebase/companions.ts's payDungeonCompanionFee) — scaling
+// with headcount AND, quadratically, with the dungeon's own zone tier
+// (gameData/zones.ts's ZONE_TIER), so an endgame dungeon costs dramatically
+// more than an early one rather than merely tracking character level (a
+// level-60 character farming the FIRST dungeon shouldn't pay endgame
+// prices just for being high level). Tier 6 costs 36x tier 1 at the same
+// headcount — deliberately steep, since this is meant to be a real sink at
+// the top of the game, not a flat tax everywhere.
+export const COMPANION_WAGE_BASE = 20;
 
-export function dungeonCompanionFee(characterLevel: number, companionCount: number): number {
-  return companionCount * characterLevel * COMPANION_WAGE_PER_LEVEL;
+export function dungeonCompanionFee(zoneTier: number, companionCount: number): number {
+  return companionCount * zoneTier * zoneTier * COMPANION_WAGE_BASE;
 }
 
 // One companion per spec (all 6 — see classStats.ts's SpecId) so a player
@@ -201,7 +206,71 @@ export interface CompanionCombatSetup {
   specDef: SpecDef;
   level: number;
   equipmentBonuses: Partial<Record<BaseStat, number>>;
+  // Alt-recruit only (see buildAltCombatSetup) — a real character's own
+  // talent bonuses, applied the same way buildPlayerProfile applies them for
+  // the live player. Undefined (every ordinary hired companion) behaves
+  // exactly as before this field existed — no talents, the deliberate V1
+  // scope cut noted above.
+  talentTotals?: TalentBonusTotals;
+  // Alt-recruit only — the real character's own saved ability loadout, so a
+  // recruited alt fights with whatever rotation its owner actually set up
+  // instead of always falling back to the default "best base kit."
+  // Undefined (every ordinary companion) behaves exactly as before —
+  // effectiveLoadout's own "no saved choice" default.
+  savedEquippedAbilityIds?: string[];
 }
+
+// The minimal shape buildAltCombatSetup needs from a roster character's raw
+// Firestore doc — deliberately NOT the full Character type (which demands
+// Dates, quests, professions, etc. this call site never has and never
+// needs): firebase/characterSlots.ts reads roster docs directly rather than
+// through getCharacter()'s full backfill/Date-conversion pipeline, since all
+// of that is player-UI machinery an AI-controlled alt has no use for.
+export interface AltCharacterSnapshot {
+  name: string;
+  class: ClassId;
+  spec: SpecId | null;
+  level: number;
+  equipment: Record<EquipmentSlot, string | null>;
+  enchantments?: Partial<Record<EquipmentSlot, string>>;
+  talentPicks?: TalentPicks;
+  equippedAbilityIds?: string[];
+}
+
+// Builds a recruited alt's combat setup from its OWN real data — this is
+// the "beneficial to have their own characters than AI" differentiator:
+// same engine, same AI-driven priority walk as a hired companion, but with
+// the alt's actual talents (which a companion deliberately never has) and
+// its own saved rotation layered on top of its real gear. An alt with no
+// spec chosen yet (sub-level-5) just fights with no talent bonuses, same as
+// any unspecced character would.
+export function buildAltCombatSetup(slot: number, alt: AltCharacterSnapshot): CompanionCombatSetup {
+  const specId = alt.spec ?? FALLBACK_SPEC_BY_CLASS[alt.class];
+  const talentTotals = alt.spec ? evaluateTalents(alt.spec, alt.talentPicks ?? {}).totals : EMPTY_TALENT_TOTALS;
+  return {
+    id: `alt-${slot}`,
+    name: alt.name,
+    cls: alt.class,
+    specId,
+    specDef: SPECS[specId],
+    level: alt.level,
+    equipmentBonuses: getEquipmentStatBonuses(alt.equipment, alt.enchantments),
+    talentTotals,
+    savedEquippedAbilityIds: alt.equippedAbilityIds ?? [],
+  };
+}
+
+// An alt recruited before level 5 (spec === null) still needs SOME spec to
+// fight with — same "no choice made yet" fallback every other unspecced-
+// character code path in this game already has to account for. Picks each
+// class's first (damage-leaning) spec rather than leaving combat math
+// undefined.
+const FALLBACK_SPEC_BY_CLASS: Record<ClassId, SpecId> = {
+  warrior: 'warrior_dps',
+  priest: 'shadow_priest',
+  paladin: 'prot_paladin',
+  mage: 'mage_fire',
+};
 
 // Builds the live combat setup for every currently-active companion (0 to
 // MAX_ACTIVE_COMPANIONS) — callers (CombatScreen/DungeonScreen/

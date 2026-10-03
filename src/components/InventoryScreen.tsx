@@ -7,6 +7,7 @@ import { disenchantItem } from '../firebase/enchanting';
 import { isDisenchantable, disenchantRequiredSkill, disenchantTier } from '../gameData/enchanting';
 import { ITEMS } from '../gameData/items';
 import { ConsumablesBar } from './ConsumablesBar';
+import { ItemSlot } from './ItemSlot';
 import type { Inventory } from '../types/character';
 
 export function InventoryScreen() {
@@ -82,14 +83,24 @@ export function InventoryScreen() {
             const canDisenchant = knowsEnchanting && item && isDisenchantable(item);
             const requiredSkill = item ? disenchantRequiredSkill(item) : 0;
             const meetsSkill = enchantingSkill >= requiredSkill;
+            if (!item) {
+              return (
+                <li key={itemId}>
+                  {itemId}: {quantity}
+                </li>
+              );
+            }
             return (
               <li key={itemId}>
-                {item ? item.name : itemId}: {quantity}
+                <div className="item-row-main">
+                  <ItemSlot item={item} quantity={quantity} />
+                  <span>{item.name}</span>
+                </div>
                 {canDisenchant && (
                   <button
                     onClick={() => handleDisenchant(itemId)}
                     disabled={!meetsSkill}
-                    title={`Disenchants into ${disenchantTier(item!)} (requires Enchanting ${requiredSkill})`}
+                    title={`Disenchants into ${disenchantTier(item)} (requires Enchanting ${requiredSkill})`}
                   >
                     Disenchant{!meetsSkill ? ` (needs skill ${requiredSkill})` : ''}
                   </button>

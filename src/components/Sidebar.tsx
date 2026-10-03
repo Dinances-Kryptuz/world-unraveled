@@ -8,7 +8,10 @@ export type AppSection =
   | 'combatSetup'
   | 'equipment'
   | 'inventory'
+  | 'bank'
   | 'companions'
+  | 'characters'
+  | 'collection'
   | 'shop'
   | 'talents'
   | 'quests'
@@ -24,7 +27,10 @@ const TOP_ITEMS: SidebarItem[] = [
   { id: 'combatSetup', label: 'Combat Setup' },
   { id: 'equipment', label: 'Equipment' },
   { id: 'inventory', label: 'Inventory' },
+  { id: 'bank', label: 'Bank' },
   { id: 'companions', label: 'Companions' },
+  { id: 'characters', label: 'Characters' },
+  { id: 'collection', label: 'Collection' },
   { id: 'shop', label: 'Shop' },
   { id: 'talents', label: 'Talents' },
   { id: 'quests', label: 'Quests' },

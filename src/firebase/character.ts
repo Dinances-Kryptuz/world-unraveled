@@ -6,6 +6,9 @@ import type { ClassId, SpecId } from '../gameData/classStats';
 import type { TalentColumn } from '../gameData/talents';
 import { professionXpForLevel } from '../gameData/xpTables';
 import { maxSkillForUnlockedTier } from '../gameData/professionTiers';
+import { BASE_BANK_SLOTS } from '../gameData/bank';
+import { DEFAULT_ZONE_ID } from '../gameData/zones';
+import type { TravelState } from '../gameData/travel';
 import { maxHp } from '../gameData/combatFormulas';
 import { canClassEquip } from '../gameData/classStats';
 import { ITEMS } from '../gameData/items';
@@ -27,8 +30,33 @@ export async function getCharacter(uid: string): Promise<Character | null> {
   if (!snap.exists()) return null;
 
   const data = snap.data();
+
+  // Resolved lazily rather than written back — the same "patch the in-memory
+  // return value, let the next real write catch Firestore up" approach every
+  // other backfill in this function already uses. Once arrivesAt has
+  // passed, the character has arrived: report the destination as
+  // currentZoneId and travel as null, with no separate "complete the
+  // flight" round-trip required. See gameData/travel.ts.
+  let currentZoneId: string = data.currentZoneId ?? DEFAULT_ZONE_ID;
+  let travel: TravelState | null = null;
+  if (data.travel) {
+    const arrivesAt = (data.travel.arrivesAt as Timestamp).toDate();
+    if (arrivesAt.getTime() <= Date.now()) {
+      currentZoneId = data.travel.toZoneId;
+    } else {
+      travel = {
+        fromZoneId: data.travel.fromZoneId,
+        toZoneId: data.travel.toZoneId,
+        departedAt: (data.travel.departedAt as Timestamp).toDate(),
+        arrivesAt,
+      };
+    }
+  }
+
   return {
     ...data,
+    currentZoneId,
+    travel,
     // A character with no professions key yet (pre-overhaul save) starts
     // knowing nothing — same "no choice made yet" convention as
     // equippedAbilityIds below, not a default grant.
@@ -36,6 +64,7 @@ export async function getCharacter(uid: string): Promise<Character | null> {
     enchantments: data.enchantments ?? {},
     learnedRecipeIds: data.learnedRecipeIds ?? [],
     bagSlots: data.bagSlots ?? BASE_BAG_SLOTS,
+    bankSlots: data.bankSlots ?? BASE_BANK_SLOTS,
     // A charge-based buff has no expiresAt in Firestore at all — omitting
     // the key entirely (rather than setting it to `undefined`) matters
     // because this object gets spread again later (consumeBuffCharges),
@@ -73,6 +102,12 @@ export async function getCharacter(uid: string): Promise<Character | null> {
     // carry it over as a one-member array rather than dropping it.
     companions: data.companions ?? {},
     activeCompanionIds: data.activeCompanionIds ?? (data.activeCompanionId ? [data.activeCompanionId] : []),
+    // Same backfill idea again, for Phase 4's alt recruiting.
+    activeAltSlots: data.activeAltSlots ?? [],
+    // Same backfill idea again, for Phase 5's achievements/collection log.
+    dungeonClears: data.dungeonClears ?? {},
+    collectedItemIds: data.collectedItemIds ?? [],
+    unlockedAchievementIds: data.unlockedAchievementIds ?? [],
     // Same backfill idea again, for the quest system — an old character
     // without this field just starts with an empty board and picks up its
     // first quests the next time it completes a trackable action (or via
@@ -149,6 +184,7 @@ export async function createCharacter(uid: string, name: string, characterClass:
     enchantments: {},
     learnedRecipeIds: [],
     bagSlots: BASE_BAG_SLOTS,
+    bankSlots: BASE_BANK_SLOTS,
     activeBuffs: {},
     currentActivity: { type: null, targetId: null, zoneId: null, startedAt: null },
     equippedAbilityIds: [],
@@ -159,10 +195,17 @@ export async function createCharacter(uid: string, name: string, characterClass:
     quests: { active: initialActiveQuests, completedIds: [], dailyCompletedAt: {} },
     companions: {},
     activeCompanionIds: [],
+    activeAltSlots: [],
+    dungeonClears: {},
+    collectedItemIds: [],
+    unlockedAchievementIds: [],
+    currentZoneId: DEFAULT_ZONE_ID,
+    travel: null,
   };
 
   await setDoc(doc(db, 'characters', uid), character);
   await setDoc(doc(db, 'characters', uid, 'inventory', 'main'), { items: {} });
+  await setDoc(doc(db, 'characters', uid, 'bank', 'main'), { items: {} });
 }
 
 export async function startActivity(
@@ -193,6 +236,11 @@ export async function applyCombatResult(
     voidShardsGained?: number;
     loot: { itemId: string; quantity: number }[];
     hpAfter?: number;
+    // Set only by DungeonScreen's autosave, only on a tick that cleared at
+    // least one full dungeon run — the lifetime total Phase 5's achievements
+    // (gameData/achievements.ts) check against, distinct from DungeonScreen's
+    // own session-only fullClears display state.
+    dungeonCleared?: { dungeonId: string; count: number };
   }
 ): Promise<void> {
   const characterUpdate: Record<string, unknown> = {
@@ -206,6 +254,9 @@ export async function applyCombatResult(
   if (result.hpAfter !== undefined) {
     characterUpdate.currentHp = result.hpAfter;
     characterUpdate.hpCheckpointAt = serverTimestamp();
+  }
+  if (result.dungeonCleared) {
+    characterUpdate[`dungeonClears.${result.dungeonCleared.dungeonId}`] = increment(result.dungeonCleared.count);
   }
   await updateDoc(doc(db, 'characters', uid), characterUpdate);
 
@@ -332,6 +383,7 @@ export async function applyCraftingResult(
     resultItemId: string;
     resultQuantity: number;
     materialsConsumed: { itemId: string; quantity: number }[];
+    goldSpent?: number;
   }
 ): Promise<void> {
   // See the matching comment in applyGatheringResult — same fix, same reason.
@@ -340,9 +392,11 @@ export async function applyCraftingResult(
   const current = character.professions[profession];
   if (!current) return;
 
-  await updateDoc(doc(db, 'characters', uid), {
+  const characterUpdate: Record<string, unknown> = {
     [`professions.${profession}`]: { ...current, xp: current.xp + result.xpGained },
-  });
+  };
+  if (result.goldSpent) characterUpdate.gold = increment(-result.goldSpent);
+  await updateDoc(doc(db, 'characters', uid), characterUpdate);
 
   const inventoryUpdates: Record<string, unknown> = {
     [`items.${result.resultItemId}`]: increment(result.resultQuantity),

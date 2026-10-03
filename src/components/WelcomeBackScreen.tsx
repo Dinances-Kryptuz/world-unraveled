@@ -15,6 +15,8 @@ import { getProfessionState } from '../gameData/professionTiers';
 import { evaluateActiveBuffs } from '../gameData/buffs';
 import { getInventory } from '../firebase/inventory';
 import { applyCombatResult, setCharacterLevel } from '../firebase/character';
+import { checkAndUnlockNextSlot } from '../firebase/characterSlots';
+import { MAX_CHARACTER_LEVEL } from '../gameData/xpTables';
 import type { Character, CurrentActivity } from '../types/character';
 
 export function isLongAbsence(activity: CurrentActivity): boolean {
@@ -86,6 +88,7 @@ export function WelcomeBackScreen({
           });
           if (result.finalLevel !== character.level) {
             await setCharacterLevel(user.uid, result.finalLevel, result.hpAfter);
+            if (result.finalLevel >= MAX_CHARACTER_LEVEL) void checkAndUnlockNextSlot(user.uid);
           }
           // Deliberately NOT refetching here — the persisted write resets
           // currentActivity.startedAt to now, which would make

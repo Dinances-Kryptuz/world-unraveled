@@ -267,6 +267,51 @@ export const ABILITIES: Record<string, Ability> = {
     targetType: 'SELF',
     effects: [{ type: 'buff', damageTakenPct: -40, durationSeconds: 10 }],
   },
+  // Warrior Tank's single-target identity piece: forces one enemy onto you
+  // specifically, unlike Prot Paladin's AOE Consecration below — see
+  // targeting.ts's forcedTargetId check.
+  warrior_tank_taunt: {
+    id: 'warrior_tank_taunt',
+    name: 'Taunt',
+    class: 'warrior',
+    spec: 'warrior_tank',
+    description: 'Forces the enemy to attack you for a few seconds, no matter who else is in the fight.',
+    unlockLevel: 20,
+    cooldownSeconds: 15,
+    resourceType: 'rage',
+    resourceCost: 10,
+    targetType: 'CURRENT_ENEMY',
+    effects: [{ type: 'taunt', durationSeconds: 6 }],
+  },
+  // A couple of bleeds for Warrior DPS's single-target burst to lean on
+  // between its big hits — low per-tick power (weaker than Shadow Word:
+  // Pain) since the spec's identity is its direct damage, not its dots.
+  warrior_dps_rend: {
+    id: 'warrior_dps_rend',
+    name: 'Rend',
+    class: 'warrior',
+    spec: 'warrior_dps',
+    description: 'A vicious gash that bleeds the enemy over time.',
+    unlockLevel: 20,
+    cooldownSeconds: 12,
+    resourceType: 'rage',
+    resourceCost: 15,
+    targetType: 'CURRENT_ENEMY',
+    effects: [{ type: 'dot', power: 0.3, durationSeconds: 12, tickSeconds: 3 }],
+  },
+  warrior_dps_deep_wounds: {
+    id: 'warrior_dps_deep_wounds',
+    name: 'Deep Wounds',
+    class: 'warrior',
+    spec: 'warrior_dps',
+    description: 'A deep, lingering wound that bleeds the enemy heavily over time. Long cooldown.',
+    unlockLevel: 25,
+    cooldownSeconds: 18,
+    resourceType: 'rage',
+    resourceCost: 20,
+    targetType: 'CURRENT_ENEMY',
+    effects: [{ type: 'dot', power: 0.45, durationSeconds: 18, tickSeconds: 6 }],
+  },
 
   shadow_priest_mind_blast: {
     id: 'shadow_priest_mind_blast',
@@ -294,6 +339,24 @@ export const ABILITIES: Record<string, Ability> = {
     targetType: 'CURRENT_ENEMY',
     effects: [{ type: 'dot', power: 0.5, durationSeconds: 15, tickSeconds: 3 }],
   },
+  // Shadow's "high single-target, low multi-dot" identity: this spreads a
+  // dot to every enemy in the fight, but at much lower power than Shadow
+  // Word: Pain/Vampiric Touch — useful for a multi_target dungeon stage, but
+  // never a replacement for the spec's single-target rotation.
+  shadow_priest_mind_sear: {
+    id: 'shadow_priest_mind_sear',
+    name: 'Mind Sear',
+    class: 'priest',
+    spec: 'shadow_priest',
+    description: 'A weak Shadow dot that spreads to every enemy in the fight at once.',
+    unlockLevel: 20,
+    cooldownSeconds: 10,
+    resourceType: 'mana',
+    resourceCost: 25,
+    targetType: 'CURRENT_ENEMY',
+    aoe: true,
+    effects: [{ type: 'dot', power: 0.15, durationSeconds: 9, tickSeconds: 3 }],
+  },
   holy_priest_greater_heal: {
     id: 'holy_priest_greater_heal',
     name: 'Greater Heal',
@@ -320,6 +383,39 @@ export const ABILITIES: Record<string, Ability> = {
     targetType: 'SELF',
     effects: [{ type: 'buff', damageTakenPct: -50, durationSeconds: 10 }],
   },
+  // Holy Priest's "smaller heals, but AOE" identity — both tools are deliberately
+  // weaker per-target than Flash Heal/Greater Heal, trading single-target
+  // throughput (Holy Paladin's job) for whole-party coverage. Renew is the
+  // efficient HOT to keep running between bigger casts; Circle of Healing is
+  // the panic button when the whole party is taking damage at once (DOT-heavy
+  // dungeons).
+  holy_priest_renew: {
+    id: 'holy_priest_renew',
+    name: 'Renew',
+    class: 'priest',
+    spec: 'holy_priest',
+    description: 'Places a heal-over-time on the target, healing them steadily for a while.',
+    unlockLevel: 20,
+    cooldownSeconds: 12,
+    resourceType: 'mana',
+    resourceCost: 20,
+    targetType: 'LOWEST_HP_ALLY',
+    effects: [{ type: 'hot', power: 0.35, durationSeconds: 12, tickSeconds: 3 }],
+  },
+  holy_priest_circle_of_healing: {
+    id: 'holy_priest_circle_of_healing',
+    name: 'Circle of Healing',
+    class: 'priest',
+    spec: 'holy_priest',
+    description: 'A weaker heal that strikes everyone in the fight at once — built for fights where the whole party is taking damage.',
+    unlockLevel: 25,
+    cooldownSeconds: 15,
+    resourceType: 'mana',
+    resourceCost: 40,
+    targetType: 'LOWEST_HP_ALLY',
+    aoe: true,
+    effects: [{ type: 'heal', power: 0.9 }],
+  },
 
   // Avenger's Shield is a real Holy Power spender — nothing in the shared
   // Paladin kit spends it yet (Judgment/Crusader Strike only generate it),
@@ -340,6 +436,28 @@ export const ABILITIES: Record<string, Ability> = {
     effects: [
       { type: 'damage', power: 1.2 },
       { type: 'stun', durationSeconds: 3 },
+    ],
+  },
+  // Prot Paladin's AOE-tanking identity: low damage power (it's not meant to
+  // hurt — see classStats.ts's survivabilityCoef, deliberately lower than
+  // Warrior Tank's) but taunts every enemy in the fight at once, letting it
+  // hold a whole multi_target wave off the party where Warrior Tank's single-
+  // target Taunt can only peel one.
+  prot_paladin_consecration: {
+    id: 'prot_paladin_consecration',
+    name: 'Consecration',
+    class: 'paladin',
+    spec: 'prot_paladin',
+    description: 'Hallowed ground that scorches every enemy in the fight and forces them all to attack you.',
+    unlockLevel: 20,
+    cooldownSeconds: 12,
+    resourceType: 'mana',
+    resourceCost: 15,
+    targetType: 'CURRENT_ENEMY',
+    aoe: true,
+    effects: [
+      { type: 'damage', power: 0.4 },
+      { type: 'taunt', durationSeconds: 6 },
     ],
   },
   prot_paladin_divine_shield: {

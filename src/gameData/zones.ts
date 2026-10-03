@@ -2,6 +2,21 @@ import type { Zone, GatherNode, FishingHole } from './types';
 
 export const DEFAULT_ZONE_ID = 'greenhollow_fields';
 
+// Explicit 1-6 tier ordering — the content-gated progression sequence a
+// character moves through (matches each zone's own level range), used
+// anywhere a cost or difficulty needs to scale by "how far into the game is
+// this zone" rather than by character level directly (e.g. companions.ts's
+// dungeonCompanionFee, zone travel time once that lands). An explicit map
+// rather than relying on ZONES' object key order, which isn't guaranteed.
+export const ZONE_TIER: Record<string, number> = {
+  greenhollow_fields: 1,
+  stonecrag_foothills: 2,
+  emberfall_ridge: 3,
+  cinderfall_depths: 4,
+  molten_scar: 5,
+  cinderheart_crater: 6,
+};
+
 // Shared by the zone selector (now in TopBar.tsx, visible from every page —
 // see App.tsx) and anywhere else that needs to know if a zone is reachable
 // yet, not just ZoneScreen.

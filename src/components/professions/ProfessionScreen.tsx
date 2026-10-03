@@ -9,6 +9,7 @@ import { canUseRecipe } from '../../firebase/professions';
 import { ITEMS } from '../../gameData/items';
 import { describeItemStats } from '../../gameData/equipmentStats';
 import { TIER_COLORS } from '../MonsterLevelBadge';
+import { ItemSlot } from '../ItemSlot';
 import { ProfessionTrainerList } from './ProfessionTrainerList';
 import { ProfessionSummaryList } from './ProfessionSummaryList';
 import type { ProfessionId } from '../../gameData/types';
@@ -60,22 +61,35 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
           .map((recipe) => {
             const meetsSkill = professionLevel >= recipe.requiredSkill;
             const meetsLevel = !recipe.requiredCharacterLevel || char.level >= recipe.requiredCharacterLevel;
-            const canCraft = meetsSkill && meetsLevel;
+            const meetsGold = !recipe.goldCost || char.gold >= recipe.goldCost;
+            const canCraft = meetsSkill && meetsLevel && meetsGold;
             const tier = craftingColorTier(professionLevel, recipe.requiredSkill, recipe.colorBreakpoints);
             const resultItem = ITEMS[recipe.resultItemId];
             return (
               <li key={recipe.id}>
-                <span
-                  style={{ color: TIER_COLORS[tier], fontWeight: 700, cursor: 'help' }}
-                  title={resultItem ? describeItemStats(resultItem) : undefined}
-                >
-                  {recipe.name}
-                </span>{' '}
-                (requires skill {recipe.requiredSkill}
-                {recipe.requiredCharacterLevel ? `, Lv ${recipe.requiredCharacterLevel}` : ''}) — materials:{' '}
-                {recipe.materials.map((m) => `${m.quantity}x ${ITEMS[m.itemId]?.name ?? m.itemId}`).join(', ')}
+                <div className="item-row-main">
+                  {resultItem && <ItemSlot item={resultItem} />}
+                  <span>
+                    <span
+                      style={{ color: TIER_COLORS[tier], fontWeight: 700, cursor: 'help' }}
+                      title={resultItem ? describeItemStats(resultItem) : undefined}
+                    >
+                      {recipe.name}
+                    </span>{' '}
+                    (requires skill {recipe.requiredSkill}
+                    {recipe.requiredCharacterLevel ? `, Lv ${recipe.requiredCharacterLevel}` : ''}) — materials:{' '}
+                    {recipe.materials.map((m) => `${m.quantity}x ${ITEMS[m.itemId]?.name ?? m.itemId}`).join(', ')}
+                    {recipe.goldCost ? ` + ${recipe.goldCost} gold` : ''}
+                  </span>
+                </div>
                 <button onClick={() => handleCraft(recipe.id)} disabled={!canCraft}>
-                  {canCraft ? 'Craft' : !meetsLevel ? `Need Lv ${recipe.requiredCharacterLevel}` : `Need skill ${recipe.requiredSkill}`}
+                  {canCraft
+                    ? 'Craft'
+                    : !meetsLevel
+                      ? `Need Lv ${recipe.requiredCharacterLevel}`
+                      : !meetsSkill
+                        ? `Need skill ${recipe.requiredSkill}`
+                        : `Need ${recipe.goldCost} gold`}
                 </button>
               </li>
             );
@@ -106,10 +120,16 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
               const equippedTool = character.equipment.tool ? ITEMS[character.equipment.tool] : null;
               const hasRequiredTool = !node.requiredToolType || equippedTool?.toolType === node.requiredToolType;
               const canGather = meetsLevel && hasRequiredTool;
+              const yieldItem = ITEMS[node.itemId];
               return (
                 <li key={node.id}>
-                  <span style={{ color: TIER_COLORS[tier], fontWeight: 700 }}>{node.name}</span> (skill {node.requiredLevel}+)
-                  — yields {ITEMS[node.itemId]?.name ?? node.itemId}
+                  <div className="item-row-main">
+                    {yieldItem && <ItemSlot item={yieldItem} />}
+                    <span>
+                      <span style={{ color: TIER_COLORS[tier], fontWeight: 700 }}>{node.name}</span> (skill{' '}
+                      {node.requiredLevel}+) — yields {yieldItem?.name ?? node.itemId}
+                    </span>
+                  </div>
                   <button onClick={() => handleGather(node.id)} disabled={!canGather}>
                     {!meetsLevel ? `Need skill ${node.requiredLevel}` : !hasRequiredTool ? 'Need tool equipped' : 'Gather'}
                   </button>
@@ -151,7 +171,13 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
             const hasRod = equippedTool?.toolType === 'fishing_rod';
             return (
               <li key={holeId}>
-                {hole.name} — yields {hole.lootTable.map((d) => ITEMS[d.itemId]?.name ?? d.itemId).join(', ')}
+                <div className="item-row-main">
+                  {hole.lootTable.map((d) => {
+                    const lootItem = ITEMS[d.itemId];
+                    return lootItem ? <ItemSlot key={d.itemId} item={lootItem} /> : null;
+                  })}
+                  <span>{hole.name}</span>
+                </div>
                 <button onClick={() => handleFish(holeId)} disabled={!hasRod}>
                   {hasRod ? 'Fish' : 'Need Fishing Rod equipped'}
                 </button>

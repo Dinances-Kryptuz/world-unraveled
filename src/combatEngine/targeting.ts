@@ -31,6 +31,13 @@ export function resolveTarget(state: CombatState, type: TargetType, sourceId: st
       // nothing differentiates monsters by threat yet, and most fights only
       // have one anyway.
       if (sourceIsPlayer) return state.enemies.find((c) => c.isAlive) ?? null;
+      // A taunt in effect overrides the normal threat pick entirely, as long
+      // as its target is still alive — see Combatant.forcedTargetId.
+      const source = findById(state.enemies, sourceId);
+      if (source?.forcedTargetId && (source.forcedTargetSeconds ?? 0) > 0) {
+        const forced = state.party.find((c) => c.id === source.forcedTargetId && c.isAlive);
+        if (forced) return forced;
+      }
       return pickWeighted(state.party.filter((c) => c.isAlive));
     }
     case 'LOWEST_HP_ALLY': {

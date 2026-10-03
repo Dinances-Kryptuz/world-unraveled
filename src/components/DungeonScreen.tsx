@@ -10,10 +10,11 @@ import { ITEMS } from '../gameData/items';
 import { resolveSpecDef, getExtraDamageTakenPct } from '../gameData/combatProfileWithTalents';
 import { evaluateTalents, EMPTY_TALENT_TOTALS } from '../utils/talentEvaluator';
 import { evaluateActiveBuffs } from '../gameData/buffs';
-import { resolveActiveCompanionSetups } from '../gameData/companions';
+import { resolveActiveCompanionSetups, type CompanionCombatSetup } from '../gameData/companions';
 import { maxHp, resolveCurrentHp, ATTACK_INTERVAL_SECONDS } from '../gameData/combatFormulas';
 import { getEquipmentStatBonuses } from '../gameData/equipmentStats';
-import { characterXpForLevelV2 } from '../gameData/xpTables';
+import { characterXpForLevelV2, MAX_CHARACTER_LEVEL } from '../gameData/xpTables';
+import { checkAndUnlockNextSlot, resolveActiveAltSetups } from '../firebase/characterSlots';
 import type { QuestEvent } from '../gameData/questEngine';
 import {
   createEncounterState,
@@ -32,6 +33,7 @@ import type { User } from 'firebase/auth';
 import { TickBar } from './TickBar';
 import { StatBar, hpBarColor } from './StatBar';
 import { MonsterLevelBadge } from './MonsterLevelBadge';
+import { MonsterPortrait } from './MonsterPortrait';
 import { StatusBadges } from './StatusBadges';
 import { ResourceBars } from './ResourceBars';
 import { AbilityBar } from './AbilityBar';
@@ -74,9 +76,22 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
   const stageIndexRef = useRef(0);
   const currentMonsterRef = useRef<Monster>(MONSTERS[dungeon.stages[0]]);
   const fullClearsRef = useRef(0);
+  // Persisted via the next autosave (see Character.dungeonClears) — unlike
+  // fullClearsRef/bankedTotals above, which are this SESSION's count and
+  // reset on reload, this feeds the lifetime total Phase 5's achievements
+  // (gameData/achievements.ts) check against.
+  const pendingDungeonClearsRef = useRef(0);
   const pendingLogRef = useRef<CombatEvent[]>([]);
 
   const combatStateRef = useRef<CombatState | null>(null);
+  // Populated once, async, before the first createEncounterState call (see
+  // the dungeonId setup effect below) — resolveActiveAltSetups needs a
+  // Firestore read per recruited alt, which buildEncounterInput (called
+  // synchronously from several places: setup, every tick, manual ability
+  // use) can't do itself. Alts only ever fight in dungeons (same
+  // "companions only fight in dungeons" rule as hired companions — see
+  // ZoneScreen.tsx), so this ref lives here, not in CombatScreen.
+  const altSetupsRef = useRef<CompanionCombatSetup[]>([]);
   const pendingKillsRef = useRef<KillReward[]>([]);
   const pendingQuestSignalsRef = useRef<QuestSignals>({ healingDone: 0, abilityUseCounts: {} });
   const pendingBuffTriggersRef = useRef<{ offensive_action: number; damage_taken: number }>({
@@ -106,6 +121,7 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
     if (justDefeated.isBoss) {
       fullClearsRef.current++;
       setFullClears(fullClearsRef.current);
+      pendingDungeonClearsRef.current++;
       pendingLogRef.current.push({
         message: `You cleared ${dungeon.name}! Looping back to the first stage.`,
         kind: 'status',
@@ -125,6 +141,22 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
     return resolveSpecDef(c.class, c.spec).combatType;
   }
 
+  // How many enemies the CURRENT stage should field — only a dungeon's own
+  // 'multi_target' stages ever field more than one, and even then never the
+  // boss stage: the final fight is always a single capstone encounter, not
+  // another wave, regardless of what the trash stages do.
+  function currentEncounterSize(): number {
+    if (dungeon.combatType !== 'multi_target' || currentMonsterRef.current.isBoss) return 1;
+    return dungeon.encounterSize ?? 2;
+  }
+
+  // Divides the existing party-size HP scaling across the wave instead of
+  // multiplying it again on top — a 2-enemy wave's TOTAL hp should be
+  // comparable to a single-enemy wave's at the same party size, not double it.
+  function currentMonsterHpMultiplier(companionCount: number): number {
+    return (1 + companionCount) / currentEncounterSize();
+  }
+
   function buildEncounterInput(c: Character): EncounterSetupInput {
     const specDef = resolveSpecDef(c.class, c.spec);
     const talentTotals = c.spec ? evaluateTalents(c.spec, c.talentPicks).totals : EMPTY_TALENT_TOTALS;
@@ -133,7 +165,7 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
     const equipmentBonuses = getEquipmentStatBonuses(c.equipment, c.enchantments);
     const charMaxHp = maxHp(c.class, c.level, equipmentBonuses, talentTotals.hpMultPct);
     const currentHp = resolveCurrentHp(c.currentHp, charMaxHp, c.hpCheckpointAt, new Date());
-    const companions = resolveActiveCompanionSetups(c);
+    const companions = [...resolveActiveCompanionSetups(c), ...altSetupsRef.current];
     return {
       cls: c.class,
       level: c.level,
@@ -156,8 +188,11 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
       // touching the per-hit damage formulas open-world combat already
       // relies on. Monster HP is otherwise purely a function of its level
       // (see combatFormulas.ts's monsterHp), so this has to happen here
-      // rather than by inventing a per-monster "group HP" field.
-      monsterHpMultiplier: 1 + companions.length,
+      // rather than by inventing a per-monster "group HP" field. Divided
+      // across the wave for a multi_target stage — see
+      // currentMonsterHpMultiplier.
+      monsterHpMultiplier: currentMonsterHpMultiplier(companions.length),
+      encounterSize: currentEncounterSize(),
     };
   }
 
@@ -172,9 +207,19 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
     pendingBuffTriggersRef.current = { offensive_action: 0, damage_taken: 0 };
     stageIndexRef.current = 0;
     fullClearsRef.current = 0;
+    pendingDungeonClearsRef.current = 0;
     currentMonsterRef.current = MONSTERS[dungeon.stages[0]];
-    combatStateRef.current = createEncounterState(buildEncounterInput(character));
-    setTick((t) => t + 1);
+    combatStateRef.current = null;
+    let cancelled = false;
+    void (async () => {
+      altSetupsRef.current = user ? await resolveActiveAltSetups(user.uid, character) : [];
+      if (cancelled) return;
+      combatStateRef.current = createEncounterState(buildEncounterInput(character));
+      setTick((t) => t + 1);
+    })();
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dungeonId]);
 
@@ -182,11 +227,14 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
     const interval = setInterval(() => {
       if (retreatedRef.current || !combatStateRef.current) return;
 
+      const companionCount = combatStateRef.current.party.length - 1;
       const ctx: TickContext = {
         monster: currentMonsterRef.current,
         playerLevel: characterRef.current?.level ?? character.level,
         playerCombatType: currentPlayerCombatType(),
         nextMonster,
+        encounterSize: currentEncounterSize(),
+        monsterHpMultiplier: currentMonsterHpMultiplier(companionCount),
       };
       const result = advanceCombat(combatStateRef.current, ctx, 1);
       pendingKillsRef.current.push(...result.kills);
@@ -233,6 +281,8 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
     pendingKillsRef.current = [];
     pendingQuestSignalsRef.current = { healingDone: 0, abilityUseCounts: {} };
     pendingBuffTriggersRef.current = { offensive_action: 0, damage_taken: 0 };
+    const dungeonClearsGained = pendingDungeonClearsRef.current;
+    pendingDungeonClearsRef.current = 0;
     if (hasBuffTriggers) void consumeBuffCharges(currentUser.uid, characterRef.current ?? character, buffTriggers);
 
     const xpGained = Math.round(kills.reduce((sum, k) => sum + k.xpGained, 0));
@@ -261,12 +311,13 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
         voidShardsGained,
         loot: lootToSave,
         hpAfter: player.hp,
+        dungeonCleared: dungeonClearsGained > 0 ? { dungeonId, count: dungeonClearsGained } : undefined,
       });
 
       const fresh = await getCharacter(currentUser.uid);
       if (fresh) {
         let newLevel = fresh.level;
-        while (fresh.xp >= characterXpForLevelV2(newLevel + 1)) {
+        while (newLevel < MAX_CHARACTER_LEVEL && fresh.xp >= characterXpForLevelV2(newLevel + 1)) {
           newLevel++;
         }
         if (newLevel !== fresh.level) {
@@ -276,6 +327,7 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
           await setCharacterLevel(currentUser.uid, newLevel, restoredHp);
           player.hp = restoredHp;
           player.maxHp = restoredHp;
+          if (newLevel >= MAX_CHARACTER_LEVEL) void checkAndUnlockNextSlot(currentUser.uid);
         }
 
         const killCountsByMonster: Record<string, number> = {};
@@ -327,6 +379,8 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
       playerLevel: characterRef.current?.level ?? character.level,
       playerCombatType: currentPlayerCombatType(),
       nextMonster,
+      encounterSize: currentEncounterSize(),
+      monsterHpMultiplier: currentMonsterHpMultiplier(state.party.length - 1),
     };
     const result = tryManualUseAbility(state, 'player', abilityId, ctx);
     if (!result) return;
@@ -378,7 +432,6 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
   const state = combatStateRef.current;
   const player = state.party.find((p) => p.isPlayer)!;
   const companions = state.party.filter((p) => !p.isPlayer);
-  const enemy = state.enemies[0];
   const monster = currentMonsterRef.current;
   const stageLabel = `Stage ${stageIndexRef.current + 1} / ${dungeon.stages.length}${monster.isBoss ? ' — Boss' : ''}`;
 
@@ -395,6 +448,7 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
 
       {!retreated && (
         <>
+          <MonsterPortrait monsterId={monster.id} isBoss={monster.isBoss} />
           <StatBar label="You" current={player.hp} max={player.maxHp} color={hpBarColor((player.hp / player.maxHp) * 100)} />
           <ResourceBars combatant={player} />
           <StatusBadges combatant={player} />
@@ -411,8 +465,17 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
             </div>
           ))}
 
-          <StatBar label={enemy.name} current={enemy.hp} max={enemy.maxHp} color={hpBarColor((enemy.hp / enemy.maxHp) * 100)} />
-          <StatusBadges combatant={enemy} />
+          {state.enemies.map((enemy, i) => (
+            <div key={enemy.id}>
+              <StatBar
+                label={state.enemies.length > 1 ? `${enemy.name} ${i + 1}` : enemy.name}
+                current={enemy.hp}
+                max={enemy.maxHp}
+                color={hpBarColor((enemy.hp / enemy.maxHp) * 100)}
+              />
+              <StatusBadges combatant={enemy} />
+            </div>
+          ))}
 
           <TickBar seconds={ATTACK_INTERVAL_SECONDS} color="#6b4f2a" label="Attack rhythm" />
 

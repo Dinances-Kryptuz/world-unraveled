@@ -7,17 +7,11 @@ import { subscribeToInventory } from '../firebase/inventory';
 import { ITEMS } from '../gameData/items';
 import { ENCHANTS, enchantsForSlot } from '../gameData/enchanting';
 import { canClassEquip } from '../gameData/classStats';
+import { ItemSlot } from './ItemSlot';
 import type { Inventory } from '../types/character';
-import type { EquipmentSlot, ItemDef } from '../gameData/types';
+import type { EquipmentSlot } from '../gameData/types';
 
 const SLOT_ORDER: EquipmentSlot[] = ['weapon', 'chest', 'helmet', 'gloves', 'legs', 'boots', 'ring', 'tool'];
-
-function formatStatBonuses(item: ItemDef): string {
-  const parts = Object.entries(item.statBonuses ?? {}).map(([stat, val]) => `+${val} ${stat}`);
-  // Tools have no statBonuses at all — gatherBonusPct is their equivalent.
-  if (item.gatherBonusPct) parts.push(`+${item.gatherBonusPct}% gathering`);
-  return parts.length > 0 ? ` (${parts.join(', ')})` : '';
-}
 
 export function EquipmentScreen() {
   const { user } = useAuth();
@@ -72,7 +66,12 @@ export function EquipmentScreen() {
           const enchant = enchantId ? ENCHANTS[enchantId] : null;
           return (
             <li key={slot}>
-              {slot}: {equippedItem ? `${equippedItem.name}${formatStatBonuses(equippedItem)}` : '(empty)'}
+              <div className="item-row-main">
+                {equippedItem ? <ItemSlot item={equippedItem} /> : <div className="item-slot item-slot-empty" />}
+                <span>
+                  {slot}: {equippedItem ? equippedItem.name : '(empty)'}
+                </span>
+              </div>
               {equippedItem && <button onClick={() => handleUnequip(slot)}>Unequip</button>}
               {enchant && (
                 <>
@@ -121,8 +120,10 @@ export function EquipmentScreen() {
             const allowed = canClassEquip(character.class, item);
             return (
               <li key={itemId}>
-                {item.name}
-                {formatStatBonuses(item)} x{quantity}
+                <div className="item-row-main">
+                  <ItemSlot item={item} quantity={quantity} />
+                  <span>{item.name}</span>
+                </div>
                 <button onClick={() => handleEquip(item.equipSlot!, itemId)} disabled={!allowed}>
                   {allowed ? 'Equip' : `${item.armorType} — not usable`}
                 </button>
