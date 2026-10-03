@@ -3,12 +3,8 @@ import { useAuth } from '../hooks/useAuth';
 import { useCharacter } from '../hooks/useCharacter';
 import { createCharacter } from '../firebase/character';
 import type { ClassId } from '../gameData/classStats';
-
-const CLASS_OPTIONS: { id: ClassId; name: string; blurb: string }[] = [
-  { id: 'warrior', name: 'Warrior', blurb: 'Melee damage or tank. High strength and stamina.' },
-  { id: 'priest', name: 'Priest', blurb: 'Shadow damage or holy healer. High intellect and spirit.' },
-  { id: 'paladin', name: 'Paladin', blurb: 'Tank or holy healer. Balanced across all stats.' },
-];
+import { CLASS_SHOWCASE, CLASS_ICONS, SPEC_ICONS, SPEC_INFO } from '../gameData/classInfo';
+import { PreGameShell } from './PreGameShell';
 
 export function CharacterCreationScreen() {
   const { user } = useAuth();
@@ -44,41 +40,59 @@ export function CharacterCreationScreen() {
   }
 
   return (
-    <div className="character-creation">
-      <h1>Create Your Adventurer</h1>
-      <p>Your journey into Greenhollow Fields begins here.</p>
+    <PreGameShell>
+      <div className="character-creation">
+        <h1>Create Your Adventurer</h1>
+        <p>Your journey into Greenhollow Fields begins here.</p>
 
-      <input
-        type="text"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        placeholder="Character name"
-        maxLength={20}
-        disabled={creating}
-      />
+        <input
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Character name"
+          maxLength={20}
+          disabled={creating}
+        />
 
-      <h3>Choose a class</h3>
-      <ul>
-        {CLASS_OPTIONS.map((opt) => (
-          <li key={opt.id}>
-            <div>
-              <strong>{opt.name}</strong> — {opt.blurb}
-            </div>
-            <button
-              onClick={() => setSelectedClass(opt.id)}
-              disabled={creating}
-              style={{ opacity: selectedClass === opt.id ? 1 : 0.6 }}
-            >
-              {selectedClass === opt.id ? 'Selected' : 'Choose'}
-            </button>
-          </li>
-        ))}
-      </ul>
+        <h3>Choose a class</h3>
+        <div className="class-showcase-grid">
+          {CLASS_SHOWCASE.map((cls) => {
+            const selected = selectedClass === cls.id;
+            return (
+              <button
+                key={cls.id}
+                type="button"
+                className={`class-card class-card-selectable${selected ? ' class-card-selected' : ''}`}
+                onClick={() => setSelectedClass(cls.id)}
+                disabled={creating}
+              >
+                <div className="class-card-header">
+                  <span className="class-card-icon">{CLASS_ICONS[cls.id]}</span>
+                  <strong>{cls.name}</strong>
+                  {selected && <span className="class-card-selected-badge">Selected</span>}
+                </div>
+                <p className="class-card-blurb">{cls.blurb}</p>
+                <div className="class-card-specs">
+                  {cls.specs.map((specId) => (
+                    <div key={specId} className="spec-chip" title={SPEC_INFO[specId].blurb}>
+                      <span className="spec-chip-icon">{SPEC_ICONS[specId]}</span>
+                      <span>
+                        <strong>{SPEC_INFO[specId].label}</strong>
+                        <small>{SPEC_INFO[specId].blurb}</small>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </button>
+            );
+          })}
+        </div>
 
-      <button onClick={handleCreate} disabled={creating || name.trim().length === 0 || !selectedClass}>
-        {creating ? 'Creating…' : 'Begin Adventure'}
-      </button>
-      {error && <p className="error">{error}</p>}
-    </div>
+        <button onClick={handleCreate} disabled={creating || name.trim().length === 0 || !selectedClass}>
+          {creating ? 'Creating…' : 'Begin Adventure'}
+        </button>
+        {error && <p className="error">{error}</p>}
+      </div>
+    </PreGameShell>
   );
 }

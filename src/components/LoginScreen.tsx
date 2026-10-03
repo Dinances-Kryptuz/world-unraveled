@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { signInWithGoogle, signInAnonymouslyForTesting } from '../firebase/auth';
+import { PreGameShell } from './PreGameShell';
+import { CLASS_SHOWCASE, CLASS_ICONS, SPEC_ICONS, SPEC_INFO } from '../gameData/classInfo';
 
 const useEmulators = import.meta.env.VITE_USE_FIREBASE_EMULATORS === 'true';
 
@@ -23,18 +25,49 @@ export function LoginScreen() {
   }
 
   return (
-    <div className="login-screen">
-      <h1>A World Unraveled</h1>
-      <p>Explore a vast and ever-changing world, and uncover why it's coming apart.</p>
-      <button onClick={() => handleSignIn(signInWithGoogle)} disabled={signingIn}>
-        {signingIn ? 'Signing in…' : 'Sign in with Google'}
-      </button>
-      {useEmulators && (
-        <button onClick={() => handleSignIn(signInAnonymouslyForTesting)} disabled={signingIn}>
-          Sign in anonymously (dev/test)
-        </button>
-      )}
-      {error && <p className="error">{error}</p>}
-    </div>
+    <PreGameShell>
+      <div className="login-hero">
+        <div className="login-hero-card">
+          <h1>A World Unraveled</h1>
+          <p>Explore a vast and ever-changing world, and uncover why it's coming apart.</p>
+          <button onClick={() => handleSignIn(signInWithGoogle)} disabled={signingIn}>
+            {signingIn ? 'Signing in…' : 'Sign in with Google'}
+          </button>
+          {useEmulators && (
+            <button onClick={() => handleSignIn(signInAnonymouslyForTesting)} disabled={signingIn}>
+              Sign in anonymously (dev/test)
+            </button>
+          )}
+          {error && <p className="error">{error}</p>}
+        </div>
+      </div>
+
+      <div className="class-showcase">
+        <h2>Choose Your Path</h2>
+        <p className="class-showcase-sub">Three classes, six specializations — pick one when you sign up.</p>
+        <div className="class-showcase-grid">
+          {CLASS_SHOWCASE.map((cls) => (
+            <div key={cls.id} className="class-card">
+              <div className="class-card-header">
+                <span className="class-card-icon">{CLASS_ICONS[cls.id]}</span>
+                <strong>{cls.name}</strong>
+              </div>
+              <p className="class-card-blurb">{cls.blurb}</p>
+              <div className="class-card-specs">
+                {cls.specs.map((specId) => (
+                  <div key={specId} className="spec-chip" title={SPEC_INFO[specId].blurb}>
+                    <span className="spec-chip-icon">{SPEC_ICONS[specId]}</span>
+                    <span>
+                      <strong>{SPEC_INFO[specId].label}</strong>
+                      <small>{SPEC_INFO[specId].blurb}</small>
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </PreGameShell>
   );
 }
