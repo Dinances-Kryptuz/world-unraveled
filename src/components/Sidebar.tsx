@@ -125,6 +125,8 @@ export function Sidebar({
   selectedProfessionId,
   onSelectProfession,
   activityRunningInBackground,
+  mobileOpen,
+  onCloseMobile,
 }: {
   active: AppSection;
   onSelect: (section: AppSection) => void;
@@ -137,32 +139,48 @@ export function Sidebar({
   // else — shows a small dot on the Adventure tab so it's obvious there's
   // something still running back there (see App.tsx's activityNode).
   activityRunningInBackground: boolean;
+  // Below the mobile breakpoint the sidebar is an off-canvas drawer instead
+  // of an always-visible column (see index.css's @media block) — these two
+  // only matter there; on desktop the sidebar is always visible and this
+  // class/callback has no visible effect.
+  mobileOpen: boolean;
+  onCloseMobile: () => void;
 }) {
+  // Any nav pick closes the drawer on mobile — on desktop onCloseMobile just
+  // sets state that nothing reads, since the sidebar isn't gated there.
+  function selectAndClose(section: AppSection) {
+    onSelect(section);
+    onCloseMobile();
+  }
+
   return (
-    <nav className="sidebar">
-      {TOP_ITEMS.filter((item) => item.id !== 'talents' || showTalents).map((item) => (
-        <NavButton
-          key={item.id}
-          item={item}
-          active={active}
-          onSelect={onSelect}
-          showActivityDot={item.id === 'adventure' && active !== 'adventure' && activityRunningInBackground}
-        />
-      ))}
-      <div className="sidebar-heading">Professions</div>
-      {ALL_PROFESSION_IDS.map((id) => (
-        <ProfessionNavButton
-          key={id}
-          professionId={id}
-          active={active === 'profession'}
-          isSelected={selectedProfessionId === id}
-          character={character}
-          onSelect={(pid) => {
-            onSelectProfession(pid);
-            onSelect('profession');
-          }}
-        />
-      ))}
-    </nav>
+    <>
+      {mobileOpen && <div className="sidebar-backdrop" onClick={onCloseMobile} />}
+      <nav className={mobileOpen ? 'sidebar sidebar-open' : 'sidebar'}>
+        {TOP_ITEMS.filter((item) => item.id !== 'talents' || showTalents).map((item) => (
+          <NavButton
+            key={item.id}
+            item={item}
+            active={active}
+            onSelect={selectAndClose}
+            showActivityDot={item.id === 'adventure' && active !== 'adventure' && activityRunningInBackground}
+          />
+        ))}
+        <div className="sidebar-heading">Professions</div>
+        {ALL_PROFESSION_IDS.map((id) => (
+          <ProfessionNavButton
+            key={id}
+            professionId={id}
+            active={active === 'profession'}
+            isSelected={selectedProfessionId === id}
+            character={character}
+            onSelect={(pid) => {
+              onSelectProfession(pid);
+              selectAndClose('profession');
+            }}
+          />
+        ))}
+      </nav>
+    </>
   );
 }
