@@ -36,6 +36,7 @@ import { TopBar } from './components/TopBar';
 import { ZoneBackdrop } from './components/ZoneBackdrop';
 import { BugReportButton } from './components/BugReportButton';
 import { NotificationToasts } from './components/NotificationToasts';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { ALL_PROFESSION_IDS } from './gameData/professionTiers';
 import type { Character } from './types/character';
 import type { ProfessionId } from './gameData/types';
@@ -64,6 +65,7 @@ function AppShell({
   hasActiveDungeon: boolean;
   children: ReactNode;
 }) {
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const equipBonuses = getEquipmentStatBonuses(character.equipment, character.enchantments);
   const talentTotals = character.spec ? evaluateTalents(character.spec, character.talentPicks).totals : EMPTY_TALENT_TOTALS;
   const characterMaxHp = maxHp(character.class, character.level, equipBonuses, talentTotals.hpMultPct);
@@ -86,8 +88,20 @@ function AppShell({
         selectedProfessionId={selectedProfessionId}
         onSelectProfession={onSelectProfession}
         activityRunningInBackground={character.currentActivity.type !== null || hasActiveDungeon}
+        mobileOpen={mobileSidebarOpen}
+        onCloseMobile={() => setMobileSidebarOpen(false)}
       />
       <div className="app-main">
+        {/* Only visible below index.css's mobile breakpoint — the sidebar
+            is always visible above it, so this has nothing to toggle. */}
+        <button
+          type="button"
+          className="mobile-nav-toggle"
+          onClick={() => setMobileSidebarOpen(true)}
+          aria-label="Open menu"
+        >
+          ☰ Menu
+        </button>
         <TopBar
           character={character}
           currentHp={currentHp}
@@ -234,9 +248,11 @@ function AppContent() {
 export default function App() {
   return (
     <AuthProvider>
-      <CharacterProvider>
-        <AppContent />
-      </CharacterProvider>
+      <ErrorBoundary>
+        <CharacterProvider>
+          <AppContent />
+        </CharacterProvider>
+      </ErrorBoundary>
       <BugReportButton />
       <NotificationToasts />
     </AuthProvider>
