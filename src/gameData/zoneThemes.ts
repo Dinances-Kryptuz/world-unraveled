@@ -7,14 +7,14 @@
 // (sidebar highlight, banner, primary buttons) retints per zone.
 //
 // Also drives the full-viewport illustrated backdrop (see
-// components/ZoneBackdrop.tsx) — a sky gradient, a sun/fire glow, three
-// parallax silhouette layers, and a drifting-particle color, all built from
-// flat CSS (gradients + clip-path), since no art/image pipeline exists in
-// this environment. It's a deliberate substitute for real zone artwork —
-// same "flat heuristic over real assets" tradeoff as gameData/itemIcons.ts
-// — tuned per zone to read as a distinct Warcraft-style vista (Elwynn-ish
-// farmland, Redridge-ish highlands, Badlands/Molten Core-ish volcanic
-// rifts) rather than just a recolored box.
+// components/ZoneBackdrop.tsx): each zone has real commissioned concept art
+// (`artUrl`, served from public/zone-art/) depicting Green Field Hollow's
+// progressive transformation from peaceful countryside into the Lord of
+// Fire's domain. The sky/glow/hill/particle fields below are the original
+// CSS-only backdrop (gradients + clip-path) — kept as the fallback
+// ZoneBackdrop renders for any zone that doesn't (yet) have an artUrl,
+// rather than deleted, since it costs nothing to keep and a future zone can
+// land without art ready on day one.
 export interface ZoneTheme {
   primary: string;
   primaryDark: string;
@@ -29,7 +29,13 @@ export interface ZoneTheme {
   hillNear: string;
   particle: string;
   terrain: 'hills' | 'mountains' | 'rift';
+  artUrl?: string;
 }
+
+// The login/character-creation hero image — same Green Field Hollow village
+// as the greenhollow_fields zone art below, with the game's logo already
+// baked into the artwork itself (see components/LoginScreen.tsx).
+export const LOGIN_ART_URL = '/zone-art/login.webp';
 
 export const ZONE_THEMES: Record<string, ZoneTheme> = {
   greenhollow_fields: {
@@ -46,6 +52,7 @@ export const ZONE_THEMES: Record<string, ZoneTheme> = {
     hillNear: '#4a7c3f',
     particle: '#f3ffc9',
     terrain: 'hills',
+    artUrl: '/zone-art/greenhollow_fields.webp',
   },
   stonecrag_foothills: {
     primary: '#6b6b63',
@@ -61,6 +68,7 @@ export const ZONE_THEMES: Record<string, ZoneTheme> = {
     hillNear: '#5c564c',
     particle: '#e4ddcc',
     terrain: 'mountains',
+    artUrl: '/zone-art/stonecrag_foothills.webp',
   },
   emberfall_ridge: {
     primary: '#c1572b',
@@ -76,6 +84,7 @@ export const ZONE_THEMES: Record<string, ZoneTheme> = {
     hillNear: '#7d3418',
     particle: '#ffb060',
     terrain: 'mountains',
+    artUrl: '/zone-art/emberfall_ridge.webp',
   },
   cinderfall_depths: {
     primary: '#5c4a6b',
@@ -91,6 +100,7 @@ export const ZONE_THEMES: Record<string, ZoneTheme> = {
     hillNear: '#352a40',
     particle: '#d2c0e0',
     terrain: 'mountains',
+    artUrl: '/zone-art/cinderfall_depths.webp',
   },
   molten_scar: {
     primary: '#a1281f',
@@ -106,6 +116,7 @@ export const ZONE_THEMES: Record<string, ZoneTheme> = {
     hillNear: '#4a140d',
     particle: '#ff7a33',
     terrain: 'rift',
+    artUrl: '/zone-art/molten_scar.webp',
   },
   cinderheart_crater: {
     primary: '#7a1414',
@@ -121,6 +132,7 @@ export const ZONE_THEMES: Record<string, ZoneTheme> = {
     hillNear: '#2e0a0a',
     particle: '#f0c040',
     terrain: 'rift',
+    artUrl: '/zone-art/cinderheart_crater.webp',
   },
 };
 
@@ -146,4 +158,8 @@ export function zoneThemeStyle(zoneId: string): Record<string, string> {
 
 export function zoneTerrain(zoneId: string): ZoneTheme['terrain'] {
   return (ZONE_THEMES[zoneId] ?? DEFAULT_ZONE_THEME).terrain;
+}
+
+export function zoneArtUrl(zoneId: string): string | undefined {
+  return (ZONE_THEMES[zoneId] ?? DEFAULT_ZONE_THEME).artUrl;
 }

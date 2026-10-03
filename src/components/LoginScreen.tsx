@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { signInWithGoogle, signInAnonymouslyForTesting } from '../firebase/auth';
 import { PreGameShell } from './PreGameShell';
 import { CLASS_SHOWCASE, CLASS_ICONS, SPEC_ICONS, SPEC_INFO } from '../gameData/classInfo';
+import { LOGIN_ART_URL } from '../gameData/zoneThemes';
 
 const useEmulators = import.meta.env.VITE_USE_FIREBASE_EMULATORS === 'true';
 
@@ -27,8 +28,11 @@ export function LoginScreen() {
   return (
     <PreGameShell>
       <div className="login-hero">
+        {/* The game logo is already baked into this artwork, so there's no
+            separate <h1> title here — just the image, then the sign-in
+            card below it. */}
+        <img className="login-hero-image" src={LOGIN_ART_URL} alt="A World Unraveled" />
         <div className="login-hero-card">
-          <h1>A World Unraveled</h1>
           <p>Explore a vast and ever-changing world, and uncover why it's coming apart.</p>
           <button onClick={() => handleSignIn(signInWithGoogle)} disabled={signingIn}>
             {signingIn ? 'Signing in…' : 'Sign in with Google'}
