@@ -16,9 +16,19 @@ service cloud.firestore {
         && request.auth.uid == uid
         && isValidNewCharacter(request.resource.data);
 
+      // The OR here is Phase 4's slot-swap allowance: isValidCharacterUpdate
+      // covers ordinary play (same character, level/xp never regress);
+      // isValidCharacterShape alone covers firebase/characterSlots.ts
+      // replacing this doc's character entirely (a fresh level-1 roll, or
+      // an archived character being restored to active) — a legitimate
+      // write no "before" character's invariants could ever make sense
+      // against. || short-circuits, so the ordinary (first) case costs
+      // nothing extra — isValidCharacterShape only runs again when that one
+      // fails, which only happens on an actual slot swap, never on a normal
+      // combat/gather/craft autosave.
       allow update: if request.auth != null
         && request.auth.uid == uid
-        && isValidCharacterUpdate(resource.data, request.resource.data);
+        && (isValidCharacterUpdate(resource.data, request.resource.data) || isValidCharacterShape(request.resource.data));
 
       allow delete: if false;
 
@@ -38,6 +48,56 @@ service cloud.firestore {
         allow update: if request.auth != null && request.auth.uid == uid && request.resource.data.keys().hasOnly(['items']);
         allow delete: if false;
       }
+
+      // Phase 4: every unlocked character slot OTHER than the currently-
+      // active one (which lives at the parent characters/{uid} doc above) is
+      // archived here in full, under firebase/characterSlots.ts's
+      // archive/promote swap. Unlike the parent doc, these ARE deletable —
+      // switchActiveCharacter clears a slot's roster copy the moment it's
+      // promoted back to active, so a character's data only ever exists in
+      // one place at a time. A roster doc is only ever written by that one
+      // swap (never incrementally, the way ordinary play updates the active
+      // character), so it only needs a basic shape check, not the full
+      // isValidCharacterUpdate apparatus.
+      match /roster/{slotId} {
+        allow read: if request.auth != null && request.auth.uid == uid;
+        allow create, update: if request.auth != null && request.auth.uid == uid
+          && request.resource.data.name is string
+          && request.resource.data.class is string
+          && request.resource.data.level is number;
+        allow delete: if request.auth != null && request.auth.uid == uid;
+
+        match /inventory/{docId} {
+          allow read: if request.auth != null && request.auth.uid == uid;
+          allow create, update: if request.auth != null && request.auth.uid == uid && request.resource.data.keys().hasOnly(['items']);
+          allow delete: if request.auth != null && request.auth.uid == uid;
+        }
+        match /bank/{docId} {
+          allow read: if request.auth != null && request.auth.uid == uid;
+          allow create, update: if request.auth != null && request.auth.uid == uid && request.resource.data.keys().hasOnly(['items']);
+          allow delete: if request.auth != null && request.auth.uid == uid;
+        }
+      }
+    }
+
+    // Phase 4: one tiny doc per account tracking which character slot is
+    // currently live at characters/{uid} and how many are unlocked — see
+    // gameData/characterSlots.ts/firebase/characterSlots.ts.
+    match /accounts/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow create: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['unlockedSlots', 'activeSlot'])
+        && request.resource.data.unlockedSlots == 1
+        && request.resource.data.activeSlot == 1;
+      allow update: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['unlockedSlots', 'activeSlot'])
+        && request.resource.data.unlockedSlots is number
+        && request.resource.data.unlockedSlots >= resource.data.unlockedSlots
+        && request.resource.data.unlockedSlots <= 3
+        && request.resource.data.activeSlot is number
+        && request.resource.data.activeSlot >= 1
+        && request.resource.data.activeSlot <= request.resource.data.unlockedSlots;
+      allow delete: if false;
     }
 
     match /{document=**} {
@@ -67,15 +127,36 @@ service cloud.firestore {
       && isValidNewQuests(data.quests)
       && data.companions == {}
       && data.activeCompanionIds == []
+      && data.activeAltSlots == []
       && data.currentZoneId == 'greenhollow_fields'
       && data.travel == null;
   }
 
+  // The ordinary-play case: the SAME character (name unchanged) just keeps
+  // leveling/earning — level/xp can never regress, createdAt is fixed.
+  // Phase 4 needs a second case (see isValidCharacterShape/the characters/
+  // {uid} update rule below) for firebase/characterSlots.ts's archive/
+  // promote swap, which legitimately OVERWRITES this doc with a different
+  // character (a fresh level-1 roll, or an older archived one being
+  // restored) — neither of which could ever satisfy "level never decreases"
+  // relative to whoever occupied the slot before.
   function isValidCharacterUpdate(before, after) {
     return after.name == before.name
       && after.createdAt == before.createdAt
       && after.level is number && after.level >= before.level
       && after.xp is number && after.xp >= before.xp
+      && isValidCharacterShape(after);
+  }
+
+  // Every check that applies no matter WHICH character occupies this slot —
+  // split out from isValidCharacterUpdate so a Phase 4 slot-swap (a
+  // different character's data entirely, where "level never decreases
+  // relative to before" is meaningless) can still be held to the same
+  // shape/bounds rules without the before/after comparisons.
+  function isValidCharacterShape(after) {
+    return after.name is string && after.name.size() >= 2 && after.name.size() <= 20
+      && after.level is number && after.level >= 1
+      && after.xp is number && after.xp >= 0
       && after.gold is number && after.gold >= 0
       && after.voidShards is number && after.voidShards >= 0
       && isValidEquipment(after.equipment)
@@ -95,7 +176,19 @@ service cloud.firestore {
       && isValidCompanions(after)
       && isValidActiveCompanionIds(after)
       && isValidCurrentZoneId(after)
-      && isValidTravel(after);
+      && isValidTravel(after)
+      && isValidActiveAltSlots(after);
+  }
+
+  // Same "may not exist yet on an old character" treatment and ownership-
+  // scoped posture as isValidActiveCompanionIds — full validation (that a
+  // slot number is actually unlocked, has a roster character in it, and the
+  // combined companions+alts count stays under the shared party-size limit)
+  // happens in firebase/characterSlots.ts's addAltToParty, the only path
+  // that ever adds an entry. One expression, not a size bound too — see
+  // isValidCurrentZoneId's comment on this file's expression budget.
+  function isValidActiveAltSlots(after) {
+    return !('activeAltSlots' in after) || after.activeAltSlots is list;
   }
 
   // Optional like bagSlots/bankSlots above — a character that existed before
@@ -103,7 +196,12 @@ service cloud.firestore {
   // firebase/character.ts's getCharacter(), which backfills it to
   // DEFAULT_ZONE_ID in memory without an eager write-back), and every one of
   // its ordinary updates (gaining xp, gold, etc.) must keep working without
-  // ever having set it.
+  // ever having set it. Kept to one expression on purpose — see
+  // isValidEquipment's comment on this file's 1000-expression-per-request
+  // evaluation ceiling; a fully-populated character (gear, professions,
+  // quests, companions) was already close to it before Phase 3/4 added
+  // currentZoneId/travel/activeAltSlots, so each of these stays as cheap as
+  // the "may not exist yet" check requires and no cheaper.
   function isValidCurrentZoneId(after) {
     return !('currentZoneId' in after) || after.currentZoneId is string;
   }
@@ -111,14 +209,11 @@ service cloud.firestore {
   // Ownership-scoped like the rest of this file — the real validation (that
   // a flight's duration actually matches the zone-tier formula, see
   // gameData/travel.ts's travelMinutes) happens in firebase/travel.ts, the
-  // only path that writes this field.
+  // only path that writes this field. A bare "is a map" check (not one
+  // expression per sub-field) for the same expression-budget reason as
+  // isValidCurrentZoneId above.
   function isValidTravel(after) {
-    return !('travel' in after) || after.travel == null || (
-      after.travel.fromZoneId is string
-      && after.travel.toZoneId is string
-      && after.travel.departedAt is timestamp
-      && after.travel.arrivesAt is timestamp
-    );
+    return !('travel' in after) || after.travel == null || after.travel is map;
   }
 
   // Ownership-scoped, not fully value-scoped — same posture as the sibling

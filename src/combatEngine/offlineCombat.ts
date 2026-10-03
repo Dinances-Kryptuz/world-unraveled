@@ -11,7 +11,7 @@ import { maxHp } from '../gameData/combatFormulas';
 import type { TalentBonusTotals } from '../utils/talentEvaluator';
 import type { BuffTotals } from '../gameData/buffs';
 import type { Monster } from '../gameData/types';
-import { characterXpForLevelV2 } from '../gameData/xpTables';
+import { characterXpForLevelV2, MAX_CHARACTER_LEVEL } from '../gameData/xpTables';
 import { resolveElapsedProgress } from '../gameData/activityEngine';
 import type { CompanionCombatSetup } from '../gameData/companions';
 import {
@@ -132,7 +132,7 @@ export function simulateOfflineCombat(input: OfflineCombatInput): OfflineCombatR
     // HP, same as live combat never resets the enemy on a mid-fight level
     // up either.
     let leveledUp = false;
-    while (xpTotal >= characterXpForLevelV2(level + 1)) {
+    while (level < MAX_CHARACTER_LEVEL && xpTotal >= characterXpForLevelV2(level + 1)) {
       level++;
       leveledUp = true;
     }

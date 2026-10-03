@@ -102,6 +102,8 @@ export async function getCharacter(uid: string): Promise<Character | null> {
     // carry it over as a one-member array rather than dropping it.
     companions: data.companions ?? {},
     activeCompanionIds: data.activeCompanionIds ?? (data.activeCompanionId ? [data.activeCompanionId] : []),
+    // Same backfill idea again, for Phase 4's alt recruiting.
+    activeAltSlots: data.activeAltSlots ?? [],
     // Same backfill idea again, for the quest system — an old character
     // without this field just starts with an empty board and picks up its
     // first quests the next time it completes a trackable action (or via
@@ -189,6 +191,7 @@ export async function createCharacter(uid: string, name: string, characterClass:
     quests: { active: initialActiveQuests, completedIds: [], dailyCompletedAt: {} },
     companions: {},
     activeCompanionIds: [],
+    activeAltSlots: [],
     currentZoneId: DEFAULT_ZONE_ID,
     travel: null,
   };

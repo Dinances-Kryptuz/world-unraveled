@@ -102,8 +102,12 @@ export function ZoneScreen({
       {Object.values(DUNGEONS)
         .filter((d) => d.zoneId === zone.id)
         .map((dungeon) => {
-          const partySize = character.activeCompanionIds.length + 1;
-          const readyForDungeon = character.activeCompanionIds.length === MAX_ACTIVE_COMPANIONS;
+          const groupHeadcount = character.activeCompanionIds.length + character.activeAltSlots.length;
+          const partySize = groupHeadcount + 1;
+          const readyForDungeon = groupHeadcount === MAX_ACTIVE_COMPANIONS;
+          // Only hired companions charge a wage — a recruited alt is your
+          // own character, not an NPC you're paying to show up (see
+          // gameData/characterSlots.ts's doc comment on activeAltSlots).
           const fee = dungeonCompanionFee(ZONE_TIER[dungeon.zoneId] ?? 1, character.activeCompanionIds.length);
           const canAffordFee = character.gold >= fee;
           return (

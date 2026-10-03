@@ -16,7 +16,7 @@ import {
   enemyDamageModifier,
   xpModifier,
 } from '../gameData/combatFormulas';
-import type { TalentBonusTotals } from '../utils/talentEvaluator';
+import { EMPTY_TALENT_TOTALS, type TalentBonusTotals } from '../utils/talentEvaluator';
 import type { BuffTotals } from '../gameData/buffs';
 import type { CompanionCombatSetup } from '../gameData/companions';
 import type { Monster } from '../gameData/types';
@@ -148,18 +148,29 @@ function buildPlayerProfile(input: EncounterSetupInput): CasterProfile {
 // straight through as its hit chance.
 function buildCompanionProfile(companion: CompanionCombatSetup, monster: Monster): CasterProfile {
   const { cls, level, specDef, equipmentBonuses } = companion;
+  // Only an alt recruit ever has talentTotals (see companions.ts's
+  // buildAltCombatSetup) — an ordinary hired companion falls back to the
+  // same "no talents" baseline it always had, so this is a no-op change for
+  // every companion that isn't a recruited alt.
+  const totals = companion.talentTotals ?? EMPTY_TALENT_TOTALS;
   const diff = monster.level - level;
+  const survCoefFinal = specDef.survivabilityCoef * (1 + totals.survCoefMultPct / 100);
   const effectiveSta = statAtLevel(cls, 'STA', level) + (equipmentBonuses.STA ?? 0);
-  const armor = effectiveSta * 2 * specDef.survivabilityCoef;
+  const armor = effectiveSta * 2 * survCoefFinal * (1 + totals.armorMultPct / 100);
+  const avoidance = Math.min(0.75, specDef.avoidance + totals.avoidanceAddPct / 100);
   return {
     normalizedHit: baseDamage(cls, level, equipmentBonuses),
-    damageCoef: specDef.damageCoef * playerDamageModifier(diff) * combatTypeModifier(specDef.combatType, monster.combatType),
+    damageCoef:
+      specDef.damageCoef *
+      playerDamageModifier(diff) *
+      combatTypeModifier(specDef.combatType, monster.combatType) *
+      (1 + totals.flatDmgPct / 100),
     accuracy: playerAccuracy(diff),
-    avoidance: specDef.avoidance,
+    avoidance,
     armor,
-    damageTakenMult: 1,
-    healFrac: specDef.healFrac,
-    passiveHealPct: specDef.passiveHealPct,
+    damageTakenMult: Math.max(0.05, 1 - totals.flatDmgTakenPct / 100),
+    healFrac: specDef.healFrac + totals.healFracAddPct / 100,
+    passiveHealPct: (specDef.passiveHealPct + totals.passiveHealAddPct / 100) * (1 + totals.healMultPct / 100),
   };
 }
 
@@ -277,9 +288,12 @@ export function createPlayerCombatant(input: EncounterSetupInput): Combatant {
 // pick (classStats.ts's SpecDef.threatWeight) — a tank-spec companion (or
 // player) draws fire disproportionately, not just "whoever's listed first."
 export function createCompanionCombatant(companion: CompanionCombatSetup, monster: Monster): Combatant {
-  const loadout = effectiveLoadout(companion.cls, companion.specId, companion.level, []);
+  // An alt recruit (see companions.ts's buildAltCombatSetup) carries its own
+  // saved loadout; an ordinary hired companion has none, same effective
+  // "use the default base kit" behavior as before this field existed.
+  const loadout = effectiveLoadout(companion.cls, companion.specId, companion.level, companion.savedEquippedAbilityIds ?? []);
   const intStat = statAtLevel(companion.cls, 'INT', companion.level) + (companion.equipmentBonuses.INT ?? 0);
-  const companionMaxHp = computeMaxHp(companion.cls, companion.level, companion.equipmentBonuses, 0);
+  const companionMaxHp = computeMaxHp(companion.cls, companion.level, companion.equipmentBonuses, companion.talentTotals?.hpMultPct ?? 0);
 
   return {
     id: `companion-${companion.id}`,

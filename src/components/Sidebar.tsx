@@ -10,6 +10,7 @@ export type AppSection =
   | 'inventory'
   | 'bank'
   | 'companions'
+  | 'characters'
   | 'shop'
   | 'talents'
   | 'quests'
@@ -27,6 +28,7 @@ const TOP_ITEMS: SidebarItem[] = [
   { id: 'inventory', label: 'Inventory' },
   { id: 'bank', label: 'Bank' },
   { id: 'companions', label: 'Companions' },
+  { id: 'characters', label: 'Characters' },
   { id: 'shop', label: 'Shop' },
   { id: 'talents', label: 'Talents' },
   { id: 'quests', label: 'Quests' },

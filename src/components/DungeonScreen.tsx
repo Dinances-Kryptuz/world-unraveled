@@ -10,10 +10,11 @@ import { ITEMS } from '../gameData/items';
 import { resolveSpecDef, getExtraDamageTakenPct } from '../gameData/combatProfileWithTalents';
 import { evaluateTalents, EMPTY_TALENT_TOTALS } from '../utils/talentEvaluator';
 import { evaluateActiveBuffs } from '../gameData/buffs';
-import { resolveActiveCompanionSetups } from '../gameData/companions';
+import { resolveActiveCompanionSetups, type CompanionCombatSetup } from '../gameData/companions';
 import { maxHp, resolveCurrentHp, ATTACK_INTERVAL_SECONDS } from '../gameData/combatFormulas';
 import { getEquipmentStatBonuses } from '../gameData/equipmentStats';
-import { characterXpForLevelV2 } from '../gameData/xpTables';
+import { characterXpForLevelV2, MAX_CHARACTER_LEVEL } from '../gameData/xpTables';
+import { checkAndUnlockNextSlot, resolveActiveAltSetups } from '../firebase/characterSlots';
 import type { QuestEvent } from '../gameData/questEngine';
 import {
   createEncounterState,
@@ -77,6 +78,14 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
   const pendingLogRef = useRef<CombatEvent[]>([]);
 
   const combatStateRef = useRef<CombatState | null>(null);
+  // Populated once, async, before the first createEncounterState call (see
+  // the dungeonId setup effect below) — resolveActiveAltSetups needs a
+  // Firestore read per recruited alt, which buildEncounterInput (called
+  // synchronously from several places: setup, every tick, manual ability
+  // use) can't do itself. Alts only ever fight in dungeons (same
+  // "companions only fight in dungeons" rule as hired companions — see
+  // ZoneScreen.tsx), so this ref lives here, not in CombatScreen.
+  const altSetupsRef = useRef<CompanionCombatSetup[]>([]);
   const pendingKillsRef = useRef<KillReward[]>([]);
   const pendingQuestSignalsRef = useRef<QuestSignals>({ healingDone: 0, abilityUseCounts: {} });
   const pendingBuffTriggersRef = useRef<{ offensive_action: number; damage_taken: number }>({
@@ -149,7 +158,7 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
     const equipmentBonuses = getEquipmentStatBonuses(c.equipment, c.enchantments);
     const charMaxHp = maxHp(c.class, c.level, equipmentBonuses, talentTotals.hpMultPct);
     const currentHp = resolveCurrentHp(c.currentHp, charMaxHp, c.hpCheckpointAt, new Date());
-    const companions = resolveActiveCompanionSetups(c);
+    const companions = [...resolveActiveCompanionSetups(c), ...altSetupsRef.current];
     return {
       cls: c.class,
       level: c.level,
@@ -192,8 +201,17 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
     stageIndexRef.current = 0;
     fullClearsRef.current = 0;
     currentMonsterRef.current = MONSTERS[dungeon.stages[0]];
-    combatStateRef.current = createEncounterState(buildEncounterInput(character));
-    setTick((t) => t + 1);
+    combatStateRef.current = null;
+    let cancelled = false;
+    void (async () => {
+      altSetupsRef.current = user ? await resolveActiveAltSetups(user.uid, character) : [];
+      if (cancelled) return;
+      combatStateRef.current = createEncounterState(buildEncounterInput(character));
+      setTick((t) => t + 1);
+    })();
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dungeonId]);
 
@@ -288,7 +306,7 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
       const fresh = await getCharacter(currentUser.uid);
       if (fresh) {
         let newLevel = fresh.level;
-        while (fresh.xp >= characterXpForLevelV2(newLevel + 1)) {
+        while (newLevel < MAX_CHARACTER_LEVEL && fresh.xp >= characterXpForLevelV2(newLevel + 1)) {
           newLevel++;
         }
         if (newLevel !== fresh.level) {
@@ -298,6 +316,7 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
           await setCharacterLevel(currentUser.uid, newLevel, restoredHp);
           player.hp = restoredHp;
           player.maxHp = restoredHp;
+          if (newLevel >= MAX_CHARACTER_LEVEL) void checkAndUnlockNextSlot(currentUser.uid);
         }
 
         const killCountsByMonster: Record<string, number> = {};

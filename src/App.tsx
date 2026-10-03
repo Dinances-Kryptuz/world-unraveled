@@ -27,6 +27,7 @@ import { zoneThemeStyle } from './gameData/zoneThemes';
 import { VendorScreen } from './components/VendorScreen';
 import { QuestLog } from './components/QuestLog';
 import { CompanionScreen } from './components/CompanionScreen';
+import { CharacterSelectScreen } from './components/CharacterSelectScreen';
 import { TravelScreen } from './components/TravelScreen';
 import { startTravel } from './firebase/travel';
 import { Sidebar, type AppSection } from './components/Sidebar';
@@ -239,6 +240,7 @@ function AppContent() {
       {section === 'inventory' && <InventoryScreen />}
       {section === 'bank' && <BankScreen />}
       {section === 'companions' && <CompanionScreen />}
+      {section === 'characters' && <CharacterSelectScreen />}
       {section === 'shop' && <VendorScreen zoneId={character.currentZoneId} />}
       {section === 'profession' && <ProfessionScreen professionId={selectedProfessionId} zoneId={character.currentZoneId} />}
       {section === 'talents' && character.spec && <TalentScreen />}

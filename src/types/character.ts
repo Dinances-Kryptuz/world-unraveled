@@ -149,6 +149,16 @@ export interface Character {
   // group with the player) to enter at all; open-world combat has no
   // minimum.
   activeCompanionIds: string[];
+  // Which of the account's OTHER character slots (gameData/characterSlots.ts)
+  // are currently recruited into this character's dungeon party, alongside
+  // activeCompanionIds — combined, the two lists are capped at
+  // MAX_ACTIVE_COMPANIONS (see ZoneScreen.tsx's dungeon-entry gate). Unlike a
+  // hired companion, a recruited alt fights with its OWN real gear, spec,
+  // and talents (see gameData/companions.ts's buildAltCombatSetup) and asks
+  // no wage — it's your own character, not an NPC. Cleared whenever that
+  // slot stops existing in the roster (switching INTO it, or creating a new
+  // character over it) — see firebase/characterSlots.ts.
+  activeAltSlots: number[];
   // The zone the character is physically standing in — gates which zone's
   // Adventure/Shop/Professions/trainers a player can actually use (see
   // gameData/travel.ts). Switching this requires a flight (below), unlike

@@ -11,7 +11,8 @@ import { evaluateTalents, EMPTY_TALENT_TOTALS } from '../utils/talentEvaluator';
 import { evaluateActiveBuffs } from '../gameData/buffs';
 import { maxHp, resolveCurrentHp, ATTACK_INTERVAL_SECONDS } from '../gameData/combatFormulas';
 import { getEquipmentStatBonuses } from '../gameData/equipmentStats';
-import { characterXpForLevelV2 } from '../gameData/xpTables';
+import { characterXpForLevelV2, MAX_CHARACTER_LEVEL } from '../gameData/xpTables';
+import { checkAndUnlockNextSlot } from '../firebase/characterSlots';
 import type { QuestEvent } from '../gameData/questEngine';
 import {
   createEncounterState,
@@ -229,7 +230,7 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
       const fresh = await getCharacter(currentUser.uid);
       if (fresh) {
         let newLevel = fresh.level;
-        while (fresh.xp >= characterXpForLevelV2(newLevel + 1)) {
+        while (newLevel < MAX_CHARACTER_LEVEL && fresh.xp >= characterXpForLevelV2(newLevel + 1)) {
           newLevel++;
         }
         if (newLevel !== fresh.level) {
@@ -239,6 +240,7 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
           await setCharacterLevel(currentUser.uid, newLevel, restoredHp);
           player.hp = restoredHp;
           player.maxHp = restoredHp;
+          if (newLevel >= MAX_CHARACTER_LEVEL) void checkAndUnlockNextSlot(currentUser.uid);
         }
 
         const killCountsByMonster: Record<string, number> = {};
