@@ -14,10 +14,20 @@
 //
 // LIVE_SESSION_THRESHOLD_SECONDS no longer affects any rate — it's kept
 // only for WelcomeBackScreen's "were you away long enough to show a
-// summary" check, a UI question, not a math one.
-
+// summary" check, a UI question, not a math one. For combat specifically,
+// this threshold used to be load-bearing by accident: the offline-combat
+// simulation only ever runs inside WelcomeBackScreen, so a gap under this
+// threshold got literally zero catch-up (CombatScreen just starts a fresh
+// encounter on mount) rather than a reduced one — gathering/crafting/
+// fishing don't have this problem since their resolvers always recompute
+// from the activity's true startedAt regardless of gap length. Kept low
+// (rather than removed) now that combat stays mounted and ticking through
+// in-app navigation (see App.tsx's activityNode) — CombatScreen only
+// remounts on an actual "came back after being away" event (page reload,
+// sign-out/in, tab closed), not routine tab-switching, so showing this
+// summary for any real gap isn't spammy.
 export const OFFLINE_CAP_HOURS = 24;
-export const LIVE_SESSION_THRESHOLD_SECONDS = 300; // 5 minutes — UI-only, see above
+export const LIVE_SESSION_THRESHOLD_SECONDS = 10;
 
 // Gathering-node failure chance: at exactly the node's required skill level,
 // there's a real chance of coming away empty-handed on a given action. That

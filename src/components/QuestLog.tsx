@@ -15,6 +15,18 @@ const CATEGORY_LABELS: Record<QuestCategory, string> = {
   daily: 'Daily',
 };
 
+// A stable tiebreaker for quests that land in the same category — see its
+// one use below. Needed because character.quests.active is a Firestore map
+// field: Object.entries() on it isn't guaranteed to return the same key
+// order on every read (the SDK just reflects whatever order the server's
+// wire format delivered), so two same-category active quests could swap
+// visible positions on every refetch (which happens after nearly every
+// action — a combat autosave, accepting/completing a quest, …) without this.
+// QUESTS' own declaration order is fixed at build time and never changes.
+const QUEST_DECLARATION_ORDER: Record<string, number> = Object.fromEntries(
+  Object.keys(QUESTS).map((id, index) => [id, index])
+);
+
 function describeObjective(obj: QuestObjective): string {
   switch (obj.type) {
     case 'kill': {
@@ -58,7 +70,9 @@ export function QuestLog() {
     .filter((q): q is { quest: QuestDef; progress: number[] } => !!q.quest)
     .sort((a, b) => {
       const order: Record<QuestCategory, number> = { zone: 0, class: 1, profession: 2, daily: 3 };
-      return order[a.quest.category] - order[b.quest.category];
+      const categoryDiff = order[a.quest.category] - order[b.quest.category];
+      if (categoryDiff !== 0) return categoryDiff;
+      return QUEST_DECLARATION_ORDER[a.quest.id] - QUEST_DECLARATION_ORDER[b.quest.id];
     });
 
   const available = availableQuests(character, new Date());

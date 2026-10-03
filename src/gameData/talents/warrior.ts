@@ -40,7 +40,7 @@ export const WARRIOR_DPS_TALENTS: TalentTree = [
   {
     level: 35,
     damage: { name: 'Overpower', description: '10% chance to deal 2x damage', effect: { kind: 'chance_mult', params: [0.1, 100] } },
-    survival: { name: 'Unbreakable', description: 'Healing received +15%', effect: { kind: 'dead', params: [], note: 'Warrior has no self-heal source to amplify' } },
+    survival: { name: 'Unbreakable', description: 'Healing received +15%', effect: { kind: 'dead', params: [], note: "Not wired to scale this spec's flat passive regen — kept a flat rate rather than another % modifier to amplify" } },
     support: { name: 'Protective Instinct', description: 'Redirect 5% ally damage to yourself', effect: { kind: 'dead', params: [], note: 'No ally to redirect from when solo' } },
   },
   {
@@ -110,7 +110,7 @@ export const WARRIOR_TANK_TALENTS: TalentTree = [
   {
     level: 30,
     damage: { name: 'Revenge', description: 'Damage increases 3% after each recent hit, up to 15%', effect: { kind: 'ramp', params: [15] } },
-    survival: { name: 'Unyielding', description: 'Healing received +15%', effect: { kind: 'dead', params: [], note: 'Warrior Tank has no self-heal source to amplify' } },
+    survival: { name: 'Unyielding', description: 'Healing received +15%', effect: { kind: 'dead', params: [], note: "Not wired to scale this spec's flat passive regen — kept a flat rate rather than another % modifier to amplify" } },
     support: { name: 'Shared Fortitude', description: 'Party armor +7%', effect: { kind: 'armor_mult', params: [3.5] } },
   },
   {

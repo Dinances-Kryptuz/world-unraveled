@@ -67,9 +67,27 @@ export interface SpecDef {
 
 // Final Pass 1 calibrated values — every spec verified solvent (margin >= ~1.0x)
 // at every level 1-59 in the naked-kit (no talent, no gear) baseline sim.
+// warrior_dps/warrior_tank/prot_paladin all carry a small passiveHealPct
+// (0.016 — "battle hardiness," a natural second-wind regen, not a spell)
+// added to narrow the solo-leveling gap against the self-healing specs. A
+// live-sim sweep found survivabilityCoef/avoidance buffs hit diminishing
+// returns fast (the safe-monster-selection logic just climbs to a
+// proportionally more dangerous target, eating most of the gain) and a
+// damageCoef buff was weak and sometimes counterproductive for the same
+// reason — neither lever reliably closes the gap. A small direct
+// passiveHealPct does, because — like the self-healing specs already get —
+// it offsets incoming damage continuously instead of bumping a ceiling the
+// monster-selection logic re-normalizes against. Tuned to land these three
+// specs in the same ~95-120h-to-60 band as Shadow Priest/Holy Paladin
+// (down from ~126-143h), while deliberately leaving them a bit slower than
+// those specs and far slower than Holy Priest (~62h) — the "safer, tankier
+// playstyle costs some time, the high-risk self-healing build is rewarded
+// with pace" asymmetry stays, just compressed to a reasonable range instead
+// of a 2-3x gap. Does not touch damageCoef (dungeon DPS checks) or healFrac
+// (group healing throughput) — both stay exactly as calibrated.
 export const SPECS: Record<SpecId, SpecDef> = {
-  warrior_dps: { class: 'warrior', damageCoef: 1.0, survivabilityCoef: 1.0, avoidance: 0.05, healFrac: 0.0, passiveHealPct: 0.0, combatType: 'melee', threatWeight: 1 },
-  warrior_tank: { class: 'warrior', damageCoef: 0.75, survivabilityCoef: 1.5, avoidance: 0.1, healFrac: 0.0, passiveHealPct: 0.0, combatType: 'melee', threatWeight: 4 },
+  warrior_dps: { class: 'warrior', damageCoef: 1.0, survivabilityCoef: 1.0, avoidance: 0.05, healFrac: 0.0, passiveHealPct: 0.016, combatType: 'melee', threatWeight: 1 },
+  warrior_tank: { class: 'warrior', damageCoef: 0.75, survivabilityCoef: 1.5, avoidance: 0.1, healFrac: 0.0, passiveHealPct: 0.016, combatType: 'melee', threatWeight: 4 },
   shadow_priest: { class: 'priest', damageCoef: 1.0, survivabilityCoef: 0.8, avoidance: 0.05, healFrac: 0.35, passiveHealPct: 0.018, combatType: 'magic', threatWeight: 1 },
   // Raised from the original Pass 1 values (0.4 / 0.5) — a live-simulation
   // sweep across all 6 specs found Holy Priest/Holy Paladin took 2-2.5x
@@ -84,7 +102,7 @@ export const SPECS: Record<SpecId, SpecDef> = {
   // survivabilityCoef deliberately lower than Warrior Tank's 1.5 — Prot
   // Paladin is the AOE-threat tank (see Consecration in abilities.ts), not
   // the one you want soaking a boss's biggest single hits.
-  prot_paladin: { class: 'paladin', damageCoef: 0.75, survivabilityCoef: 1.3, avoidance: 0.1, healFrac: 0.0, passiveHealPct: 0.006, combatType: 'melee', threatWeight: 4 },
+  prot_paladin: { class: 'paladin', damageCoef: 0.75, survivabilityCoef: 1.3, avoidance: 0.1, healFrac: 0.0, passiveHealPct: 0.016, combatType: 'melee', threatWeight: 4 },
   holy_paladin: { class: 'paladin', damageCoef: 0.85, survivabilityCoef: 1.0, avoidance: 0.05, healFrac: 0.3, passiveHealPct: 0.022, combatType: 'magic', threatWeight: 1 },
   // Both Mage specs are matched to the other pure-DPS casters (Shadow
   // Priest's own 1.0/0.8) rather than given a raw-number edge — they
