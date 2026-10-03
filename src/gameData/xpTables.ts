@@ -3,14 +3,28 @@
 // later never requires a data migration.
 
 /**
- * The real, calibrated 1-60 character XP curve (simulation-verified against
- * all six specs — see the combat-sim work: ~509 hours of 24/7 play to reach
- * level 60, a smooth ramp rather than a flat/spike shape). This is what the
- * new combat resolver (Step 7+) checks level-ups against.
+ * The 1-60 character XP curve. Squished for the alpha test — the original
+ * calibration (4000 * level^2.6, ~509 hours of 24/7 play to reach 60) was
+ * deliberately a long-haul MMO curve, but that's the wrong shape for
+ * getting early alpha data: it buried the level-5 spec choice under ~18-20
+ * hours even after the pre-spec combat buff, and ~500+ hours to 60 means
+ * nobody reaches endgame content during a short test window.
+ *
+ * Re-simulated against the real combat formulas (all 6 zones' monster
+ * levels, all 6 specs, optimal-but-safe monster selection, factoring in
+ * each spec's own self-healing/survivability) to find a curve landing
+ * level 5 at roughly 1 hour and level 60 at roughly 90-95 hours for the
+ * slowest (non-self-healing) specs — self-healing specs (the two Priest
+ * specs, Holy Paladin) finish considerably faster, which is fine; the
+ * target is "the slowest reasonable playstyle still reaches 60 within a
+ * few days," not every spec taking the same time. These are also
+ * pessimistic estimates (the simulation only ever uses starting gear, never
+ * accounting for better loot/crafted gear along the way), so real play
+ * should be faster than this, not slower.
  */
 export function characterXpForLevelV2(level: number): number {
   if (level <= 1) return 0;
-  return 4000 * Math.pow(level, 2.6);
+  return 290 * Math.pow(level, 2.3);
 }
 
 // The level cap — every zone/dungeon/ability in the game is built against
