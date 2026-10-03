@@ -7,6 +7,8 @@ import type { TalentColumn } from '../gameData/talents';
 import { professionXpForLevel } from '../gameData/xpTables';
 import { maxSkillForUnlockedTier } from '../gameData/professionTiers';
 import { BASE_BANK_SLOTS } from '../gameData/bank';
+import { DEFAULT_ZONE_ID } from '../gameData/zones';
+import type { TravelState } from '../gameData/travel';
 import { maxHp } from '../gameData/combatFormulas';
 import { canClassEquip } from '../gameData/classStats';
 import { ITEMS } from '../gameData/items';
@@ -28,8 +30,33 @@ export async function getCharacter(uid: string): Promise<Character | null> {
   if (!snap.exists()) return null;
 
   const data = snap.data();
+
+  // Resolved lazily rather than written back — the same "patch the in-memory
+  // return value, let the next real write catch Firestore up" approach every
+  // other backfill in this function already uses. Once arrivesAt has
+  // passed, the character has arrived: report the destination as
+  // currentZoneId and travel as null, with no separate "complete the
+  // flight" round-trip required. See gameData/travel.ts.
+  let currentZoneId: string = data.currentZoneId ?? DEFAULT_ZONE_ID;
+  let travel: TravelState | null = null;
+  if (data.travel) {
+    const arrivesAt = (data.travel.arrivesAt as Timestamp).toDate();
+    if (arrivesAt.getTime() <= Date.now()) {
+      currentZoneId = data.travel.toZoneId;
+    } else {
+      travel = {
+        fromZoneId: data.travel.fromZoneId,
+        toZoneId: data.travel.toZoneId,
+        departedAt: (data.travel.departedAt as Timestamp).toDate(),
+        arrivesAt,
+      };
+    }
+  }
+
   return {
     ...data,
+    currentZoneId,
+    travel,
     // A character with no professions key yet (pre-overhaul save) starts
     // knowing nothing — same "no choice made yet" convention as
     // equippedAbilityIds below, not a default grant.
@@ -162,6 +189,8 @@ export async function createCharacter(uid: string, name: string, characterClass:
     quests: { active: initialActiveQuests, completedIds: [], dailyCompletedAt: {} },
     companions: {},
     activeCompanionIds: [],
+    currentZoneId: DEFAULT_ZONE_ID,
+    travel: null,
   };
 
   await setDoc(doc(db, 'characters', uid), character);

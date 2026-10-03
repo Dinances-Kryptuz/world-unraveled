@@ -21,12 +21,14 @@ import { maxHp, resolveCurrentHp } from './gameData/combatFormulas';
 import { getEquipmentStatBonuses } from './gameData/equipmentStats';
 import { evaluateTalents, EMPTY_TALENT_TOTALS } from './utils/talentEvaluator';
 import { characterXpForLevelV2 } from './gameData/xpTables';
-import { DEFAULT_ZONE_ID, GATHER_NODES, FISHING_HOLES } from './gameData/zones';
+import { GATHER_NODES, FISHING_HOLES } from './gameData/zones';
 import { RECIPES } from './gameData/recipes';
 import { zoneThemeStyle } from './gameData/zoneThemes';
 import { VendorScreen } from './components/VendorScreen';
 import { QuestLog } from './components/QuestLog';
 import { CompanionScreen } from './components/CompanionScreen';
+import { TravelScreen } from './components/TravelScreen';
+import { startTravel } from './firebase/travel';
 import { Sidebar, type AppSection } from './components/Sidebar';
 import { TopBar } from './components/TopBar';
 import { ALL_PROFESSION_IDS } from './gameData/professionTiers';
@@ -42,8 +44,7 @@ function AppShell({
   character,
   section,
   onSelectSection,
-  selectedZoneId,
-  onSelectZone,
+  onRequestTravel,
   selectedProfessionId,
   onSelectProfession,
   children,
@@ -51,8 +52,7 @@ function AppShell({
   character: Character;
   section: AppSection;
   onSelectSection: (s: AppSection) => void;
-  selectedZoneId: string;
-  onSelectZone: (zoneId: string) => void;
+  onRequestTravel: (zoneId: string) => void;
   selectedProfessionId: ProfessionId;
   onSelectProfession: (id: ProfessionId) => void;
   children: ReactNode;
@@ -69,7 +69,7 @@ function AppShell({
   const xpProgressPct = Math.max(0, Math.min(100, (xpIntoLevel / xpNeededForLevel) * 100));
 
   return (
-    <div className="app-shell" style={zoneThemeStyle(selectedZoneId) as CSSProperties}>
+    <div className="app-shell" style={zoneThemeStyle(character.currentZoneId) as CSSProperties}>
       <Sidebar
         active={section}
         onSelect={onSelectSection}
@@ -86,8 +86,7 @@ function AppShell({
           xpIntoLevel={xpIntoLevel}
           xpNeededForLevel={xpNeededForLevel}
           xpProgressPct={xpProgressPct}
-          selectedZoneId={selectedZoneId}
-          onSelectZone={onSelectZone}
+          onSelectZone={onRequestTravel}
         />
         <main className="app-content">{children}</main>
       </div>
@@ -97,8 +96,7 @@ function AppShell({
 
 function AppContent() {
   const { user, loading: authLoading } = useAuth();
-  const { character, loading: characterLoading } = useCharacter();
-  const [selectedZoneId, setSelectedZoneId] = useState(DEFAULT_ZONE_ID);
+  const { character, loading: characterLoading, refetch } = useCharacter();
   const [selectedProfessionId, setSelectedProfessionId] = useState<ProfessionId>(ALL_PROFESSION_IDS[0]);
   const [activeSection, setActiveSection] = useState<AppSection>('adventure');
   const [activeDungeonId, setActiveDungeonId] = useState<string | null>(null);
@@ -128,15 +126,44 @@ function AppContent() {
   // and reports clicks back up.
   const section = activeSection === 'talents' && !character.spec ? 'adventure' : activeSection;
 
+  // Captured as plain, already-non-null bindings right at this narrowed
+  // point — referencing user/character directly inside the closure below
+  // would lose that narrowing (TS can't prove a later-invoked closure still
+  // sees them as non-null), the same reason other screens in this codebase
+  // use a `characterOrNull!` style assignment once, up front.
+  const uid = user.uid;
+  const confirmedCharacter = character;
+
+  function handleRequestTravel(zoneId: string) {
+    // Mid-dungeon-run is the one state this guard alone can't see (a
+    // dungeon run is local React state, not persisted to currentActivity) —
+    // startTravel's own currentActivity check covers everything else.
+    if (activeDungeonId) return;
+    void startTravel(uid, confirmedCharacter, zoneId).then((result) => {
+      if (result.success) void refetch();
+    });
+  }
+
   const shellProps = {
     character,
     section,
     onSelectSection: setActiveSection,
-    selectedZoneId,
-    onSelectZone: setSelectedZoneId,
+    onRequestTravel: handleRequestTravel,
     selectedProfessionId,
     onSelectProfession: setSelectedProfessionId,
   };
+
+  // A flight in progress takes over the content area before anything else
+  // does — same "live activity owns the screen" rule as combat/gathering/a
+  // dungeon run below, just checked first since you can't be mid-flight and
+  // mid-anything-else at once (startTravel refuses to start one otherwise).
+  if (character.travel) {
+    return (
+      <AppShell {...shellProps}>
+        <TravelScreen travel={character.travel} />
+      </AppShell>
+    );
+  }
 
   // A "live activity" (combat/gathering/fishing/crafting, or a dungeon run)
   // takes over the content area regardless of which sidebar section is
@@ -206,14 +233,14 @@ function AppContent() {
 
   return (
     <AppShell {...shellProps}>
-      {section === 'adventure' && <ZoneScreen selectedZoneId={selectedZoneId} onEnterDungeon={setActiveDungeonId} />}
+      {section === 'adventure' && <ZoneScreen selectedZoneId={character.currentZoneId} onEnterDungeon={setActiveDungeonId} />}
       {section === 'combatSetup' && <CombatSetupScreen />}
       {section === 'equipment' && <EquipmentScreen />}
       {section === 'inventory' && <InventoryScreen />}
       {section === 'bank' && <BankScreen />}
       {section === 'companions' && <CompanionScreen />}
-      {section === 'shop' && <VendorScreen zoneId={selectedZoneId} />}
-      {section === 'profession' && <ProfessionScreen professionId={selectedProfessionId} zoneId={selectedZoneId} />}
+      {section === 'shop' && <VendorScreen zoneId={character.currentZoneId} />}
+      {section === 'profession' && <ProfessionScreen professionId={selectedProfessionId} zoneId={character.currentZoneId} />}
       {section === 'talents' && character.spec && <TalentScreen />}
       {section === 'quests' && <QuestLog />}
     </AppShell>

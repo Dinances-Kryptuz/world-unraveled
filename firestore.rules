@@ -66,7 +66,9 @@ service cloud.firestore {
       && data.itemCooldowns == {}
       && isValidNewQuests(data.quests)
       && data.companions == {}
-      && data.activeCompanionIds == [];
+      && data.activeCompanionIds == []
+      && data.currentZoneId == 'greenhollow_fields'
+      && data.travel == null;
   }
 
   function isValidCharacterUpdate(before, after) {
@@ -91,7 +93,32 @@ service cloud.firestore {
       && isValidItemCooldowns(after)
       && isValidQuests(after)
       && isValidCompanions(after)
-      && isValidActiveCompanionIds(after);
+      && isValidActiveCompanionIds(after)
+      && isValidCurrentZoneId(after)
+      && isValidTravel(after);
+  }
+
+  // Optional like bagSlots/bankSlots above — a character that existed before
+  // this field did has no currentZoneId in its raw document at all yet (see
+  // firebase/character.ts's getCharacter(), which backfills it to
+  // DEFAULT_ZONE_ID in memory without an eager write-back), and every one of
+  // its ordinary updates (gaining xp, gold, etc.) must keep working without
+  // ever having set it.
+  function isValidCurrentZoneId(after) {
+    return !('currentZoneId' in after) || after.currentZoneId is string;
+  }
+
+  // Ownership-scoped like the rest of this file — the real validation (that
+  // a flight's duration actually matches the zone-tier formula, see
+  // gameData/travel.ts's travelMinutes) happens in firebase/travel.ts, the
+  // only path that writes this field.
+  function isValidTravel(after) {
+    return !('travel' in after) || after.travel == null || (
+      after.travel.fromZoneId is string
+      && after.travel.toZoneId is string
+      && after.travel.departedAt is timestamp
+      && after.travel.arrivesAt is timestamp
+    );
   }
 
   // Ownership-scoped, not fully value-scoped — same posture as the sibling

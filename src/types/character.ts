@@ -2,6 +2,7 @@ import type { EquipmentSlot, ProfessionId, ActivityType, ProfessionTierName } fr
 import type { ClassId, SpecId } from '../gameData/classStats';
 import type { TalentPicks } from '../gameData/talents';
 import type { ConditionGroup } from '../combatEngine/types';
+import type { TravelState } from '../gameData/travel';
 
 // `level` IS the profession's 1-300 skill value (naming predates this
 // overhaul — see xpTables.ts's professionXpForLevel, unchanged). `xp` is
@@ -148,6 +149,18 @@ export interface Character {
   // group with the player) to enter at all; open-world combat has no
   // minimum.
   activeCompanionIds: string[];
+  // The zone the character is physically standing in — gates which zone's
+  // Adventure/Shop/Professions/trainers a player can actually use (see
+  // gameData/travel.ts). Switching this requires a flight (below), unlike
+  // the old purely client-side "selected zone" this replaced.
+  currentZoneId: string;
+  // An in-progress flight, or null when not traveling — see
+  // gameData/travel.ts's TravelState and firebase/travel.ts's startTravel.
+  // Resolved lazily (see firebase/character.ts's getCharacter): once
+  // arrivesAt has passed, the next read reports currentZoneId as already
+  // having arrived and travel as already null, with no separate "complete
+  // the flight" write needed.
+  travel: TravelState | null;
 }
 
 export interface Inventory {
