@@ -230,6 +230,35 @@ input[type="number"] {
   font-weight: 600;
 }
 
+/* ── Monster list rows (ZoneScreen) — overrides the global `li`'s
+   `display:flex; justify-content:space-between`, which otherwise spreads
+   space evenly between every child (name text, level badge, type badge,
+   each button) instead of just separating "info" from "actions". ── */
+
+.monster-list-item {
+  display: block;
+}
+
+.monster-row-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.monster-row-info {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.monster-row-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
 /* ── Item slots: square icon tiles with a hover tooltip, replacing plain
    text rows wherever an item is shown (inventory/bank/vendor/crafting/
    loot/consumables) — see components/ItemSlot.tsx. ── */

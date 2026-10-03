@@ -88,11 +88,17 @@ export function ZoneScreen({
           const monster = MONSTERS[monsterId];
           const isExpanded = expandedMonsterId === monsterId;
           return (
-            <li key={monsterId}>
-              {monster.name} (<MonsterLevelBadge monsterLevel={monster.level} playerLevel={character.level} />{' '}
-              <CombatTypeBadge monsterType={monster.combatType} playerType={playerCombatType} />)
-              <button onClick={() => handleFight(monsterId)}>Fight</button>
-              <button onClick={() => setExpandedMonsterId(isExpanded ? null : monsterId)}>Drops</button>
+            <li key={monsterId} className="monster-list-item">
+              <div className="monster-row-main">
+                <span className="monster-row-info">
+                  {monster.name} (<MonsterLevelBadge monsterLevel={monster.level} playerLevel={character.level} />{' '}
+                  <CombatTypeBadge monsterType={monster.combatType} playerType={playerCombatType} />)
+                </span>
+                <div className="monster-row-actions">
+                  <button onClick={() => handleFight(monsterId)}>Fight</button>
+                  <button onClick={() => setExpandedMonsterId(isExpanded ? null : monsterId)}>Drops</button>
+                </div>
+              </div>
               {isExpanded && <MonsterLootPanel monster={monster} />}
             </li>
           );
