@@ -33,6 +33,7 @@ import { TravelScreen } from './components/TravelScreen';
 import { startTravel } from './firebase/travel';
 import { Sidebar, type AppSection } from './components/Sidebar';
 import { TopBar } from './components/TopBar';
+import { ZoneBackdrop } from './components/ZoneBackdrop';
 import { ALL_PROFESSION_IDS } from './gameData/professionTiers';
 import type { Character } from './types/character';
 import type { ProfessionId } from './gameData/types';
@@ -72,6 +73,7 @@ function AppShell({
 
   return (
     <div className="app-shell" style={zoneThemeStyle(character.currentZoneId) as CSSProperties}>
+      <ZoneBackdrop zoneId={character.currentZoneId} />
       <Sidebar
         active={section}
         onSelect={onSelectSection}
