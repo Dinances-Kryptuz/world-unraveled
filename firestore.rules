@@ -100,9 +100,33 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // Player-submitted bug reports (see components/BugReportButton.tsx /
+    // firebase/bugReports.ts) — deliberately create-only from the client:
+    // nobody can read, edit, or delete another player's (or their own)
+    // report once sent, only view them via the Firebase console. Allowed
+    // signed-out too (the login screen itself can hit a bug before a
+    // player ever authenticates), with `uid` required to match the caller
+    // when one exists so a signed-in player can't spoof someone else's.
+    match /bugReports/{reportId} {
+      allow read, update, delete: if false;
+      allow create: if isValidBugReport(request.resource.data)
+        && ((request.auth == null && request.resource.data.uid == null)
+          || (request.auth != null && request.resource.data.uid == request.auth.uid));
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }
+  }
+
+  function isValidBugReport(data) {
+    return data.keys().hasOnly(['uid', 'email', 'message', 'page', 'userAgent', 'createdAt'])
+      && (data.uid == null || (data.uid is string && data.uid.size() <= 128))
+      && (data.email == null || (data.email is string && data.email.size() <= 254))
+      && data.message is string && data.message.size() >= 1 && data.message.size() <= 2000
+      && (data.page == null || (data.page is string && data.page.size() <= 100))
+      && (data.userAgent == null || (data.userAgent is string && data.userAgent.size() <= 300))
+      && data.createdAt == request.time;
   }
 
   function isValidNewCharacter(data) {
