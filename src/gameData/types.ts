@@ -180,6 +180,10 @@ export interface GatherNode {
   // every existing call site for a cosmetic rename.
   requiredLevel: number;
   itemId: string;
+  // No longer read by resolveGathering (gathering grants discrete skill-up
+  // chances now, see colorBreakpoints below, not XP) — kept rather than
+  // removed from every node's data to avoid an otherwise-pointless mechanical
+  // edit across dozens of entries in zones.ts.
   xpPerAction: number;
   secondsPerAction: number;
   rareBonus?: {
@@ -187,9 +191,10 @@ export interface GatherNode {
     chance: number; // 0–1, checked per action in addition to the guaranteed yield
   };
   // Same orange/yellow/green/grey semantics as Recipe.colorBreakpoints,
-  // applied to gathering XP by activityEngine's gatheringColorTier — a node
-  // far below your skill still succeeds (that's requiredSkill's job) but
-  // stops teaching you anything once it's grey.
+  // applied by activityEngine's craftingColorTier/PROFESSION_SKILLUP_CHANCE_BY_TIER —
+  // a node far below your skill still succeeds on every gather (that's
+  // requiredLevel's job) but stops teaching you anything once it's grey,
+  // same as Fishing never running out of fish, just skill-ups.
   colorBreakpoints: {
     orangeUntil: number;
     yellowUntil: number;
@@ -292,11 +297,15 @@ export interface Recipe {
   // materials to turn a damaged dungeon drop back into its real form.
   goldCost?: number;
   craftSeconds: number;
+  // No longer read by resolveCrafting (crafting grants a discrete skill-up
+  // chance per craft now, see colorBreakpoints below, not XP) — kept rather
+  // than removed from every recipe's data to avoid an otherwise-pointless
+  // mechanical edit across the ~100 entries in recipes.ts.
   xpAward: number;
-  // Skill at/below orangeUntil = 100% XP (skill-up chance), up to
+  // Skill at/below orangeUntil = 100% skill-up chance per craft, up to
   // yellowUntil = 80%, up to greenUntil = 30%, above that = 0% (grey — never
-  // provides a skillup, per the design brief). See activityEngine.ts's
-  // craftingColorTier/PROFESSION_XP_MULTIPLIER_BY_TIER.
+  // provides a skillup, same as a trivial fish). See activityEngine.ts's
+  // craftingColorTier/PROFESSION_SKILLUP_CHANCE_BY_TIER.
   colorBreakpoints: {
     orangeUntil: number;
     yellowUntil: number;

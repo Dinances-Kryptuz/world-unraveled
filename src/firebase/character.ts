@@ -4,7 +4,6 @@ import type { Character, CombatPreset } from '../types/character';
 import type { ProfessionId, EquipmentSlot } from '../gameData/types';
 import type { ClassId, SpecId } from '../gameData/classStats';
 import type { TalentColumn } from '../gameData/talents';
-import { professionXpForLevel } from '../gameData/xpTables';
 import { maxSkillForUnlockedTier } from '../gameData/professionTiers';
 import { BASE_BANK_SLOTS } from '../gameData/bank';
 import { DEFAULT_ZONE_ID } from '../gameData/zones';
@@ -281,22 +280,27 @@ export async function setCharacterLevel(uid: string, level: number, restoredHp: 
   });
 }
 
+// Gathering grants a discrete skill-up chance per success now (see
+// activityEngine.ts's resolveGathering/PROFESSION_SKILLUP_CHANCE_BY_TIER),
+// not XP toward a curve — same one-step "cap at the unlocked rank's
+// ceiling, write the level directly" pattern firebase/professions.ts's
+// applyFishingResult already uses, rather than the old two-step xp-then-
+// checkAndApplyProfessionLevelUp dance.
 export async function applyGatheringResult(
   uid: string,
   profession: ProfessionId,
-  result: { xpGained: number; itemId: string; quantity: number }
+  result: { skillupsGained: number; itemId: string; quantity: number }
 ): Promise<void> {
-  // Written as a full { level, xp, unlockedTier } replace rather than an
-  // increment() on the .xp sub-path, for the same read-modify-write safety
-  // every other professions.<id> writer here uses.
   const character = await getCharacter(uid);
   if (!character) return;
   const current = character.professions[profession];
   if (!current) return; // profession not learned — a stale/malicious client call, not a real state
 
-  await updateDoc(doc(db, 'characters', uid), {
-    [`professions.${profession}`]: { ...current, xp: current.xp + result.xpGained },
-  });
+  const cap = maxSkillForUnlockedTier(current.unlockedTier);
+  const newLevel = Math.min(cap, current.level + result.skillupsGained);
+  if (newLevel !== current.level) {
+    await updateDoc(doc(db, 'characters', uid), { [`professions.${profession}.level`]: newLevel });
+  }
 
   if (result.quantity > 0) {
     await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), {
@@ -358,49 +362,36 @@ export async function acceptQuest(uid: string, questId: string): Promise<{ succe
   return { success: true };
 }
 
-export async function checkAndApplyProfessionLevelUp(uid: string, profession: ProfessionId): Promise<void> {
-  const character = await getCharacter(uid);
-  if (!character) return;
-  const state = character.professions[profession];
-  if (!state) return;
-  // Skill can never climb past the ceiling of the CURRENTLY unlocked rank —
-  // the whole point of "visit a trainer to unlock the next rank." A
-  // character sitting exactly at that ceiling just banks xp with no visible
-  // effect until they train up (see professionTiers.ts's checkRankUp).
-  const cap = maxSkillForUnlockedTier(state.unlockedTier);
-  let newLevel = state.level;
-  while (newLevel < cap && state.xp >= professionXpForLevel(newLevel + 1)) {
-    newLevel++;
-  }
-  if (newLevel !== state.level) {
-    await updateDoc(doc(db, 'characters', uid), {
-      [`professions.${profession}.level`]: newLevel,
-    });
-  }
-}
-
+// Crafting grants a discrete skill-up chance per craft now (see
+// activityEngine.ts's resolveCrafting/PROFESSION_SKILLUP_CHANCE_BY_TIER),
+// not XP toward a curve — same one-step pattern as applyGatheringResult
+// above. Skill can never climb past the ceiling of the CURRENTLY unlocked
+// rank — the whole point of "visit a trainer to unlock the next rank."
 export async function applyCraftingResult(
   uid: string,
   profession: ProfessionId,
   result: {
-    xpGained: number;
+    skillupsGained: number;
     resultItemId: string;
     resultQuantity: number;
     materialsConsumed: { itemId: string; quantity: number }[];
     goldSpent?: number;
   }
 ): Promise<void> {
-  // See the matching comment in applyGatheringResult — same fix, same reason.
   const character = await getCharacter(uid);
   if (!character) return;
   const current = character.professions[profession];
   if (!current) return;
 
-  const characterUpdate: Record<string, unknown> = {
-    [`professions.${profession}`]: { ...current, xp: current.xp + result.xpGained },
-  };
+  const cap = maxSkillForUnlockedTier(current.unlockedTier);
+  const newLevel = Math.min(cap, current.level + result.skillupsGained);
+
+  const characterUpdate: Record<string, unknown> = {};
+  if (newLevel !== current.level) characterUpdate[`professions.${profession}.level`] = newLevel;
   if (result.goldSpent) characterUpdate.gold = increment(-result.goldSpent);
-  await updateDoc(doc(db, 'characters', uid), characterUpdate);
+  if (Object.keys(characterUpdate).length > 0) {
+    await updateDoc(doc(db, 'characters', uid), characterUpdate);
+  }
 
   const inventoryUpdates: Record<string, unknown> = {
     [`items.${result.resultItemId}`]: increment(result.resultQuantity),

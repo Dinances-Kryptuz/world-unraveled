@@ -104,10 +104,11 @@ export async function learnRecipe(uid: string, recipeItemId: string): Promise<Pr
   return { success: true };
 }
 
-// Fishing has its own skill curve (resolveFishing in activityEngine.ts
-// already converts catches directly into whole skill points, not XP), so
-// unlike applyGatheringResult/checkAndApplyProfessionLevelUp this applies
-// the skill gain and the rank-ceiling cap in one step rather than two.
+// Every profession now resolves catches/gathers/crafts directly into whole
+// skill points (not XP) — see activityEngine.ts's resolveFishing/
+// resolveGathering/resolveCrafting and PROFESSION_SKILLUP_CHANCE_BY_TIER —
+// so this applies the skill gain and the rank-ceiling cap in one step, same
+// as firebase/character.ts's applyGatheringResult/applyCraftingResult.
 export async function applyFishingResult(
   uid: string,
   result: { skillupsGained: number; catches: { itemId: string; quantity: number }[] }

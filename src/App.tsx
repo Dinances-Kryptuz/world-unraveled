@@ -206,12 +206,13 @@ function AppContent() {
   // A "live activity" (combat/gathering/fishing/crafting, or a dungeon run)
   // stays mounted and ticking even when the player switches to a different
   // sidebar section — its pane is just hidden via CSS unless section is
-  // 'adventure' (below), rather than unmounted, so its interval/in-memory
-  // state (current monster HP, resource bars, a gathering session's carried
-  // fractional progress, …) survives navigating to Equipment or Settings
-  // and back instead of resetting. DungeonScreen's state lives here (not in
-  // ZoneScreen, which just reports "enter this dungeon" up) for the same
-  // reason.
+  // 'adventure' (or 'profession', when there's an activity to show — see
+  // showActivityPane below), rather than unmounted, so its interval/in-
+  // memory state (current monster HP, resource bars, a gathering session's
+  // carried fractional progress, …) survives navigating to Equipment or
+  // Settings and back instead of resetting. DungeonScreen's state lives
+  // here (not in ZoneScreen, which just reports "enter this dungeon" up)
+  // for the same reason.
   let activityNode: ReactNode = null;
   if (activeDungeonId) {
     activityNode = <DungeonScreen dungeonId={activeDungeonId} onExit={() => setActiveDungeonId(null)} />;
@@ -225,10 +226,19 @@ function AppContent() {
     activityNode = <CraftingScreen recipe={RECIPES[activity.targetId]} />;
   }
 
+  // Starting a gather/craft/fish from the Professions page used to leave the
+  // player stuck looking at the Professions list with no visible sign
+  // anything had started — the actual progress bar only existed inside the
+  // 'adventure' pane below, reachable only by clicking over to Adventure.
+  // Surface the SAME single activityNode instance here too (never a second
+  // mounted copy of e.g. GatheringScreen, which would double its autosave)
+  // whenever there's a live activity to show.
+  const showActivityPane = section === 'adventure' || (section === 'profession' && activityNode !== null);
+
   return (
     <AppShell {...shellProps}>
-      <div style={{ display: section === 'adventure' ? 'block' : 'none' }}>
-        {activityNode ?? <ZoneScreen selectedZoneId={character.currentZoneId} onEnterDungeon={setActiveDungeonId} />}
+      <div style={{ display: showActivityPane ? 'block' : 'none' }}>
+        {activityNode ?? (section === 'adventure' ? <ZoneScreen selectedZoneId={character.currentZoneId} onEnterDungeon={setActiveDungeonId} /> : null)}
       </div>
       {section === 'equipment' && <EquipmentScreen />}
       {section === 'inventory' && <InventoryScreen />}

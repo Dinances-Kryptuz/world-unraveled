@@ -111,9 +111,9 @@ export function WelcomeBackScreen({
         const result = resolveGathering(activity.startedAt, now, node, currentSkill);
         const itemName = ITEMS[node.itemId]?.name ?? node.itemId;
         setSummary(
-          `While you were away, you gathered ${Math.floor(result.quantityGained)} ${itemName}, earning ${Math.round(
-            result.xpGained
-          )} XP.`
+          `While you were away, you gathered ${Math.floor(result.quantityGained)} ${itemName}, gaining ${Math.floor(
+            result.skillupsGained
+          )} skill.`
         );
       } else if (activity.type === 'crafting') {
         const recipe = RECIPES[activity.targetId];
@@ -128,7 +128,9 @@ export function WelcomeBackScreen({
           recipe.colorBreakpoints
         );
         setSummary(
-          `While you were away, you crafted ${result.itemsCrafted} ${recipe.name}, earning ${result.xpGained} XP.`
+          `While you were away, you crafted ${result.itemsCrafted} ${recipe.name}, gaining ${Math.floor(
+            result.skillupsGained
+          )} skill.`
         );
       } else if (activity.type === 'fishing') {
         const hole = FISHING_HOLES[activity.targetId];

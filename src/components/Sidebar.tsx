@@ -1,5 +1,4 @@
-import { ALL_PROFESSION_IDS, PROFESSION_LABELS } from '../gameData/professionTiers';
-import { professionXpForLevel } from '../gameData/xpTables';
+import { ALL_PROFESSION_IDS, PROFESSION_LABELS, maxSkillForUnlockedTier } from '../gameData/professionTiers';
 import type { Character } from '../types/character';
 import type { ProfessionId } from '../gameData/types';
 
@@ -85,14 +84,12 @@ function ProfessionNavButton({
 }) {
   const state = character.professions[professionId];
   const highlighted = active && isSelected;
-  let progressPct = 0;
-  if (state) {
-    const currentLevelXp = professionXpForLevel(state.level);
-    const nextLevelXp = professionXpForLevel(state.level + 1);
-    const xpIntoLevel = Math.max(0, state.xp - currentLevelXp);
-    const xpNeededForLevel = nextLevelXp - currentLevelXp;
-    progressPct = Math.max(0, Math.min(100, (xpIntoLevel / xpNeededForLevel) * 100));
-  }
+  // Every profession is a flat 0-300 skill number now (no more a sub-level
+  // XP curve on top — see activityEngine.ts's PROFESSION_SKILLUP_CHANCE_BY_TIER),
+  // so this is just current skill against the ceiling of your unlocked rank
+  // rather than "xp toward the next level."
+  const cap = state ? maxSkillForUnlockedTier(state.unlockedTier) : 0;
+  const progressPct = state ? Math.max(0, Math.min(100, (state.level / cap) * 100)) : 0;
 
   return (
     <button
