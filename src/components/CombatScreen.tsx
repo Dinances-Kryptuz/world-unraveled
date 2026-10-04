@@ -227,8 +227,21 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
     // Bump the shared character xp/gold now, in the same tick as the banked
     // session totals above, so the header bar and this screen's "session"
     // line move together instead of the header lagging behind the Firestore
-    // round-trip below.
-    applyOptimisticUpdate((c) => ({ ...c, xp: c.xp + xpGained, gold: c.gold + goldGained, voidShards: c.voidShards + voidShardsGained }));
+    // round-trip below. Also mirror applyCombatResult's startedAt reset
+    // (below) into local state immediately — useCharacter has no live
+    // listener, so without this, `character.currentActivity.startedAt`
+    // only ever advances once the Firestore round-trip's refetch() resolves,
+    // staying stale for the whole autosave interval in between. With
+    // isLongAbsence's threshold now close to that interval (see
+    // activityEngine.ts), that staleness alone was enough to flash the
+    // Welcome Back screen on every autosave tick before snapping back off.
+    applyOptimisticUpdate((c) => ({
+      ...c,
+      xp: c.xp + xpGained,
+      gold: c.gold + goldGained,
+      voidShards: c.voidShards + voidShardsGained,
+      currentActivity: { ...c.currentActivity, startedAt: new Date() },
+    }));
 
     try {
       await applyCombatResult(currentUser.uid, {

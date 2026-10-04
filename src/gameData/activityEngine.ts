@@ -26,8 +26,23 @@
 // remounts on an actual "came back after being away" event (page reload,
 // sign-out/in, tab closed), not routine tab-switching, so showing this
 // summary for any real gap isn't spammy.
+//
+// Set well above CombatScreen's own AUTOSAVE_INTERVAL_SECONDS (10) rather
+// than matching it. useCharacter has no live Firestore listener, so
+// character.currentActivity.startedAt only ever advances when an autosave's
+// refetch() resolves — which only happens on a tick that actually banked a
+// kill (CombatScreen's autosave() early-returns otherwise). A slower fight
+// can easily go one or two 10s ticks without a kill, so startedAt can sit
+// 10-20+ real seconds stale even during normal active play. At 10s that
+// staleness alone was enough to flip isLongAbsence true right before every
+// refetch, flashing this screen on and off continuously (see CombatScreen's
+// optimistic currentActivity.startedAt bump, which closes most of this gap
+// but not a genuinely slow kill). 30s comfortably clears the slowest
+// realistic per-kill time (combatFormulas.ts's targetTimeToKill tops out
+// around 25s) while still catching the real absences (sign-outs measured in
+// minutes) this was lowered from 300s to fix in the first place.
 export const OFFLINE_CAP_HOURS = 24;
-export const LIVE_SESSION_THRESHOLD_SECONDS = 10;
+export const LIVE_SESSION_THRESHOLD_SECONDS = 30;
 
 // Gathering-node failure chance: at exactly the node's required skill level,
 // there's a real chance of coming away empty-handed on a given action. That
