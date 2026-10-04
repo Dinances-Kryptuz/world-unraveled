@@ -91,7 +91,7 @@ export const RECIPES: Record<string, Recipe> = {
     id: 'copper_chestguard',
     name: 'Copper Chestguard',
     profession: 'smithing',
-    requiredSkill: 3,
+    requiredSkill: 1,
     resultItemId: 'copper_chestguard',
     resultQuantity: 1,
     materials: [
@@ -1128,7 +1128,7 @@ export const RECIPES: Record<string, Recipe> = {
   // ── Cooking — one dish per zone's fish, also spread across the full
   // skill range.
   farmhouse_stew: {
-    id: 'farmhouse_stew', name: 'Farmhouse Stew', profession: 'cooking', requiredSkill: 5,
+    id: 'farmhouse_stew', name: 'Farmhouse Stew', profession: 'cooking', requiredSkill: 1,
     resultItemId: 'farmhouse_stew', resultQuantity: 1,
     materials: [{ itemId: 'brook_trout', quantity: 3 }],
     craftSeconds: 8, xpAward: 6,

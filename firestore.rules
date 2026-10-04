@@ -439,36 +439,29 @@ service cloud.firestore {
       && e.helmet == null && e.gloves == null && e.legs == null && e.ring == null && e.tool == null;
   }
 
-  function isValidProfessionState(p) {
-    return p.keys().hasOnly(['level','xp','unlockedTier'])
-      && p.level is number && p.level >= 1
-      && p.xp is number && p.xp >= 0
-      && p.unlockedTier in ['apprentice','journeyman','expert','artisan'];
-  }
-
   // A character now starts knowing NO professions at all (see
   // firebase/professions.ts's learnProfession) — professions is only ever
   // populated by explicit, server-validated learn/abandon/rank-up calls, so
-  // this is ownership-scoped (bounds + per-entry shape) rather than
-  // requiring any specific key to exist, same posture as
-  // isValidCombatPresets/isValidItemCooldowns/isValidQuests above. A
+  // this is ownership-scoped (bounds + shape only, not a per-entry
+  // isValidProfessionState descent) — same posture as
+  // isValidCombatPresets/isValidItemCooldowns/isValidQuests above. This used
+  // to also validate each known profession's {level, xp, unlockedTier} shape
+  // individually (10 extra function calls, unconditionally, on every single
+  // write touching this character), which stacked with every other field's
+  // own checks below closely enough to the 1000-expression-per-request
+  // evaluation ceiling (see isValidEquipment's comment on this same limit)
+  // that learning a profession could start failing with "insufficient
+  // permissions" once a character's other state (gear, quests, companions)
+  // had grown large enough — worse the more professions were already known,
+  // so it surfaced as "I can learn some professions but not others" even
+  // though nothing about any specific profession was actually invalid. A
   // profession can also be REMOVED (abandonProfession resets it entirely),
-  // so there's deliberately no "never decreases" invariant here — re-
-  // learning after abandoning always restarts at level 1 anyway.
+  // so there's deliberately no "never decreases" invariant here either —
+  // re-learning after abandoning always restarts at level 1 anyway.
   function isValidProfessions(profs) {
     return profs is map
       && profs.size() <= 10
-      && profs.keys().hasOnly(['herbalism','skinning','mining','fishing','alchemy','leatherworking','smithing','tailoring','enchanting','cooking'])
-      && (!('herbalism' in profs) || isValidProfessionState(profs.herbalism))
-      && (!('skinning' in profs) || isValidProfessionState(profs.skinning))
-      && (!('mining' in profs) || isValidProfessionState(profs.mining))
-      && (!('fishing' in profs) || isValidProfessionState(profs.fishing))
-      && (!('alchemy' in profs) || isValidProfessionState(profs.alchemy))
-      && (!('leatherworking' in profs) || isValidProfessionState(profs.leatherworking))
-      && (!('smithing' in profs) || isValidProfessionState(profs.smithing))
-      && (!('tailoring' in profs) || isValidProfessionState(profs.tailoring))
-      && (!('enchanting' in profs) || isValidProfessionState(profs.enchanting))
-      && (!('cooking' in profs) || isValidProfessionState(profs.cooking));
+      && profs.keys().hasOnly(['herbalism','skinning','mining','fishing','alchemy','leatherworking','smithing','tailoring','enchanting','cooking']);
   }
 
   function isValidActivity(a) {
