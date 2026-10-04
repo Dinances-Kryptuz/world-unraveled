@@ -90,6 +90,22 @@ export function baseDamage(cls: ClassId, level: number, equipmentBonuses: Partia
   return 10 + primary * 2 + level;
 }
 
+// SPI's one job: a flat % more effective healing (every kind — direct heals,
+// HOTs, healFrac self-heal, passiveHealPct) per total point (class-baseline
+// statAtLevel growth plus equipment), mirroring how STA's one job is +HP and
+// STR/INT's is +damage — see maxHp/baseDamage above for the same
+// statAtLevel-plus-equipment shape. Added for the Blacksmithing jewelry/
+// armor overhaul's INT+SPI gear line — before this, SPI was a stat slot
+// with no reader anywhere in the engine, which would have made half that
+// gear line's budget inert. Each class's own SPI growth rate (classStats.ts's
+// CLASS_GROWTH) already encodes how much a healing-capable spec benefits
+// from leveling alone; equipment SPI is the gearing lever on top of that.
+export const SPI_HEALING_PCT_PER_POINT = 0.5;
+
+export function healingPowerMultiplier(totalSpi: number): number {
+  return 1 + (totalSpi * SPI_HEALING_PCT_PER_POINT) / 100;
+}
+
 export function monsterArmor(level: number): number {
   return 3 * level;
 }

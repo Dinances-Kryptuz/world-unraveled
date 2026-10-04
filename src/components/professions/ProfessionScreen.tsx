@@ -15,6 +15,16 @@ import { ProfessionTrainerList } from './ProfessionTrainerList';
 import { ProfessionSummaryList } from './ProfessionSummaryList';
 import type { ProfessionId } from '../../gameData/types';
 
+// Smithing's full-armor recipe ids are prefixed by their metal tier (plain
+// for the STR+STA plate line, 'sacred_<tier>_' for the INT+SPI cloth line —
+// see recipes.ts/items.ts's generated Blacksmithing section) — order here
+// is display order for the dropdown list, matching the zone progression.
+const SMITHING_TIER_ORDER = ['copper', 'bronze', 'iron', 'steel', 'mithril', 'thorium', 'obsidian', 'silver', 'gold', 'platinum'];
+const SMITHING_TIER_LABELS: Record<string, string> = {
+  copper: 'Copper', bronze: 'Bronze', iron: 'Iron', steel: 'Steel', mithril: 'Mithril',
+  thorium: 'Thorium', obsidian: 'Obsidian', silver: 'Silver Jewelry', gold: 'Gold Jewelry', platinum: 'Platinum Jewelry',
+};
+
 // A single profession's own page — one per sidebar nav item (see
 // Sidebar.tsx), replacing the old three-category pages (Gathering/Fishing/
 // Crafting) that stacked every known crafting profession's full recipe list
@@ -54,10 +64,10 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
   const professionLevel = getProfessionState(char.professions, professionId).level;
   const recipesForProfession = Object.values(RECIPES).filter((recipe) => recipe.profession === professionId);
 
-  function renderRecipeList() {
+  function renderRecipeList(recipesToShow: typeof recipesForProfession = recipesForProfession) {
     return (
       <ul>
-        {recipesForProfession
+        {recipesToShow
           .filter((recipe) => canUseRecipe(char, recipe))
           .map((recipe) => {
             const meetsSkill = professionLevel >= recipe.requiredSkill;
@@ -109,6 +119,45 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
             );
           })}
       </ul>
+    );
+  }
+
+  // Smithing's full armor buildout (masteryEngine.ts's pilot) is ~130
+  // recipes — a single flat list would be unusable, so it's grouped into
+  // one clickable dropdown per metal tier, the same pattern as Mining's own
+  // Smelting section below. A recipe not matching any known tier slug
+  // (the two Blacksmith repair recipes, the quest-taught Emberforged
+  // Gauntlets) falls into a final ungrouped section rather than vanishing.
+  function renderGroupedSmithingRecipes() {
+    const grouped = new Map<string, typeof recipesForProfession>();
+    const ungrouped: typeof recipesForProfession = [];
+    for (const recipe of recipesForProfession) {
+      const slug = SMITHING_TIER_ORDER.find((s) => {
+        const stripped = recipe.id.startsWith('sacred_') ? recipe.id.slice('sacred_'.length) : recipe.id;
+        return stripped.startsWith(`${s}_`);
+      });
+      if (!slug) {
+        ungrouped.push(recipe);
+        continue;
+      }
+      if (!grouped.has(slug)) grouped.set(slug, []);
+      grouped.get(slug)!.push(recipe);
+    }
+    return (
+      <>
+        {SMITHING_TIER_ORDER.filter((slug) => grouped.has(slug)).map((slug) => (
+          <details key={slug}>
+            <summary>{SMITHING_TIER_LABELS[slug]}</summary>
+            {renderRecipeList(grouped.get(slug))}
+          </details>
+        ))}
+        {ungrouped.length > 0 && (
+          <details>
+            <summary>Other</summary>
+            {renderRecipeList(ungrouped)}
+          </details>
+        )}
+      </>
     );
   }
 
@@ -173,11 +222,11 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
           recipes tagged to it, so this renders for no other gathering
           profession. */}
       {category === 'gathering' && recipesForProfession.length > 0 && (
-        <>
-          <h3>Smelting</h3>
+        <details>
+          <summary>Smelting</summary>
           {!known && <p>You don't know {label} yet — learn it below.</p>}
           {known && renderRecipeList()}
-        </>
+        </details>
       )}
 
       {category === 'fishing' && (
@@ -215,7 +264,7 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
       {category === 'production' && (
         <>
           {!known && <p>You don't know {label} yet — learn it below.</p>}
-          {known && renderRecipeList()}
+          {known && (professionId === 'smithing' ? renderGroupedSmithingRecipes() : renderRecipeList())}
         </>
       )}
 

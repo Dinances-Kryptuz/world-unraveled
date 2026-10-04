@@ -166,6 +166,10 @@ export interface CasterProfile {
   damageTakenMult: number; // extra multiplier on damage this combatant takes (talents, etc.)
   healFrac: number;
   passiveHealPct: number;
+  // Multiplies every kind of healing this combatant produces — see
+  // combatFormulas.ts's healingPowerMultiplier (SPI-driven). 1 for anyone
+  // with no SPI (monsters always; most non-healing specs in practice).
+  healingPowerMult: number;
 }
 
 export interface CombatState {

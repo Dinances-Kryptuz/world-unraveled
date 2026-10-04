@@ -22,14 +22,25 @@ export type ActivityType = 'combat' | 'gathering' | 'crafting' | 'fishing';
 // 'tool' is a 7th-slot-adjacent equip slot for profession tools (mining
 // pick, skinning knife, fishing rod) — reuses the exact same equip/unequip
 // flow as armor rather than inventing a separate "tool belt" system.
+// 'ring'/'ring2' are two independent slots (same jewelry pool fits either
+// one) rather than a single slot holding two items — added alongside
+// 'necklace' for the Blacksmithing jewelry overhaul (gameData/recipes.ts's
+// zone-2/4/6 jewelry sets). 'offhand' holds a shield independently of
+// 'weapon' — added for Blacksmithing's shield recipes. There's no
+// one-handed/two-handed enforcement (equipping a 2h axe alongside a shield
+// is allowed, same permissive posture as every other slot combination this
+// engine already allows) — purely a stat-bonus slot, like every other one.
 export type EquipmentSlot =
   | 'weapon'
+  | 'offhand'
   | 'chest'
   | 'helmet'
   | 'gloves'
   | 'legs'
   | 'boots'
   | 'ring'
+  | 'ring2'
+  | 'necklace'
   | 'tool';
 
 // 'recipe' items are reagent-like: using one permanently teaches the recipe

@@ -15,6 +15,7 @@ import {
   playerDamageModifier,
   enemyDamageModifier,
   xpModifier,
+  healingPowerMultiplier,
 } from '../gameData/combatFormulas';
 import { EMPTY_TALENT_TOTALS, type TalentBonusTotals } from '../utils/talentEvaluator';
 import type { BuffTotals } from '../gameData/buffs';
@@ -136,6 +137,7 @@ function buildPlayerProfile(input: EncounterSetupInput): CasterProfile {
     healFrac: specDef.healFrac + talentTotals.healFracAddPct / 100,
     passiveHealPct:
       (specDef.passiveHealPct + talentTotals.passiveHealAddPct / 100) * (1 + talentTotals.healMultPct / 100),
+    healingPowerMult: healingPowerMultiplier(statAtLevel(cls, 'SPI', level) + (equipmentBonuses.SPI ?? 0)),
   };
 }
 
@@ -171,6 +173,7 @@ function buildCompanionProfile(companion: CompanionCombatSetup, monster: Monster
     damageTakenMult: Math.max(0.05, 1 - totals.flatDmgTakenPct / 100),
     healFrac: specDef.healFrac + totals.healFracAddPct / 100,
     passiveHealPct: (specDef.passiveHealPct + totals.passiveHealAddPct / 100) * (1 + totals.healMultPct / 100),
+    healingPowerMult: healingPowerMultiplier(statAtLevel(cls, 'SPI', level) + (equipmentBonuses.SPI ?? 0)),
   };
 }
 
@@ -185,6 +188,7 @@ function buildMonsterProfile(monster: Monster, playerLevel: number, playerCombat
     damageTakenMult: 1,
     healFrac: 0,
     passiveHealPct: 0,
+    healingPowerMult: 1,
   };
 }
 
@@ -471,7 +475,7 @@ export function advanceCombat(state: CombatState, ctx: TickContext, deltaSeconds
     // again rather than trusting the outer loop's guard.
     if (c.isAlive && c.profile.passiveHealPct > 0) {
       const before = c.hp;
-      c.hp = Math.min(c.maxHp, c.hp + c.maxHp * c.profile.passiveHealPct * deltaSeconds);
+      c.hp = Math.min(c.maxHp, c.hp + c.maxHp * c.profile.passiveHealPct * c.profile.healingPowerMult * deltaSeconds);
       if (c.isPlayer) questSignals.healingDone += c.hp - before;
     }
   }
@@ -613,7 +617,7 @@ export function useAbility(
           // dealt" against a single self-heal budget for no real benefit.
           if (source.profile.healFrac > 0 && source.isAlive) {
             const before = source.hp;
-            source.hp = Math.min(source.maxHp, source.hp + amount * source.profile.healFrac);
+            source.hp = Math.min(source.maxHp, source.hp + amount * source.profile.healFrac * source.profile.healingPowerMult);
             if (source.isPlayer) questSignals.healingDone += source.hp - before;
           }
           // Rage, fixed: Warriors previously had no way to generate it
@@ -656,7 +660,12 @@ export function useAbility(
             remainingSeconds: effect.durationSeconds ?? 0,
             tickSeconds: effect.tickSeconds ?? 1,
             timeSinceLastTick: 0,
-            healPerTick: source.profile.normalizedHit * (effect.power ?? 0.3) * source.profile.damageCoef * buffDamageDealtMult(source),
+            healPerTick:
+              source.profile.normalizedHit *
+              (effect.power ?? 0.3) *
+              source.profile.damageCoef *
+              buffDamageDealtMult(source) *
+              source.profile.healingPowerMult,
           });
           events.push({ message: `${source.name} places ${ability.name} on ${target.name}.`, kind: 'status' });
           break;
@@ -670,7 +679,11 @@ export function useAbility(
           // "damage dealt" (Divine Favor) reads naturally as boosting outgoing
           // effect power in general, healing included.
           const healAmount = Math.round(
-            source.profile.normalizedHit * (effect.power ?? 1) * source.profile.damageCoef * buffDamageDealtMult(source)
+            source.profile.normalizedHit *
+              (effect.power ?? 1) *
+              source.profile.damageCoef *
+              buffDamageDealtMult(source) *
+              source.profile.healingPowerMult
           );
           const hpBefore = target.hp;
           target.hp = Math.min(target.maxHp, target.hp + healAmount);

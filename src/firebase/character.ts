@@ -147,6 +147,9 @@ function starterEquipment(cls: ClassId): Record<EquipmentSlot, string | null> {
     legs: null,
     boots: 'novice_boots',
     ring: null,
+    ring2: null,
+    necklace: null,
+    offhand: null,
     tool: null,
   };
 }

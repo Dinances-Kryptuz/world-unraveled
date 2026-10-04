@@ -13,7 +13,7 @@ import { ItemSlot } from './ItemSlot';
 import type { Inventory } from '../types/character';
 import type { EquipmentSlot } from '../gameData/types';
 
-const SLOT_ORDER: EquipmentSlot[] = ['weapon', 'chest', 'helmet', 'gloves', 'legs', 'boots', 'ring'];
+const SLOT_ORDER: EquipmentSlot[] = ['weapon', 'offhand', 'chest', 'helmet', 'gloves', 'legs', 'boots', 'necklace', 'ring', 'ring2'];
 
 export function CompanionScreen() {
   const { user } = useAuth();
@@ -223,6 +223,25 @@ export function CompanionScreen() {
                         const item = ITEMS[itemId];
                         if (!item?.equipSlot) return null;
                         const allowed = canClassEquip(def.class, item);
+                        // See EquipmentScreen's matching comment — a ring
+                        // item fits either independent ring slot, so both
+                        // are offered rather than always targeting 'ring'.
+                        if (item.equipSlot === 'ring') {
+                          return (
+                            <li key={itemId}>
+                              <div className="item-row-main">
+                                <ItemSlot item={item} quantity={quantity} />
+                                <span>{item.name}</span>
+                              </div>
+                              <button onClick={() => handleEquip(companionId, 'ring', itemId)} disabled={!allowed}>
+                                {allowed ? 'Equip (Ring 1)' : `${item.armorType} — not usable`}
+                              </button>
+                              {allowed && (
+                                <button onClick={() => handleEquip(companionId, 'ring2', itemId)}>Equip (Ring 2)</button>
+                              )}
+                            </li>
+                          );
+                        }
                         return (
                           <li key={itemId}>
                             <div className="item-row-main">
