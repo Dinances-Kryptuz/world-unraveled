@@ -12,6 +12,19 @@
 // activityStartedAt, it just no longer treats a long gap any differently
 // from a short one except for the cap.
 //
+// The single autosave cadence for every live activity screen (combat,
+// gathering, crafting, fishing) — used to live as four separately-declared
+// copies of the same constant, one per screen, which is exactly how it
+// drifted out of sync with LIVE_SESSION_THRESHOLD_SECONDS below once before
+// (see that constant's comment). One shared constant now, so changing the
+// save cadence can never again silently invalidate the threshold tuned
+// against it. Doubled from the original 10s specifically to cut Firestore
+// read/write volume roughly in half for alpha testing on the free Spark
+// plan's daily quota — purely a persistence-cadence change, invisible in
+// play since every screen's "this session" numbers already interpolate
+// smoothly between saves via their own sinceLastSave math.
+export const AUTOSAVE_INTERVAL_SECONDS = 20;
+
 // LIVE_SESSION_THRESHOLD_SECONDS no longer affects any rate — it's kept
 // only for WelcomeBackScreen's "were you away long enough to show a
 // summary" check, a UI question, not a math one. For combat specifically,
@@ -27,22 +40,20 @@
 // sign-out/in, tab closed), not routine tab-switching, so showing this
 // summary for any real gap isn't spammy.
 //
-// Set well above CombatScreen's own AUTOSAVE_INTERVAL_SECONDS (10) rather
-// than matching it. useCharacter has no live Firestore listener, so
-// character.currentActivity.startedAt only ever advances when an autosave's
-// refetch() resolves — which only happens on a tick that actually banked a
-// kill (CombatScreen's autosave() early-returns otherwise). A slower fight
-// can easily go one or two 10s ticks without a kill, so startedAt can sit
-// 10-20+ real seconds stale even during normal active play. At 10s that
-// staleness alone was enough to flip isLongAbsence true right before every
-// refetch, flashing this screen on and off continuously (see CombatScreen's
-// optimistic currentActivity.startedAt bump, which closes most of this gap
-// but not a genuinely slow kill). 30s comfortably clears the slowest
-// realistic per-kill time (combatFormulas.ts's targetTimeToKill tops out
-// around 25s) while still catching the real absences (sign-outs measured in
-// minutes) this was lowered from 300s to fix in the first place.
+// Derived from AUTOSAVE_INTERVAL_SECONDS rather than a bare number, so it
+// can never again quietly fall out of the safe range the way it did when
+// the save cadence was 10s and this was also set to 10s: useCharacter has
+// no live Firestore listener, so character.currentActivity.startedAt only
+// ever advances when an autosave actually banks something — a slow fight
+// can go a full AUTOSAVE_INTERVAL_SECONDS tick with no kill, during which
+// startedAt sits stale. Worst case that staleness is roughly one kill's
+// worth of time (combatFormulas.ts's targetTimeToKill tops out around 25s)
+// plus one more full autosave tick before the next save catches it. The x3
+// multiplier keeps a comfortable margin over that worst case at any
+// reasonable autosave interval, while staying far below the real absences
+// (sign-outs measured in minutes) this exists to catch.
 export const OFFLINE_CAP_HOURS = 24;
-export const LIVE_SESSION_THRESHOLD_SECONDS = 30;
+export const LIVE_SESSION_THRESHOLD_SECONDS = AUTOSAVE_INTERVAL_SECONDS * 3;
 
 // Gathering-node failure chance: at exactly the node's required skill level,
 // there's a real chance of coming away empty-handed on a given action. That

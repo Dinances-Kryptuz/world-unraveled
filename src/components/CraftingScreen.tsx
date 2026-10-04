@@ -3,8 +3,8 @@ import { useAuth } from '../hooks/useAuth';
 import { useCharacter } from '../hooks/useCharacter';
 import { applyCraftingResult, stopActivity, getCharacter, advanceQuests } from '../firebase/character';
 import { getInventory } from '../firebase/inventory';
-import { resolveCrafting } from '../gameData/activityEngine';
-import { getProfessionState } from '../gameData/professionTiers';
+import { resolveCrafting, AUTOSAVE_INTERVAL_SECONDS } from '../gameData/activityEngine';
+import { getProfessionState, maxSkillForUnlockedTier } from '../gameData/professionTiers';
 import { TickBar } from './TickBar';
 import { ItemSlot } from './ItemSlot';
 import { ITEMS } from '../gameData/items';
@@ -12,8 +12,6 @@ import { notify } from '../utils/notifications';
 import type { Character } from '../types/character';
 import type { User } from 'firebase/auth';
 import type { Recipe } from '../gameData/types';
-
-const AUTOSAVE_INTERVAL_SECONDS = 10;
 
 export function CraftingScreen({ recipe }: { recipe: Recipe }) {
   const { user } = useAuth();
@@ -134,7 +132,9 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
     }
     // Bump the shared profession skill now, in the same tick as the banked
     // session totals above, so the skill display right below doesn't
-    // visibly lag behind the "This session" line on this same screen.
+    // visibly lag behind the "This session" line on this same screen. A
+    // rough speculative estimate, superseded moments later by the
+    // authoritative reconciliation below once the write succeeds.
     applyOptimisticUpdate((c) => ({
       ...c,
       professions: {
@@ -147,23 +147,43 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
     }));
 
     try {
+      // One read per cycle, done up front — see GatheringScreen's matching
+      // comment for why this replaces three separate reads of the same
+      // document (one inside applyCraftingResult, one for quests, one in
+      // refetch()) with exactly one.
+      const fresh = await getCharacter(currentUser.uid);
+      // Routes through the catch block below (rolling back the speculative
+      // optimistic update and re-queuing this cycle's gains for retry)
+      // rather than silently dropping them — see CombatScreen's matching
+      // comment.
+      if (!fresh) throw new Error('Character not found during autosave');
+      const freshProf = getProfessionState(fresh.professions, recipe.profession);
+
       await applyCraftingResult(currentUser.uid, recipe.profession, {
         skillupsGained: wholeSkillups,
         resultItemId: recipe.resultItemId,
         resultQuantity: recipe.resultQuantity * result.itemsCrafted,
         materialsConsumed: result.materialsConsumed,
         goldSpent: result.goldSpent,
+        currentLevel: freshProf.level,
+        unlockedTier: freshProf.unlockedTier,
       });
 
-      // Fetched fresh for the same lost-update reason as GatheringScreen.
-      const fresh = await getCharacter(currentUser.uid);
-      if (fresh) {
-        await advanceQuests(currentUser.uid, fresh, [
-          { type: 'craft', itemId: recipe.resultItemId, count: result.itemsCrafted },
-        ]);
-      }
+      await advanceQuests(currentUser.uid, fresh, [
+        { type: 'craft', itemId: recipe.resultItemId, count: result.itemsCrafted },
+      ]);
 
-      await refetch();
+      const cap = maxSkillForUnlockedTier(freshProf.unlockedTier);
+      const newLevel = Math.min(cap, freshProf.level + wholeSkillups);
+      applyOptimisticUpdate(() => ({
+        ...fresh,
+        professions: { ...fresh.professions, [recipe.profession]: { ...freshProf, level: newLevel } },
+        gold: fresh.gold - result.goldSpent,
+        // See GatheringScreen's matching comment — crafting never touches
+        // currentActivity.startedAt server-side either, same latent
+        // isLongAbsence flicker risk without this.
+        currentActivity: { ...fresh.currentActivity, startedAt: now },
+      }));
     } catch (err) {
       console.error('Crafting autosave failed, will retry next cycle:', err);
       anchorRef.current = previousAnchor;

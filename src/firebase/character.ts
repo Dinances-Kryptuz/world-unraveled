@@ -1,7 +1,7 @@
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp, Timestamp, increment } from 'firebase/firestore';
 import { db } from './config';
 import type { Character, CombatPreset } from '../types/character';
-import type { ProfessionId, EquipmentSlot } from '../gameData/types';
+import type { ProfessionId, ProfessionTierName, EquipmentSlot } from '../gameData/types';
 import type { ClassId, SpecId } from '../gameData/classStats';
 import type { TalentColumn } from '../gameData/talents';
 import { maxSkillForUnlockedTier } from '../gameData/professionTiers';
@@ -284,21 +284,25 @@ export async function setCharacterLevel(uid: string, level: number, restoredHp: 
 // activityEngine.ts's resolveGathering/PROFESSION_SKILLUP_CHANCE_BY_TIER),
 // not XP toward a curve — same one-step "cap at the unlocked rank's
 // ceiling, write the level directly" pattern firebase/professions.ts's
-// applyFishingResult already uses, rather than the old two-step xp-then-
-// checkAndApplyProfessionLevelUp dance.
+// applyFishingResult uses.
+//
+// Takes the current level/unlockedTier from the caller rather than reading
+// the character itself — GatheringScreen's autosave already has both (it
+// just read them to compute this very result), so re-reading here would be
+// a second Firestore read of the exact same document on every single
+// autosave cycle purely to re-derive numbers the caller already has in
+// hand. Safe because this is the only code path that ever writes this
+// profession's level, and only one activity screen is ever live at a time —
+// the one realistic staleness window is two tabs open on the same account
+// simultaneously, which nothing else in this app guards against either.
 export async function applyGatheringResult(
   uid: string,
   profession: ProfessionId,
-  result: { skillupsGained: number; itemId: string; quantity: number }
+  result: { skillupsGained: number; itemId: string; quantity: number; currentLevel: number; unlockedTier: ProfessionTierName }
 ): Promise<void> {
-  const character = await getCharacter(uid);
-  if (!character) return;
-  const current = character.professions[profession];
-  if (!current) return; // profession not learned — a stale/malicious client call, not a real state
-
-  const cap = maxSkillForUnlockedTier(current.unlockedTier);
-  const newLevel = Math.min(cap, current.level + result.skillupsGained);
-  if (newLevel !== current.level) {
+  const cap = maxSkillForUnlockedTier(result.unlockedTier);
+  const newLevel = Math.min(cap, result.currentLevel + result.skillupsGained);
+  if (newLevel !== result.currentLevel) {
     await updateDoc(doc(db, 'characters', uid), { [`professions.${profession}.level`]: newLevel });
   }
 
@@ -367,6 +371,10 @@ export async function acceptQuest(uid: string, questId: string): Promise<{ succe
 // not XP toward a curve — same one-step pattern as applyGatheringResult
 // above. Skill can never climb past the ceiling of the CURRENTLY unlocked
 // rank — the whole point of "visit a trainer to unlock the next rank."
+//
+// Takes the current level/unlockedTier from the caller rather than reading
+// the character itself — same reasoning as applyGatheringResult above, to
+// avoid a second Firestore read of the same document every autosave cycle.
 export async function applyCraftingResult(
   uid: string,
   profession: ProfessionId,
@@ -376,18 +384,15 @@ export async function applyCraftingResult(
     resultQuantity: number;
     materialsConsumed: { itemId: string; quantity: number }[];
     goldSpent?: number;
+    currentLevel: number;
+    unlockedTier: ProfessionTierName;
   }
 ): Promise<void> {
-  const character = await getCharacter(uid);
-  if (!character) return;
-  const current = character.professions[profession];
-  if (!current) return;
-
-  const cap = maxSkillForUnlockedTier(current.unlockedTier);
-  const newLevel = Math.min(cap, current.level + result.skillupsGained);
+  const cap = maxSkillForUnlockedTier(result.unlockedTier);
+  const newLevel = Math.min(cap, result.currentLevel + result.skillupsGained);
 
   const characterUpdate: Record<string, unknown> = {};
-  if (newLevel !== current.level) characterUpdate[`professions.${profession}.level`] = newLevel;
+  if (newLevel !== result.currentLevel) characterUpdate[`professions.${profession}.level`] = newLevel;
   if (result.goldSpent) characterUpdate.gold = increment(-result.goldSpent);
   if (Object.keys(characterUpdate).length > 0) {
     await updateDoc(doc(db, 'characters', uid), characterUpdate);

@@ -5,7 +5,7 @@ import { getInventory } from './inventory';
 import { ITEMS } from '../gameData/items';
 import { RECIPES } from '../gameData/recipes';
 import { checkLearnProfession, checkRankUp, nextTier, maxSkillForUnlockedTier } from '../gameData/professionTiers';
-import type { ProfessionId } from '../gameData/types';
+import type { ProfessionId, ProfessionTierName } from '../gameData/types';
 import type { Character } from '../types/character';
 
 export interface ProfessionActionResult {
@@ -109,18 +109,28 @@ export async function learnRecipe(uid: string, recipeItemId: string): Promise<Pr
 // resolveGathering/resolveCrafting and PROFESSION_SKILLUP_CHANCE_BY_TIER —
 // so this applies the skill gain and the rank-ceiling cap in one step, same
 // as firebase/character.ts's applyGatheringResult/applyCraftingResult.
+//
+// Takes the current level/unlockedTier from the caller rather than reading
+// the character itself — FishingScreen's autosave already has both (it just
+// read them to compute this very result), so re-reading here would be a
+// second Firestore read of the exact same document on every single autosave
+// cycle purely to re-derive numbers the caller already has in hand. Safe
+// because this is the only code path that ever writes professions.fishing's
+// level, and only one activity screen is ever live at a time — the one
+// realistic staleness window is two tabs open on the same account
+// simultaneously, which nothing else in this app guards against either.
 export async function applyFishingResult(
   uid: string,
-  result: { skillupsGained: number; catches: { itemId: string; quantity: number }[] }
+  result: {
+    skillupsGained: number;
+    catches: { itemId: string; quantity: number }[];
+    currentLevel: number;
+    unlockedTier: ProfessionTierName;
+  }
 ): Promise<void> {
-  const character = await getCharacter(uid);
-  if (!character) return;
-  const state = character.professions.fishing;
-  if (!state) return;
-
-  const cap = maxSkillForUnlockedTier(state.unlockedTier);
-  const newLevel = Math.min(cap, state.level + result.skillupsGained);
-  if (newLevel !== state.level) {
+  const cap = maxSkillForUnlockedTier(result.unlockedTier);
+  const newLevel = Math.min(cap, result.currentLevel + result.skillupsGained);
+  if (newLevel !== result.currentLevel) {
     await updateDoc(doc(db, 'characters', uid), { 'professions.fishing.level': newLevel });
   }
 

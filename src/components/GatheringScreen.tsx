@@ -2,16 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useCharacter } from '../hooks/useCharacter';
 import { applyGatheringResult, stopActivity, getCharacter, advanceQuests } from '../firebase/character';
-import { resolveGathering } from '../gameData/activityEngine';
-import { getProfessionState } from '../gameData/professionTiers';
+import { resolveGathering, AUTOSAVE_INTERVAL_SECONDS } from '../gameData/activityEngine';
+import { getProfessionState, maxSkillForUnlockedTier } from '../gameData/professionTiers';
 import { ITEMS } from '../gameData/items';
 import { notify } from '../utils/notifications';
 import { TickBar } from './TickBar';
 import type { Character } from '../types/character';
 import type { User } from 'firebase/auth';
 import type { GatherNode } from '../gameData/types';
-
-const AUTOSAVE_INTERVAL_SECONDS = 10;
 
 export function GatheringScreen({ node }: { node: GatherNode }) {
   const { user } = useAuth();
@@ -103,7 +101,9 @@ export function GatheringScreen({ node }: { node: GatherNode }) {
 
     // Bump the shared profession skill now, in the same tick as the banked
     // session totals above, so the Professions bar doesn't lag behind the
-    // Firestore round-trip below.
+    // Firestore round-trip below. A rough speculative estimate, superseded
+    // moments later by the authoritative reconciliation below once the
+    // write succeeds.
     applyOptimisticUpdate((c) => ({
       ...c,
       professions: {
@@ -116,22 +116,48 @@ export function GatheringScreen({ node }: { node: GatherNode }) {
     }));
 
     try {
+      // One read per cycle, done up front, used for three things below:
+      // (1) a safe current-level/unlockedTier to cap the skill-up write
+      // against, (2) a non-stale quests.active to merge progress into
+      // (quests ARE reachable while this screen keeps running in the
+      // background — see App.tsx's activityNode — so a stale local copy
+      // here really could race a concurrent Accept/Complete Quest click and
+      // silently revert it), and (3) reconciling local state afterward
+      // instead of a second getCharacter() round-trip via refetch(). This
+      // replaces what used to be three separate reads of the same document
+      // every single autosave cycle (one inside applyGatheringResult, one
+      // here, one in refetch()) with exactly one.
+      const fresh = await getCharacter(currentUser.uid);
+      // Routes through the catch block below (rolling back the speculative
+      // optimistic update and re-queuing this cycle's gains for retry)
+      // rather than silently dropping them — see CombatScreen's matching
+      // comment.
+      if (!fresh) throw new Error('Character not found during autosave');
+      const freshProf = getProfessionState(fresh.professions, node.profession);
+
       await applyGatheringResult(currentUser.uid, node.profession, {
         skillupsGained: wholeSkillups,
         itemId: node.itemId,
         quantity: wholeItems,
+        currentLevel: freshProf.level,
+        unlockedTier: freshProf.unlockedTier,
       });
 
-      // Fetched fresh (not the possibly-stale characterRef) for the same
-      // reason CombatScreen does before its own level-up check: applying
-      // quest progress against stale quest state and writing it back would
-      // silently lose any progress that landed in between.
-      const fresh = await getCharacter(currentUser.uid);
-      if (fresh) {
-        await advanceQuests(currentUser.uid, fresh, [{ type: 'gather', itemId: node.itemId, count: wholeItems }]);
-      }
+      await advanceQuests(currentUser.uid, fresh, [{ type: 'gather', itemId: node.itemId, count: wholeItems }]);
 
-      await refetch();
+      const cap = maxSkillForUnlockedTier(freshProf.unlockedTier);
+      const newLevel = Math.min(cap, freshProf.level + wholeSkillups);
+      applyOptimisticUpdate(() => ({
+        ...fresh,
+        professions: { ...fresh.professions, [node.profession]: { ...freshProf, level: newLevel } },
+        // Mirrors applyGatheringResult's (lack of a) write here on purpose —
+        // gathering never touches currentActivity.startedAt server-side, so
+        // without refreshing it locally too it sits stale from whenever the
+        // activity started, same latent isLongAbsence flicker risk
+        // CombatScreen's autosave already guards against (see its own
+        // optimistic update's comment).
+        currentActivity: { ...fresh.currentActivity, startedAt: now },
+      }));
     } catch (err) {
       console.error('Gathering autosave failed, will retry next cycle:', err);
       anchorRef.current = previousAnchor;
