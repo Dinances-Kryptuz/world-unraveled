@@ -350,6 +350,18 @@ button.item-slot:active:not(:disabled) {
   filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.2));
 }
 
+/* Real art (see components/ItemSlot.tsx's ItemIcon) — sized to leave a
+   small margin inside the 56px tile, same visual weight the emoji glyphs
+   already have. Source images should be 128x128 square with a transparent
+   background (see public/item-art/README.md) so they stay crisp at this
+   display size on retina screens. */
+.item-slot-icon-img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.2));
+}
+
 .item-slot-qty {
   position: absolute;
   bottom: 2px;

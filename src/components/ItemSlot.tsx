@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { getItemIcon } from '../gameData/itemIcons';
 import type { ItemDef } from '../gameData/types';
 
@@ -37,6 +37,27 @@ function buildTooltip(item: ItemDef): ReactNode {
   );
 }
 
+// Resolves to /item-art/{id}.webp by convention — same "no per-item data
+// field, just a naming convention" approach as gameData/zoneThemes.ts's
+// LOGIN_ART_URL/zone backdrops. Falls back to the emoji glyph (getItemIcon)
+// until real art exists for that id, so art can be dropped into
+// public/item-art/ for any subset of the ~350 items with zero code or data
+// changes — a missing file just quietly keeps showing its emoji.
+function ItemIcon({ item }: { item: ItemDef }) {
+  const [artFailed, setArtFailed] = useState(false);
+  if (artFailed) {
+    return <span className="item-slot-icon">{getItemIcon(item)}</span>;
+  }
+  return (
+    <img
+      className="item-slot-icon item-slot-icon-img"
+      src={`/item-art/${item.id}.webp`}
+      alt=""
+      onError={() => setArtFailed(true)}
+    />
+  );
+}
+
 // The square icon tile every item list in the game now renders as (see
 // index.css's .item-slot/.item-tooltip rules) — Melvor Idle/Rock Idle-style
 // grid of icons with a hover tooltip, replacing the old plain-text <li>
@@ -66,7 +87,7 @@ export function ItemSlot({
       disabled={onClick ? disabled : undefined}
       type={onClick ? 'button' : undefined}
     >
-      <span className="item-slot-icon">{getItemIcon(item)}</span>
+      <ItemIcon item={item} />
       {quantity !== undefined && quantity > 1 && <span className="item-slot-qty">{quantity}</span>}
       {buildTooltip(item)}
       {children}
