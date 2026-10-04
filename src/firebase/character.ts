@@ -407,6 +407,79 @@ export async function applyCraftingResult(
   await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), inventoryUpdates);
 }
 
+// Mining/Smithing's Mastery-pilot engine (gameData/masteryEngine.ts) writes
+// a continuous skill level+xp and a per-node/recipe Mastery level+xp,
+// instead of applyGatheringResult/applyCraftingResult's single discrete
+// skill-up count — see masteryEngine.ts's module doc comment for why these
+// two professions resolve differently from the other 8. The caller
+// (MasteryGatheringScreen) has already run resolveMasteryGatheringOffline
+// and is just persisting its final numbers, same "caller already did the
+// read/math, this just writes" shape as applyGatheringResult above.
+export async function applyMasteryGatheringResult(
+  uid: string,
+  profession: ProfessionId,
+  nodeId: string,
+  result: {
+    itemId: string;
+    quantity: number;
+    rareBonusItemId?: string;
+    rareBonusQuantity: number;
+    newSkillLevel: number;
+    newSkillXp: number;
+    newMasteryLevel: number;
+    newMasteryXp: number;
+  }
+): Promise<void> {
+  await updateDoc(doc(db, 'characters', uid), {
+    [`professions.${profession}.level`]: result.newSkillLevel,
+    [`professions.${profession}.xp`]: result.newSkillXp,
+    [`professions.${profession}.mastery.${nodeId}`]: { level: result.newMasteryLevel, xp: result.newMasteryXp },
+  });
+
+  const inventoryUpdates: Record<string, unknown> = {};
+  if (result.quantity > 0) inventoryUpdates[`items.${result.itemId}`] = increment(result.quantity);
+  if (result.rareBonusItemId && result.rareBonusQuantity > 0) {
+    inventoryUpdates[`items.${result.rareBonusItemId}`] = increment(result.rareBonusQuantity);
+  }
+  if (Object.keys(inventoryUpdates).length > 0) {
+    await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), inventoryUpdates);
+  }
+}
+
+// Smithing's side of the same Mastery-pilot engine — see
+// applyMasteryGatheringResult above for the shared design notes.
+export async function applyMasteryCraftingResult(
+  uid: string,
+  profession: ProfessionId,
+  recipeId: string,
+  result: {
+    resultItemId: string;
+    resultQuantity: number;
+    materialsConsumed: { itemId: string; quantity: number }[];
+    goldSpent: number;
+    newSkillLevel: number;
+    newSkillXp: number;
+    newMasteryLevel: number;
+    newMasteryXp: number;
+  }
+): Promise<void> {
+  const characterUpdate: Record<string, unknown> = {
+    [`professions.${profession}.level`]: result.newSkillLevel,
+    [`professions.${profession}.xp`]: result.newSkillXp,
+    [`professions.${profession}.mastery.${recipeId}`]: { level: result.newMasteryLevel, xp: result.newMasteryXp },
+  };
+  if (result.goldSpent) characterUpdate.gold = increment(-result.goldSpent);
+  await updateDoc(doc(db, 'characters', uid), characterUpdate);
+
+  const inventoryUpdates: Record<string, unknown> = {
+    [`items.${result.resultItemId}`]: increment(result.resultQuantity),
+  };
+  for (const m of result.materialsConsumed) {
+    inventoryUpdates[`items.${m.itemId}`] = increment(-m.quantity);
+  }
+  await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), inventoryUpdates);
+}
+
 export async function equipItem(uid: string, slot: EquipmentSlot, itemId: string): Promise<void> {
   const character = await getCharacter(uid);
   if (!character) return;

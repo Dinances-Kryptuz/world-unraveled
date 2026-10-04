@@ -2,6 +2,13 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useCharacter } from '../hooks/useCharacter';
 import { resolveGathering, resolveCrafting, resolveFishing, LIVE_SESSION_THRESHOLD_SECONDS } from '../gameData/activityEngine';
+import {
+  resolveMasteryGatheringOffline,
+  resolveMasteryCraftingOffline,
+  usesMasteryEngine,
+  type MasteryGatherNodeLike,
+  type MasteryCraftRecipeLike,
+} from '../gameData/masteryEngine';
 import { MONSTERS } from '../gameData/monsters';
 import { GATHER_NODES, FISHING_HOLES } from '../gameData/zones';
 import { RECIPES } from '../gameData/recipes';
@@ -11,7 +18,7 @@ import { simulateOfflineCombat } from '../combatEngine/offlineCombat';
 import { evaluateTalents, EMPTY_TALENT_TOTALS } from '../utils/talentEvaluator';
 import { maxHp, resolveCurrentHp } from '../gameData/combatFormulas';
 import { getEquipmentStatBonuses } from '../gameData/equipmentStats';
-import { getProfessionState } from '../gameData/professionTiers';
+import { getProfessionState, maxSkillForUnlockedTier } from '../gameData/professionTiers';
 import { evaluateActiveBuffs } from '../gameData/buffs';
 import { getInventory } from '../firebase/inventory';
 import { applyCombatResult, setCharacterLevel } from '../firebase/character';
@@ -107,31 +114,89 @@ export function WelcomeBackScreen({
         );
       } else if (activity.type === 'gathering') {
         const node = GATHER_NODES[activity.targetId];
-        const currentSkill = getProfessionState(character.professions, node.profession).level;
-        const result = resolveGathering(activity.startedAt, now, node, currentSkill);
         const itemName = ITEMS[node.itemId]?.name ?? node.itemId;
-        setSummary(
-          `While you were away, you gathered ${Math.floor(result.quantityGained)} ${itemName}, gaining ${Math.floor(
-            result.skillupsGained
-          )} skill.`
-        );
+        if (usesMasteryEngine(node.profession)) {
+          const prof = getProfessionState(character.professions, node.profession);
+          const masteryState = prof.mastery?.[node.id] ?? { level: 0, xp: 0 };
+          const nodeLike: MasteryGatherNodeLike = {
+            itemId: node.itemId,
+            baseProfessionXp: node.xpPerAction,
+            secondsPerAction: node.secondsPerAction,
+            requiredLevel: node.requiredLevel,
+            colorBreakpoints: node.colorBreakpoints,
+            rareBonus: node.rareBonus,
+          };
+          const result = resolveMasteryGatheringOffline(
+            activity.startedAt,
+            now,
+            nodeLike,
+            prof.level,
+            prof.xp,
+            masteryState.level,
+            masteryState.xp,
+            maxSkillForUnlockedTier(prof.unlockedTier)
+          );
+          const levelUpNote = result.finalSkill !== prof.level ? ` Your ${node.profession} skill reached ${result.finalSkill}!` : '';
+          setSummary(
+            `While you were away, you gathered ${Math.floor(result.quantityGained)} ${itemName}.${levelUpNote}`
+          );
+        } else {
+          const currentSkill = getProfessionState(character.professions, node.profession).level;
+          const result = resolveGathering(activity.startedAt, now, node, currentSkill);
+          setSummary(
+            `While you were away, you gathered ${Math.floor(result.quantityGained)} ${itemName}, gaining ${Math.floor(
+              result.skillupsGained
+            )} skill.`
+          );
+        }
       } else if (activity.type === 'crafting') {
         const recipe = RECIPES[activity.targetId];
-        const currentSkill = getProfessionState(character.professions, recipe.profession).level;
         const inventory = user ? await getInventory(user.uid) : { items: {} };
-        const result = resolveCrafting(
-          activity.startedAt,
-          now,
-          recipe,
-          currentSkill,
-          inventory.items,
-          recipe.colorBreakpoints
-        );
-        setSummary(
-          `While you were away, you crafted ${result.itemsCrafted} ${recipe.name}, gaining ${Math.floor(
-            result.skillupsGained
-          )} skill.`
-        );
+        if (usesMasteryEngine(recipe.profession)) {
+          const prof = getProfessionState(character.professions, recipe.profession);
+          const masteryState = prof.mastery?.[recipe.id] ?? { level: 0, xp: 0 };
+          const recipeLike: MasteryCraftRecipeLike = {
+            resultItemId: recipe.resultItemId,
+            resultQuantity: recipe.resultQuantity,
+            baseProfessionXp: recipe.xpAward,
+            craftSeconds: recipe.craftSeconds,
+            requiredSkill: recipe.requiredSkill,
+            colorBreakpoints: recipe.colorBreakpoints,
+            materials: recipe.materials,
+            goldCost: recipe.goldCost,
+          };
+          const result = resolveMasteryCraftingOffline(
+            activity.startedAt,
+            now,
+            recipeLike,
+            prof.level,
+            prof.xp,
+            masteryState.level,
+            masteryState.xp,
+            maxSkillForUnlockedTier(prof.unlockedTier),
+            inventory.items,
+            character.gold
+          );
+          const levelUpNote = result.finalSkill !== prof.level ? ` Your ${recipe.profession} skill reached ${result.finalSkill}!` : '';
+          setSummary(
+            `While you were away, you crafted ${Math.floor(result.itemsCrafted)} ${recipe.name}.${levelUpNote}`
+          );
+        } else {
+          const currentSkill = getProfessionState(character.professions, recipe.profession).level;
+          const result = resolveCrafting(
+            activity.startedAt,
+            now,
+            recipe,
+            currentSkill,
+            inventory.items,
+            recipe.colorBreakpoints
+          );
+          setSummary(
+            `While you were away, you crafted ${result.itemsCrafted} ${recipe.name}, gaining ${Math.floor(
+              result.skillupsGained
+            )} skill.`
+          );
+        }
       } else if (activity.type === 'fishing') {
         const hole = FISHING_HOLES[activity.targetId];
         const currentSkill = getProfessionState(character.professions, 'fishing').level;

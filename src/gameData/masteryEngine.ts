@@ -240,7 +240,10 @@ export function resolveMasteryGatheringOffline(
 
     const actionsThisBatch = Math.min(actionsForFullTime, actionsToSkillUp, actionsToMasteryUp);
 
-    quantityGained += actionsThisBatch;
+    // Same expected-value "chance to double items" as the live resolver
+    // above — kept consistent rather than letting the offline path under-
+    // count the Mastery bonus just because it resolves in batches.
+    quantityGained += actionsThisBatch * (1 + masteryBonusChance(masteryLevel));
     rareBonusQuantity += node.rareBonus ? actionsThisBatch * node.rareBonus.chance : 0;
     professionXpGained += actionsThisBatch * profXpPerAction;
     masteryXpGained += actionsThisBatch * masteryXpPerAction;

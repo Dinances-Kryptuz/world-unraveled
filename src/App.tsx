@@ -11,8 +11,11 @@ import { BankScreen } from './components/BankScreen';
 import { TalentScreen } from './components/TalentScreen';
 import { CombatScreen } from './components/CombatScreen';
 import { GatheringScreen } from './components/GatheringScreen';
+import { MasteryGatheringScreen } from './components/MasteryGatheringScreen';
 import { FishingScreen } from './components/FishingScreen';
 import { CraftingScreen } from './components/CraftingScreen';
+import { MasteryCraftingScreen } from './components/MasteryCraftingScreen';
+import { usesMasteryEngine } from './gameData/masteryEngine';
 import { DungeonScreen } from './components/DungeonScreen';
 import { WelcomeBackScreen, isLongAbsence } from './components/WelcomeBackScreen';
 import { ProfessionScreen } from './components/professions/ProfessionScreen';
@@ -219,11 +222,13 @@ function AppContent() {
   } else if (activity.type === 'combat' && activity.targetId) {
     activityNode = <CombatScreen monsterId={activity.targetId} />;
   } else if (activity.type === 'gathering' && activity.targetId && GATHER_NODES[activity.targetId]) {
-    activityNode = <GatheringScreen node={GATHER_NODES[activity.targetId]} />;
+    const node = GATHER_NODES[activity.targetId];
+    activityNode = usesMasteryEngine(node.profession) ? <MasteryGatheringScreen node={node} /> : <GatheringScreen node={node} />;
   } else if (activity.type === 'fishing' && activity.targetId && FISHING_HOLES[activity.targetId]) {
     activityNode = <FishingScreen hole={FISHING_HOLES[activity.targetId]} />;
   } else if (activity.type === 'crafting' && activity.targetId && RECIPES[activity.targetId]) {
-    activityNode = <CraftingScreen recipe={RECIPES[activity.targetId]} />;
+    const recipe = RECIPES[activity.targetId];
+    activityNode = usesMasteryEngine(recipe.profession) ? <MasteryCraftingScreen recipe={recipe} /> : <CraftingScreen recipe={recipe} />;
   }
 
   // Starting a gather/craft/fish from the Professions page used to leave the
