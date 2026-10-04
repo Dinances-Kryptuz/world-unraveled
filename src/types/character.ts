@@ -15,6 +15,13 @@ export interface ProfessionState {
   level: number;
   xp: number;
   unlockedTier: ProfessionTierName;
+  // Per-resource/recipe Item Mastery — only populated for the two pilot
+  // professions (gameData/masteryEngine.ts's MASTERY_PILOT_PROFESSIONS:
+  // mining and smithing). Keyed by GatherNode.id or Recipe.id. A node/recipe
+  // with no entry here is simply un-practiced (Mastery level 0), not an
+  // error — same "absence is the zero state" convention as the rest of this
+  // interface.
+  mastery?: Record<string, { level: number; xp: number }>;
 }
 
 export interface CurrentActivity {

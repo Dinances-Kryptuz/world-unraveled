@@ -404,7 +404,7 @@ export const MONSTERS: Record<string, Monster> = {
     goldMin: 14,
     goldMax: 25,
     lootTable: [
-      { itemId: 'cinderore', chance: 0.4, minQty: 1, maxQty: 2 },
+      { itemId: 'mithril_ore', chance: 0.4, minQty: 1, maxQty: 2 },
       { itemId: 'ashwoven_cloth', chance: 0.25, minQty: 1, maxQty: 1 },
       { itemId: 'scavenged_hatchet', chance: 0.06, minQty: 1, maxQty: 1 },
       { itemId: 'scavenged_focus', chance: 0.06, minQty: 1, maxQty: 1 },
@@ -425,7 +425,7 @@ export const MONSTERS: Record<string, Monster> = {
     goldMin: 17,
     goldMax: 30,
     lootTable: [
-      { itemId: 'cinderore', chance: 0.45, minQty: 1, maxQty: 2 },
+      { itemId: 'mithril_ore', chance: 0.45, minQty: 1, maxQty: 2 },
       { itemId: 'smoky_quartz', chance: 0.08, minQty: 1, maxQty: 1 },
     ],
     specialAbility: {
@@ -504,7 +504,7 @@ export const MONSTERS: Record<string, Monster> = {
     goldMin: 28,
     goldMax: 46,
     lootTable: [
-      { itemId: 'brimstone_ore', chance: 0.4, minQty: 1, maxQty: 2 },
+      { itemId: 'thorium_ore', chance: 0.4, minQty: 1, maxQty: 2 },
       { itemId: 'fire_opal', chance: 0.08, minQty: 1, maxQty: 1 },
     ],
     specialAbility: {
@@ -607,7 +607,7 @@ export const MONSTERS: Record<string, Monster> = {
     voidShardsMin: 1,
     voidShardsMax: 2,
     lootTable: [
-      { itemId: 'emberforge_ore', chance: 0.4, minQty: 1, maxQty: 2 },
+      { itemId: 'obsidian_ore', chance: 0.4, minQty: 1, maxQty: 2 },
       { itemId: 'heartflame_crystal', chance: 0.08, minQty: 1, maxQty: 1 },
     ],
     specialAbility: {
@@ -671,7 +671,7 @@ export const MONSTERS: Record<string, Monster> = {
     voidShardsMin: 1,
     voidShardsMax: 2,
     lootTable: [
-      { itemId: 'emberforge_ore', chance: 0.4, minQty: 1, maxQty: 2 },
+      { itemId: 'obsidian_ore', chance: 0.4, minQty: 1, maxQty: 2 },
       { itemId: 'sentinels_signet', chance: 0.06, minQty: 1, maxQty: 1 },
     ],
     specialAbility: {

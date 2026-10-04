@@ -223,6 +223,14 @@ export const ITEMS: Record<string, ItemDef> = {
     stackable: true,
     sellValue: 2,
   },
+  silver_ore: {
+    id: 'silver_ore',
+    name: 'Silver Ore',
+    type: 'material',
+    description: 'A bright, lustrous ore mined from a Silver Vein.',
+    stackable: true,
+    sellValue: 3,
+  },
   flawed_gem: {
     id: 'flawed_gem',
     name: 'Flawed Gem',
@@ -333,6 +341,22 @@ export const ITEMS: Record<string, ItemDef> = {
     description: 'Copper ore smelted down into a workable bar.',
     stackable: true,
     sellValue: 3,
+  },
+  tin_bar: {
+    id: 'tin_bar',
+    name: 'Tin Bar',
+    type: 'material',
+    description: 'Tin ore smelted down into a workable bar.',
+    stackable: true,
+    sellValue: 4,
+  },
+  silver_bar: {
+    id: 'silver_bar',
+    name: 'Silver Bar',
+    type: 'material',
+    description: 'Silver ore smelted down into a workable bar.',
+    stackable: true,
+    sellValue: 5,
   },
   bronze_bar: {
     id: 'bronze_bar',
@@ -541,6 +565,14 @@ export const ITEMS: Record<string, ItemDef> = {
     stackable: true,
     sellValue: 7,
   },
+  steel_bar: {
+    id: 'steel_bar',
+    name: 'Steel Bar',
+    type: 'material',
+    description: 'Iron ore smelted twice over into a harder, refined bar.',
+    stackable: true,
+    sellValue: 10,
+  },
   scaled_leather: {
     id: 'scaled_leather',
     name: 'Scaled Leather',
@@ -567,9 +599,9 @@ export const ITEMS: Record<string, ItemDef> = {
   },
   obsidian_shard: {
     id: 'obsidian_shard',
-    name: 'Obsidian Shard',
+    name: 'Dense Stone',
     type: 'material',
-    description: 'A jagged black glass fragment, cooled from molten rock.',
+    description: 'An unusually dense stone found alongside thorium ore.',
     stackable: true,
     sellValue: 18,
   },
@@ -659,10 +691,15 @@ export const ITEMS: Record<string, ItemDef> = {
   },
 
   // ── Cinderfall Depths materials ───────────────────────────────────────
-  cinderore: {
-    id: 'cinderore', name: 'Cinderore', type: 'material',
-    description: 'A heavy ore veined with cooled ash, found deep in collapsed dwarven tunnels.',
+  mithril_ore: {
+    id: 'mithril_ore', name: 'Mithril Ore', type: 'material',
+    description: 'A light but immensely strong ore, found deep in collapsed dwarven tunnels.',
     stackable: true, sellValue: 4,
+  },
+  gold_ore: {
+    id: 'gold_ore', name: 'Gold Ore', type: 'material',
+    description: 'A soft, gleaming ore mined from a Gold Vein.',
+    stackable: true, sellValue: 5,
   },
   emberpetal: {
     id: 'emberpetal', name: 'Emberpetal', type: 'material',
@@ -674,10 +711,15 @@ export const ITEMS: Record<string, ItemDef> = {
     description: 'Tough, ash-grey hide from a beast long adapted to the ruins.',
     stackable: true, sellValue: 4,
   },
-  cinder_steel_bar: {
-    id: 'cinder_steel_bar', name: 'Cinder Steel Bar', type: 'material',
-    description: 'Cinderore smelted into a dense, ash-tempered bar.',
+  mithril_bar: {
+    id: 'mithril_bar', name: 'Mithril Bar', type: 'material',
+    description: 'Mithril ore smelted into a light, immensely strong bar.',
     stackable: true, sellValue: 9,
+  },
+  gold_bar: {
+    id: 'gold_bar', name: 'Gold Bar', type: 'material',
+    description: 'Gold ore smelted into a soft, gleaming bar.',
+    stackable: true, sellValue: 10,
   },
   ashhide_leather: {
     id: 'ashhide_leather', name: 'Ashhide Leather', type: 'material',
@@ -784,9 +826,9 @@ export const ITEMS: Record<string, ItemDef> = {
   },
 
   // ── The Molten Scar materials ─────────────────────────────────────────
-  brimstone_ore: {
-    id: 'brimstone_ore', name: 'Brimstone Ore', type: 'material',
-    description: 'A sulfurous ore that never fully cools, mined from the rift itself.',
+  thorium_ore: {
+    id: 'thorium_ore', name: 'Thorium Ore', type: 'material',
+    description: 'A dense, faintly warm ore that never fully cools, mined from the rift itself.',
     stackable: true, sellValue: 5,
   },
   cinderbloom: {
@@ -799,9 +841,9 @@ export const ITEMS: Record<string, ItemDef> = {
     description: 'Thick, overlapping scaled hide from a beast that calls the rift home.',
     stackable: true, sellValue: 5,
   },
-  brimstone_bar: {
-    id: 'brimstone_bar', name: 'Brimstone Bar', type: 'material',
-    description: 'Brimstone ore smelted into a bar that radiates heat long after cooling.',
+  thorium_bar: {
+    id: 'thorium_bar', name: 'Thorium Bar', type: 'material',
+    description: 'Thorium ore smelted into a bar that radiates heat long after cooling.',
     stackable: true, sellValue: 11,
   },
   scaleback_leather: {
@@ -909,10 +951,15 @@ export const ITEMS: Record<string, ItemDef> = {
   },
 
   // ── Cinderheart Crater materials ──────────────────────────────────────
-  emberforge_ore: {
-    id: 'emberforge_ore', name: 'Emberforge Ore', type: 'material',
-    description: 'The finest ore in the known world, mined at the very edge of the crater.',
+  obsidian_ore: {
+    id: 'obsidian_ore', name: 'Obsidian Ore', type: 'material',
+    description: 'A jagged, glassy-black ore, mined at the very edge of the crater.',
     stackable: true, sellValue: 6,
+  },
+  platinum_ore: {
+    id: 'platinum_ore', name: 'Platinum Ore', type: 'material',
+    description: 'A rare, silvery-white ore mined from a Platinum Vein.',
+    stackable: true, sellValue: 8,
   },
   emberheart_bloom: {
     id: 'emberheart_bloom', name: 'Emberheart Bloom', type: 'material',
@@ -924,10 +971,15 @@ export const ITEMS: Record<string, ItemDef> = {
     description: 'Hide from a beast that has lived its whole life at the crater’s edge.',
     stackable: true, sellValue: 6,
   },
-  emberforged_bar: {
-    id: 'emberforged_bar', name: 'Emberforged Bar', type: 'material',
-    description: 'Emberforge ore smelted at incredible heat into the strongest bar yet forged.',
+  obsidian_bar: {
+    id: 'obsidian_bar', name: 'Obsidian Bar', type: 'material',
+    description: 'Obsidian ore smelted at incredible heat into a dense, glassy-black bar.',
     stackable: true, sellValue: 13,
+  },
+  platinum_bar: {
+    id: 'platinum_bar', name: 'Platinum Bar', type: 'material',
+    description: 'Rare platinum ore smelted into a dense, silvery-white bar.',
+    stackable: true, sellValue: 14,
   },
   emberscale_leather: {
     id: 'emberscale_leather', name: 'Emberscale Leather', type: 'material',
@@ -1392,9 +1444,13 @@ export const ITEMS: Record<string, ItemDef> = {
   // tier as that zone's original node; a few are also woven into existing
   // recipes as an added ingredient for more varied material lists (see
   // recipes.ts).
+  // Mining/Smithing's Mastery-pilot rareBonus stones (see zones.ts's
+  // GATHER_NODES) — ids predate the overhaul (each was its own standalone
+  // node once) but now drop as a 10% bonus alongside that zone's primary
+  // ore, renamed to match the new design's naming.
   granite_chunk: {
-    id: 'granite_chunk', name: 'Granite Chunk', type: 'material',
-    description: 'A rough chunk of granite, pried from an outcrop.', stackable: true, sellValue: 1,
+    id: 'granite_chunk', name: 'Rough Stone', type: 'material',
+    description: 'A rough, unworked stone found alongside copper ore.', stackable: true, sellValue: 1,
   },
   wildroot: {
     id: 'wildroot', name: 'Wildroot', type: 'material',
@@ -1405,8 +1461,8 @@ export const ITEMS: Record<string, ItemDef> = {
     description: 'A small, soft pelt from the warrens.', stackable: true, sellValue: 1,
   },
   flint: {
-    id: 'flint', name: 'Flint', type: 'material',
-    description: 'A hard, flaking stone found among the foothill scree.', stackable: true, sellValue: 2,
+    id: 'flint', name: 'Coarse Stone', type: 'material',
+    description: 'A hard, flaking stone found alongside tin ore.', stackable: true, sellValue: 2,
   },
   frostcap: {
     id: 'frostcap', name: 'Frostcap', type: 'material',
@@ -1417,8 +1473,8 @@ export const ITEMS: Record<string, ItemDef> = {
     description: 'Coarse fur, still carrying the jackal’s musk.', stackable: true, sellValue: 2,
   },
   sulfur_chunk: {
-    id: 'sulfur_chunk', name: 'Sulfur Chunk', type: 'material',
-    description: 'A yellow, acrid chunk pried from a steaming vein.', stackable: true, sellValue: 3,
+    id: 'sulfur_chunk', name: 'Heavy Stone', type: 'material',
+    description: 'A dense, unusually heavy stone found alongside iron ore.', stackable: true, sellValue: 3,
   },
   emberleaf: {
     id: 'emberleaf', name: 'Emberleaf', type: 'material',
@@ -1429,8 +1485,8 @@ export const ITEMS: Record<string, ItemDef> = {
     description: 'A singed pelt, still faintly warm.', stackable: true, sellValue: 3,
   },
   shadowore: {
-    id: 'shadowore', name: 'Shadowore', type: 'material',
-    description: 'A dark, light-swallowing ore found only in collapsed tunnels.', stackable: true, sellValue: 4,
+    id: 'shadowore', name: 'Solid Stone', type: 'material',
+    description: 'An unusually solid, dense stone found alongside mithril ore.', stackable: true, sellValue: 4,
   },
   ashroot: {
     id: 'ashroot', name: 'Ashroot', type: 'material',
@@ -1449,8 +1505,8 @@ export const ITEMS: Record<string, ItemDef> = {
     description: 'A single overlapping scale, still warm.', stackable: true, sellValue: 5,
   },
   starforge_ore: {
-    id: 'starforge_ore', name: 'Starforge Ore', type: 'material',
-    description: 'Ore flecked with something that glints like starlight.', stackable: true, sellValue: 6,
+    id: 'starforge_ore', name: 'Fire Stone', type: 'material',
+    description: 'A stone that stays warm to the touch, found alongside obsidian ore.', stackable: true, sellValue: 6,
   },
   heartbloom: {
     id: 'heartbloom', name: 'Heartbloom', type: 'material',
