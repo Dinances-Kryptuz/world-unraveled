@@ -204,6 +204,11 @@ export interface Character {
   // read before this field existed backfills to true (see getCharacter),
   // same "opt-out, not opt-in" posture as every other preference toggle.
   notificationsEnabled: boolean;
+  // Owned mount ids (gameData/mounts.ts) — a permanent gold-sink purchase
+  // from the Shop that discounts zone-travel flight time (gameData/
+  // travel.ts's travelMinutes). Mounts don't stack; see
+  // bestMountSpeedBonusPct for how an owned mount's bonus is applied.
+  mounts: string[];
 }
 
 export interface Inventory {

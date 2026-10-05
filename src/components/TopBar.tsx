@@ -2,6 +2,7 @@ import { signOut } from '../firebase/auth';
 import { CLASS_LABELS, SPEC_LABELS } from '../gameData/classStats';
 import { ZONES, isZoneUnlocked } from '../gameData/zones';
 import { travelMinutes } from '../gameData/travel';
+import { bestMountSpeedBonusPct } from '../gameData/mounts';
 import type { Character } from '../types/character';
 
 // The one thing visible no matter which sidebar section is open — who you
@@ -30,6 +31,7 @@ export function TopBar({
   onSelectZone: (zoneId: string) => void;
 }) {
   const traveling = !!character.travel;
+  const speedBonusPct = bestMountSpeedBonusPct(character.mounts);
   return (
     <div className="top-bar">
       <div className="top-bar-main">
@@ -62,7 +64,7 @@ export function TopBar({
         {Object.values(ZONES).map((z) => {
           const unlocked = isZoneUnlocked(z, character.level);
           const isCurrent = z.id === character.currentZoneId;
-          const minutes = isCurrent ? 0 : travelMinutes(character.currentZoneId, z.id);
+          const minutes = isCurrent ? 0 : travelMinutes(character.currentZoneId, z.id, speedBonusPct);
           const clickable = unlocked && !isCurrent && !traveling;
           let title: string | undefined;
           if (!unlocked) {
