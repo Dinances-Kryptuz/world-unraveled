@@ -37,23 +37,28 @@ function buildTooltip(item: ItemDef): ReactNode {
   );
 }
 
-// Resolves to /item-art/{id}.webp by convention — same "no per-item data
+// Resolves to /item-art/{id}.<ext> by convention — same "no per-item data
 // field, just a naming convention" approach as gameData/zoneThemes.ts's
-// LOGIN_ART_URL/zone backdrops. Falls back to the emoji glyph (getItemIcon)
-// until real art exists for that id, so art can be dropped into
-// public/item-art/ for any subset of the ~350 items with zero code or data
-// changes — a missing file just quietly keeps showing its emoji.
+// LOGIN_ART_URL/zone backdrops. Tries .webp first, then .png (most image
+// tools/OS "save as" dialogs don't offer a WebP option, so requiring it
+// would've meant everyone needs a converter just to add art), then falls
+// back to the emoji glyph (getItemIcon). Art can be dropped into
+// public/item-art/ as either format, for any subset of the ~350 items,
+// with zero code or data changes — a missing file just quietly keeps
+// showing its emoji.
+const ART_EXTENSIONS = ['webp', 'png'];
+
 function ItemIcon({ item }: { item: ItemDef }) {
-  const [artFailed, setArtFailed] = useState(false);
-  if (artFailed) {
+  const [extIndex, setExtIndex] = useState(0);
+  if (extIndex >= ART_EXTENSIONS.length) {
     return <span className="item-slot-icon">{getItemIcon(item)}</span>;
   }
   return (
     <img
       className="item-slot-icon item-slot-icon-img"
-      src={`/item-art/${item.id}.webp`}
+      src={`/item-art/${item.id}.${ART_EXTENSIONS[extIndex]}`}
       alt=""
-      onError={() => setArtFailed(true)}
+      onError={() => setExtIndex((i) => i + 1)}
     />
   );
 }
