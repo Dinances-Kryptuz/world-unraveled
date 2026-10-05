@@ -12,6 +12,19 @@
 // activityStartedAt, it just no longer treats a long gap any differently
 // from a short one except for the cap.
 //
+// The single autosave cadence for every live activity screen (combat,
+// gathering, crafting, fishing) — used to live as four separately-declared
+// copies of the same constant, one per screen, which is exactly how it
+// drifted out of sync with LIVE_SESSION_THRESHOLD_SECONDS below once before
+// (see that constant's comment). One shared constant now, so changing the
+// save cadence can never again silently invalidate the threshold tuned
+// against it. Doubled from the original 10s specifically to cut Firestore
+// read/write volume roughly in half for alpha testing on the free Spark
+// plan's daily quota — purely a persistence-cadence change, invisible in
+// play since every screen's "this session" numbers already interpolate
+// smoothly between saves via their own sinceLastSave math.
+export const AUTOSAVE_INTERVAL_SECONDS = 20;
+
 // LIVE_SESSION_THRESHOLD_SECONDS no longer affects any rate — it's kept
 // only for WelcomeBackScreen's "were you away long enough to show a
 // summary" check, a UI question, not a math one. For combat specifically,
@@ -26,8 +39,21 @@
 // remounts on an actual "came back after being away" event (page reload,
 // sign-out/in, tab closed), not routine tab-switching, so showing this
 // summary for any real gap isn't spammy.
+//
+// Derived from AUTOSAVE_INTERVAL_SECONDS rather than a bare number, so it
+// can never again quietly fall out of the safe range the way it did when
+// the save cadence was 10s and this was also set to 10s: useCharacter has
+// no live Firestore listener, so character.currentActivity.startedAt only
+// ever advances when an autosave actually banks something — a slow fight
+// can go a full AUTOSAVE_INTERVAL_SECONDS tick with no kill, during which
+// startedAt sits stale. Worst case that staleness is roughly one kill's
+// worth of time (combatFormulas.ts's targetTimeToKill tops out around 25s)
+// plus one more full autosave tick before the next save catches it. The x3
+// multiplier keeps a comfortable margin over that worst case at any
+// reasonable autosave interval, while staying far below the real absences
+// (sign-outs measured in minutes) this exists to catch.
 export const OFFLINE_CAP_HOURS = 24;
-export const LIVE_SESSION_THRESHOLD_SECONDS = 10;
+export const LIVE_SESSION_THRESHOLD_SECONDS = AUTOSAVE_INTERVAL_SECONDS * 3;
 
 // Gathering-node failure chance: at exactly the node's required skill level,
 // there's a real chance of coming away empty-handed on a given action. That
@@ -83,16 +109,16 @@ export function resolveElapsedProgress(startedAt: Date, now: Date): ResolvedProg
 export interface GatherNodeResult {
   itemId: string;
   quantityGained: number; // successful actions only
-  xpGained: number; // awarded for successful actions only
+  skillupsGained: number; // expected whole skill points — see PROFESSION_SKILLUP_CHANCE_BY_TIER
   actionsAttempted: number;
   successfulActions: number;
   successChance: number; // for UI display, e.g. "72% success rate"
-  // The orange/yellow/green/grey multiplier already folded into xpGained
+  // The orange/yellow/green/grey chance already folded into skillupsGained
   // above — exposed separately because GatheringScreen.tsx computes its
-  // own whole-items-only xpGained (quantityGained is carried as a
-  // fraction and only "banked" once it crosses a whole item; xpGained
-  // needs the same treatment) rather than using xpGained directly.
-  xpMultiplier: number;
+  // own whole-items-only skillupsGained (quantityGained is carried as a
+  // fraction and only "banked" once it crosses a whole item; skillupsGained
+  // needs the same treatment) rather than using skillupsGained directly.
+  skillupChance: number;
 }
 
 export function resolveGathering(
@@ -100,7 +126,6 @@ export function resolveGathering(
   now: Date,
   node: {
     itemId: string;
-    xpPerAction: number;
     secondsPerAction: number;
     requiredLevel: number;
     colorBreakpoints: { orangeUntil: number; yellowUntil: number; greenUntil: number };
@@ -118,22 +143,24 @@ export function resolveGathering(
   // the fractional remainder across chunks (see GatheringScreen.tsx).
   const successfulActions = actionsAttempted * successChance;
 
-  // A node you're well past (grey) still yields the material on success —
-  // only the skill-up XP dries up, exactly like a grey crafting recipe.
+  // A node you're well past (grey) still yields the material on every
+  // success — only the skill-up chance dries up, exactly like a grey
+  // crafting recipe (and exactly like Fishing, which never stops landing
+  // fish, just stops teaching you anything once you're skilled enough).
   // requiredLevel is passed as requiredSkill here since gathering nodes are
   // always attempted at/above their skill requirement (an unmet requirement
   // blocks starting the activity at all, same as crafting's "red" tier).
   const tier = craftingColorTier(currentSkill, 0, node.colorBreakpoints);
-  const xpMultiplier = PROFESSION_XP_MULTIPLIER_BY_TIER[tier];
+  const skillupChance = PROFESSION_SKILLUP_CHANCE_BY_TIER[tier];
 
   return {
     itemId: node.itemId,
     quantityGained: successfulActions, // 1 unit per successful action in V1
-    xpGained: successfulActions * node.xpPerAction * xpMultiplier,
+    skillupsGained: successfulActions * skillupChance,
     actionsAttempted,
     successfulActions,
     successChance,
-    xpMultiplier,
+    skillupChance,
   };
 }
 
@@ -222,14 +249,18 @@ export function craftingColorTier(
 }
 
 // Shared by both crafting and gathering (see resolveGathering above) — the
-// data-driven "skill-up chance" curve the design brief asks for, expressed
-// as a continuous XP-rate multiplier rather than a discrete per-action dice
-// roll (this engine already resolves gathering/crafting in batched elapsed-
-// time chunks for idle play, where a continuous rate is the natural fit and
-// is mathematically equivalent in expectation to "orange = 100% chance,
-// yellow = high, green = low, grey = none"). Grey is exactly 0 — per the
-// design brief, grey content must never contribute a skillup.
-export const PROFESSION_XP_MULTIPLIER_BY_TIER: Record<CraftColorTier, number> = {
+// data-driven skill-up chance per successful action/craft, same model
+// Fishing already uses (fishingSkillupChance above): a discrete chance of
+// gaining ONE skill point, decaying to exactly 0 once the content is grey.
+// Expressed here as an expected-value rate (successes * chance) rather than
+// an actual per-action dice roll, since this engine resolves gathering/
+// crafting in batched elapsed-time chunks for idle play — mathematically
+// equivalent in expectation, and the caller (GatheringScreen/
+// CraftingScreen) already carries the fractional remainder across chunks
+// the same way Fishing does. Grey is exactly 0 — content you've outgrown
+// still yields the item/result on every success, it just never teaches you
+// anything anymore, exactly like a trivial fish.
+export const PROFESSION_SKILLUP_CHANCE_BY_TIER: Record<CraftColorTier, number> = {
   red: 0, // can't happen in practice — not reachable below requiredSkill
   orange: 1.0,
   yellow: 0.8,
@@ -239,7 +270,8 @@ export const PROFESSION_XP_MULTIPLIER_BY_TIER: Record<CraftColorTier, number> = 
 
 export interface CraftingResult {
   itemsCrafted: number;
-  xpGained: number;
+  skillupsGained: number; // expected whole skill points — see PROFESSION_SKILLUP_CHANCE_BY_TIER
+  skillupChance: number; // for UI display, e.g. "80% skill-up chance"
   materialsConsumed: { itemId: string; quantity: number }[];
   goldSpent: number;
 }
@@ -250,7 +282,6 @@ export function resolveCrafting(
   recipe: {
     requiredSkill: number;
     craftSeconds: number;
-    xpAward: number;
     materials: { itemId: string; quantity: number }[];
     goldCost?: number;
   },
@@ -274,11 +305,12 @@ export function resolveCrafting(
   const itemsCrafted = Math.max(0, Math.min(timeLimitedCrafts, materialLimitedCrafts, goldLimitedCrafts));
 
   const tier = craftingColorTier(currentSkill, recipe.requiredSkill, colorBreakpoints);
-  const xpMultiplier = PROFESSION_XP_MULTIPLIER_BY_TIER[tier];
+  const skillupChance = PROFESSION_SKILLUP_CHANCE_BY_TIER[tier];
 
   return {
     itemsCrafted,
-    xpGained: Math.round(itemsCrafted * recipe.xpAward * xpMultiplier),
+    skillupsGained: itemsCrafted * skillupChance,
+    skillupChance,
     goldSpent: itemsCrafted * (recipe.goldCost ?? 0),
     materialsConsumed: recipe.materials.map((m) => ({
       itemId: m.itemId,

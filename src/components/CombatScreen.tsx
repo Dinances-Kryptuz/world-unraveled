@@ -10,6 +10,7 @@ import { resolveSpecDef, getExtraDamageTakenPct } from '../gameData/combatProfil
 import { evaluateTalents, EMPTY_TALENT_TOTALS } from '../utils/talentEvaluator';
 import { evaluateActiveBuffs } from '../gameData/buffs';
 import { maxHp, resolveCurrentHp, ATTACK_INTERVAL_SECONDS } from '../gameData/combatFormulas';
+import { AUTOSAVE_INTERVAL_SECONDS } from '../gameData/activityEngine';
 import { getEquipmentStatBonuses } from '../gameData/equipmentStats';
 import { characterXpForLevelV2, MAX_CHARACTER_LEVEL } from '../gameData/xpTables';
 import { checkAndUnlockNextSlot } from '../firebase/characterSlots';
@@ -38,7 +39,6 @@ import { ConsumablesBar } from './ConsumablesBar';
 import { CombatLog } from './CombatLog';
 import { notify } from '../utils/notifications';
 
-const AUTOSAVE_INTERVAL_SECONDS = 10;
 const MAX_LOG_LINES = 30;
 
 interface SessionTotals {
@@ -227,10 +227,39 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
     // Bump the shared character xp/gold now, in the same tick as the banked
     // session totals above, so the header bar and this screen's "session"
     // line move together instead of the header lagging behind the Firestore
-    // round-trip below.
-    applyOptimisticUpdate((c) => ({ ...c, xp: c.xp + xpGained, gold: c.gold + goldGained, voidShards: c.voidShards + voidShardsGained }));
+    // round-trip below. Also mirror applyCombatResult's startedAt reset
+    // (below) into local state immediately — useCharacter has no live
+    // listener, so without this, `character.currentActivity.startedAt`
+    // only ever advances once the Firestore round-trip's refetch() resolves,
+    // staying stale for the whole autosave interval in between. With
+    // isLongAbsence's threshold now close to that interval (see
+    // activityEngine.ts), that staleness alone was enough to flash the
+    // Welcome Back screen on every autosave tick before snapping back off.
+    applyOptimisticUpdate((c) => ({
+      ...c,
+      xp: c.xp + xpGained,
+      gold: c.gold + goldGained,
+      voidShards: c.voidShards + voidShardsGained,
+      currentActivity: { ...c.currentActivity, startedAt: new Date() },
+    }));
 
     try {
+      // One read per cycle, done up front rather than after the write —
+      // see GatheringScreen's matching comment for the full reasoning. Using
+      // fresh.xp (pre-write) + the locally-known xpGained is exactly
+      // equivalent to the old post-write read for level-up purposes, and
+      // this same read also safely merges quest progress and reconciles
+      // local state afterward, replacing what used to be two separate reads
+      // of the same document (this one plus refetch()) with exactly one.
+      const fresh = await getCharacter(currentUser.uid);
+      // Routes through the catch block below (rolling back the speculative
+      // optimistic update and re-queuing these kills for next cycle) rather
+      // than silently dropping them — near-impossible for an already-loaded
+      // character, but a bare `return` here would otherwise discard this
+      // cycle's rewards without ever persisting or retrying them.
+      if (!fresh) throw new Error('Character not found during autosave');
+      const newXp = fresh.xp + xpGained;
+
       await applyCombatResult(currentUser.uid, {
         xpGained,
         goldGained,
@@ -239,43 +268,49 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
         hpAfter: player.hp,
       });
 
-      const fresh = await getCharacter(currentUser.uid);
-      if (fresh) {
-        let newLevel = fresh.level;
-        while (newLevel < MAX_CHARACTER_LEVEL && fresh.xp >= characterXpForLevelV2(newLevel + 1)) {
-          newLevel++;
-        }
-        if (newLevel !== fresh.level) {
-          const equipBonuses = getEquipmentStatBonuses(fresh.equipment, fresh.enchantments);
-          const freshTalentTotals = fresh.spec ? evaluateTalents(fresh.spec, fresh.talentPicks).totals : EMPTY_TALENT_TOTALS;
-          const restoredHp = maxHp(fresh.class, newLevel, equipBonuses, freshTalentTotals.hpMultPct);
-          await setCharacterLevel(currentUser.uid, newLevel, restoredHp);
-          player.hp = restoredHp;
-          player.maxHp = restoredHp;
-          if (newLevel >= MAX_CHARACTER_LEVEL) void checkAndUnlockNextSlot(currentUser.uid);
-        }
-
-        const killCountsByMonster: Record<string, number> = {};
-        for (const kill of kills) {
-          killCountsByMonster[kill.monsterId] = (killCountsByMonster[kill.monsterId] ?? 0) + 1;
-        }
-        const questEvents: QuestEvent[] = Object.entries(killCountsByMonster).map(([monsterId, count]) => ({
-          type: 'kill',
-          monsterId,
-          count,
-        }));
-        if (questSignals.healingDone > 0) {
-          questEvents.push({ type: 'heal_amount', amount: Math.round(questSignals.healingDone) });
-        }
-        for (const [abilityId, count] of Object.entries(questSignals.abilityUseCounts)) {
-          questEvents.push({ type: 'use_ability', abilityId, count });
-        }
-        if (questEvents.length > 0) {
-          await advanceQuests(currentUser.uid, fresh, questEvents);
-        }
+      let newLevel = fresh.level;
+      while (newLevel < MAX_CHARACTER_LEVEL && newXp >= characterXpForLevelV2(newLevel + 1)) {
+        newLevel++;
+      }
+      let restoredHp: number | null = null;
+      if (newLevel !== fresh.level) {
+        const equipBonuses = getEquipmentStatBonuses(fresh.equipment, fresh.enchantments);
+        const freshTalentTotals = fresh.spec ? evaluateTalents(fresh.spec, fresh.talentPicks).totals : EMPTY_TALENT_TOTALS;
+        restoredHp = maxHp(fresh.class, newLevel, equipBonuses, freshTalentTotals.hpMultPct);
+        await setCharacterLevel(currentUser.uid, newLevel, restoredHp);
+        player.hp = restoredHp;
+        player.maxHp = restoredHp;
+        if (newLevel >= MAX_CHARACTER_LEVEL) void checkAndUnlockNextSlot(currentUser.uid);
       }
 
-      await refetch();
+      const killCountsByMonster: Record<string, number> = {};
+      for (const kill of kills) {
+        killCountsByMonster[kill.monsterId] = (killCountsByMonster[kill.monsterId] ?? 0) + 1;
+      }
+      const questEvents: QuestEvent[] = Object.entries(killCountsByMonster).map(([monsterId, count]) => ({
+        type: 'kill',
+        monsterId,
+        count,
+      }));
+      if (questSignals.healingDone > 0) {
+        questEvents.push({ type: 'heal_amount', amount: Math.round(questSignals.healingDone) });
+      }
+      for (const [abilityId, count] of Object.entries(questSignals.abilityUseCounts)) {
+        questEvents.push({ type: 'use_ability', abilityId, count });
+      }
+      if (questEvents.length > 0) {
+        await advanceQuests(currentUser.uid, fresh, questEvents);
+      }
+
+      applyOptimisticUpdate(() => ({
+        ...fresh,
+        xp: newXp,
+        gold: fresh.gold + goldGained,
+        voidShards: fresh.voidShards + voidShardsGained,
+        level: newLevel,
+        currentHp: restoredHp ?? player.hp,
+        currentActivity: { ...fresh.currentActivity, startedAt: new Date() },
+      }));
     } catch (err) {
       console.error('Combat autosave failed, will retry next cycle:', err);
       pendingKillsRef.current.push(...kills);

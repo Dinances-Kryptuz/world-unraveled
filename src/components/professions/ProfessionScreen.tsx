@@ -5,6 +5,7 @@ import { ZONES, GATHER_NODES, FISHING_HOLES } from '../../gameData/zones';
 import { RECIPES } from '../../gameData/recipes';
 import { PROFESSION_LABELS, PROFESSION_CATEGORY, getProfessionState } from '../../gameData/professionTiers';
 import { craftingColorTier } from '../../gameData/activityEngine';
+import { usesMasteryEngine, masteryColorTier, MASTERY_COLOR_XP_PCT } from '../../gameData/masteryEngine';
 import { canUseRecipe } from '../../firebase/professions';
 import { ITEMS } from '../../gameData/items';
 import { describeItemStats } from '../../gameData/equipmentStats';
@@ -13,6 +14,16 @@ import { ItemSlot } from '../ItemSlot';
 import { ProfessionTrainerList } from './ProfessionTrainerList';
 import { ProfessionSummaryList } from './ProfessionSummaryList';
 import type { ProfessionId } from '../../gameData/types';
+
+// Smithing's full-armor recipe ids are prefixed by their metal tier (plain
+// for the STR+STA plate line, 'sacred_<tier>_' for the INT+SPI cloth line —
+// see recipes.ts/items.ts's generated Blacksmithing section) — order here
+// is display order for the dropdown list, matching the zone progression.
+const SMITHING_TIER_ORDER = ['copper', 'bronze', 'iron', 'steel', 'mithril', 'thorium', 'obsidian', 'silver', 'gold', 'platinum'];
+const SMITHING_TIER_LABELS: Record<string, string> = {
+  copper: 'Copper', bronze: 'Bronze', iron: 'Iron', steel: 'Steel', mithril: 'Mithril',
+  thorium: 'Thorium', obsidian: 'Obsidian', silver: 'Silver Jewelry', gold: 'Gold Jewelry', platinum: 'Platinum Jewelry',
+};
 
 // A single profession's own page — one per sidebar nav item (see
 // Sidebar.tsx), replacing the old three-category pages (Gathering/Fishing/
@@ -53,17 +64,26 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
   const professionLevel = getProfessionState(char.professions, professionId).level;
   const recipesForProfession = Object.values(RECIPES).filter((recipe) => recipe.profession === professionId);
 
-  function renderRecipeList() {
+  function renderRecipeList(recipesToShow: typeof recipesForProfession = recipesForProfession) {
     return (
       <ul>
-        {recipesForProfession
+        {recipesToShow
           .filter((recipe) => canUseRecipe(char, recipe))
           .map((recipe) => {
             const meetsSkill = professionLevel >= recipe.requiredSkill;
             const meetsLevel = !recipe.requiredCharacterLevel || char.level >= recipe.requiredCharacterLevel;
             const meetsGold = !recipe.goldCost || char.gold >= recipe.goldCost;
             const canCraft = meetsSkill && meetsLevel && meetsGold;
-            const tier = craftingColorTier(professionLevel, recipe.requiredSkill, recipe.colorBreakpoints);
+            // Mining's smelting recipes and Smithing recipes report a
+            // continuous XP-rate color instead of the discrete skill-up-
+            // chance tier every other crafting profession uses — see
+            // masteryEngine.ts's module doc comment. "red" (below
+            // requiredSkill) is still purely a gating display either way.
+            const tier = !meetsSkill
+              ? 'red'
+              : usesMasteryEngine(professionId)
+                ? masteryColorTier(professionLevel, recipe.colorBreakpoints)
+                : craftingColorTier(professionLevel, recipe.requiredSkill, recipe.colorBreakpoints);
             const resultItem = ITEMS[recipe.resultItemId];
             return (
               <li key={recipe.id}>
@@ -77,7 +97,11 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
                       {recipe.name}
                     </span>{' '}
                     (requires skill {recipe.requiredSkill}
-                    {recipe.requiredCharacterLevel ? `, Lv ${recipe.requiredCharacterLevel}` : ''}) — materials:{' '}
+                    {recipe.requiredCharacterLevel ? `, Lv ${recipe.requiredCharacterLevel}` : ''}
+                    {meetsSkill && usesMasteryEngine(professionId)
+                      ? `, ${(MASTERY_COLOR_XP_PCT[tier as keyof typeof MASTERY_COLOR_XP_PCT] * 100).toFixed(0)}% XP`
+                      : ''}
+                    ) — materials:{' '}
                     {recipe.materials.map((m) => `${m.quantity}x ${ITEMS[m.itemId]?.name ?? m.itemId}`).join(', ')}
                     {recipe.goldCost ? ` + ${recipe.goldCost} gold` : ''}
                   </span>
@@ -95,6 +119,45 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
             );
           })}
       </ul>
+    );
+  }
+
+  // Smithing's full armor buildout (masteryEngine.ts's pilot) is ~130
+  // recipes — a single flat list would be unusable, so it's grouped into
+  // one clickable dropdown per metal tier, the same pattern as Mining's own
+  // Smelting section below. A recipe not matching any known tier slug
+  // (the two Blacksmith repair recipes, the quest-taught Emberforged
+  // Gauntlets) falls into a final ungrouped section rather than vanishing.
+  function renderGroupedSmithingRecipes() {
+    const grouped = new Map<string, typeof recipesForProfession>();
+    const ungrouped: typeof recipesForProfession = [];
+    for (const recipe of recipesForProfession) {
+      const slug = SMITHING_TIER_ORDER.find((s) => {
+        const stripped = recipe.id.startsWith('sacred_') ? recipe.id.slice('sacred_'.length) : recipe.id;
+        return stripped.startsWith(`${s}_`);
+      });
+      if (!slug) {
+        ungrouped.push(recipe);
+        continue;
+      }
+      if (!grouped.has(slug)) grouped.set(slug, []);
+      grouped.get(slug)!.push(recipe);
+    }
+    return (
+      <>
+        {SMITHING_TIER_ORDER.filter((slug) => grouped.has(slug)).map((slug) => (
+          <details key={slug}>
+            <summary>{SMITHING_TIER_LABELS[slug]}</summary>
+            {renderRecipeList(grouped.get(slug))}
+          </details>
+        ))}
+        {ungrouped.length > 0 && (
+          <details>
+            <summary>Other</summary>
+            {renderRecipeList(ungrouped)}
+          </details>
+        )}
+      </>
     );
   }
 
@@ -116,18 +179,28 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
                 );
               }
               const meetsLevel = professionLevel >= node.requiredLevel;
-              const tier = craftingColorTier(professionLevel, node.requiredLevel, node.colorBreakpoints);
+              const tier = !meetsLevel
+                ? 'red'
+                : usesMasteryEngine(professionId)
+                  ? masteryColorTier(professionLevel, node.colorBreakpoints)
+                  : craftingColorTier(professionLevel, node.requiredLevel, node.colorBreakpoints);
               const equippedTool = character.equipment.tool ? ITEMS[character.equipment.tool] : null;
               const hasRequiredTool = !node.requiredToolType || equippedTool?.toolType === node.requiredToolType;
               const canGather = meetsLevel && hasRequiredTool;
               const yieldItem = ITEMS[node.itemId];
+              const bonusItem = node.rareBonus ? ITEMS[node.rareBonus.itemId] : null;
               return (
                 <li key={node.id}>
                   <div className="item-row-main">
                     {yieldItem && <ItemSlot item={yieldItem} />}
                     <span>
                       <span style={{ color: TIER_COLORS[tier], fontWeight: 700 }}>{node.name}</span> (skill{' '}
-                      {node.requiredLevel}+) — yields {yieldItem?.name ?? node.itemId}
+                      {node.requiredLevel}+
+                      {meetsLevel && usesMasteryEngine(professionId)
+                        ? `, ${(MASTERY_COLOR_XP_PCT[tier as keyof typeof MASTERY_COLOR_XP_PCT] * 100).toFixed(0)}% XP`
+                        : ''}
+                      ) — yields {yieldItem?.name ?? node.itemId}
+                      {bonusItem ? ` (+${(node.rareBonus!.chance * 100).toFixed(0)}% chance of ${bonusItem.name})` : ''}
                     </span>
                   </div>
                   <button onClick={() => handleGather(node.id)} disabled={!canGather}>
@@ -149,11 +222,11 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
           recipes tagged to it, so this renders for no other gathering
           profession. */}
       {category === 'gathering' && recipesForProfession.length > 0 && (
-        <>
-          <h3>Smelting</h3>
+        <details>
+          <summary>Smelting</summary>
           {!known && <p>You don't know {label} yet — learn it below.</p>}
           {known && renderRecipeList()}
-        </>
+        </details>
       )}
 
       {category === 'fishing' && (
@@ -191,7 +264,7 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
       {category === 'production' && (
         <>
           {!known && <p>You don't know {label} yet — learn it below.</p>}
-          {known && renderRecipeList()}
+          {known && (professionId === 'smithing' ? renderGroupedSmithingRecipes() : renderRecipeList())}
         </>
       )}
 

@@ -5,12 +5,15 @@ import { ENCHANTS } from './enchanting';
 
 const SLOT_LABELS: Record<EquipmentSlot, string> = {
   weapon: 'Weapon',
+  offhand: 'Off Hand',
   chest: 'Chest',
   helmet: 'Helmet',
   gloves: 'Gloves',
   legs: 'Legs',
   boots: 'Boots',
   ring: 'Ring',
+  ring2: 'Ring',
+  necklace: 'Necklace',
   tool: 'Tool',
 };
 

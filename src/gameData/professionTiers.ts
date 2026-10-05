@@ -115,7 +115,8 @@ export function nextTier(tier: ProfessionTierName): ProfessionTierDef | null {
 // A profession's skill is only ever allowed to climb to the ceiling of its
 // CURRENTLY unlocked rank — e.g. stuck at 75 until Journeyman is trained —
 // which is the entire point of ranks gating content. See
-// firebase/character.ts's checkAndApplyProfessionLevelUp.
+// firebase/character.ts's applyGatheringResult/applyCraftingResult and
+// firebase/professions.ts's applyFishingResult.
 export function maxSkillForUnlockedTier(unlockedTier: ProfessionTierName): number {
   return (PROFESSION_TIERS.find((t) => t.tier === unlockedTier) ?? PROFESSION_TIERS[0]).maxSkill;
 }

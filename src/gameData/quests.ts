@@ -417,8 +417,8 @@ export const QUESTS: Record<string, QuestDef> = {
     category: 'profession',
     profession: 'smithing',
     requiredLevel: 40,
-    description: 'A journeyman smith in the Molten Scar wants proof you can turn ore into something useful. Smelt Brimstone Bars.',
-    objectives: [{ type: 'craft', itemId: 'brimstone_bar', count: 10 }],
+    description: 'A journeyman smith in the Molten Scar wants proof you can turn ore into something useful. Smelt Thorium Bars.',
+    objectives: [{ type: 'craft', itemId: 'thorium_bar', count: 10 }],
     rewards: { xp: 300, gold: 20 },
   },
   forge_journeyman_trial: {
@@ -428,8 +428,8 @@ export const QUESTS: Record<string, QuestDef> = {
     profession: 'smithing',
     prerequisiteQuestId: 'forge_apprentice_trial',
     requiredLevel: 40,
-    description: 'Dig deeper. The old forge’s formula is said to need a mountain of brimstone ore to even attempt.',
-    objectives: [{ type: 'gather', itemId: 'brimstone_ore', count: 20 }],
+    description: 'Dig deeper. The old forge’s formula is said to need a mountain of thorium ore to even attempt.',
+    objectives: [{ type: 'gather', itemId: 'thorium_ore', count: 20 }],
     rewards: { xp: 400, gold: 30 },
   },
   forge_master_trial: {

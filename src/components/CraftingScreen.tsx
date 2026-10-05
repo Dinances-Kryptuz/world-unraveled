@@ -1,12 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useCharacter } from '../hooks/useCharacter';
-import { applyCraftingResult, checkAndApplyProfessionLevelUp, stopActivity, getCharacter, advanceQuests } from '../firebase/character';
+import { applyCraftingResult, stopActivity, getCharacter, advanceQuests } from '../firebase/character';
 import { getInventory } from '../firebase/inventory';
-import { resolveCrafting } from '../gameData/activityEngine';
-import { professionXpForLevel } from '../gameData/xpTables';
-import { getProfessionState } from '../gameData/professionTiers';
-import { XpBar } from './XpBar';
+import { resolveCrafting, AUTOSAVE_INTERVAL_SECONDS } from '../gameData/activityEngine';
+import { getProfessionState, maxSkillForUnlockedTier } from '../gameData/professionTiers';
 import { TickBar } from './TickBar';
 import { ItemSlot } from './ItemSlot';
 import { ITEMS } from '../gameData/items';
@@ -14,8 +12,6 @@ import { notify } from '../utils/notifications';
 import type { Character } from '../types/character';
 import type { User } from 'firebase/auth';
 import type { Recipe } from '../gameData/types';
-
-const AUTOSAVE_INTERVAL_SECONDS = 10;
 
 export function CraftingScreen({ recipe }: { recipe: Recipe }) {
   const { user } = useAuth();
@@ -29,11 +25,12 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
   const secondsSinceSaveRef = useRef(0);
 
   const [bankedCrafted, setBankedCrafted] = useState(0);
-  const [bankedXp, setBankedXp] = useState(0);
+  const [bankedSkillups, setBankedSkillups] = useState(0);
   const [outOfMaterials, setOutOfMaterials] = useState(false);
   const anchorRef = useRef<Date | null>(character.currentActivity.startedAt);
   const materialsRef = useRef<Record<string, number>>({});
   const goldRef = useRef(character.gold);
+  const skillupCarryRef = useRef(0); // fractional skill-ups carried across chunks
 
   const characterRef = useRef<Character | null>(character);
   const userRef = useRef<User | null>(user);
@@ -46,10 +43,11 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
 
   useEffect(() => {
     setBankedCrafted(0);
-    setBankedXp(0);
+    setBankedSkillups(0);
     setOutOfMaterials(false);
     anchorRef.current = character.currentActivity.startedAt;
     goldRef.current = character.gold;
+    skillupCarryRef.current = 0;
     if (user) {
       getInventory(user.uid).then((inv) => {
         materialsRef.current = { ...inv.items };
@@ -107,6 +105,7 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
     const previousAnchor = anchor;
     const previousMaterials = { ...materialsRef.current };
     const previousGold = goldRef.current;
+    const previousSkillupCarry = skillupCarryRef.current;
 
     anchorRef.current = now;
     for (const consumed of result.materialsConsumed) {
@@ -115,62 +114,91 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
     }
     goldRef.current -= result.goldSpent;
     setBankedCrafted((prev) => prev + result.itemsCrafted);
-    setBankedXp((prev) => prev + result.xpGained);
+
+    // skillupsGained is fractional (itemsCrafted * a <1.0 chance for yellow/
+    // green tiers) — carry the remainder forward, same pattern as Fishing/
+    // GatheringScreen, so it behaves probabilistically over many chunks
+    // instead of resolving identically every single time.
+    const skillupTotal = skillupCarryRef.current + result.skillupsGained;
+    const wholeSkillups = Math.floor(skillupTotal);
+    skillupCarryRef.current = skillupTotal - wholeSkillups;
+    setBankedSkillups((prev) => prev + wholeSkillups);
 
     if (currentCharacter.notificationsEnabled) {
       const resultQty = recipe.resultQuantity * result.itemsCrafted;
       notify(`${ITEMS[recipe.resultItemId]?.name ?? recipe.resultItemId} crafted`, [
         `${resultQty}x ${ITEMS[recipe.resultItemId]?.name ?? recipe.resultItemId}`,
-        `+${Math.round(result.xpGained)} XP`,
       ]);
     }
-    // Bump the shared profession xp now, in the same tick as the banked
-    // session totals above, so the XpBar right below doesn't visibly lag
-    // behind the "This session" line on this same screen.
+    // Bump the shared profession skill now, in the same tick as the banked
+    // session totals above, so the skill display right below doesn't
+    // visibly lag behind the "This session" line on this same screen. A
+    // rough speculative estimate, superseded moments later by the
+    // authoritative reconciliation below once the write succeeds.
     applyOptimisticUpdate((c) => ({
       ...c,
       professions: {
         ...c.professions,
         [recipe.profession]: {
           ...getProfessionState(c.professions, recipe.profession),
-          xp: getProfessionState(c.professions, recipe.profession).xp + result.xpGained,
+          level: getProfessionState(c.professions, recipe.profession).level + wholeSkillups,
         },
       },
     }));
 
     try {
+      // One read per cycle, done up front — see GatheringScreen's matching
+      // comment for why this replaces three separate reads of the same
+      // document (one inside applyCraftingResult, one for quests, one in
+      // refetch()) with exactly one.
+      const fresh = await getCharacter(currentUser.uid);
+      // Routes through the catch block below (rolling back the speculative
+      // optimistic update and re-queuing this cycle's gains for retry)
+      // rather than silently dropping them — see CombatScreen's matching
+      // comment.
+      if (!fresh) throw new Error('Character not found during autosave');
+      const freshProf = getProfessionState(fresh.professions, recipe.profession);
+
       await applyCraftingResult(currentUser.uid, recipe.profession, {
-        xpGained: result.xpGained,
+        skillupsGained: wholeSkillups,
         resultItemId: recipe.resultItemId,
         resultQuantity: recipe.resultQuantity * result.itemsCrafted,
         materialsConsumed: result.materialsConsumed,
         goldSpent: result.goldSpent,
+        currentLevel: freshProf.level,
+        unlockedTier: freshProf.unlockedTier,
       });
-      await checkAndApplyProfessionLevelUp(currentUser.uid, recipe.profession);
 
-      // Fetched fresh for the same lost-update reason as GatheringScreen.
-      const fresh = await getCharacter(currentUser.uid);
-      if (fresh) {
-        await advanceQuests(currentUser.uid, fresh, [
-          { type: 'craft', itemId: recipe.resultItemId, count: result.itemsCrafted },
-        ]);
-      }
+      await advanceQuests(currentUser.uid, fresh, [
+        { type: 'craft', itemId: recipe.resultItemId, count: result.itemsCrafted },
+      ]);
 
-      await refetch();
+      const cap = maxSkillForUnlockedTier(freshProf.unlockedTier);
+      const newLevel = Math.min(cap, freshProf.level + wholeSkillups);
+      applyOptimisticUpdate(() => ({
+        ...fresh,
+        professions: { ...fresh.professions, [recipe.profession]: { ...freshProf, level: newLevel } },
+        gold: fresh.gold - result.goldSpent,
+        // See GatheringScreen's matching comment — crafting never touches
+        // currentActivity.startedAt server-side either, same latent
+        // isLongAbsence flicker risk without this.
+        currentActivity: { ...fresh.currentActivity, startedAt: now },
+      }));
     } catch (err) {
       console.error('Crafting autosave failed, will retry next cycle:', err);
       anchorRef.current = previousAnchor;
       materialsRef.current = previousMaterials;
       goldRef.current = previousGold;
+      skillupCarryRef.current = previousSkillupCarry;
       setBankedCrafted((prev) => prev - result.itemsCrafted);
-      setBankedXp((prev) => prev - result.xpGained);
+      setBankedSkillups((prev) => prev - wholeSkillups);
       applyOptimisticUpdate((c) => ({
         ...c,
         professions: {
           ...c.professions,
           [recipe.profession]: {
             ...getProfessionState(c.professions, recipe.profession),
-            xp: getProfessionState(c.professions, recipe.profession).xp - result.xpGained,
+            level: getProfessionState(c.professions, recipe.profession).level - wholeSkillups,
           },
         },
       }));
@@ -195,12 +223,10 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
   const currentSkill = getProfessionState(character.professions, recipe.profession).level;
   const sinceLastSave = anchorRef.current
     ? resolveCrafting(anchorRef.current, new Date(), recipe, currentSkill, materialsRef.current, recipe.colorBreakpoints, goldRef.current)
-    : { itemsCrafted: 0, xpGained: 0, materialsConsumed: [], goldSpent: 0 };
+    : { itemsCrafted: 0, skillupsGained: 0, skillupChance: 0, materialsConsumed: [], goldSpent: 0 };
 
   const displayCrafted = bankedCrafted + sinceLastSave.itemsCrafted;
-  const displayXp = bankedXp + sinceLastSave.xpGained;
-  const profession = getProfessionState(character.professions, recipe.profession);
-  const liveXp = profession.xp + sinceLastSave.xpGained;
+  const displaySkillups = bankedSkillups + skillupCarryRef.current + sinceLastSave.skillupsGained;
 
   const resultItem = ITEMS[recipe.resultItemId];
 
@@ -223,15 +249,11 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
         </div>
       </div>
       {!outOfMaterials && <TickBar seconds={recipe.craftSeconds} color="#6b4f2a" label="Crafting" />}
+      <p>Skill-up chance per craft at your skill: {(sinceLastSave.skillupChance * 100).toFixed(0)}%</p>
       <p>
-        This session: {displayCrafted} crafted, +{Math.round(displayXp)} XP
+        This session: {displayCrafted} crafted, +{Math.floor(displaySkillups)} skill
       </p>
-      <XpBar
-        level={profession.level}
-        xp={liveXp}
-        curve={professionXpForLevel}
-        label={recipe.profession.charAt(0).toUpperCase() + recipe.profession.slice(1)}
-      />
+      <p>{recipe.profession.charAt(0).toUpperCase() + recipe.profession.slice(1)} skill: {currentSkill}</p>
       {outOfMaterials && <p>Out of materials{recipe.goldCost ? ' or gold' : ''} — stopped.</p>}
       <button onClick={handleStop}>Stop</button>
     </div>

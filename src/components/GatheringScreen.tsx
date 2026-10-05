@@ -1,19 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useCharacter } from '../hooks/useCharacter';
-import { applyGatheringResult, checkAndApplyProfessionLevelUp, stopActivity, getCharacter, advanceQuests } from '../firebase/character';
-import { resolveGathering } from '../gameData/activityEngine';
-import { professionXpForLevel } from '../gameData/xpTables';
-import { getProfessionState } from '../gameData/professionTiers';
+import { applyGatheringResult, stopActivity, getCharacter, advanceQuests } from '../firebase/character';
+import { resolveGathering, AUTOSAVE_INTERVAL_SECONDS } from '../gameData/activityEngine';
+import { getProfessionState, maxSkillForUnlockedTier } from '../gameData/professionTiers';
 import { ITEMS } from '../gameData/items';
 import { notify } from '../utils/notifications';
-import { XpBar } from './XpBar';
 import { TickBar } from './TickBar';
 import type { Character } from '../types/character';
 import type { User } from 'firebase/auth';
 import type { GatherNode } from '../gameData/types';
-
-const AUTOSAVE_INTERVAL_SECONDS = 10;
 
 export function GatheringScreen({ node }: { node: GatherNode }) {
   const { user } = useAuth();
@@ -27,9 +23,10 @@ export function GatheringScreen({ node }: { node: GatherNode }) {
   const secondsSinceSaveRef = useRef(0);
 
   const [bankedQuantity, setBankedQuantity] = useState(0);
-  const [bankedXp, setBankedXp] = useState(0);
+  const [bankedSkillups, setBankedSkillups] = useState(0);
   const anchorRef = useRef<Date | null>(character.currentActivity.startedAt);
   const carryRef = useRef(0); // fractional successful actions carried across chunks
+  const skillupCarryRef = useRef(0); // fractional skill-ups carried across chunks
 
   const characterRef = useRef<Character | null>(character);
   const userRef = useRef<User | null>(user);
@@ -42,9 +39,10 @@ export function GatheringScreen({ node }: { node: GatherNode }) {
 
   useEffect(() => {
     setBankedQuantity(0);
-    setBankedXp(0);
+    setBankedSkillups(0);
     anchorRef.current = character.currentActivity.startedAt;
     carryRef.current = 0;
+    skillupCarryRef.current = 0;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [node.id]);
 
@@ -76,6 +74,7 @@ export function GatheringScreen({ node }: { node: GatherNode }) {
 
     const previousAnchor = anchor;
     const previousCarry = carryRef.current;
+    const previousSkillupCarry = skillupCarryRef.current;
 
     // quantityGained is fractional successful actions — carry the remainder
     // forward so a 60-95% success chance behaves probabilistically over
@@ -83,69 +82,96 @@ export function GatheringScreen({ node }: { node: GatherNode }) {
     const total = carryRef.current + result.quantityGained;
     const wholeItems = Math.floor(total);
     carryRef.current = total - wholeItems;
-    // Scaled by the node's current color-tier multiplier (see
-    // GatherNodeResult.xpMultiplier's doc comment) — a grey node still
-    // yields the material on every whole item, but 0 skill-up XP.
-    const xpGained = wholeItems * node.xpPerAction * result.xpMultiplier;
+    // Scaled by the node's current color-tier chance (see
+    // GatherNodeResult.skillupChance's doc comment) — a grey node still
+    // yields the material on every whole item, but 0% skill-up chance.
+    const skillupTotal = skillupCarryRef.current + result.skillupsGained;
+    const wholeSkillups = Math.floor(skillupTotal);
+    skillupCarryRef.current = skillupTotal - wholeSkillups;
 
     anchorRef.current = now;
     setBankedQuantity((prev) => prev + wholeItems);
-    setBankedXp((prev) => prev + xpGained);
+    setBankedSkillups((prev) => prev + wholeSkillups);
 
     if (wholeItems === 0) return; // nothing crossed a whole item yet, nothing to save
 
     if (currentCharacter.notificationsEnabled) {
-      notify(`${ITEMS[node.itemId]?.name ?? node.itemId} gathered`, [
-        `${wholeItems}x ${ITEMS[node.itemId]?.name ?? node.itemId}`,
-        `+${Math.round(xpGained)} XP`,
-      ]);
+      notify(`${ITEMS[node.itemId]?.name ?? node.itemId} gathered`, [`${wholeItems}x ${ITEMS[node.itemId]?.name ?? node.itemId}`]);
     }
 
-    // Bump the shared profession xp now, in the same tick as the banked
+    // Bump the shared profession skill now, in the same tick as the banked
     // session totals above, so the Professions bar doesn't lag behind the
-    // Firestore round-trip below.
+    // Firestore round-trip below. A rough speculative estimate, superseded
+    // moments later by the authoritative reconciliation below once the
+    // write succeeds.
     applyOptimisticUpdate((c) => ({
       ...c,
       professions: {
         ...c.professions,
         [node.profession]: {
           ...getProfessionState(c.professions, node.profession),
-          xp: getProfessionState(c.professions, node.profession).xp + xpGained,
+          level: getProfessionState(c.professions, node.profession).level + wholeSkillups,
         },
       },
     }));
 
     try {
+      // One read per cycle, done up front, used for three things below:
+      // (1) a safe current-level/unlockedTier to cap the skill-up write
+      // against, (2) a non-stale quests.active to merge progress into
+      // (quests ARE reachable while this screen keeps running in the
+      // background — see App.tsx's activityNode — so a stale local copy
+      // here really could race a concurrent Accept/Complete Quest click and
+      // silently revert it), and (3) reconciling local state afterward
+      // instead of a second getCharacter() round-trip via refetch(). This
+      // replaces what used to be three separate reads of the same document
+      // every single autosave cycle (one inside applyGatheringResult, one
+      // here, one in refetch()) with exactly one.
+      const fresh = await getCharacter(currentUser.uid);
+      // Routes through the catch block below (rolling back the speculative
+      // optimistic update and re-queuing this cycle's gains for retry)
+      // rather than silently dropping them — see CombatScreen's matching
+      // comment.
+      if (!fresh) throw new Error('Character not found during autosave');
+      const freshProf = getProfessionState(fresh.professions, node.profession);
+
       await applyGatheringResult(currentUser.uid, node.profession, {
-        xpGained,
+        skillupsGained: wholeSkillups,
         itemId: node.itemId,
         quantity: wholeItems,
+        currentLevel: freshProf.level,
+        unlockedTier: freshProf.unlockedTier,
       });
-      await checkAndApplyProfessionLevelUp(currentUser.uid, node.profession);
 
-      // Fetched fresh (not the possibly-stale characterRef) for the same
-      // reason CombatScreen does before its own level-up check: applying
-      // quest progress against stale quest state and writing it back would
-      // silently lose any progress that landed in between.
-      const fresh = await getCharacter(currentUser.uid);
-      if (fresh) {
-        await advanceQuests(currentUser.uid, fresh, [{ type: 'gather', itemId: node.itemId, count: wholeItems }]);
-      }
+      await advanceQuests(currentUser.uid, fresh, [{ type: 'gather', itemId: node.itemId, count: wholeItems }]);
 
-      await refetch();
+      const cap = maxSkillForUnlockedTier(freshProf.unlockedTier);
+      const newLevel = Math.min(cap, freshProf.level + wholeSkillups);
+      applyOptimisticUpdate(() => ({
+        ...fresh,
+        professions: { ...fresh.professions, [node.profession]: { ...freshProf, level: newLevel } },
+        // Mirrors applyGatheringResult's (lack of a) write here on purpose —
+        // gathering never touches currentActivity.startedAt server-side, so
+        // without refreshing it locally too it sits stale from whenever the
+        // activity started, same latent isLongAbsence flicker risk
+        // CombatScreen's autosave already guards against (see its own
+        // optimistic update's comment).
+        currentActivity: { ...fresh.currentActivity, startedAt: now },
+      }));
     } catch (err) {
       console.error('Gathering autosave failed, will retry next cycle:', err);
       anchorRef.current = previousAnchor;
       carryRef.current = previousCarry;
+      skillupCarryRef.current = previousSkillupCarry;
       setBankedQuantity((prev) => prev - wholeItems);
-      setBankedXp((prev) => prev - xpGained);
+      setBankedSkillups((prev) => prev - wholeSkillups);
       applyOptimisticUpdate((c) => ({
         ...c,
         professions: {
           ...c.professions,
           [node.profession]: {
             ...getProfessionState(c.professions, node.profession),
-            xp: getProfessionState(c.professions, node.profession).xp - xpGained,
+            level: getProfessionState(c.professions, node.profession).level - wholeSkillups,
           },
         },
       }));
@@ -163,28 +189,22 @@ export function GatheringScreen({ node }: { node: GatherNode }) {
   const currentSkill = getProfessionState(character.professions, node.profession).level;
   const sinceLastSave = anchorRef.current
     ? resolveGathering(anchorRef.current, new Date(), node, currentSkill)
-    : { quantityGained: 0, xpGained: 0, actionsAttempted: 0, successfulActions: 0, successChance: 0, xpMultiplier: 0 };
+    : { quantityGained: 0, skillupsGained: 0, actionsAttempted: 0, successfulActions: 0, successChance: 0, skillupChance: 0 };
 
   const previewWhole = Math.floor(carryRef.current + sinceLastSave.quantityGained);
   const displayQuantity = bankedQuantity + previewWhole;
-  const displayXp = bankedXp + previewWhole * node.xpPerAction * sinceLastSave.xpMultiplier;
-  const profession = getProfessionState(character.professions, node.profession);
-  const liveXp = profession.xp + previewWhole * node.xpPerAction * sinceLastSave.xpMultiplier;
+  const displaySkillups = bankedSkillups + skillupCarryRef.current + sinceLastSave.skillupsGained;
 
   return (
     <div className="gathering-screen">
       <h2>Gathering: {node.name}</h2>
       <TickBar seconds={node.secondsPerAction} color="#6b4f2a" label="Gathering" />
       <p>Success chance at your skill: {(sinceLastSave.successChance * 100).toFixed(0)}%</p>
+      <p>Skill-up chance per gather at your skill: {(sinceLastSave.skillupChance * 100).toFixed(0)}%</p>
       <p>
-        This session: {displayQuantity} gathered, +{displayXp} XP
+        This session: {displayQuantity} gathered, +{Math.floor(displaySkillups)} skill
       </p>
-      <XpBar
-        level={profession.level}
-        xp={liveXp}
-        curve={professionXpForLevel}
-        label={node.profession.charAt(0).toUpperCase() + node.profession.slice(1)}
-      />
+      <p>{node.profession.charAt(0).toUpperCase() + node.profession.slice(1)} skill: {currentSkill}</p>
       <button onClick={handleStop}>Stop</button>
     </div>
   );

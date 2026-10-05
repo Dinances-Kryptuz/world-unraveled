@@ -3,16 +3,14 @@ import { useAuth } from '../hooks/useAuth';
 import { useCharacter } from '../hooks/useCharacter';
 import { applyFishingResult } from '../firebase/professions';
 import { stopActivity, getCharacter, advanceQuests } from '../firebase/character';
-import { resolveFishing, fishingSkillupChance } from '../gameData/activityEngine';
-import { getProfessionState } from '../gameData/professionTiers';
+import { resolveFishing, fishingSkillupChance, AUTOSAVE_INTERVAL_SECONDS } from '../gameData/activityEngine';
+import { getProfessionState, maxSkillForUnlockedTier } from '../gameData/professionTiers';
 import { ITEMS } from '../gameData/items';
 import { notify } from '../utils/notifications';
 import { TickBar } from './TickBar';
 import type { Character } from '../types/character';
 import type { User } from 'firebase/auth';
 import type { FishingHole } from '../gameData/types';
-
-const AUTOSAVE_INTERVAL_SECONDS = 10;
 
 // Deliberately not reusing GatheringScreen — Fishing resolves a whole loot
 // table per cast (not one guaranteed item) and banks whole SKILL POINTS
@@ -108,6 +106,8 @@ export function FishingScreen({ hole }: { hole: FishingHole }) {
       }
     }
 
+    // A rough speculative estimate, superseded moments later by the
+    // authoritative reconciliation below once the write succeeds.
     applyOptimisticUpdate((c) => ({
       ...c,
       professions: {
@@ -120,17 +120,38 @@ export function FishingScreen({ hole }: { hole: FishingHole }) {
     }));
 
     try {
+      // One read per cycle, done up front — see GatheringScreen's matching
+      // comment for why this replaces three separate reads of the same
+      // document (one inside applyFishingResult, one for quests, one in
+      // refetch()) with exactly one.
+      const fresh = await getCharacter(currentUser.uid);
+      // Routes through the catch block below (rolling back the speculative
+      // optimistic update and re-queuing this cycle's gains for retry)
+      // rather than silently dropping them — see CombatScreen's matching
+      // comment.
+      if (!fresh) throw new Error('Character not found during autosave');
+      const freshProf = getProfessionState(fresh.professions, 'fishing');
+
       await applyFishingResult(currentUser.uid, {
         skillupsGained: wholeSkillups,
         catches: Object.entries(wholeCatches).map(([itemId, quantity]) => ({ itemId, quantity })),
+        currentLevel: freshProf.level,
+        unlockedTier: freshProf.unlockedTier,
       });
 
-      const fresh = await getCharacter(currentUser.uid);
-      if (fresh) {
-        const events = Object.entries(wholeCatches).map(([itemId, count]) => ({ type: 'gather' as const, itemId, count }));
-        if (events.length > 0) await advanceQuests(currentUser.uid, fresh, events);
-      }
-      await refetch();
+      const events = Object.entries(wholeCatches).map(([itemId, count]) => ({ type: 'gather' as const, itemId, count }));
+      if (events.length > 0) await advanceQuests(currentUser.uid, fresh, events);
+
+      const cap = maxSkillForUnlockedTier(freshProf.unlockedTier);
+      const newLevel = Math.min(cap, freshProf.level + wholeSkillups);
+      applyOptimisticUpdate(() => ({
+        ...fresh,
+        professions: { ...fresh.professions, fishing: { ...freshProf, level: newLevel } },
+        // See GatheringScreen's matching comment — fishing never touches
+        // currentActivity.startedAt server-side either, same latent
+        // isLongAbsence flicker risk without this.
+        currentActivity: { ...fresh.currentActivity, startedAt: now },
+      }));
     } catch (err) {
       console.error('Fishing autosave failed, will retry next cycle:', err);
       anchorRef.current = previousAnchor;

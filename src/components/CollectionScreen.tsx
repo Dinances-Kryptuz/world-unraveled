@@ -7,15 +7,21 @@ import { ITEMS } from '../gameData/items';
 import { ItemSlot } from './ItemSlot';
 import type { EquipmentSlot } from '../gameData/types';
 
-const SLOT_ORDER: EquipmentSlot[] = ['weapon', 'chest', 'helmet', 'gloves', 'legs', 'boots', 'ring', 'tool'];
+// 'ring2' is deliberately omitted — it's a second equip DESTINATION, not a
+// distinct item category (every ring item's own equipSlot is always
+// 'ring'), so grouping by it below would only ever find zero items.
+const SLOT_ORDER: EquipmentSlot[] = ['weapon', 'offhand', 'chest', 'helmet', 'gloves', 'legs', 'boots', 'necklace', 'ring', 'tool'];
 const SLOT_LABELS: Record<EquipmentSlot, string> = {
   weapon: 'Weapons',
+  offhand: 'Off Hand',
   chest: 'Chest',
   helmet: 'Helmets',
   gloves: 'Gloves',
   legs: 'Legs',
   boots: 'Boots',
+  necklace: 'Necklaces',
   ring: 'Rings',
+  ring2: 'Rings',
   tool: 'Tools',
 };
 

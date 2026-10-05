@@ -1,10 +1,9 @@
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp, Timestamp, increment } from 'firebase/firestore';
 import { db } from './config';
 import type { Character, CombatPreset } from '../types/character';
-import type { ProfessionId, EquipmentSlot } from '../gameData/types';
+import type { ProfessionId, ProfessionTierName, EquipmentSlot } from '../gameData/types';
 import type { ClassId, SpecId } from '../gameData/classStats';
 import type { TalentColumn } from '../gameData/talents';
-import { professionXpForLevel } from '../gameData/xpTables';
 import { maxSkillForUnlockedTier } from '../gameData/professionTiers';
 import { BASE_BANK_SLOTS } from '../gameData/bank';
 import { DEFAULT_ZONE_ID } from '../gameData/zones';
@@ -148,6 +147,9 @@ function starterEquipment(cls: ClassId): Record<EquipmentSlot, string | null> {
     legs: null,
     boots: 'novice_boots',
     ring: null,
+    ring2: null,
+    necklace: null,
+    offhand: null,
     tool: null,
   };
 }
@@ -281,22 +283,31 @@ export async function setCharacterLevel(uid: string, level: number, restoredHp: 
   });
 }
 
+// Gathering grants a discrete skill-up chance per success now (see
+// activityEngine.ts's resolveGathering/PROFESSION_SKILLUP_CHANCE_BY_TIER),
+// not XP toward a curve — same one-step "cap at the unlocked rank's
+// ceiling, write the level directly" pattern firebase/professions.ts's
+// applyFishingResult uses.
+//
+// Takes the current level/unlockedTier from the caller rather than reading
+// the character itself — GatheringScreen's autosave already has both (it
+// just read them to compute this very result), so re-reading here would be
+// a second Firestore read of the exact same document on every single
+// autosave cycle purely to re-derive numbers the caller already has in
+// hand. Safe because this is the only code path that ever writes this
+// profession's level, and only one activity screen is ever live at a time —
+// the one realistic staleness window is two tabs open on the same account
+// simultaneously, which nothing else in this app guards against either.
 export async function applyGatheringResult(
   uid: string,
   profession: ProfessionId,
-  result: { xpGained: number; itemId: string; quantity: number }
+  result: { skillupsGained: number; itemId: string; quantity: number; currentLevel: number; unlockedTier: ProfessionTierName }
 ): Promise<void> {
-  // Written as a full { level, xp, unlockedTier } replace rather than an
-  // increment() on the .xp sub-path, for the same read-modify-write safety
-  // every other professions.<id> writer here uses.
-  const character = await getCharacter(uid);
-  if (!character) return;
-  const current = character.professions[profession];
-  if (!current) return; // profession not learned — a stale/malicious client call, not a real state
-
-  await updateDoc(doc(db, 'characters', uid), {
-    [`professions.${profession}`]: { ...current, xp: current.xp + result.xpGained },
-  });
+  const cap = maxSkillForUnlockedTier(result.unlockedTier);
+  const newLevel = Math.min(cap, result.currentLevel + result.skillupsGained);
+  if (newLevel !== result.currentLevel) {
+    await updateDoc(doc(db, 'characters', uid), { [`professions.${profession}.level`]: newLevel });
+  }
 
   if (result.quantity > 0) {
     await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), {
@@ -358,46 +369,107 @@ export async function acceptQuest(uid: string, questId: string): Promise<{ succe
   return { success: true };
 }
 
-export async function checkAndApplyProfessionLevelUp(uid: string, profession: ProfessionId): Promise<void> {
-  const character = await getCharacter(uid);
-  if (!character) return;
-  const state = character.professions[profession];
-  if (!state) return;
-  // Skill can never climb past the ceiling of the CURRENTLY unlocked rank —
-  // the whole point of "visit a trainer to unlock the next rank." A
-  // character sitting exactly at that ceiling just banks xp with no visible
-  // effect until they train up (see professionTiers.ts's checkRankUp).
-  const cap = maxSkillForUnlockedTier(state.unlockedTier);
-  let newLevel = state.level;
-  while (newLevel < cap && state.xp >= professionXpForLevel(newLevel + 1)) {
-    newLevel++;
-  }
-  if (newLevel !== state.level) {
-    await updateDoc(doc(db, 'characters', uid), {
-      [`professions.${profession}.level`]: newLevel,
-    });
-  }
-}
-
+// Crafting grants a discrete skill-up chance per craft now (see
+// activityEngine.ts's resolveCrafting/PROFESSION_SKILLUP_CHANCE_BY_TIER),
+// not XP toward a curve — same one-step pattern as applyGatheringResult
+// above. Skill can never climb past the ceiling of the CURRENTLY unlocked
+// rank — the whole point of "visit a trainer to unlock the next rank."
+//
+// Takes the current level/unlockedTier from the caller rather than reading
+// the character itself — same reasoning as applyGatheringResult above, to
+// avoid a second Firestore read of the same document every autosave cycle.
 export async function applyCraftingResult(
   uid: string,
   profession: ProfessionId,
   result: {
-    xpGained: number;
+    skillupsGained: number;
     resultItemId: string;
     resultQuantity: number;
     materialsConsumed: { itemId: string; quantity: number }[];
     goldSpent?: number;
+    currentLevel: number;
+    unlockedTier: ProfessionTierName;
   }
 ): Promise<void> {
-  // See the matching comment in applyGatheringResult — same fix, same reason.
-  const character = await getCharacter(uid);
-  if (!character) return;
-  const current = character.professions[profession];
-  if (!current) return;
+  const cap = maxSkillForUnlockedTier(result.unlockedTier);
+  const newLevel = Math.min(cap, result.currentLevel + result.skillupsGained);
 
+  const characterUpdate: Record<string, unknown> = {};
+  if (newLevel !== result.currentLevel) characterUpdate[`professions.${profession}.level`] = newLevel;
+  if (result.goldSpent) characterUpdate.gold = increment(-result.goldSpent);
+  if (Object.keys(characterUpdate).length > 0) {
+    await updateDoc(doc(db, 'characters', uid), characterUpdate);
+  }
+
+  const inventoryUpdates: Record<string, unknown> = {
+    [`items.${result.resultItemId}`]: increment(result.resultQuantity),
+  };
+  for (const m of result.materialsConsumed) {
+    inventoryUpdates[`items.${m.itemId}`] = increment(-m.quantity);
+  }
+  await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), inventoryUpdates);
+}
+
+// Mining/Smithing's Mastery-pilot engine (gameData/masteryEngine.ts) writes
+// a continuous skill level+xp and a per-node/recipe Mastery level+xp,
+// instead of applyGatheringResult/applyCraftingResult's single discrete
+// skill-up count — see masteryEngine.ts's module doc comment for why these
+// two professions resolve differently from the other 8. The caller
+// (MasteryGatheringScreen) has already run resolveMasteryGatheringOffline
+// and is just persisting its final numbers, same "caller already did the
+// read/math, this just writes" shape as applyGatheringResult above.
+export async function applyMasteryGatheringResult(
+  uid: string,
+  profession: ProfessionId,
+  nodeId: string,
+  result: {
+    itemId: string;
+    quantity: number;
+    rareBonusItemId?: string;
+    rareBonusQuantity: number;
+    newSkillLevel: number;
+    newSkillXp: number;
+    newMasteryLevel: number;
+    newMasteryXp: number;
+  }
+): Promise<void> {
+  await updateDoc(doc(db, 'characters', uid), {
+    [`professions.${profession}.level`]: result.newSkillLevel,
+    [`professions.${profession}.xp`]: result.newSkillXp,
+    [`professions.${profession}.mastery.${nodeId}`]: { level: result.newMasteryLevel, xp: result.newMasteryXp },
+  });
+
+  const inventoryUpdates: Record<string, unknown> = {};
+  if (result.quantity > 0) inventoryUpdates[`items.${result.itemId}`] = increment(result.quantity);
+  if (result.rareBonusItemId && result.rareBonusQuantity > 0) {
+    inventoryUpdates[`items.${result.rareBonusItemId}`] = increment(result.rareBonusQuantity);
+  }
+  if (Object.keys(inventoryUpdates).length > 0) {
+    await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), inventoryUpdates);
+  }
+}
+
+// Smithing's side of the same Mastery-pilot engine — see
+// applyMasteryGatheringResult above for the shared design notes.
+export async function applyMasteryCraftingResult(
+  uid: string,
+  profession: ProfessionId,
+  recipeId: string,
+  result: {
+    resultItemId: string;
+    resultQuantity: number;
+    materialsConsumed: { itemId: string; quantity: number }[];
+    goldSpent: number;
+    newSkillLevel: number;
+    newSkillXp: number;
+    newMasteryLevel: number;
+    newMasteryXp: number;
+  }
+): Promise<void> {
   const characterUpdate: Record<string, unknown> = {
-    [`professions.${profession}`]: { ...current, xp: current.xp + result.xpGained },
+    [`professions.${profession}.level`]: result.newSkillLevel,
+    [`professions.${profession}.xp`]: result.newSkillXp,
+    [`professions.${profession}.mastery.${recipeId}`]: { level: result.newMasteryLevel, xp: result.newMasteryXp },
   };
   if (result.goldSpent) characterUpdate.gold = increment(-result.goldSpent);
   await updateDoc(doc(db, 'characters', uid), characterUpdate);

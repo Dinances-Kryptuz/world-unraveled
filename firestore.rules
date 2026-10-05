@@ -426,49 +426,44 @@ service cloud.firestore {
   // combat/gather/craft autosave — a real, production-blocking bug, not an
   // emulator artifact.
   function isValidEquipment(e) {
-    return e is map && e.keys().hasOnly(['weapon','chest','helmet','gloves','legs','boots','ring','tool']);
+    return e is map && e.keys().hasOnly(['weapon','offhand','chest','helmet','gloves','legs','boots','ring','ring2','necklace','tool']);
   }
 
   // weapon/chest/boots may already be filled at creation — createCharacter()
   // grants a small class-appropriate starter kit there (see gameData/items.ts's
   // "Starter gear" section) so a level-1 character isn't fighting bare-handed.
-  // The remaining slots (helmet/gloves/legs/ring/tool) the starter kit never
-  // touches, so those must still be empty on a genuinely new character.
+  // The remaining slots (helmet/gloves/legs/ring/ring2/necklace/offhand/tool)
+  // the starter kit never touches, so those must still be empty on a
+  // genuinely new character.
   function isValidNewEquipment(e) {
     return isValidEquipment(e)
-      && e.helmet == null && e.gloves == null && e.legs == null && e.ring == null && e.tool == null;
-  }
-
-  function isValidProfessionState(p) {
-    return p.keys().hasOnly(['level','xp','unlockedTier'])
-      && p.level is number && p.level >= 1
-      && p.xp is number && p.xp >= 0
-      && p.unlockedTier in ['apprentice','journeyman','expert','artisan'];
+      && e.helmet == null && e.gloves == null && e.legs == null && e.ring == null && e.ring2 == null
+      && e.necklace == null && e.offhand == null && e.tool == null;
   }
 
   // A character now starts knowing NO professions at all (see
   // firebase/professions.ts's learnProfession) — professions is only ever
   // populated by explicit, server-validated learn/abandon/rank-up calls, so
-  // this is ownership-scoped (bounds + per-entry shape) rather than
-  // requiring any specific key to exist, same posture as
-  // isValidCombatPresets/isValidItemCooldowns/isValidQuests above. A
+  // this is ownership-scoped (bounds + shape only, not a per-entry
+  // isValidProfessionState descent) — same posture as
+  // isValidCombatPresets/isValidItemCooldowns/isValidQuests above. This used
+  // to also validate each known profession's {level, xp, unlockedTier} shape
+  // individually (10 extra function calls, unconditionally, on every single
+  // write touching this character), which stacked with every other field's
+  // own checks below closely enough to the 1000-expression-per-request
+  // evaluation ceiling (see isValidEquipment's comment on this same limit)
+  // that learning a profession could start failing with "insufficient
+  // permissions" once a character's other state (gear, quests, companions)
+  // had grown large enough — worse the more professions were already known,
+  // so it surfaced as "I can learn some professions but not others" even
+  // though nothing about any specific profession was actually invalid. A
   // profession can also be REMOVED (abandonProfession resets it entirely),
-  // so there's deliberately no "never decreases" invariant here — re-
-  // learning after abandoning always restarts at level 1 anyway.
+  // so there's deliberately no "never decreases" invariant here either —
+  // re-learning after abandoning always restarts at level 1 anyway.
   function isValidProfessions(profs) {
     return profs is map
       && profs.size() <= 10
-      && profs.keys().hasOnly(['herbalism','skinning','mining','fishing','alchemy','leatherworking','smithing','tailoring','enchanting','cooking'])
-      && (!('herbalism' in profs) || isValidProfessionState(profs.herbalism))
-      && (!('skinning' in profs) || isValidProfessionState(profs.skinning))
-      && (!('mining' in profs) || isValidProfessionState(profs.mining))
-      && (!('fishing' in profs) || isValidProfessionState(profs.fishing))
-      && (!('alchemy' in profs) || isValidProfessionState(profs.alchemy))
-      && (!('leatherworking' in profs) || isValidProfessionState(profs.leatherworking))
-      && (!('smithing' in profs) || isValidProfessionState(profs.smithing))
-      && (!('tailoring' in profs) || isValidProfessionState(profs.tailoring))
-      && (!('enchanting' in profs) || isValidProfessionState(profs.enchanting))
-      && (!('cooking' in profs) || isValidProfessionState(profs.cooking));
+      && profs.keys().hasOnly(['herbalism','skinning','mining','fishing','alchemy','leatherworking','smithing','tailoring','enchanting','cooking']);
   }
 
   function isValidActivity(a) {

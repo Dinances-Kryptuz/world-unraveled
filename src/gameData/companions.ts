@@ -190,7 +190,10 @@ export function checkRecruitCompanion(
 }
 
 export function emptyCompanionEquipment(): Record<EquipmentSlot, string | null> {
-  return { weapon: null, chest: null, helmet: null, gloves: null, legs: null, boots: null, ring: null, tool: null };
+  return {
+    weapon: null, offhand: null, chest: null, helmet: null, gloves: null, legs: null, boots: null,
+    ring: null, ring2: null, necklace: null, tool: null,
+  };
 }
 
 // The shape combatEngine/engine.ts's EncounterSetupInput.companions expects —
