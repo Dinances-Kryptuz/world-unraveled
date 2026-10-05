@@ -455,6 +455,18 @@ button.item-slot:active:not(:disabled) {
   filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.25));
 }
 
+/* Real art (see components/MonsterPortrait.tsx's MonsterArt) — fills the
+   round frame edge-to-edge via object-fit:cover (cropping as needed)
+   rather than sitting inset like an item icon, so it reads as a portrait
+   rather than a tile. A square, centered source image crops most
+   predictably here. */
+.monster-portrait-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
 .monster-portrait-boss {
   width: 128px;
   height: 128px;
