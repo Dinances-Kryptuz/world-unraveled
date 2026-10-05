@@ -3,8 +3,10 @@ import { useAuth } from '../hooks/useAuth';
 import { useCharacter } from '../hooks/useCharacter';
 import { sellItem, buyItem } from '../firebase/vendor';
 import { subscribeToInventory } from '../firebase/inventory';
+import { buyMount } from '../firebase/mounts';
 import { ITEMS } from '../gameData/items';
 import { VENDOR_STOCK } from '../gameData/vendors';
+import { MOUNTS } from '../gameData/mounts';
 import { ItemSlot } from './ItemSlot';
 import type { Inventory } from '../types/character';
 
@@ -22,6 +24,8 @@ export function VendorScreen({ zoneId }: { zoneId: string }) {
   const [buying, setBuying] = useState<string | null>(null);
   const [buyQty, setBuyQty] = useState<Record<string, string>>({});
   const [sellQty, setSellQty] = useState<Record<string, string>>({});
+  const [buyingMount, setBuyingMount] = useState<string | null>(null);
+  const [mountError, setMountError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -58,9 +62,47 @@ export function VendorScreen({ zoneId }: { zoneId: string }) {
     }
   }
 
+  async function handleBuyMount(mountId: string) {
+    if (!user) return;
+    setBuyingMount(mountId);
+    setMountError(null);
+    try {
+      const result = await buyMount(user.uid, mountId);
+      if (!result.success) {
+        setMountError(result.reason ?? 'Could not buy that mount.');
+      } else {
+        await refetch();
+      }
+    } finally {
+      setBuyingMount(null);
+    }
+  }
+
   return (
     <div className="vendor-screen">
       <h2>Shop</h2>
+
+      <h3>Mounts</h3>
+      <ul>
+        {Object.values(MOUNTS).map((mount) => {
+          const owned = character.mounts.includes(mount.id);
+          const isBusy = buyingMount === mount.id;
+          const canAfford = character.gold >= mount.cost;
+          return (
+            <li key={mount.id}>
+              <div className="item-row-main">
+                <span>
+                  {mount.name} — {mount.description} ({mount.cost.toLocaleString()} gold)
+                </span>
+              </div>
+              <button onClick={() => handleBuyMount(mount.id)} disabled={owned || isBusy || !canAfford}>
+                {owned ? 'Owned' : 'Buy'}
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+      {mountError && <p className="error">{mountError}</p>}
 
       {stock.length > 0 && (
         <>

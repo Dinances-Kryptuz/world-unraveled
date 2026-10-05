@@ -2,6 +2,7 @@ import { doc, updateDoc, Timestamp } from 'firebase/firestore';
 import { db } from './config';
 import type { Character } from '../types/character';
 import { travelMinutes } from '../gameData/travel';
+import { bestMountSpeedBonusPct } from '../gameData/mounts';
 
 // Both departedAt and arrivesAt come from the same client clock rather than
 // serverTimestamp() — a flight's countdown is a purely local-clock concept
@@ -20,7 +21,7 @@ export async function startTravel(
     return { success: false, reason: 'Finish your current activity before traveling.' };
   }
 
-  const minutes = travelMinutes(character.currentZoneId, toZoneId);
+  const minutes = travelMinutes(character.currentZoneId, toZoneId, bestMountSpeedBonusPct(character.mounts));
   const departedAt = new Date();
   const arrivesAt = new Date(departedAt.getTime() + minutes * 60_000);
 

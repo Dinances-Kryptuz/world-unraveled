@@ -156,6 +156,7 @@ service cloud.firestore {
       && data.collectedItemIds == []
       && data.unlockedAchievementIds == []
       && data.notificationsEnabled == true
+      && data.mounts == []
       && data.currentZoneId == 'greenhollow_fields'
       && data.travel == null;
   }
@@ -209,7 +210,8 @@ service cloud.firestore {
       && isValidDungeonClears(after)
       && isValidCollectedItemIds(after)
       && isValidUnlockedAchievementIds(after)
-      && isValidNotificationsEnabled(after);
+      && isValidNotificationsEnabled(after)
+      && isValidMounts(after);
   }
 
   // Same "may not exist yet on an old character" treatment and expression-
@@ -238,6 +240,16 @@ service cloud.firestore {
 
   function isValidNotificationsEnabled(after) {
     return !('notificationsEnabled' in after) || after.notificationsEnabled is bool;
+  }
+
+  // Same "may not exist yet on an old character" treatment and ownership-
+  // scoped posture as isValidCollectedItemIds above — full validation (that
+  // an id is a real mount, that gold was actually spent, that a mount is
+  // never added twice) happens in firebase/mounts.ts's buyMount, the only
+  // path that writes this field. Bounded generously since this grows with
+  // the mount catalog, not with player action.
+  function isValidMounts(after) {
+    return !('mounts' in after) || (after.mounts is list && after.mounts.size() <= 20);
   }
 
   // Same "may not exist yet on an old character" treatment and ownership-

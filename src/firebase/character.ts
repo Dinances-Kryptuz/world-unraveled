@@ -110,6 +110,9 @@ export async function getCharacter(uid: string): Promise<Character | null> {
     // Same backfill idea again, for the notification toggle — an old
     // character read before this field existed defaults to on.
     notificationsEnabled: data.notificationsEnabled ?? true,
+    // Same backfill idea again, for mounts — an old character read before
+    // this field existed owns none yet and flies at the un-discounted rate.
+    mounts: data.mounts ?? [],
     // Same backfill idea again, for the quest system — an old character
     // without this field just starts with an empty board and picks up its
     // first quests the next time it completes a trackable action (or via
@@ -205,6 +208,7 @@ export async function createCharacter(uid: string, name: string, characterClass:
     collectedItemIds: [],
     unlockedAchievementIds: [],
     notificationsEnabled: true,
+    mounts: [],
     currentZoneId: DEFAULT_ZONE_ID,
     travel: null,
   };

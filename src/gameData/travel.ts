@@ -2,15 +2,19 @@ import { ZONE_TIER } from './zones';
 
 // 2 minutes per zone-tier step apart — adjacent zones (tier 1 to tier 2) are
 // a 2-minute flight, the two ends of the game (tier 1 to tier 6) are 10
-// minutes. A future "pay gold to cut flight time" / instant-teleport
-// purchase (explicitly scoped OUT of this pass) will discount this number,
-// not replace the formula.
+// minutes. A mount (gameData/mounts.ts) discounts this via speedBonusPct
+// below rather than replacing the formula.
 export const FLIGHT_MINUTES_PER_TIER = 2;
 
-export function travelMinutes(fromZoneId: string, toZoneId: string): number {
+// speedBonusPct comes from gameData/mounts.ts's bestMountSpeedBonusPct — 0
+// for a mountless character (the default), up to a mount's own
+// speedBonusPct for one who owns a mount. 50 means "flights take half as
+// long."
+export function travelMinutes(fromZoneId: string, toZoneId: string, speedBonusPct = 0): number {
   const fromTier = ZONE_TIER[fromZoneId] ?? 1;
   const toTier = ZONE_TIER[toZoneId] ?? 1;
-  return FLIGHT_MINUTES_PER_TIER * Math.abs(toTier - fromTier);
+  const baseMinutes = FLIGHT_MINUTES_PER_TIER * Math.abs(toTier - fromTier);
+  return Math.round(baseMinutes * (1 - speedBonusPct / 100));
 }
 
 // Null means "not currently traveling" — same convention as
