@@ -1,7 +1,7 @@
 import { doc, updateDoc, increment, arrayUnion } from 'firebase/firestore';
 import { db } from './config';
 import { getCharacter } from './character';
-import { MOUNTS } from '../gameData/mounts';
+import { MOUNTS, requiredPriorMountId } from '../gameData/mounts';
 import { ZONES } from '../gameData/zones';
 
 export interface MountTrainResult {
@@ -19,6 +19,12 @@ export async function trainMount(uid: string, mountId: string): Promise<MountTra
   const character = await getCharacter(uid);
   if (!character) return { success: false, reason: 'Character not found.' };
   if (character.mounts.includes(mountId)) return { success: false, reason: 'You already own this mount.' };
+
+  const priorId = requiredPriorMountId(mountId);
+  if (priorId && !character.mounts.includes(priorId)) {
+    return { success: false, reason: `Train ${MOUNTS[priorId].name} first.` };
+  }
+
   if (character.currentZoneId !== mount.requiredZoneId) {
     return { success: false, reason: `Train this at ${ZONES[mount.requiredZoneId]?.name ?? mount.requiredZoneId}.` };
   }
