@@ -78,6 +78,7 @@ export function WelcomeBackScreen({
           startingXp: character.xp,
           startingHp,
           savedEquippedAbilityIds: character.equippedAbilityIds,
+          trainedAbilityIds: character.trainedAbilityIds,
           savedAbilityConditions: character.abilityConditions,
           disabledAbilityIds: character.disabledAbilityIds,
           monster,

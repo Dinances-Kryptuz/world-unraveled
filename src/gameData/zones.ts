@@ -490,3 +490,23 @@ export const ZONES: Record<string, Zone> = {
     fishingHoleIds: ['cinderheart_fishing_hole'],
   },
 };
+
+// Which zone "belongs to" a given character level — the zone with the
+// highest unlockRequirement.level that's still <= level, i.e. the most
+// advanced zone that level could actually be standing in. Used anywhere
+// level-gated content needs a home zone to be trained/bought in (Class
+// Trainer spells, gameData/abilityTraining.ts) — the same stepped
+// band-by-zone-unlock-level idea professionTrainers.ts already uses for the
+// 4 profession-rank trainers, generalized to any level.
+export function zoneForLevel(level: number): string {
+  let bestZoneId = DEFAULT_ZONE_ID;
+  let bestReq = -1;
+  for (const zone of Object.values(ZONES)) {
+    const req = zone.unlockRequirement.type === 'none' ? 0 : zone.unlockRequirement.level;
+    if (req <= level && req > bestReq) {
+      bestReq = req;
+      bestZoneId = zone.id;
+    }
+  }
+  return bestZoneId;
+}

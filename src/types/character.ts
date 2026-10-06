@@ -205,10 +205,20 @@ export interface Character {
   // same "opt-out, not opt-in" posture as every other preference toggle.
   notificationsEnabled: boolean;
   // Owned mount ids (gameData/mounts.ts) — a permanent gold-sink purchase
-  // from the Shop that discounts zone-travel flight time (gameData/
-  // travel.ts's travelMinutes). Mounts don't stack; see
+  // from the Mount Trainer that discounts zone-travel flight time
+  // (gameData/travel.ts's travelMinutes). Mounts don't stack; see
   // bestMountSpeedBonusPct for how an owned mount's bonus is applied.
   mounts: string[];
+  // Abilities actually paid for at the Class Trainer's Spells & Abilities
+  // page (gameData/abilityTraining.ts) — an ability whose unlockLevel the
+  // character has reached is only usable once its id is ALSO here (see
+  // combatEngine/progression.ts's effectiveLoadout, which an id missing
+  // from this list can never enter). A character that existed before this
+  // field did is grandfathered in with everything it had already
+  // level-unlocked (see firebase/character.ts's getCharacter) rather than
+  // losing its whole kit; every character created after is empty until its
+  // first trainAbility() call.
+  trainedAbilityIds: string[];
 }
 
 export interface Inventory {

@@ -160,10 +160,17 @@ export function CombatSetupScreen() {
 
   const abilityConditionsKey = JSON.stringify(character?.abilityConditions ?? {});
   const disabledAbilityIdsKey = (character?.disabledAbilityIds ?? []).join(',');
+  const trainedAbilityIdsKey = (character?.trainedAbilityIds ?? []).join(',');
 
   useEffect(() => {
     if (!character || !character.class) return;
-    const loadout = effectiveLoadout(character.class, character.spec, character.level, character.equippedAbilityIds);
+    const loadout = effectiveLoadout(
+      character.class,
+      character.spec,
+      character.level,
+      character.equippedAbilityIds,
+      character.trainedAbilityIds
+    );
     setPending(loadout);
     const conditions: Record<string, ConditionGroup> = {};
     for (const id of loadout) {
@@ -172,12 +179,21 @@ export function CombatSetupScreen() {
     setPendingConditions(conditions);
     setPendingDisabled(new Set(character.disabledAbilityIds.filter((id) => loadout.includes(id))));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [character?.class, character?.level, character?.equippedAbilityIds.join(','), abilityConditionsKey, disabledAbilityIdsKey]);
+  }, [
+    character?.class,
+    character?.level,
+    character?.equippedAbilityIds.join(','),
+    trainedAbilityIdsKey,
+    abilityConditionsKey,
+    disabledAbilityIdsKey,
+  ]);
 
   if (!character || !cls) return null;
 
+  const trainedSet = new Set(character.trainedAbilityIds);
   const equippedSet = new Set(pending);
-  const available = unlocked.filter((a) => !equippedSet.has(a.id));
+  const available = unlocked.filter((a) => !equippedSet.has(a.id) && trainedSet.has(a.id));
+  const untrained = unlocked.filter((a) => !equippedSet.has(a.id) && !trainedSet.has(a.id));
 
   function move(index: number, direction: -1 | 1) {
     setPending((prev) => {
@@ -334,7 +350,7 @@ export function CombatSetupScreen() {
   const canReorder = level >= PRIORITY_UNLOCK_LEVEL;
   const canUseConditions = level >= CONDITIONS_UNLOCK_LEVEL;
 
-  const savedLoadout = effectiveLoadout(cls, spec, level, character.equippedAbilityIds);
+  const savedLoadout = effectiveLoadout(cls, spec, level, character.equippedAbilityIds, character.trainedAbilityIds);
   const savedConditions: Record<string, ConditionGroup> = {};
   for (const id of savedLoadout) {
     if (character.abilityConditions[id]) savedConditions[id] = character.abilityConditions[id];
@@ -416,7 +432,7 @@ export function CombatSetupScreen() {
 
       <h3>Available</h3>
       {available.length === 0 ? (
-        <p>Everything you've unlocked is equipped.</p>
+        <p>Everything you've trained is equipped.</p>
       ) : (
         <ul style={{ listStyle: 'none', paddingLeft: 0 }}>
           {available.map((ability) => (
@@ -431,6 +447,20 @@ export function CombatSetupScreen() {
             />
           ))}
         </ul>
+      )}
+
+      {untrained.length > 0 && (
+        <>
+          <h3>Not Yet Trained</h3>
+          <p>
+            <small>Visit Class Trainer → Spells &amp; Abilities to learn these.</small>
+          </p>
+          <ul style={{ listStyle: 'none', paddingLeft: 0 }}>
+            {untrained.map((ability) => (
+              <AbilityRow key={ability.id} ability={ability} dimmed controls={<em>Untrained</em>} />
+            ))}
+          </ul>
+        </>
       )}
 
       <button onClick={handleSave} disabled={saving || !dirty}>

@@ -4,15 +4,17 @@ import type { ProfessionId } from '../gameData/types';
 
 export type AppSection =
   | 'adventure'
+  | 'shop'
   | 'equipment'
   | 'inventory'
   | 'bank'
   | 'companions'
+  | 'quests'
+  | 'classTrainer'
+  | 'mountTrainer'
+  | 'professionsTrainer'
   | 'characters'
   | 'collection'
-  | 'shop'
-  | 'talents'
-  | 'quests'
   | 'settings'
   | 'profession';
 
@@ -21,20 +23,24 @@ interface SidebarItem {
   label: string;
 }
 
-// Combat Setup used to be its own top-level entry here — it now lives as a
-// tab inside Settings (gameplay-loadout preferences, not a thing you flip
-// between mid-adventure the way the other sections are).
+// Talents and Combat Setup used to be their own top-level entries here —
+// both now live as sub-tabs inside Class Trainer (gameplay-build concerns
+// grouped with the new Spells & Abilities training page, rather than
+// scattered across the sidebar). 'shop' keeps its old id for minimal
+// plumbing churn; only its displayed label changed to Shopkeeper.
 const TOP_ITEMS: SidebarItem[] = [
   { id: 'adventure', label: 'Adventure' },
+  { id: 'shop', label: 'Shopkeeper' },
   { id: 'equipment', label: 'Equipment' },
   { id: 'inventory', label: 'Inventory' },
   { id: 'bank', label: 'Bank' },
   { id: 'companions', label: 'Companions' },
+  { id: 'quests', label: 'Quests' },
+  { id: 'classTrainer', label: 'Class Trainer' },
+  { id: 'mountTrainer', label: 'Mount Trainer' },
+  { id: 'professionsTrainer', label: 'Professions Trainer' },
   { id: 'characters', label: 'Characters' },
   { id: 'collection', label: 'Collection' },
-  { id: 'shop', label: 'Shop' },
-  { id: 'talents', label: 'Talents' },
-  { id: 'quests', label: 'Quests' },
   { id: 'settings', label: 'Settings' },
 ];
 
@@ -112,12 +118,13 @@ function ProfessionNavButton({
 
 // A persistent left-hand nav so every screen isn't just stacked one after
 // another on one infinitely-scrolling page — each section renders alone in
-// the content area (see App.tsx). showTalents hides the Talents entry
-// before a spec is chosen, same gate the old stacked layout used.
+// the content area (see App.tsx). Talents is no longer a top-level entry
+// here (it's a Class Trainer sub-tab — see ClassTrainerScreen.tsx, which
+// hides that option itself before a spec is chosen), so this component no
+// longer needs a spec gate of its own.
 export function Sidebar({
   active,
   onSelect,
-  showTalents,
   character,
   selectedProfessionId,
   onSelectProfession,
@@ -127,7 +134,6 @@ export function Sidebar({
 }: {
   active: AppSection;
   onSelect: (section: AppSection) => void;
-  showTalents: boolean;
   character: Character;
   selectedProfessionId: ProfessionId;
   onSelectProfession: (id: ProfessionId) => void;
@@ -154,7 +160,7 @@ export function Sidebar({
     <>
       {mobileOpen && <div className="sidebar-backdrop" onClick={onCloseMobile} />}
       <nav className={mobileOpen ? 'sidebar sidebar-open' : 'sidebar'}>
-        {TOP_ITEMS.filter((item) => item.id !== 'talents' || showTalents).map((item) => (
+        {TOP_ITEMS.map((item) => (
           <NavButton
             key={item.id}
             item={item}

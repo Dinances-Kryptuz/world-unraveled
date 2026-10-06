@@ -38,6 +38,7 @@ export interface OfflineCombatInput {
   startingXp: number;
   startingHp: number;
   savedEquippedAbilityIds: string[];
+  trainedAbilityIds: string[];
   savedAbilityConditions: Record<string, ConditionGroup>;
   disabledAbilityIds: string[];
   monster: Monster;
@@ -87,6 +88,7 @@ export function simulateOfflineCombat(input: OfflineCombatInput): OfflineCombatR
       currentHp,
       monster: input.monster,
       savedEquippedAbilityIds: input.savedEquippedAbilityIds,
+      trainedAbilityIds: input.trainedAbilityIds,
       savedAbilityConditions: input.savedAbilityConditions,
       disabledAbilityIds: input.disabledAbilityIds,
       companions: input.companions?.map((c) => ({ ...c, level })),

@@ -120,6 +120,7 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
       currentHp,
       monster,
       savedEquippedAbilityIds: c.equippedAbilityIds,
+      trainedAbilityIds: c.trainedAbilityIds,
       savedAbilityConditions: c.abilityConditions,
       disabledAbilityIds: c.disabledAbilityIds,
       // Companions only fight in dungeons (see DungeonScreen.tsx) — open-

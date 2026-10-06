@@ -50,6 +50,12 @@ export interface EncounterSetupInput {
   // this level, and falls back to a sensible default when it's empty (a
   // character who's never touched the setup screen still fights well).
   savedEquippedAbilityIds: string[];
+  // Character.trainedAbilityIds — which of the player's level-unlocked
+  // abilities have actually been paid for at the Class Trainer (see
+  // gameData/abilityTraining.ts). effectiveLoadout() uses this to keep an
+  // untrained spell out of the fight entirely, including out of its "no
+  // saved choice yet" default loadout.
+  trainedAbilityIds: string[];
   // The player's saved per-ability condition groups (Character.abilityConditions).
   // Keyed by ability id; an ability with no entry (or an empty conditions
   // array) is always usable, same as before this field existed.
@@ -256,7 +262,7 @@ const MONSTER_BASIC_ATTACK: Ability = {
 };
 
 export function createPlayerCombatant(input: EncounterSetupInput): Combatant {
-  const loadout = effectiveLoadout(input.cls, input.specId, input.level, input.savedEquippedAbilityIds);
+  const loadout = effectiveLoadout(input.cls, input.specId, input.level, input.savedEquippedAbilityIds, input.trainedAbilityIds);
   const mergedBonuses = mergeStatBonuses(input.equipmentBonuses, input.buffTotals.statBonuses);
   const intStat = statAtLevel(input.cls, 'INT', input.level) + (mergedBonuses.INT ?? 0);
   const playerMaxHp = computeMaxHp(input.cls, input.level, mergedBonuses, input.talentTotals.hpMultPct);
