@@ -247,6 +247,14 @@ export interface AltCharacterSnapshot {
 // its own saved rotation layered on top of its real gear. An alt with no
 // spec chosen yet (sub-level-5) just fights with no talent bonuses, same as
 // any unspecced character would.
+//
+// `alt.level` is the caller's choice, not necessarily the alt's own stored
+// level — resolveActiveAltSetups passes the DUNGEON-RUNNING character's
+// current level instead, so a high-level alt recruited into a low-level
+// character's party fights (and unlocks abilities — see
+// combatEngine/progression.ts's effectiveLoadout) at that lower level
+// instead of trivializing content with its real power. See
+// resolveActiveAltSetups's own comment for the exploit this closes.
 export function buildAltCombatSetup(slot: number, alt: AltCharacterSnapshot): CompanionCombatSetup {
   const specId = alt.spec ?? FALLBACK_SPEC_BY_CLASS[alt.class];
   const talentTotals = alt.spec ? evaluateTalents(alt.spec, alt.talentPicks ?? {}).totals : EMPTY_TALENT_TOTALS;
