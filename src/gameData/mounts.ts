@@ -10,7 +10,10 @@ import { ZONE_TIER } from './zones';
 // Apprentice at Stonecrag Foothills (zone 2) through Master at Cinderheart
 // Crater (zone 6) — so the mount trainer's zone-gating mirrors the
 // profession trainers' "learn the next rank once you've reached the zone
-// for it" shape (professionTrainers.ts).
+// for it" shape (professionTrainers.ts). Also sequential like profession
+// ranks: a rank can't be trained until the one before it is owned (see
+// requiredPriorMountId/firebase/mounts.ts's trainMount), not just reachable
+// by zone.
 export interface MountDef {
   id: string;
   name: string;
@@ -82,6 +85,16 @@ export const MOUNTS: Record<string, MountDef> = {
 };
 
 export const MOUNT_ORDER: string[] = ['apprentice_mount', 'journeyman_mount', 'expert_mount', 'artisan_mount', 'master_mount'];
+
+// The rank that must already be owned before this one can be trained — null
+// for Apprentice (the first rank, nothing gates it). Sequential by design:
+// each rank is a bigger speed jump than the last (10/20/30/60/80%), so
+// without this a player who can already reach a later zone's trainer could
+// skip straight to it and never need the earlier ranks at all.
+export function requiredPriorMountId(mountId: string): string | null {
+  const index = MOUNT_ORDER.indexOf(mountId);
+  return index > 0 ? MOUNT_ORDER[index - 1] : null;
+}
 
 // Mounts don't stack — a player with more than one just always flies at
 // whichever owned mount is fastest.

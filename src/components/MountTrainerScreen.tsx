@@ -2,14 +2,13 @@ import { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useCharacter } from '../hooks/useCharacter';
 import { trainMount } from '../firebase/mounts';
-import { MOUNTS, MOUNT_ORDER } from '../gameData/mounts';
+import { MOUNTS, MOUNT_ORDER, requiredPriorMountId } from '../gameData/mounts';
 import { ZONES } from '../gameData/zones';
 
 // Five ranks (Apprentice → Master), each trainable starting at its own zone
-// — see gameData/mounts.ts's MOUNT_RANK_ZONE. Mounts don't stack, so owning
-// a later rank makes an earlier one pointless to buy, but nothing stops a
-// player from training out of order if they can reach a later zone's
-// trainer some other way (a dungeon shortcut, a future teleport item, …).
+// — see gameData/mounts.ts's MOUNT_RANK_ZONE — and strictly sequential: the
+// previous rank must already be owned (see requiredPriorMountId) before the
+// next one can be trained, mirroring how profession ranks work.
 export function MountTrainerScreen({ zoneId }: { zoneId: string }) {
   const { user } = useAuth();
   const { character, refetch } = useCharacter();
@@ -46,15 +45,22 @@ export function MountTrainerScreen({ zoneId }: { zoneId: string }) {
           const isBusy = training === mountId;
           const canAfford = character.gold >= mount.cost;
           const zoneName = ZONES[mount.requiredZoneId]?.name ?? mount.requiredZoneId;
+          const priorId = requiredPriorMountId(mountId);
+          const priorOwned = !priorId || character.mounts.includes(priorId);
+          let lockedNote: string | null = null;
+          if (!owned) {
+            if (!priorOwned) lockedNote = `Train ${MOUNTS[priorId!].name} first`;
+            else if (!inZone) lockedNote = `train this at ${zoneName}`;
+          }
           return (
             <li key={mountId}>
               <div className="item-row-main">
                 <span>
                   <strong>{mount.name}</strong> — {mount.description} ({mount.cost.toLocaleString()} gold)
-                  {!owned && !inZone && <small> — train this at {zoneName}</small>}
+                  {lockedNote && <small> — {lockedNote}</small>}
                 </span>
               </div>
-              <button onClick={() => handleTrain(mountId)} disabled={owned || isBusy || !inZone || !canAfford}>
+              <button onClick={() => handleTrain(mountId)} disabled={owned || isBusy || !priorOwned || !inZone || !canAfford}>
                 {owned ? 'Owned' : 'Train'}
               </button>
             </li>
