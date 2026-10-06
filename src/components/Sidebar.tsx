@@ -1,4 +1,5 @@
 import { ALL_PROFESSION_IDS, PROFESSION_LABELS, maxSkillForUnlockedTier } from '../gameData/professionTiers';
+import { usesMasteryEngine, masteryProfessionXpForNextLevel } from '../gameData/masteryEngine';
 import type { Character } from '../types/character';
 import type { ProfessionId } from '../gameData/types';
 
@@ -97,6 +98,16 @@ function ProfessionNavButton({
   const cap = state ? maxSkillForUnlockedTier(state.unlockedTier) : 0;
   const progressPct = state ? Math.max(0, Math.min(100, (state.level / cap) * 100)) : 0;
 
+  // Mining/Smithing (the Mastery-engine pilot professions — see
+  // masteryEngine.ts) are the only two that actually track XP toward the
+  // next level; the other 8 level up via a discrete per-action skill-up
+  // chance with no XP counter at all (see applyGatheringResult/
+  // applyCraftingResult's "not XP toward a curve" comment), so there's
+  // nothing meaningful to show them beyond the tier-progress bar above.
+  const isMastery = usesMasteryEngine(professionId);
+  const xpForNextLevel = isMastery && state ? masteryProfessionXpForNextLevel(state.level) : null;
+  const xpProgressPct = xpForNextLevel ? Math.max(0, Math.min(100, (state!.xp / xpForNextLevel) * 100)) : 0;
+
   return (
     <button
       className="sidebar-item sidebar-profession-item"
@@ -111,6 +122,16 @@ function ProfessionNavButton({
         <div className="sidebar-profession-bar-track">
           <div className="sidebar-profession-bar-fill" style={{ width: `${progressPct}%` }} />
         </div>
+      )}
+      {xpForNextLevel !== null && (
+        <>
+          <div className="sidebar-profession-bar-track sidebar-profession-xp-track">
+            <div className="sidebar-profession-bar-fill sidebar-profession-xp-fill" style={{ width: `${xpProgressPct}%` }} />
+          </div>
+          <div className="sidebar-profession-xp-label">
+            {Math.floor(state!.xp)} / {xpForNextLevel} XP
+          </div>
+        </>
       )}
     </button>
   );

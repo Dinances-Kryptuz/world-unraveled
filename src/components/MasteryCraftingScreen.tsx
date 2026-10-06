@@ -252,11 +252,19 @@ export function MasteryCraftingScreen({ recipe }: { recipe: Recipe }) {
       <p>
         {recipe.profession.charAt(0).toUpperCase() + recipe.profession.slice(1)} skill: {prof.level} ({Math.floor(prof.xp)} / {xpForNextSkillLevel} XP)
       </p>
+      <div className="profession-xp-bar-track">
+        <div className="profession-xp-bar-fill" style={{ width: `${Math.min(100, (prof.xp / xpForNextSkillLevel) * 100)}%` }} />
+      </div>
       <p>
         Mastery: {masteryState.level}/{MASTERY_MAX_LEVEL}
         {xpForNextMasteryLevel !== null ? ` (${Math.floor(masteryState.xp)} / ${xpForNextMasteryLevel} XP)` : ' (max)'}
         {' — '}+{((speedMult - 1) * 100).toFixed(0)}% speed, {(bonusChance * 100).toFixed(0)}% chance to double output
       </p>
+      {xpForNextMasteryLevel !== null && (
+        <div className="profession-xp-bar-track">
+          <div className="profession-xp-bar-fill" style={{ width: `${Math.min(100, (masteryState.xp / xpForNextMasteryLevel) * 100)}%` }} />
+        </div>
+      )}
       {outOfMaterials && <p>Out of materials{recipe.goldCost ? ' or gold' : ''} — stopped.</p>}
       <button onClick={handleStop}>Stop</button>
     </div>

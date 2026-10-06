@@ -232,11 +232,19 @@ export function MasteryGatheringScreen({ node }: { node: GatherNode }) {
       <p>
         Mining skill: {prof.level} ({Math.floor(prof.xp)} / {xpForNextSkillLevel} XP)
       </p>
+      <div className="profession-xp-bar-track">
+        <div className="profession-xp-bar-fill" style={{ width: `${Math.min(100, (prof.xp / xpForNextSkillLevel) * 100)}%` }} />
+      </div>
       <p>
         Mastery: {masteryState.level}/{MASTERY_MAX_LEVEL}
         {xpForNextMasteryLevel !== null ? ` (${Math.floor(masteryState.xp)} / ${xpForNextMasteryLevel} XP)` : ' (max)'}
         {' — '}+{((speedMult - 1) * 100).toFixed(0)}% speed, {(bonusChance * 100).toFixed(0)}% bonus yield
       </p>
+      {xpForNextMasteryLevel !== null && (
+        <div className="profession-xp-bar-track">
+          <div className="profession-xp-bar-fill" style={{ width: `${Math.min(100, (masteryState.xp / xpForNextMasteryLevel) * 100)}%` }} />
+        </div>
+      )}
       <button onClick={handleStop}>Stop</button>
     </div>
   );
