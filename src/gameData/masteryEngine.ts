@@ -31,13 +31,28 @@ export function usesMasteryEngine(profession: ProfessionId): boolean {
 // these two professions only). Scales up within each rank, and jumps again
 // at each rank boundary, so Apprentice is quick and Artisan is a real grind.
 // Central config, easy to retune without touching the resolvers below.
+//
+// Rebalanced from an earlier (150/400/1000/2200, exponent 1.35) pass that,
+// simulated against the real Mining node table under optimal play (always on
+// the best currently-unlocked ore, per-node Mastery resetting on each
+// switch), worked out to ~46,000 hours for a full 1->300 climb — and made
+// the very first 10 levels (to unlock Tin Ore) alone cost 4.8 hours, with
+// the single level 9->10 step costing more XP than levels 1->8 combined.
+// This curve targets ~150 hours for the same 1->300 climb (apprentice done
+// in under an hour, journeyman by ~14h, expert by ~58h — the back half of
+// artisan, grinding the endgame ore long after its node has gone Grey past
+// skill 118, is deliberately where most of the 150 hours lives). The lower
+// exponent (1.0 vs 1.35) also flattens the WITHIN-rank shape so late levels
+// in a rank don't balloon disproportionately against early ones — same
+// relative rank-to-rank jump (roughly 1:2.5:6.5:14), just far less overall
+// weight and a gentler climb inside each rank.
 const RANK_BASE_XP: Record<ProfessionTierName, number> = {
-  apprentice: 150,
-  journeyman: 400,
-  expert: 1000,
-  artisan: 2200,
+  apprentice: 2,
+  journeyman: 5,
+  expert: 13,
+  artisan: 28,
 };
-const RANK_XP_EXPONENT = 1.35;
+const RANK_XP_EXPONENT = 1.0;
 
 export function masteryProfessionXpForNextLevel(level: number): number {
   const tier = getTierForSkillLevel(level);

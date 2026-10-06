@@ -1008,6 +1008,34 @@ button.class-card-selected:hover:not(:disabled) {
   height: 100%;
 }
 
+.sidebar-profession-xp-track {
+  height: 3px;
+}
+
+.sidebar-profession-xp-fill {
+  background: #6fa8c9;
+}
+
+.sidebar-profession-xp-label {
+  color: #ab9f8c;
+  font-size: 0.68rem;
+}
+
+.profession-xp-bar-track {
+  background: #e2d9c8;
+  border-radius: 4px;
+  height: 8px;
+  width: 100%;
+  max-width: 320px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.profession-xp-bar-fill {
+  background: #6fa8c9;
+  height: 100%;
+}
+
 .app-main {
   position: relative;
   z-index: 1;
