@@ -210,6 +210,10 @@ input[type="number"] {
 .quest-log,
 .talent-screen,
 .settings-screen,
+.class-trainer-screen,
+.spell-trainer-screen,
+.mount-trainer-screen,
+.professions-trainer-screen,
 .spec-selection {
   background: linear-gradient(180deg, rgba(255, 253, 249, 0.88), rgba(249, 244, 233, 0.88));
   backdrop-filter: blur(10px);

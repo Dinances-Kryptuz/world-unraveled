@@ -191,6 +191,7 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
       currentHp,
       monster: currentMonsterRef.current,
       savedEquippedAbilityIds: c.equippedAbilityIds,
+      trainedAbilityIds: c.trainedAbilityIds,
       savedAbilityConditions: c.abilityConditions,
       disabledAbilityIds: c.disabledAbilityIds,
       companions,

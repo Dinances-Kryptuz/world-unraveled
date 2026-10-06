@@ -157,6 +157,7 @@ service cloud.firestore {
       && data.unlockedAchievementIds == []
       && data.notificationsEnabled == true
       && data.mounts == []
+      && data.trainedAbilityIds == []
       && data.currentZoneId == 'greenhollow_fields'
       && data.travel == null;
   }
@@ -211,7 +212,8 @@ service cloud.firestore {
       && isValidCollectedItemIds(after)
       && isValidUnlockedAchievementIds(after)
       && isValidNotificationsEnabled(after)
-      && isValidMounts(after);
+      && isValidMounts(after)
+      && isValidTrainedAbilityIds(after);
   }
 
   // Same "may not exist yet on an old character" treatment and expression-
@@ -250,6 +252,16 @@ service cloud.firestore {
   // the mount catalog, not with player action.
   function isValidMounts(after) {
     return !('mounts' in after) || (after.mounts is list && after.mounts.size() <= 20);
+  }
+
+  // Same "may not exist yet on an old character" treatment and ownership-
+  // scoped posture as isValidMounts above — full validation (that an id is a
+  // real ability the character's own class/spec, that the right zone and
+  // gold were checked) happens in firebase/character.ts's trainAbility, the
+  // only path that writes this field. Bounded generously since this grows
+  // with the ability catalog, not with player action.
+  function isValidTrainedAbilityIds(after) {
+    return !('trainedAbilityIds' in after) || (after.trainedAbilityIds is list && after.trainedAbilityIds.size() <= 60);
   }
 
   // Same "may not exist yet on an old character" treatment and ownership-

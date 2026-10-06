@@ -8,7 +8,9 @@ import { ZoneScreen } from './components/ZoneScreen';
 import { EquipmentScreen } from './components/EquipmentScreen';
 import { InventoryScreen } from './components/InventoryScreen';
 import { BankScreen } from './components/BankScreen';
-import { TalentScreen } from './components/TalentScreen';
+import { ClassTrainerScreen } from './components/ClassTrainerScreen';
+import { MountTrainerScreen } from './components/MountTrainerScreen';
+import { ProfessionsTrainerScreen } from './components/ProfessionsTrainerScreen';
 import { CombatScreen } from './components/CombatScreen';
 import { GatheringScreen } from './components/GatheringScreen';
 import { MasteryGatheringScreen } from './components/MasteryGatheringScreen';
@@ -86,7 +88,6 @@ function AppShell({
       <Sidebar
         active={section}
         onSelect={onSelectSection}
-        showTalents={!!character.spec}
         character={character}
         selectedProfessionId={selectedProfessionId}
         onSelectProfession={onSelectProfession}
@@ -148,9 +149,10 @@ function AppContent() {
     return <SpecSelectionScreen />;
   }
 
-  // Section visibility/selection — Sidebar just renders the current choice
-  // and reports clicks back up.
-  const section = activeSection === 'talents' && !character.spec ? 'adventure' : activeSection;
+  // Sidebar just renders the current choice and reports clicks back up —
+  // Talents' own spec gate now lives inside ClassTrainerScreen, so there's
+  // no section-level redirect needed here anymore.
+  const section = activeSection;
 
   // Captured as plain, already-non-null bindings right at this narrowed
   // point — referencing user/character directly inside the closure below
@@ -253,7 +255,9 @@ function AppContent() {
       {section === 'collection' && <CollectionScreen />}
       {section === 'shop' && <VendorScreen zoneId={character.currentZoneId} />}
       {section === 'profession' && <ProfessionScreen professionId={selectedProfessionId} zoneId={character.currentZoneId} />}
-      {section === 'talents' && character.spec && <TalentScreen />}
+      {section === 'classTrainer' && <ClassTrainerScreen zoneId={character.currentZoneId} />}
+      {section === 'mountTrainer' && <MountTrainerScreen zoneId={character.currentZoneId} />}
+      {section === 'professionsTrainer' && <ProfessionsTrainerScreen zoneId={character.currentZoneId} />}
       {section === 'quests' && <QuestLog />}
       {section === 'settings' && <SettingsScreen />}
     </AppShell>

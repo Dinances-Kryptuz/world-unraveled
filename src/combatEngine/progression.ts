@@ -51,8 +51,27 @@ export function unlockedAbilities(cls: ClassId, spec: SpecId | null, level: numb
 // default so a character who's never touched the setup screen still fights
 // effectively. This is what "casual player can just press a recommended
 // setup" (from the design doc) means in practice for now.
-export function effectiveLoadout(cls: ClassId, spec: SpecId | null, level: number, savedChoice: string[]): string[] {
-  const unlocked = unlockedAbilities(cls, spec, level);
+//
+// trainedAbilityIds, when passed, further restricts `unlocked` to only
+// abilities the character has actually paid to train at the Class Trainer
+// (gameData/abilityTraining.ts) — an ability that's level-unlocked but
+// never trained can't be equipped OR fall into the "sensible default"
+// fallback below. Left undefined (every companion/alt call site — see
+// combatEngine/engine.ts's createCompanionCombatant), this behaves exactly
+// as before training existed: a hired companion has no trainer of its own
+// and always fights with its full level-unlocked kit.
+export function effectiveLoadout(
+  cls: ClassId,
+  spec: SpecId | null,
+  level: number,
+  savedChoice: string[],
+  trainedAbilityIds?: string[]
+): string[] {
+  let unlocked = unlockedAbilities(cls, spec, level);
+  if (trainedAbilityIds) {
+    const trainedSet = new Set(trainedAbilityIds);
+    unlocked = unlocked.filter((a) => trainedSet.has(a.id));
+  }
   const unlockedIds = new Set(unlocked.map((a) => a.id));
   const slots = maxEquippedSlots(level);
 

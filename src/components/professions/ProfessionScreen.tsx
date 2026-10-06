@@ -11,7 +11,6 @@ import { ITEMS } from '../../gameData/items';
 import { describeItemStats } from '../../gameData/equipmentStats';
 import { TIER_COLORS } from '../MonsterLevelBadge';
 import { ItemSlot } from '../ItemSlot';
-import { ProfessionTrainerList } from './ProfessionTrainerList';
 import { ProfessionSummaryList } from './ProfessionSummaryList';
 import type { ProfessionId } from '../../gameData/types';
 
@@ -174,7 +173,7 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
               if (!known) {
                 return (
                   <li key={node.id} style={{ opacity: 0.6 }}>
-                    {node.name} — learn {label} below to gather here.
+                    {node.name} — learn {label} at the Professions Trainer to gather here.
                   </li>
                 );
               }
@@ -224,7 +223,7 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
       {category === 'gathering' && recipesForProfession.length > 0 && (
         <details>
           <summary>Smelting</summary>
-          {!known && <p>You don't know {label} yet — learn it below.</p>}
+          {!known && <p>You don't know {label} yet — learn it at the Professions Trainer.</p>}
           {known && renderRecipeList()}
         </details>
       )}
@@ -263,12 +262,11 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
 
       {category === 'production' && (
         <>
-          {!known && <p>You don't know {label} yet — learn it below.</p>}
+          {!known && <p>You don't know {label} yet — learn it at the Professions Trainer.</p>}
           {known && (professionId === 'smithing' ? renderGroupedSmithingRecipes() : renderRecipeList())}
         </>
       )}
 
-      <ProfessionTrainerList zoneId={zoneId} professionIds={[professionId]} />
       <ProfessionSummaryList professionIds={[professionId]} />
     </div>
   );

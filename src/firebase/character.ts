@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp, Timestamp, increment } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp, Timestamp, increment, arrayUnion } from 'firebase/firestore';
 import { db } from './config';
 import type { Character, CombatPreset } from '../types/character';
 import type { ProfessionId, ProfessionTierName, EquipmentSlot } from '../gameData/types';
@@ -6,13 +6,15 @@ import type { ClassId, SpecId } from '../gameData/classStats';
 import type { TalentColumn } from '../gameData/talents';
 import { maxSkillForUnlockedTier } from '../gameData/professionTiers';
 import { BASE_BANK_SLOTS } from '../gameData/bank';
-import { DEFAULT_ZONE_ID } from '../gameData/zones';
+import { DEFAULT_ZONE_ID, ZONES } from '../gameData/zones';
+import { abilityTrainingCost, abilityTrainingZoneId } from '../gameData/abilityTraining';
 import type { TravelState } from '../gameData/travel';
 import { maxHp } from '../gameData/combatFormulas';
 import { canClassEquip } from '../gameData/classStats';
 import { ITEMS } from '../gameData/items';
 import { getEquipmentStatBonuses } from '../gameData/equipmentStats';
 import { maxEquippedSlots, unlockedAbilities, effectiveLoadout, MAX_COMBAT_PRESETS } from '../combatEngine/progression';
+import { ABILITIES } from '../combatEngine/abilities';
 import type { Condition, ConditionGroup, ConditionType, ResourceType } from '../combatEngine/types';
 import {
   refillActiveQuests,
@@ -113,6 +115,15 @@ export async function getCharacter(uid: string): Promise<Character | null> {
     // Same backfill idea again, for mounts — an old character read before
     // this field existed owns none yet and flies at the un-discounted rate.
     mounts: data.mounts ?? [],
+    // Same "may not exist yet" backfill, but NOT to an empty default — a
+    // character read before Class Trainer training existed already fought
+    // with everything its level unlocked under the old free-unlock rules,
+    // and losing that whole kit the moment this field shipped would be a
+    // real regression for an already-played character. Grandfather it in as
+    // already-trained; only a character created AFTER this field existed
+    // (see createCharacter below) starts at [] and must visit the trainer.
+    trainedAbilityIds:
+      data.trainedAbilityIds ?? unlockedAbilities(data.class, data.spec ?? null, data.level).map((a) => a.id),
     // Same backfill idea again, for the quest system — an old character
     // without this field just starts with an empty board and picks up its
     // first quests the next time it completes a trackable action (or via
@@ -209,6 +220,7 @@ export async function createCharacter(uid: string, name: string, characterClass:
     unlockedAchievementIds: [],
     notificationsEnabled: true,
     mounts: [],
+    trainedAbilityIds: [],
     currentZoneId: DEFAULT_ZONE_ID,
     travel: null,
   };
@@ -582,7 +594,12 @@ export async function saveCombatSetup(
   const character = await getCharacter(uid);
   if (!character) return;
 
-  const unlockedIds = new Set(unlockedAbilities(character.class, character.spec, character.level).map((a) => a.id));
+  const trainedSet = new Set(character.trainedAbilityIds);
+  const unlockedIds = new Set(
+    unlockedAbilities(character.class, character.spec, character.level)
+      .filter((a) => trainedSet.has(a.id))
+      .map((a) => a.id)
+  );
   const slots = maxEquippedSlots(character.level);
   const validatedIds = abilityIds.filter((id) => unlockedIds.has(id)).slice(0, slots);
   const equippedSet = new Set(validatedIds);
@@ -626,7 +643,13 @@ export async function saveCombatPreset(uid: string, name: string): Promise<{ suc
   // effectiveLoadout()'s recommended default (see progression.ts) — that
   // default, not the possibly-empty raw field, is what's actually "active"
   // from the player's point of view, so it's what a preset should capture.
-  const activeAbilityIds = effectiveLoadout(character.class, character.spec, character.level, character.equippedAbilityIds);
+  const activeAbilityIds = effectiveLoadout(
+    character.class,
+    character.spec,
+    character.level,
+    character.equippedAbilityIds,
+    character.trainedAbilityIds
+  );
   const activeConditions: Record<string, ConditionGroup> = {};
   for (const id of activeAbilityIds) {
     if (character.abilityConditions[id]) activeConditions[id] = character.abilityConditions[id];
@@ -696,4 +719,40 @@ export async function respecTalents(uid: string): Promise<{ success: boolean; re
 
 export async function setNotificationsEnabled(uid: string, enabled: boolean): Promise<void> {
   await updateDoc(doc(db, 'characters', uid), { notificationsEnabled: enabled });
+}
+
+// Pays gold to add one ability to Character.trainedAbilityIds — the Class
+// Trainer's "Spells & Abilities" page, the only path that ever writes this
+// field for a post-training-system character. Requires the character to
+// already be standing in the ability's training zone (gameData/
+// abilityTraining.ts's abilityTrainingZoneId) — same "ownership-scoped,
+// zone-checked server-side" posture as firebase/professions.ts's
+// learnProfession/advanceProfessionRank.
+export async function trainAbility(uid: string, abilityId: string): Promise<{ success: boolean; reason?: string }> {
+  const ability = ABILITIES[abilityId];
+  if (!ability || ability.isBasicAttack) return { success: false, reason: 'Unknown ability.' };
+
+  const character = await getCharacter(uid);
+  if (!character) return { success: false, reason: 'Character not found.' };
+  if (ability.class !== character.class || (ability.spec && ability.spec !== character.spec)) {
+    return { success: false, reason: 'Not available to your class/spec.' };
+  }
+  if (character.trainedAbilityIds.includes(abilityId)) return { success: false, reason: 'Already trained.' };
+  if (character.level < ability.unlockLevel) {
+    return { success: false, reason: `Requires character level ${ability.unlockLevel}.` };
+  }
+
+  const requiredZoneId = abilityTrainingZoneId(ability.unlockLevel);
+  if (character.currentZoneId !== requiredZoneId) {
+    return { success: false, reason: `Train this at ${ZONES[requiredZoneId]?.name ?? requiredZoneId}.` };
+  }
+
+  const cost = abilityTrainingCost(ability.unlockLevel);
+  if (character.gold < cost) return { success: false, reason: `Requires ${cost} gold (have ${Math.floor(character.gold)}).` };
+
+  await updateDoc(doc(db, 'characters', uid), {
+    gold: increment(-cost),
+    trainedAbilityIds: arrayUnion(abilityId),
+  });
+  return { success: true };
 }
