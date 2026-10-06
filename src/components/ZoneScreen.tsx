@@ -116,6 +116,13 @@ export function ZoneScreen({
           // gameData/characterSlots.ts's doc comment on activeAltSlots).
           const fee = dungeonCompanionFee(ZONE_TIER[dungeon.zoneId] ?? 1, character.activeCompanionIds.length);
           const canAffordFee = character.gold >= fee;
+          // A floor, not a ceiling — mirrors firebase/companions.ts's
+          // payDungeonCompanionFee, the actual server-trusted gate. Without
+          // it (combined with alts/companions now fighting at THIS
+          // character's level — see resolveActiveAltSetups) a brand-new
+          // character could still never get carried into a dungeon far
+          // above what it could reach on its own.
+          const meetsLevel = character.level >= dungeon.levelRange[0];
           return (
             <div key={dungeon.id}>
               <h2>Dungeons</h2>
@@ -134,10 +141,14 @@ export function ZoneScreen({
                     <br />
                     <small>Your party charges {fee} gold up front for this run (you have {Math.floor(character.gold)}).</small>
                   </div>
-                  <button onClick={() => handleEnterDungeon(dungeon.id)} disabled={!readyForDungeon || !canAffordFee || entering}>
+                  <button
+                    onClick={() => handleEnterDungeon(dungeon.id)}
+                    disabled={!readyForDungeon || !canAffordFee || !meetsLevel || entering}
+                  >
                     {entering ? 'Entering…' : 'Enter'}
                   </button>
-                  {readyForDungeon && !canAffordFee && <p className="error">Need {fee} gold to pay your party first.</p>}
+                  {!meetsLevel && <p className="error">Requires character level {dungeon.levelRange[0]}.</p>}
+                  {meetsLevel && readyForDungeon && !canAffordFee && <p className="error">Need {fee} gold to pay your party first.</p>}
                   {feeError && <p className="error">{feeError}</p>}
                 </li>
               </ul>

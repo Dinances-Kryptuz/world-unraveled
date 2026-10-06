@@ -135,7 +135,9 @@ export function CompanionScreen() {
           <p>
             <small>
               Recruiting one of your own characters into the party is free (no wage), and it fights with its own
-              real gear, spec, and talents — better than a hired companion at the same job.
+              real gear, spec, and talents — better than a hired companion at the same job. In a dungeon it fights
+              at whichever character is actually running the dungeon's level, not its own, so it can't power-level
+              a low-level character by carrying it through content far above that character's own strength.
             </small>
           </p>
           <ul>

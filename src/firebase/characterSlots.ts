@@ -204,7 +204,18 @@ export async function resolveActiveAltSetups(uid: string, character: Character):
         name: data.name,
         class: data.class,
         spec: data.spec ?? null,
-        level: data.level,
+        // The DUNGEON-RUNNING character's level, not the alt's own stored
+        // one — closes a power-leveling exploit where a high-level alt
+        // recruited into a brand-new character's party fought at its own
+        // real (much higher) level, trivializing a dungeon the entering
+        // character was nowhere near strong enough for and farming it for
+        // free XP/loot. A companion already worked this way (see
+        // resolveActiveCompanionSetups's "always matches the player's
+        // level" above); an alt now gets the same treatment — it still
+        // fights with its own real gear/talents/rotation (see
+        // buildAltCombatSetup), just leveled to match whoever's actually
+        // running the dungeon.
+        level: character.level,
         equipment: data.equipment,
         enchantments: data.enchantments,
         talentPicks: data.talentPicks,

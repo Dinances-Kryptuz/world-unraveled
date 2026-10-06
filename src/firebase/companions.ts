@@ -112,6 +112,18 @@ export async function payDungeonCompanionFee(uid: string, dungeonId: string): Pr
   const dungeon = DUNGEONS[dungeonId];
   if (!dungeon) return { success: false, reason: 'Unknown dungeon.' };
 
+  // The one server-trusted checkpoint every dungeon entry passes through
+  // (ZoneScreen.tsx's Enter button mirrors this client-side, but this is the
+  // real gate) — without it, a brand-new character could get a level-60 alt
+  // (see firebase/characterSlots.ts's resolveActiveAltSetups) to carry it
+  // into ANY dungeon, including the endgame one, well before it could
+  // survive there on its own. Only a floor, matching how zone unlocks work
+  // (gameData/zones.ts's isZoneUnlocked) — an over-leveled character
+  // stomping an early dungeon solo is normal, not the exploit this closes.
+  if (character.level < dungeon.levelRange[0]) {
+    return { success: false, reason: `Requires character level ${dungeon.levelRange[0]}.` };
+  }
+
   const fee = dungeonCompanionFee(ZONE_TIER[dungeon.zoneId] ?? 1, character.activeCompanionIds.length);
   if (fee === 0) return { success: true, costPaid: 0 };
   if (character.gold < fee) {
