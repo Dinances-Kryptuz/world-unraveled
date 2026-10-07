@@ -4,7 +4,9 @@ import type { Character, CombatPreset } from '../types/character';
 import type { ProfessionId, ProfessionTierName, EquipmentSlot } from '../gameData/types';
 import type { ClassId, SpecId } from '../gameData/classStats';
 import type { TalentColumn } from '../gameData/talents';
-import { maxSkillForUnlockedTier } from '../gameData/professionTiers';
+import { maxSkillForUnlockedTier, PROFESSION_CATEGORY, gatheringTierForLevel } from '../gameData/professionTiers';
+import { migrateLegacyGatheringLevel, migrateLegacyMasteryLevel } from '../gameData/gatheringEngine';
+import type { ProfessionState } from '../types/character';
 import { BASE_BANK_SLOTS } from '../gameData/bank';
 import { DEFAULT_ZONE_ID, ZONES } from '../gameData/zones';
 import { abilityTrainingCost, abilityTrainingZoneId } from '../gameData/abilityTraining';
@@ -26,11 +28,53 @@ import {
 
 export const BASE_BAG_SLOTS = 24;
 
+// The 4 gathering professions moved from a 1-300 skill scale (0-10 Mastery
+// for Mining) to gatheringEngine.ts's 1-100 scale (0-50 Mastery) — see
+// migrateLegacyGatheringLevel/migrateLegacyMasteryLevel's doc comments for
+// the rescale itself. Unlike every other backfill in getCharacter below,
+// this one is NOT idempotent (re-running a proportional rescale on already-
+// migrated data would silently shrink it again), so it runs at most once per
+// character, gated by — and persisting — the gatheringProfessionsMigratedV2
+// flag, rather than being patched in memory and left for "the next real
+// write" to catch up.
+async function migrateGatheringProfessions(
+  uid: string,
+  data: Record<string, any>
+): Promise<Partial<Record<ProfessionId, ProfessionState>>> {
+  const professions: Partial<Record<ProfessionId, ProfessionState>> = data.professions ?? {};
+  if (data.gatheringProfessionsMigratedV2) return professions;
+
+  const migrated: Partial<Record<ProfessionId, ProfessionState>> = { ...professions };
+  for (const id of Object.keys(migrated) as ProfessionId[]) {
+    if (PROFESSION_CATEGORY[id] === 'production') continue; // Smithing/the other 5 crafting professions are untouched
+    const state = migrated[id]!;
+    const level = migrateLegacyGatheringLevel(state.level);
+    const mastery = state.mastery
+      ? Object.fromEntries(
+          Object.entries(state.mastery).map(([resourceId, m]) => [resourceId, { level: migrateLegacyMasteryLevel(m.level), xp: 0 }])
+        )
+      : undefined;
+    migrated[id] = { level, xp: 0, unlockedTier: gatheringTierForLevel(level), ...(mastery ? { mastery } : {}) };
+  }
+
+  try {
+    await updateDoc(doc(db, 'characters', uid), { professions: migrated, gatheringProfessionsMigratedV2: true });
+  } catch (err) {
+    // Safe to retry on the next read — the flag is only set once this write
+    // actually succeeds, so a failure here just means the migration (and
+    // this same log) runs again next time.
+    console.error('Gathering profession migration failed, will retry next read:', err);
+    return professions;
+  }
+  return migrated;
+}
+
 export async function getCharacter(uid: string): Promise<Character | null> {
   const snap = await getDoc(doc(db, 'characters', uid));
   if (!snap.exists()) return null;
 
   const data = snap.data();
+  const professions = await migrateGatheringProfessions(uid, data);
 
   // Resolved lazily rather than written back — the same "patch the in-memory
   // return value, let the next real write catch Firestore up" approach every
@@ -60,8 +104,9 @@ export async function getCharacter(uid: string): Promise<Character | null> {
     travel,
     // A character with no professions key yet (pre-overhaul save) starts
     // knowing nothing — same "no choice made yet" convention as
-    // equippedAbilityIds below, not a default grant.
-    professions: data.professions ?? {},
+    // equippedAbilityIds below, not a default grant. Already migrated (if
+    // needed) by migrateGatheringProfessions above.
+    professions,
     enchantments: data.enchantments ?? {},
     learnedRecipeIds: data.learnedRecipeIds ?? [],
     bagSlots: data.bagSlots ?? BASE_BAG_SLOTS,
@@ -299,39 +344,6 @@ export async function setCharacterLevel(uid: string, level: number, restoredHp: 
   });
 }
 
-// Gathering grants a discrete skill-up chance per success now (see
-// activityEngine.ts's resolveGathering/PROFESSION_SKILLUP_CHANCE_BY_TIER),
-// not XP toward a curve — same one-step "cap at the unlocked rank's
-// ceiling, write the level directly" pattern firebase/professions.ts's
-// applyFishingResult uses.
-//
-// Takes the current level/unlockedTier from the caller rather than reading
-// the character itself — GatheringScreen's autosave already has both (it
-// just read them to compute this very result), so re-reading here would be
-// a second Firestore read of the exact same document on every single
-// autosave cycle purely to re-derive numbers the caller already has in
-// hand. Safe because this is the only code path that ever writes this
-// profession's level, and only one activity screen is ever live at a time —
-// the one realistic staleness window is two tabs open on the same account
-// simultaneously, which nothing else in this app guards against either.
-export async function applyGatheringResult(
-  uid: string,
-  profession: ProfessionId,
-  result: { skillupsGained: number; itemId: string; quantity: number; currentLevel: number; unlockedTier: ProfessionTierName }
-): Promise<void> {
-  const cap = maxSkillForUnlockedTier(result.unlockedTier);
-  const newLevel = Math.min(cap, result.currentLevel + result.skillupsGained);
-  if (newLevel !== result.currentLevel) {
-    await updateDoc(doc(db, 'characters', uid), { [`professions.${profession}.level`]: newLevel });
-  }
-
-  if (result.quantity > 0) {
-    await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), {
-      [`items.${result.itemId}`]: increment(result.quantity),
-    });
-  }
-}
-
 // Applies a batch of quest-progress events (kills, gathers, crafts, ability
 // uses, healing) to the character's active quests, persists the result, and
 // pays out any rewards from newly-completed quests. Called from the same
@@ -407,7 +419,7 @@ export async function applyCraftingResult(
     unlockedTier: ProfessionTierName;
   }
 ): Promise<void> {
-  const cap = maxSkillForUnlockedTier(result.unlockedTier);
+  const cap = maxSkillForUnlockedTier(profession, result.unlockedTier);
   const newLevel = Math.min(cap, result.currentLevel + result.skillupsGained);
 
   const characterUpdate: Record<string, unknown> = {};
@@ -426,15 +438,14 @@ export async function applyCraftingResult(
   await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), inventoryUpdates);
 }
 
-// Mining/Smithing's Mastery-pilot engine (gameData/masteryEngine.ts) writes
-// a continuous skill level+xp and a per-node/recipe Mastery level+xp,
-// instead of applyGatheringResult/applyCraftingResult's single discrete
-// skill-up count — see masteryEngine.ts's module doc comment for why these
-// two professions resolve differently from the other 8. The caller
-// (MasteryGatheringScreen) has already run resolveMasteryGatheringOffline
-// and is just persisting its final numbers, same "caller already did the
-// read/math, this just writes" shape as applyGatheringResult above.
-export async function applyMasteryGatheringResult(
+// Mining/Herbalism/Skinning's shared 1-100 XP+Mastery engine
+// (gameData/gatheringEngine.ts) writes a continuous profession level+xp and
+// a per-resource Mastery level+xp, instead of applyCraftingResult's single
+// discrete skill-up count — see gatheringEngine.ts's module doc comment. The
+// caller (GatheringScreen) has already run resolveGatheringOffline and is
+// just persisting its final numbers, same "caller already did the
+// read/math, this just writes" shape as applyCraftingResult above.
+export async function applyGatheringProfessionResult(
   uid: string,
   profession: ProfessionId,
   nodeId: string,

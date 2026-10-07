@@ -106,7 +106,13 @@ export interface ConsumableEffect {
 // boots); weapons and rings have no armorType and are unrestricted.
 export type ArmorType = 'cloth' | 'leather' | 'mail' | 'plate';
 
-export type ProfessionTierName = 'apprentice' | 'journeyman' | 'expert' | 'artisan';
+// 'master' only exists for the 4 gathering professions' 5-rank/1-100 table
+// (professionTiers.ts's GATHERING_PROFESSION_TIERS) — the 6 crafting
+// professions' 4-rank/1-300 table (PROFESSION_TIERS) never produces or
+// expects it. One shared enum rather than two parallel ones since
+// ProfessionState.unlockedTier is a single field type across every
+// profession regardless of which table it's actually drawn from.
+export type ProfessionTierName = 'apprentice' | 'journeyman' | 'expert' | 'artisan' | 'master';
 
 export interface LootDrop {
   itemId: string;
@@ -183,33 +189,22 @@ export interface GatherNode {
   name: string;
   profession: ProfessionId;
   zoneId: string;
-  // Minimum profession SKILL to attempt this node at all (despite the name,
-  // predating this overhaul — gatheringSuccessChance in activityEngine.ts
-  // has always compared it against profession skill, never character
-  // level; the zone's own unlockRequirement is what actually gates by
-  // character level). Kept as-is rather than renamed, to avoid touching
-  // every existing call site for a cosmetic rename.
+  // Both the minimum profession SKILL to attempt this node at all AND "the
+  // level this resource is appropriate for" — gatheringEngine.ts's
+  // gatheringColorTier computes Orange/Yellow/Green/Grey from the player's
+  // level MINUS this number, so there's no separate per-node breakpoints
+  // table to keep in sync anymore (see that file's module doc comment for
+  // the full 1-100 XP+Mastery design).
   requiredLevel: number;
   itemId: string;
-  // No longer read by resolveGathering (gathering grants discrete skill-up
-  // chances now, see colorBreakpoints below, not XP) — kept rather than
-  // removed from every node's data to avoid an otherwise-pointless mechanical
-  // edit across dozens of entries in zones.ts.
-  xpPerAction: number;
+  // Profession XP awarded per gather at Orange (100%) — gatheringEngine.ts
+  // scales this by the current color tier's percentage, floored at 1 XP so
+  // even a thoroughly outdated (Grey) resource still teaches something.
+  baseXp: number;
   secondsPerAction: number;
   rareBonus?: {
     itemId: string;
     chance: number; // 0–1, checked per action in addition to the guaranteed yield
-  };
-  // Same orange/yellow/green/grey semantics as Recipe.colorBreakpoints,
-  // applied by activityEngine's craftingColorTier/PROFESSION_SKILLUP_CHANCE_BY_TIER —
-  // a node far below your skill still succeeds on every gather (that's
-  // requiredLevel's job) but stops teaching you anything once it's grey,
-  // same as Fishing never running out of fish, just skill-ups.
-  colorBreakpoints: {
-    orangeUntil: number;
-    yellowUntil: number;
-    greenUntil: number;
   };
   // Mining/Skinning/Herbalism nodes require the matching tool equipped in
   // the 'tool' slot; absent means no tool is needed (not currently used,
@@ -219,20 +214,24 @@ export interface GatherNode {
 
 export type ToolType = 'mining_pick' | 'skinning_knife' | 'fishing_rod';
 
-// Fishing is deliberately modeled apart from GatherNode: one cast can land
-// any of several fish (or nothing at all, per LootDrop's implied remainder
-// chance) rather than a single guaranteed-on-success item, and its skill-up
-// curve (fishingSkillupChance in activityEngine.ts) gets harder as skill
-// rises instead of following the orange/yellow/green/grey bands — see the
-// module doc comment there for why.
+// Same shape as GatherNode (requiredLevel/baseXp/secondsPerAction/rareBonus
+// all mean the same thing, run through the exact same gatheringEngine.ts
+// resolver) plus catchChance — the one way Fishing still differs: a cast
+// can come back with nothing ("your fish got away"), earning no XP, no
+// Mastery, and no fish, before the color-tier math ever applies. One fish
+// species per hole (no more lootTable/minQty/maxQty variance) keeps Fishing
+// on the identical Profession XP + Mastery architecture as the other three,
+// per the design brief's explicit ask.
 export interface FishingHole {
   id: string;
   name: string;
   zoneId: string;
   requiredLevel: number;
-  lootTable: LootDrop[]; // chances need not sum to 1 — the remainder is "nothing" (fish got away)
-  xpPerCatch: number;
+  itemId: string;
+  baseXp: number;
   secondsPerAction: number;
+  // 0–1, checked once per cast before any XP/Mastery/color-tier math runs.
+  catchChance: number;
 }
 
 export type UnlockRequirement =

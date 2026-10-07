@@ -4,7 +4,7 @@ import { useCharacter } from '../hooks/useCharacter';
 import { applyCraftingResult, stopActivity, getCharacter, advanceQuests } from '../firebase/character';
 import { getInventory } from '../firebase/inventory';
 import { resolveCrafting, AUTOSAVE_INTERVAL_SECONDS } from '../gameData/activityEngine';
-import { getProfessionState, maxSkillForUnlockedTier } from '../gameData/professionTiers';
+import { getProfessionState, maxSkillForUnlockedTier, PROFESSION_CATEGORY } from '../gameData/professionTiers';
 import { TickBar } from './TickBar';
 import { ItemSlot } from './ItemSlot';
 import { ITEMS } from '../gameData/items';
@@ -88,6 +88,16 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
       goldRef.current
     );
 
+    // Mining's Smelting recipes are the one case of a "crafting" recipe
+    // tagged to a gathering-category profession — Mining's level/xp is now
+    // owned entirely by gatheringEngine.ts's 1-100 curve (gathering ore is
+    // the only thing that earns Mining XP, per the design brief), so
+    // Smelting never contributes a skill-up of its own; it's purely a
+    // level-gated material conversion. Every real crafting profession
+    // (category 'production') keeps the original discrete skill-up-chance
+    // behavior below unchanged.
+    const earnsSkillup = PROFESSION_CATEGORY[recipe.profession] === 'production';
+
     if (result.itemsCrafted === 0) {
       const hasEnoughMaterials = recipe.materials.every(
         (m) => (materialsRef.current[m.itemId] ?? 0) >= m.quantity
@@ -119,7 +129,7 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
     // green tiers) — carry the remainder forward, same pattern as Fishing/
     // GatheringScreen, so it behaves probabilistically over many chunks
     // instead of resolving identically every single time.
-    const skillupTotal = skillupCarryRef.current + result.skillupsGained;
+    const skillupTotal = skillupCarryRef.current + (earnsSkillup ? result.skillupsGained : 0);
     const wholeSkillups = Math.floor(skillupTotal);
     skillupCarryRef.current = skillupTotal - wholeSkillups;
     setBankedSkillups((prev) => prev + wholeSkillups);
@@ -173,7 +183,7 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
         { type: 'craft', itemId: recipe.resultItemId, count: result.itemsCrafted },
       ]);
 
-      const cap = maxSkillForUnlockedTier(freshProf.unlockedTier);
+      const cap = maxSkillForUnlockedTier(recipe.profession, freshProf.unlockedTier);
       const newLevel = Math.min(cap, freshProf.level + wholeSkillups);
       applyOptimisticUpdate(() => ({
         ...fresh,
@@ -225,8 +235,9 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
     ? resolveCrafting(anchorRef.current, new Date(), recipe, currentSkill, materialsRef.current, recipe.colorBreakpoints, goldRef.current)
     : { itemsCrafted: 0, skillupsGained: 0, skillupChance: 0, materialsConsumed: [], goldSpent: 0 };
 
+  const earnsSkillup = PROFESSION_CATEGORY[recipe.profession] === 'production';
   const displayCrafted = bankedCrafted + sinceLastSave.itemsCrafted;
-  const displaySkillups = bankedSkillups + skillupCarryRef.current + sinceLastSave.skillupsGained;
+  const displaySkillups = bankedSkillups + skillupCarryRef.current + (earnsSkillup ? sinceLastSave.skillupsGained : 0);
 
   const resultItem = ITEMS[recipe.resultItemId];
 
@@ -249,9 +260,9 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
         </div>
       </div>
       {!outOfMaterials && <TickBar seconds={recipe.craftSeconds} color="#6b4f2a" label="Crafting" />}
-      <p>Skill-up chance per craft at your skill: {(sinceLastSave.skillupChance * 100).toFixed(0)}%</p>
+      {earnsSkillup && <p>Skill-up chance per craft at your skill: {(sinceLastSave.skillupChance * 100).toFixed(0)}%</p>}
       <p>
-        This session: {displayCrafted} crafted, +{Math.floor(displaySkillups)} skill
+        This session: {displayCrafted} crafted{earnsSkillup ? `, +${Math.floor(displaySkillups)} skill` : ''}
       </p>
       <p>{recipe.profession.charAt(0).toUpperCase() + recipe.profession.slice(1)} skill: {currentSkill}</p>
       {outOfMaterials && <p>Out of materials{recipe.goldCost ? ' or gold' : ''} — stopped.</p>}

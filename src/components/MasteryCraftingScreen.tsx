@@ -101,7 +101,7 @@ export function MasteryCraftingScreen({ recipe }: { recipe: Recipe }) {
     const now = new Date();
     const prof = getProfessionState(currentCharacter.professions, recipe.profession);
     const masteryState = prof.mastery?.[recipe.id] ?? { level: 0, xp: 0 };
-    const cap = maxSkillForUnlockedTier(prof.unlockedTier);
+    const cap = maxSkillForUnlockedTier(recipe.profession, prof.unlockedTier);
 
     const result = resolveMasteryCraftingOffline(
       anchor,

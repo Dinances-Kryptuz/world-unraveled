@@ -1,26 +1,25 @@
-// A parallel profession engine for Mining and Smithing — the two professions
-// piloting the "Gathering Progression Overhaul" design (one gathering skill,
-// one crafting skill) before any decision on rolling it out further. The
-// other 8 professions (Herbalism, Skinning, Fishing, Alchemy, Leatherworking,
-// Tailoring, Enchanting, Cooking) are untouched and keep using
-// activityEngine.ts's discrete skill-up-chance model exactly as shipped.
+// A parallel profession engine for Smithing's crafting side — originally
+// piloted alongside Mining before the "Gathering Progression Overhaul"
+// redesign moved Mining (and Herbalism/Skinning/Fishing) onto their own
+// dedicated 1-100 XP+Mastery engine (see gatheringEngine.ts). Smithing stays
+// here on its original 1-300/0-10 system, out of scope for that redesign.
+// The other 5 crafting professions (Alchemy, Leatherworking, Tailoring,
+// Enchanting, Cooking) are untouched and keep using activityEngine.ts's
+// discrete skill-up-chance model exactly as shipped.
 //
-// This engine reuses GatherNode/Recipe's existing requiredLevel/
-// colorBreakpoints fields (they already match the design's
-// requiredSkill/orangeUntil/yellowUntil/greenUntil shape) but changes what
-// the color MEANS for these two professions: a continuous Profession-XP-rate
+// This engine reuses Recipe's existing requiredSkill/colorBreakpoints fields
+// but changes what the color MEANS: a continuous Profession-XP-rate
 // multiplier (100/65/30/10%) rather than a discrete skill-up chance, with
 // Grey deliberately never zero. A second, independent axis — Item Mastery,
-// 0-10 per specific resource/crafted item — tracks gathering/crafting
-// efficiency for that one thing, separate from what the profession's overall
-// skill unlocks.
+// 0-10 per specific crafted item — tracks crafting efficiency for that one
+// thing, separate from what the profession's overall skill unlocks.
 import { getTierForSkillLevel } from './professionTiers';
 import { resolveElapsedProgress } from './activityEngine';
 import type { ProfessionId, ProfessionTierName } from './types';
 
-// Only these two professions use this engine — checked by callers (UI,
-// firebase writers) to decide which engine/persistence path applies.
-export const MASTERY_PILOT_PROFESSIONS: ProfessionId[] = ['mining', 'smithing'];
+// Only Smithing uses this engine — checked by callers (UI, firebase writers)
+// to decide which engine/persistence path applies.
+export const MASTERY_PILOT_PROFESSIONS: ProfessionId[] = ['smithing'];
 export function usesMasteryEngine(profession: ProfessionId): boolean {
   return MASTERY_PILOT_PROFESSIONS.includes(profession);
 }
@@ -51,6 +50,10 @@ const RANK_BASE_XP: Record<ProfessionTierName, number> = {
   journeyman: 5,
   expert: 13,
   artisan: 28,
+  // Unreachable — getTierForSkillLevel only ever resolves against
+  // PROFESSION_TIERS, which has 4 ranks. Present purely because
+  // ProfessionTierName is one shared enum across every profession.
+  master: 0,
 };
 const RANK_XP_EXPONENT = 1.0;
 
@@ -121,176 +124,11 @@ export function masteryXpForNextLevel(masteryLevel: number): number {
   return Math.round(MASTERY_XP_BASE * Math.pow(masteryLevel + 1, MASTERY_XP_EXPONENT));
 }
 
-// ── Gathering (Mining) ───────────────────────────────────────────────────
-
-export interface MasteryGatherNodeLike {
-  itemId: string;
-  baseProfessionXp: number;
-  secondsPerAction: number;
-  requiredLevel: number;
-  colorBreakpoints: { orangeUntil: number; yellowUntil: number; greenUntil: number };
-  rareBonus?: { itemId: string; chance: number };
-}
-
-export interface MasteryGatherResult {
-  itemId: string;
-  quantityGained: number; // guaranteed units only — rareBonusQuantity is separate
-  rareBonusQuantity: number;
-  professionXpGained: number;
-  masteryXpGained: number;
-  actionsAttempted: number;
-  colorTier: MasteryColorTier;
-  xpPct: number; // for UI display, e.g. "Yellow — 65% XP"
-}
-
-// Live per-autosave-chunk resolution — one skill/mastery snapshot for the
-// whole elapsed window, same granularity convention activityEngine.ts's
-// resolveGathering already uses (negligible error at a ~20s autosave
-// cadence). The offline resolver below is the one that actually needs to
-// cross multiple thresholds inside one call.
-export function resolveMasteryGathering(
-  startedAt: Date,
-  now: Date,
-  node: MasteryGatherNodeLike,
-  currentSkill: number,
-  currentMasteryLevel: number,
-  toolBonusPct = 0
-): MasteryGatherResult {
-  const progress = resolveElapsedProgress(startedAt, now);
-  const effectiveSeconds = progress.effectiveHours * 3600;
-  const speedMult = masterySpeedMultiplier(currentMasteryLevel) * (1 + toolBonusPct / 100);
-  const secondsPerAction = node.secondsPerAction / speedMult;
-  const actionsAttempted = Math.floor(effectiveSeconds / secondsPerAction);
-
-  const tier = masteryColorTier(currentSkill, node.colorBreakpoints);
-  const xpPct = MASTERY_COLOR_XP_PCT[tier];
-  const bonusChance = masteryBonusChance(currentMasteryLevel);
-
-  return {
-    itemId: node.itemId,
-    // Each action guarantees 1 unit, plus bonusChance's expected fraction of
-    // a second ("chance to double items" — see masteryBonusChance's doc
-    // comment) averaged over actionsAttempted.
-    quantityGained: actionsAttempted * (1 + bonusChance),
-    rareBonusQuantity: node.rareBonus ? actionsAttempted * node.rareBonus.chance : 0,
-    professionXpGained: actionsAttempted * node.baseProfessionXp * xpPct,
-    masteryXpGained: actionsAttempted * node.baseProfessionXp,
-    actionsAttempted,
-    colorTier: tier,
-    xpPct,
-  };
-}
-
-export interface MasteryOfflineGatherResult {
-  quantityGained: number;
-  rareBonusQuantity: number;
-  professionXpGained: number;
-  masteryXpGained: number;
-  finalSkill: number;
-  finalSkillXp: number;
-  finalMasteryLevel: number;
-  finalMasteryXp: number;
-  startColorTier: MasteryColorTier;
-  finalColorTier: MasteryColorTier;
-  didNotConverge: boolean;
-}
-
 // Belt-and-suspenders only, same role as combatEngine/offlineCombat.ts's
 // MAX_TICKS — the 24h offline cap plus the smallest realistic per-action
 // time bounds how many batches this could ever need; this is just a
 // guarantee against an unexpected infinite loop, not a real limit.
 const MAX_BATCH_ITERATIONS = 2000;
-
-// Handles multiple profession-level-ups, mastery-level-ups and color changes
-// within one elapsed offline period cheaply: each iteration jumps straight
-// to whichever comes first (running out of time, the next skill point, or
-// the next mastery point) instead of simulating action-by-action. A skill
-// level-up IS the only thing that can change color (color is purely a
-// function of current skill), so there's no separate "color threshold" to
-// track beyond the skill one.
-export function resolveMasteryGatheringOffline(
-  startedAt: Date,
-  now: Date,
-  node: MasteryGatherNodeLike,
-  startingSkill: number,
-  startingSkillXp: number,
-  startingMasteryLevel: number,
-  startingMasteryXp: number,
-  skillCap: number,
-  toolBonusPct = 0
-): MasteryOfflineGatherResult {
-  const progress = resolveElapsedProgress(startedAt, now);
-  let remainingSeconds = progress.effectiveHours * 3600;
-
-  let skill = startingSkill;
-  let skillXp = startingSkillXp;
-  let masteryLevel = startingMasteryLevel;
-  let masteryXp = startingMasteryXp;
-  const startColorTier = masteryColorTier(skill, node.colorBreakpoints);
-
-  let quantityGained = 0;
-  let rareBonusQuantity = 0;
-  let professionXpGained = 0;
-  let masteryXpGained = 0;
-  let iterations = 0;
-
-  while (remainingSeconds > 0 && iterations < MAX_BATCH_ITERATIONS) {
-    iterations++;
-    const speedMult = masterySpeedMultiplier(masteryLevel) * (1 + toolBonusPct / 100);
-    const secondsPerAction = node.secondsPerAction / speedMult;
-    const actionsForFullTime = Math.floor(remainingSeconds / secondsPerAction);
-    if (actionsForFullTime <= 0) break;
-
-    const tier = masteryColorTier(skill, node.colorBreakpoints);
-    const xpPct = MASTERY_COLOR_XP_PCT[tier];
-    const profXpPerAction = node.baseProfessionXp * xpPct;
-    const masteryXpPerAction = node.baseProfessionXp;
-
-    const actionsToSkillUp =
-      skill < skillCap ? Math.max(1, Math.ceil((masteryProfessionXpForNextLevel(skill) - skillXp) / profXpPerAction)) : Infinity;
-    const actionsToMasteryUp =
-      masteryLevel < MASTERY_MAX_LEVEL
-        ? Math.max(1, Math.ceil((masteryXpForNextLevel(masteryLevel) - masteryXp) / masteryXpPerAction))
-        : Infinity;
-
-    const actionsThisBatch = Math.min(actionsForFullTime, actionsToSkillUp, actionsToMasteryUp);
-
-    // Same expected-value "chance to double items" as the live resolver
-    // above — kept consistent rather than letting the offline path under-
-    // count the Mastery bonus just because it resolves in batches.
-    quantityGained += actionsThisBatch * (1 + masteryBonusChance(masteryLevel));
-    rareBonusQuantity += node.rareBonus ? actionsThisBatch * node.rareBonus.chance : 0;
-    professionXpGained += actionsThisBatch * profXpPerAction;
-    masteryXpGained += actionsThisBatch * masteryXpPerAction;
-    remainingSeconds -= actionsThisBatch * secondsPerAction;
-
-    skillXp += actionsThisBatch * profXpPerAction;
-    masteryXp += actionsThisBatch * masteryXpPerAction;
-
-    while (skill < skillCap && skillXp >= masteryProfessionXpForNextLevel(skill)) {
-      skillXp -= masteryProfessionXpForNextLevel(skill);
-      skill++;
-    }
-    while (masteryLevel < MASTERY_MAX_LEVEL && masteryXp >= masteryXpForNextLevel(masteryLevel)) {
-      masteryXp -= masteryXpForNextLevel(masteryLevel);
-      masteryLevel++;
-    }
-  }
-
-  return {
-    quantityGained,
-    rareBonusQuantity,
-    professionXpGained,
-    masteryXpGained,
-    finalSkill: skill,
-    finalSkillXp: skillXp,
-    finalMasteryLevel: masteryLevel,
-    finalMasteryXp: masteryXp,
-    startColorTier,
-    finalColorTier: masteryColorTier(skill, node.colorBreakpoints),
-    didNotConverge: iterations >= MAX_BATCH_ITERATIONS,
-  };
-}
 
 // ── Crafting (Smithing) ──────────────────────────────────────────────────
 // Same engine, adapted for a materials/gold-gated action instead of an

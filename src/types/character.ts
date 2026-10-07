@@ -4,23 +4,27 @@ import type { TalentPicks } from '../gameData/talents';
 import type { ConditionGroup } from '../combatEngine/types';
 import type { TravelState } from '../gameData/travel';
 
-// `level` IS the profession's 1-300 skill value (naming predates this
-// overhaul — see xpTables.ts's professionXpForLevel, unchanged). `xp` is
-// progress toward the next skill point. A profession the character hasn't
-// learned yet has no entry in Character.professions at all (see
-// firebase/professions.ts's learnProfession) rather than a default row —
-// knowing a profession is itself meaningful state now (primary-slot limit),
-// not just a given.
+// ONE shared shape across all 10 professions, on two different scales
+// depending on category (gameData/professionTiers.ts's PROFESSION_CATEGORY):
+// the 6 crafting professions (including Smithing) use a 1-300 `level` with
+// `xp` meaningful only for Smithing (gameData/masteryEngine.ts) — the other
+// 5 level via a discrete skill-up chance with `xp` always 0; the 4 gathering
+// professions (Mining/Herbalism/Skinning/Fishing) use a 1-100 `level` with
+// `xp` toward the next level on gameData/gatheringEngine.ts's shared curve.
+// A profession the character hasn't learned yet has no entry in
+// Character.professions at all (see firebase/professions.ts's
+// learnProfession) rather than a default row.
 export interface ProfessionState {
   level: number;
   xp: number;
   unlockedTier: ProfessionTierName;
-  // Per-resource/recipe Item Mastery — only populated for the two pilot
-  // professions (gameData/masteryEngine.ts's MASTERY_PILOT_PROFESSIONS:
-  // mining and smithing). Keyed by GatherNode.id or Recipe.id. A node/recipe
-  // with no entry here is simply un-practiced (Mastery level 0), not an
-  // error — same "absence is the zero state" convention as the rest of this
-  // interface.
+  // Per-resource/recipe Mastery — populated for Smithing (0-10, keyed by
+  // Recipe.id, gameData/masteryEngine.ts) and for all 4 gathering
+  // professions (0-50, keyed by GatherNode.id/FishingHole.id,
+  // gameData/gatheringEngine.ts). The other 5 crafting professions never
+  // populate this. A node/recipe with no entry here is simply un-practiced
+  // (Mastery level 0), not an error — same "absence is the zero state"
+  // convention as the rest of this interface.
   mastery?: Record<string, { level: number; xp: number }>;
 }
 
