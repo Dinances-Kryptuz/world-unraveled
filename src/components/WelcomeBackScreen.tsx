@@ -2,12 +2,13 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useCharacter } from '../hooks/useCharacter';
 import { LIVE_SESSION_THRESHOLD_SECONDS } from '../gameData/activityEngine';
-import { resolveCraftingOffline, type CraftingRecipeLike } from '../gameData/craftingEngine';
+import { resolveCraftingOffline, resolveDisenchantOffline, type CraftingRecipeLike } from '../gameData/craftingEngine';
 import { resolveGatheringOffline, type GatheringResourceLike } from '../gameData/gatheringEngine';
 import { MONSTERS } from '../gameData/monsters';
 import { GATHER_NODES, FISHING_HOLES } from '../gameData/zones';
 import { RECIPES } from '../gameData/recipes';
 import { ITEMS } from '../gameData/items';
+import { disenchantRequiredSkill, disenchantXpAward, disenchantYieldRange } from '../gameData/enchanting';
 import { resolveSpecDef, getExtraDamageTakenPct } from '../gameData/combatProfileWithTalents';
 import { simulateOfflineCombat } from '../combatEngine/offlineCombat';
 import { evaluateTalents, EMPTY_TALENT_TOTALS } from '../utils/talentEvaluator';
@@ -211,6 +212,39 @@ export function WelcomeBackScreen({
             ? `While you were away, you caught ${Math.floor(result.quantityGained)} ${itemName}.${levelUpNote}`
             : 'While you were away, the fish weren’t biting.'
         );
+      } else if (activity.type === 'disenchanting') {
+        // Purely a preview, same as gathering/crafting above — nothing is
+        // persisted until DisenchantingScreen itself mounts and runs its own
+        // first autosave from this same anchor.
+        const item = ITEMS[activity.targetId];
+        const inventory = user ? await getInventory(user.uid) : { items: {} };
+        const owned = inventory.items[activity.targetId] ?? 0;
+        const requested = activity.disenchantQuantity ?? 1;
+        if (!item) {
+          setSummary('Welcome back!');
+        } else {
+          const prof = getProfessionState(character.professions, 'enchanting');
+          const yieldRange = disenchantYieldRange(item);
+          const result = resolveDisenchantOffline(
+            activity.startedAt,
+            now,
+            disenchantRequiredSkill(item),
+            disenchantXpAward(item),
+            yieldRange.min,
+            yieldRange.max,
+            Math.min(requested, owned),
+            prof.level,
+            prof.xp,
+            maxSkillForUnlockedTier('enchanting', prof.unlockedTier)
+          );
+          const levelUpNote =
+            result.finalSkill !== prof.level ? ` Your Enchanting level reached ${result.finalSkill}!` : '';
+          setSummary(
+            result.itemsDisenchanted > 0
+              ? `While you were away, you disenchanted ${result.itemsDisenchanted} ${item.name}.${levelUpNote}`
+              : 'While you were away, you had nothing left to disenchant.'
+          );
+        }
       } else {
         setSummary('Welcome back!');
       }

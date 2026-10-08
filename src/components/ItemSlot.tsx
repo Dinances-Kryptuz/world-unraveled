@@ -7,6 +7,7 @@ const TYPE_LABEL: Record<ItemDef['type'], string> = {
   material: 'Material',
   consumable: 'Consumable',
   recipe: 'Recipe',
+  enchant_scroll: 'Enchanting Scroll',
 };
 
 function buildTooltip(item: ItemDef): ReactNode {

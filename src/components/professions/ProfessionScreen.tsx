@@ -8,9 +8,9 @@ import { PROFESSION_LABELS, PROFESSION_CATEGORY, getProfessionState } from '../.
 import { gatheringColorTier, GATHERING_COLOR_XP_PCT } from '../../gameData/gatheringEngine';
 import { craftingColorTier, CRAFTING_COLOR_XP_PCT } from '../../gameData/craftingEngine';
 import { canUseRecipe } from '../../firebase/professions';
-import { applyEnchant, removeEnchant, disenchantItem } from '../../firebase/enchanting';
+import { useEnchantScroll, removeEnchant } from '../../firebase/enchanting';
 import { subscribeToInventory } from '../../firebase/inventory';
-import { ENCHANTS, enchantsForSlot, isDisenchantable, disenchantRequiredSkill, disenchantTier } from '../../gameData/enchanting';
+import { ENCHANTS, isDisenchantable, disenchantRequiredSkill, disenchantTier } from '../../gameData/enchanting';
 import { ITEMS } from '../../gameData/items';
 import { describeItemStats } from '../../gameData/equipmentStats';
 import { TIER_COLORS } from '../MonsterLevelBadge';
@@ -20,7 +20,8 @@ import type { ProfessionId, EquipmentSlot } from '../../gameData/types';
 import type { Inventory } from '../../types/character';
 
 // The 6 equipment slots any enchant actually targets (ENCHANTS' own slot
-// values — see gameData/enchanting.ts) in a sensible display order.
+// values — see gameData/enchanting.ts) in a sensible display order, used by
+// the Active Enchants list.
 const ENCHANT_SLOTS: EquipmentSlot[] = ['weapon', 'chest', 'gloves', 'legs', 'boots', 'ring'];
 
 // Smithing's full-armor recipe ids are prefixed by their metal tier (plain
@@ -47,13 +48,20 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
   const label = PROFESSION_LABELS[professionId];
   const category = PROFESSION_CATEGORY[professionId];
 
-  // Only Enchanting's panel needs live inventory (to list disenchantable
-  // items) — every other profession tab skips the subscription entirely.
+  // Only Enchanting's panel needs live inventory (to list scrolls to use and
+  // equipment to disenchant) — every other profession tab skips the
+  // subscription entirely.
   const [inventory, setInventory] = useState<Inventory | null>(null);
   useEffect(() => {
     if (!user || professionId !== 'enchanting') return;
     return subscribeToInventory(user.uid, setInventory);
   }, [user, professionId]);
+
+  // The quantity slider's chosen value per disenchantable item id — defaults
+  // to the full owned stack (see renderEnchantingPanel) the first time an
+  // item is seen, so "disenchant everything" needs no interaction beyond one
+  // click, per the design brief's "further incentivize idle" ask.
+  const [disenchantQty, setDisenchantQty] = useState<Record<string, number>>({});
 
   async function handleGather(nodeId: string) {
     if (!user) return;
@@ -73,9 +81,9 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
     await refetch();
   }
 
-  async function handleApplyEnchant(enchantId: string) {
+  async function handleUseScroll(scrollItemId: string) {
     if (!user) return;
-    await applyEnchant(user.uid, enchantId);
+    await useEnchantScroll(user.uid, scrollItemId);
     await refetch();
   }
 
@@ -85,9 +93,9 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
     await refetch();
   }
 
-  async function handleDisenchant(itemId: string) {
+  async function handleStartDisenchanting(itemId: string, quantity: number) {
     if (!user) return;
-    await disenchantItem(user.uid, itemId);
+    await startActivity(user.uid, { type: 'disenchanting', targetId: itemId, zoneId, quantity });
     await refetch();
   }
 
@@ -194,17 +202,21 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
     );
   }
 
-  // Enchanting has no timed crafting at all (see craftingEngine.ts's
-  // resolveEnchantApply/resolveDisenchant doc comment) — applying/removing
-  // an enchant and disenchanting unwanted gear are its only actions, so its
-  // tab replaces the generic recipe list with its own panel instead of
-  // using renderRecipeList(). This consolidates everything that used to
-  // live scattered across EquipmentScreen.tsx (the apply/remove-enchant
-  // catalog) and InventoryScreen.tsx (the disenchant button) into the one
-  // tab a player would actually look for it under.
+  // Enchanting's crafting recipes (scroll_* — see recipes.ts's "Enchanting
+  // scrolls" section) are just like any other profession's: renderRecipeList
+  // below already handles them via the normal timed/offline CraftingScreen
+  // flow. What's unique to this tab is everything AFTER a scroll exists —
+  // using it on gear, viewing what's active, and the disenchant batch —
+  // which used to live scattered across EquipmentScreen.tsx (apply/remove)
+  // and InventoryScreen.tsx (a single-item disenchant button) and is
+  // consolidated here instead.
   function renderEnchantingPanel() {
     if (!known) return <p>You don't know {label} yet — learn it at the Professions Trainer.</p>;
     const skill = professionLevel;
+
+    const scrollEntries = Object.entries(inventory?.items ?? {})
+      .filter(([itemId, quantity]) => quantity > 0 && ITEMS[itemId]?.type === 'enchant_scroll')
+      .sort(([a], [b]) => (ITEMS[a]?.name ?? a).localeCompare(ITEMS[b]?.name ?? b));
 
     const disenchantableEntries = Object.entries(inventory?.items ?? {})
       .filter(([itemId, quantity]) => quantity > 0 && ITEMS[itemId] && isDisenchantable(ITEMS[itemId]!))
@@ -212,24 +224,33 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
 
     return (
       <>
-        <h3>Apply Enchants</h3>
-        <ul>
-          {ENCHANT_SLOTS.flatMap((slot) =>
-            enchantsForSlot(slot).map((enchant) => {
-              const meetsSkill = skill >= enchant.requiredSkill;
-              const alreadyActive = char.enchantments[slot] === enchant.id;
+        <h3>Craft Scrolls</h3>
+        {renderRecipeList()}
+
+        <h3>Use Scroll</h3>
+        {scrollEntries.length === 0 ? (
+          <p>No scrolls in your inventory — craft one above.</p>
+        ) : (
+          <ul>
+            {scrollEntries.map(([itemId, quantity]) => {
+              const scroll = ITEMS[itemId]!;
+              const enchant = scroll.scrollEnchantId ? ENCHANTS[scroll.scrollEnchantId] : undefined;
+              if (!enchant) return null;
+              const equippedItem = char.equipment[enchant.slot] ? ITEMS[char.equipment[enchant.slot]!] : null;
               return (
-                <li key={enchant.id}>
-                  {enchant.name} ({enchant.description}) — requires Enchanting {enchant.requiredSkill}, {enchant.goldCost}{' '}
-                  gold, {enchant.materials.map((m) => `${m.quantity}x ${ITEMS[m.itemId]?.name ?? m.itemId}`).join(', ')}
-                  <button onClick={() => handleApplyEnchant(enchant.id)} disabled={!meetsSkill || alreadyActive}>
-                    {alreadyActive ? 'Active' : meetsSkill ? 'Apply' : `Need skill ${enchant.requiredSkill}`}
-                  </button>
+                <li key={itemId}>
+                  <div className="item-row-main">
+                    <ItemSlot item={scroll} quantity={quantity} />
+                    <span>
+                      {scroll.name} ({enchant.description}) — {equippedItem ? `applies to your equipped ${equippedItem.name}` : `no ${enchant.slot} equipped`}
+                    </span>
+                  </div>
+                  <button onClick={() => handleUseScroll(itemId)}>Use</button>
                 </li>
               );
-            })
-          )}
-        </ul>
+            })}
+          </ul>
+        )}
 
         <h3>Active Enchants</h3>
         <ul>
@@ -255,18 +276,28 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
               const item = ITEMS[itemId]!;
               const requiredSkill = disenchantRequiredSkill(item);
               const meetsSkill = skill >= requiredSkill;
+              const qty = Math.min(disenchantQty[itemId] ?? quantity, quantity);
               return (
                 <li key={itemId}>
                   <div className="item-row-main">
                     <ItemSlot item={item} quantity={quantity} />
                     <span>{item.name}</span>
                   </div>
+                  <input
+                    type="range"
+                    min={1}
+                    max={quantity}
+                    value={qty}
+                    disabled={!meetsSkill || quantity <= 1}
+                    onChange={(e) => setDisenchantQty((prev) => ({ ...prev, [itemId]: Number(e.target.value) }))}
+                  />
+                  <span>{qty}</span>
                   <button
-                    onClick={() => handleDisenchant(itemId)}
+                    onClick={() => handleStartDisenchanting(itemId, qty)}
                     disabled={!meetsSkill}
                     title={`Disenchants into ${disenchantTier(item)} (requires Enchanting ${requiredSkill})`}
                   >
-                    Disenchant{!meetsSkill ? ` (needs skill ${requiredSkill})` : ''}
+                    {meetsSkill ? `Disenchant ${qty}` : `Needs skill ${requiredSkill}`}
                   </button>
                 </li>
               );

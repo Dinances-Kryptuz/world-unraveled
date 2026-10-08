@@ -2065,4 +2065,111 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
 
+  // ── Enchanting scrolls — Enchanting's actual crafting recipes (see
+  // gameData/enchanting.ts's module doc comment: ENCHANTS is now purely the
+  // effect, these recipes own requiredSkill/xpAward/materials/goldCost, same
+  // split every other profession already has between its Recipe and its
+  // result item). craftSeconds is a smooth linear function of requiredSkill
+  // (12-38s across 1-100, same monotonic-float convention the other sparse
+  // crafting professions use — see craftingEngine.ts's module doc comment)
+  // calibrated by simulation to land Enchanting at ~39 hours to level 100
+  // with zero anti-exploit violations, matching its original ~40h target.
+  scroll_weapon_minor_might: {
+    id: 'scroll_weapon_minor_might', name: 'Scroll: Minor Might', profession: 'enchanting', requiredSkill: 5,
+    resultItemId: 'scroll_weapon_minor_might', resultQuantity: 1,
+    materials: [{ itemId: 'arcane_dust', quantity: 4 }], goldCost: 5,
+    craftSeconds: 13.1, xpAward: 13,
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  scroll_weapon_greater_might: {
+    id: 'scroll_weapon_greater_might', name: 'Scroll: Greater Might', profession: 'enchanting', requiredSkill: 49,
+    resultItemId: 'scroll_weapon_greater_might', resultQuantity: 1,
+    materials: [{ itemId: 'arcane_essence', quantity: 4 }], goldCost: 25,
+    craftSeconds: 24.6, xpAward: 106,
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  scroll_weapon_superior_might: {
+    id: 'scroll_weapon_superior_might', name: 'Scroll: Superior Might', profession: 'enchanting', requiredSkill: 98,
+    resultItemId: 'scroll_weapon_superior_might', resultQuantity: 1,
+    materials: [{ itemId: 'arcane_crystal', quantity: 3 }], goldCost: 80,
+    craftSeconds: 37.5, xpAward: 202,
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  scroll_chest_minor_stats: {
+    id: 'scroll_chest_minor_stats', name: 'Scroll: Minor Vigor', profession: 'enchanting', requiredSkill: 3,
+    resultItemId: 'scroll_chest_minor_stats', resultQuantity: 1,
+    materials: [{ itemId: 'arcane_dust', quantity: 4 }], goldCost: 5,
+    craftSeconds: 12.5, xpAward: 8,
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  scroll_chest_greater_stats: {
+    id: 'scroll_chest_greater_stats', name: 'Scroll: Greater Vigor', profession: 'enchanting', requiredSkill: 52,
+    resultItemId: 'scroll_chest_greater_stats', resultQuantity: 1,
+    materials: [{ itemId: 'arcane_essence', quantity: 4 }], goldCost: 25,
+    craftSeconds: 25.4, xpAward: 112,
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  scroll_chest_superior_stats: {
+    id: 'scroll_chest_superior_stats', name: 'Scroll: Superior Vigor', profession: 'enchanting', requiredSkill: 100,
+    resultItemId: 'scroll_chest_superior_stats', resultQuantity: 1,
+    materials: [{ itemId: 'arcane_crystal', quantity: 3 }], goldCost: 80,
+    craftSeconds: 38, xpAward: 206,
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  scroll_gloves_minor_focus: {
+    id: 'scroll_gloves_minor_focus', name: 'Scroll: Minor Focus', profession: 'enchanting', requiredSkill: 8,
+    resultItemId: 'scroll_gloves_minor_focus', resultQuantity: 1,
+    materials: [{ itemId: 'arcane_dust', quantity: 3 }], goldCost: 5,
+    craftSeconds: 13.8, xpAward: 20,
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  scroll_gloves_greater_focus: {
+    id: 'scroll_gloves_greater_focus', name: 'Scroll: Greater Focus', profession: 'enchanting', requiredSkill: 56,
+    resultItemId: 'scroll_gloves_greater_focus', resultQuantity: 1,
+    materials: [{ itemId: 'arcane_essence', quantity: 3 }], goldCost: 25,
+    craftSeconds: 26.4, xpAward: 120,
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  scroll_legs_minor_vitality: {
+    id: 'scroll_legs_minor_vitality', name: 'Scroll: Minor Vitality', profession: 'enchanting', requiredSkill: 10,
+    resultItemId: 'scroll_legs_minor_vitality', resultQuantity: 1,
+    materials: [{ itemId: 'arcane_dust', quantity: 4 }], goldCost: 6,
+    craftSeconds: 14.4, xpAward: 24,
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  scroll_legs_greater_vitality: {
+    id: 'scroll_legs_greater_vitality', name: 'Scroll: Greater Vitality', profession: 'enchanting', requiredSkill: 63,
+    resultItemId: 'scroll_legs_greater_vitality', resultQuantity: 1,
+    materials: [{ itemId: 'arcane_essence', quantity: 4 }], goldCost: 28,
+    craftSeconds: 28.3, xpAward: 134,
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  scroll_boots_minor_spirit: {
+    id: 'scroll_boots_minor_spirit', name: 'Scroll: Minor Spirit', profession: 'enchanting', requiredSkill: 1,
+    resultItemId: 'scroll_boots_minor_spirit', resultQuantity: 1,
+    materials: [{ itemId: 'arcane_dust', quantity: 3 }], goldCost: 4,
+    craftSeconds: 12, xpAward: 3,
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  scroll_boots_greater_spirit: {
+    id: 'scroll_boots_greater_spirit', name: 'Scroll: Greater Spirit', profession: 'enchanting', requiredSkill: 45,
+    resultItemId: 'scroll_boots_greater_spirit', resultQuantity: 1,
+    materials: [{ itemId: 'arcane_essence', quantity: 3 }], goldCost: 22,
+    craftSeconds: 23.6, xpAward: 98,
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  scroll_ring_minor_power: {
+    id: 'scroll_ring_minor_power', name: 'Scroll: Minor Power', profession: 'enchanting', requiredSkill: 16,
+    resultItemId: 'scroll_ring_minor_power', resultQuantity: 1,
+    materials: [{ itemId: 'arcane_essence', quantity: 2 }], goldCost: 15,
+    craftSeconds: 15.9, xpAward: 37,
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  scroll_ring_greater_power: {
+    id: 'scroll_ring_greater_power', name: 'Scroll: Greater Power', profession: 'enchanting', requiredSkill: 76,
+    resultItemId: 'scroll_ring_greater_power', resultQuantity: 1,
+    materials: [{ itemId: 'arcane_crystal', quantity: 2 }], goldCost: 60,
+    craftSeconds: 31.7, xpAward: 159,
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
 };

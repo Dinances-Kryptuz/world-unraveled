@@ -1219,6 +1219,82 @@ export const ITEMS: Record<string, ItemDef> = {
     stackable: true, sellValue: 25,
   },
 
+  // ── Enchanting scrolls — Enchanting's actual crafted output (see
+  // gameData/enchanting.ts's module doc comment and recipes.ts's matching
+  // section). Craft one through the normal timed/offline recipe pipeline,
+  // then use it on an equipped item for a free, instant apply — one per
+  // ENCHANTS entry, named to match.
+  scroll_weapon_minor_might: {
+    id: 'scroll_weapon_minor_might', name: 'Scroll: Minor Might', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon to grant +4 Strength.', stackable: true,
+    scrollEnchantId: 'enchant_weapon_minor_might', sellValue: 3,
+  },
+  scroll_weapon_greater_might: {
+    id: 'scroll_weapon_greater_might', name: 'Scroll: Greater Might', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon to grant +10 Strength.', stackable: true,
+    scrollEnchantId: 'enchant_weapon_greater_might', sellValue: 12,
+  },
+  scroll_weapon_superior_might: {
+    id: 'scroll_weapon_superior_might', name: 'Scroll: Superior Might', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon to grant +18 Strength.', stackable: true,
+    scrollEnchantId: 'enchant_weapon_superior_might', sellValue: 40,
+  },
+  scroll_chest_minor_stats: {
+    id: 'scroll_chest_minor_stats', name: 'Scroll: Minor Vigor', type: 'enchant_scroll',
+    description: 'Use on an equipped chest piece to grant +5 Stamina.', stackable: true,
+    scrollEnchantId: 'enchant_chest_minor_stats', sellValue: 3,
+  },
+  scroll_chest_greater_stats: {
+    id: 'scroll_chest_greater_stats', name: 'Scroll: Greater Vigor', type: 'enchant_scroll',
+    description: 'Use on an equipped chest piece to grant +12 Stamina.', stackable: true,
+    scrollEnchantId: 'enchant_chest_greater_stats', sellValue: 12,
+  },
+  scroll_chest_superior_stats: {
+    id: 'scroll_chest_superior_stats', name: 'Scroll: Superior Vigor', type: 'enchant_scroll',
+    description: 'Use on an equipped chest piece to grant +20 Stamina.', stackable: true,
+    scrollEnchantId: 'enchant_chest_superior_stats', sellValue: 40,
+  },
+  scroll_gloves_minor_focus: {
+    id: 'scroll_gloves_minor_focus', name: 'Scroll: Minor Focus', type: 'enchant_scroll',
+    description: 'Use on equipped gloves to grant +4 Intellect.', stackable: true,
+    scrollEnchantId: 'enchant_gloves_minor_focus', sellValue: 4,
+  },
+  scroll_gloves_greater_focus: {
+    id: 'scroll_gloves_greater_focus', name: 'Scroll: Greater Focus', type: 'enchant_scroll',
+    description: 'Use on equipped gloves to grant +9 Intellect.', stackable: true,
+    scrollEnchantId: 'enchant_gloves_greater_focus', sellValue: 13,
+  },
+  scroll_legs_minor_vitality: {
+    id: 'scroll_legs_minor_vitality', name: 'Scroll: Minor Vitality', type: 'enchant_scroll',
+    description: 'Use on equipped legs to grant +6 Stamina.', stackable: true,
+    scrollEnchantId: 'enchant_legs_minor_vitality', sellValue: 4,
+  },
+  scroll_legs_greater_vitality: {
+    id: 'scroll_legs_greater_vitality', name: 'Scroll: Greater Vitality', type: 'enchant_scroll',
+    description: 'Use on equipped legs to grant +14 Stamina.', stackable: true,
+    scrollEnchantId: 'enchant_legs_greater_vitality', sellValue: 15,
+  },
+  scroll_boots_minor_spirit: {
+    id: 'scroll_boots_minor_spirit', name: 'Scroll: Minor Spirit', type: 'enchant_scroll',
+    description: 'Use on equipped boots to grant +4 Spirit.', stackable: true,
+    scrollEnchantId: 'enchant_boots_minor_spirit', sellValue: 2,
+  },
+  scroll_boots_greater_spirit: {
+    id: 'scroll_boots_greater_spirit', name: 'Scroll: Greater Spirit', type: 'enchant_scroll',
+    description: 'Use on equipped boots to grant +9 Spirit.', stackable: true,
+    scrollEnchantId: 'enchant_boots_greater_spirit', sellValue: 11,
+  },
+  scroll_ring_minor_power: {
+    id: 'scroll_ring_minor_power', name: 'Scroll: Minor Power', type: 'enchant_scroll',
+    description: 'Use on an equipped ring to grant +3 Strength, +3 Intellect.', stackable: true,
+    scrollEnchantId: 'enchant_ring_minor_power', sellValue: 8,
+  },
+  scroll_ring_greater_power: {
+    id: 'scroll_ring_greater_power', name: 'Scroll: Greater Power', type: 'enchant_scroll',
+    description: 'Use on an equipped ring to grant +7 Strength, +7 Intellect.', stackable: true,
+    scrollEnchantId: 'enchant_ring_greater_power', sellValue: 30,
+  },
+
   // ── Alchemy potions — healAmount/manaAmount potions stay simple instant
   // active-use items (health_potion/emberpetal_tonic/etc. above); these are
   // the buff-category potions the profession overhaul adds. Only one buff

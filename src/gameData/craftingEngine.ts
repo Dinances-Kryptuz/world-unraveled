@@ -214,22 +214,17 @@ export function resolveCraftingOffline(
   };
 }
 
-// ── Enchanting (instant, one-shot — no craftSeconds, no idle/offline) ─────
-// Applying an enchant (or disenchanting an item) is a single immediate
-// Firestore write, not a timed activity — there is no "elapsed time" to
-// batch over. This resolves exactly ONE action's worth of profession XP
-// (and, for a named enchant, Recipe Mastery) using the same curve/color math
-// as timed crafting, just without a time/materials-availability loop.
-export interface EnchantActionXpResult {
-  professionXpGained: number;
-  masteryXpGained: number;
-  finalSkill: number;
-  finalSkillXp: number;
-  finalMasteryLevel: number;
-  finalMasteryXp: number;
-  colorTier: CraftingColorTier;
-}
-
+// ── Enchanting ─────────────────────────────────────────────────────────
+// Applying an enchant is no longer a standalone instant action — it's
+// crafting a scroll (a normal timed Recipe, resolved through
+// resolveCraftingOffline above like any other profession's goods) and then
+// using the finished scroll, a free action with no XP of its own (the XP
+// was already earned crafting it — see firebase/enchanting.ts's
+// useEnchantScroll). Disenchanting, below, is the one Enchanting action that
+// still needs its own resolver: there's no fixed "recipe" for an arbitrary
+// qualifying item, so it can't go through resolveCraftingOffline's
+// materials-based batching, but it's now a timed, quantity-capped, idle-
+// capable batch (resolveDisenchantOffline) rather than a single click.
 function applyOneCraftXp(
   baseXp: number,
   requiredSkill: number,
@@ -250,51 +245,71 @@ function applyOneCraftXp(
   return { professionXpGained: xpGained, finalSkill: skill, finalSkillXp: skillXp, colorTier };
 }
 
-// Applying a named enchant — tracks Recipe Mastery per enchant id, same as
-// any other crafting recipe.
-export function resolveEnchantApply(
-  baseXp: number,
+// Flat per-item time, independent of skill/Mastery (there's no Mastery axis
+// to speed it up — see the module comment above) — short enough that a
+// modest stack clears in well under a minute of live play, but still a real
+// timed/offline activity rather than an instant click, so "disenchant my
+// whole stack" is something you queue up and let run (optionally while
+// away), the same AFK-first idle posture as every other profession action.
+export const DISENCHANT_SECONDS = 5;
+
+export interface DisenchantOfflineResult {
+  itemsDisenchanted: number;
+  yieldQuantity: number;
+  professionXpGained: number;
+  finalSkill: number;
+  finalSkillXp: number;
+  // True once `maxQuantity` has been processed — the caller (
+  // DisenchantingScreen) stops the activity when this flips, same
+  // "automatically wraps up" behavior the quantity slider promises.
+  reachedRequestedQuantity: boolean;
+  didNotConverge: boolean;
+}
+
+// Disenchanting any qualifying item, N at a time — profession XP only, no
+// Mastery (there is no fixed "recipe" to master; any sufficiently-leveled
+// item qualifies). `maxQuantity` is min(requested slider value, stack size
+// actually owned) — the caller is responsible for that clamp since this
+// resolver has no inventory access of its own.
+export function resolveDisenchantOffline(
+  startedAt: Date,
+  now: Date,
   requiredSkill: number,
+  baseXp: number,
+  yieldMin: number,
+  yieldMax: number,
+  maxQuantity: number,
   startingSkill: number,
   startingSkillXp: number,
-  startingMasteryLevel: number,
-  startingMasteryXp: number,
   skillCap: number
-): EnchantActionXpResult {
-  const { professionXpGained, finalSkill, finalSkillXp, colorTier } = applyOneCraftXp(
-    baseXp,
-    requiredSkill,
-    startingSkill,
-    startingSkillXp,
-    skillCap
-  );
+): DisenchantOfflineResult {
+  const progress = resolveElapsedProgress(startedAt, now);
+  let remainingSeconds = progress.effectiveHours * 3600;
+  let skill = startingSkill;
+  let skillXp = startingSkillXp;
+  let itemsDisenchanted = 0;
+  let yieldQuantity = 0;
+  let professionXpGained = 0;
+  let iterations = 0;
 
-  let masteryLevel = startingMasteryLevel;
-  let masteryXp = startingMasteryXp + baseXp;
-  while (masteryLevel < RECIPE_MASTERY_MAX_LEVEL && masteryXp >= recipeMasteryXpForNextLevel(masteryLevel)) {
-    masteryXp -= recipeMasteryXpForNextLevel(masteryLevel);
-    masteryLevel++;
+  while (remainingSeconds >= DISENCHANT_SECONDS && itemsDisenchanted < maxQuantity && iterations < MAX_BATCH_ITERATIONS) {
+    iterations++;
+    remainingSeconds -= DISENCHANT_SECONDS;
+    itemsDisenchanted++;
+    const result = applyOneCraftXp(baseXp, requiredSkill, skill, skillXp, skillCap);
+    professionXpGained += result.professionXpGained;
+    skill = result.finalSkill;
+    skillXp = result.finalSkillXp;
+    yieldQuantity += yieldMin + Math.floor(Math.random() * (yieldMax - yieldMin + 1));
   }
 
   return {
+    itemsDisenchanted,
+    yieldQuantity,
     professionXpGained,
-    masteryXpGained: baseXp,
-    finalSkill,
-    finalSkillXp,
-    finalMasteryLevel: masteryLevel,
-    finalMasteryXp: masteryXp,
-    colorTier,
+    finalSkill: skill,
+    finalSkillXp: skillXp,
+    reachedRequestedQuantity: itemsDisenchanted >= maxQuantity,
+    didNotConverge: iterations >= MAX_BATCH_ITERATIONS,
   };
-}
-
-// Disenchanting any qualifying item — profession XP only, no Mastery (there
-// is no fixed "recipe" to master; any sufficiently-leveled item qualifies).
-export function resolveDisenchant(
-  baseXp: number,
-  requiredSkill: number,
-  startingSkill: number,
-  startingSkillXp: number,
-  skillCap: number
-): { professionXpGained: number; finalSkill: number; finalSkillXp: number; colorTier: CraftingColorTier } {
-  return applyOneCraftXp(baseXp, requiredSkill, startingSkill, startingSkillXp, skillCap);
 }

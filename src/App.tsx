@@ -15,6 +15,7 @@ import { CombatScreen } from './components/CombatScreen';
 import { GatheringScreen } from './components/GatheringScreen';
 import { FishingScreen } from './components/FishingScreen';
 import { CraftingScreen } from './components/CraftingScreen';
+import { DisenchantingScreen } from './components/DisenchantingScreen';
 import { DungeonScreen } from './components/DungeonScreen';
 import { WelcomeBackScreen, isLongAbsence } from './components/WelcomeBackScreen';
 import { ProfessionScreen } from './components/professions/ProfessionScreen';
@@ -228,6 +229,8 @@ function AppContent() {
   } else if (activity.type === 'crafting' && activity.targetId && RECIPES[activity.targetId]) {
     const recipe = RECIPES[activity.targetId];
     activityNode = <CraftingScreen recipe={recipe} />;
+  } else if (activity.type === 'disenchanting' && activity.targetId) {
+    activityNode = <DisenchantingScreen itemId={activity.targetId} />;
   }
 
   // Starting a gather/craft/fish from the Professions page used to leave the
