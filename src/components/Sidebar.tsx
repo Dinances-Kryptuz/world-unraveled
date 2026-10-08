@@ -1,5 +1,4 @@
-import { ALL_PROFESSION_IDS, PROFESSION_LABELS, PROFESSION_CATEGORY, maxSkillForUnlockedTier } from '../gameData/professionTiers';
-import { usesMasteryEngine, masteryProfessionXpForNextLevel } from '../gameData/masteryEngine';
+import { ALL_PROFESSION_IDS, PROFESSION_LABELS, maxSkillForUnlockedTier } from '../gameData/professionTiers';
 import { gatheringXpForNextLevel } from '../gameData/gatheringEngine';
 import type { Character } from '../types/character';
 import type { ProfessionId } from '../gameData/types';
@@ -92,29 +91,17 @@ function ProfessionNavButton({
 }) {
   const state = character.professions[professionId];
   const highlighted = active && isSelected;
-  // Every profession is a flat skill number (0-300 for crafting, 1-100 for
-  // gathering/fishing) against the ceiling of its currently unlocked rank —
-  // this bar is that tier-progress, separate from the XP-to-next-level bar
-  // below.
+  // Every profession is a flat 1-100 level against the ceiling of its
+  // currently unlocked rank — this bar is that tier-progress, separate from
+  // the XP-to-next-level bar below.
   const cap = state ? maxSkillForUnlockedTier(professionId, state.unlockedTier) : 0;
   const progressPct = state ? Math.max(0, Math.min(100, (state.level / cap) * 100)) : 0;
 
-  // Smithing (the lone remaining Mastery-engine crafting profession — see
-  // masteryEngine.ts) and all 4 gathering/fishing professions (now on
-  // gatheringEngine.ts's 1-100 XP curve) track real XP toward the next
-  // level; the other 5 crafting professions level up via a discrete
-  // per-action skill-up chance with no XP counter at all (see
-  // applyCraftingResult's "not XP toward a curve" comment), so there's
-  // nothing meaningful to show them beyond the tier-progress bar above.
-  const isMastery = usesMasteryEngine(professionId);
-  const isGathering = PROFESSION_CATEGORY[professionId] !== 'production';
-  const xpForNextLevel = state
-    ? isMastery
-      ? masteryProfessionXpForNextLevel(state.level)
-      : isGathering
-        ? gatheringXpForNextLevel(state.level)
-        : null
-    : null;
+  // All 10 professions now share gatheringEngine.ts's/craftingEngine.ts's
+  // same 1-100 XP curve (craftingXpForNextLevel is a direct re-export of
+  // gatheringXpForNextLevel), so every known profession tracks real XP
+  // toward its next level.
+  const xpForNextLevel = state ? gatheringXpForNextLevel(state.level) : null;
   const xpProgressPct = xpForNextLevel ? Math.max(0, Math.min(100, (state!.xp / xpForNextLevel) * 100)) : 0;
 
   return (

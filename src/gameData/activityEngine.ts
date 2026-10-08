@@ -1,6 +1,6 @@
-// The single elapsed-time resolver shared by every activity — combat,
-// crafting (both still live here), and gatheringEngine.ts's own resolver for
-// Mining/Herbalism/Skinning/Fishing (which imports resolveElapsedProgress
+// The single elapsed-time resolver shared by every activity — combat (still
+// live here), and gatheringEngine.ts/craftingEngine.ts's own resolvers for
+// every gathering and crafting profession (both import resolveElapsedProgress
 // from this file rather than duplicating it). Offline progress is worth
 // exactly as much as live progress,
 // per real hour — no throttle, no diminishing-returns tier — up to a flat
@@ -83,96 +83,3 @@ export function resolveElapsedProgress(startedAt: Date, now: Date): ResolvedProg
   };
 }
 
-// ── Crafting resolution ─────────────────────────────────────────────────
-// Crafting is unaffected by the live/offline throttle: it's already
-// self-limiting by materials on hand, so there's no "thousands of items"
-// runaway case the way unbounded combat/gathering had.
-
-// Classic-WoW-style recipe color, driven by current skill vs. the recipe's
-// requiredSkill and colorBreakpoints. "red" only shows up in UI contexts
-// that list recipes below your skill requirement — resolveCrafting itself
-// is never reached below requiredSkill (the UI gates starting the activity).
-export type CraftColorTier = 'red' | 'orange' | 'yellow' | 'green' | 'grey';
-
-export function craftingColorTier(
-  currentSkill: number,
-  requiredSkill: number,
-  colorBreakpoints: { orangeUntil: number; yellowUntil: number; greenUntil: number }
-): CraftColorTier {
-  if (currentSkill < requiredSkill) return 'red';
-  if (currentSkill <= colorBreakpoints.orangeUntil) return 'orange';
-  if (currentSkill <= colorBreakpoints.yellowUntil) return 'yellow';
-  if (currentSkill <= colorBreakpoints.greenUntil) return 'green';
-  return 'grey';
-}
-
-// Shared by both crafting and gathering (see resolveGathering above) — the
-// data-driven skill-up chance per successful action/craft, same model
-// Fishing already uses (fishingSkillupChance above): a discrete chance of
-// gaining ONE skill point, decaying to exactly 0 once the content is grey.
-// Expressed here as an expected-value rate (successes * chance) rather than
-// an actual per-action dice roll, since this engine resolves gathering/
-// crafting in batched elapsed-time chunks for idle play — mathematically
-// equivalent in expectation, and the caller (GatheringScreen/
-// CraftingScreen) already carries the fractional remainder across chunks
-// the same way Fishing does. Grey is exactly 0 — content you've outgrown
-// still yields the item/result on every success, it just never teaches you
-// anything anymore, exactly like a trivial fish.
-export const PROFESSION_SKILLUP_CHANCE_BY_TIER: Record<CraftColorTier, number> = {
-  red: 0, // can't happen in practice — not reachable below requiredSkill
-  orange: 1.0,
-  yellow: 0.8,
-  green: 0.3,
-  grey: 0,
-};
-
-export interface CraftingResult {
-  itemsCrafted: number;
-  skillupsGained: number; // expected whole skill points — see PROFESSION_SKILLUP_CHANCE_BY_TIER
-  skillupChance: number; // for UI display, e.g. "80% skill-up chance"
-  materialsConsumed: { itemId: string; quantity: number }[];
-  goldSpent: number;
-}
-
-export function resolveCrafting(
-  startedAt: Date,
-  now: Date,
-  recipe: {
-    requiredSkill: number;
-    craftSeconds: number;
-    materials: { itemId: string; quantity: number }[];
-    goldCost?: number;
-  },
-  currentSkill: number,
-  availableMaterialQuantities: Record<string, number>,
-  colorBreakpoints: { orangeUntil: number; yellowUntil: number; greenUntil: number },
-  availableGold = Infinity
-): CraftingResult {
-  const progress = resolveElapsedProgress(startedAt, now);
-  const effectiveSeconds = progress.effectiveHours * 3600;
-
-  const timeLimitedCrafts = Math.floor(effectiveSeconds / recipe.craftSeconds);
-
-  const materialLimitedCrafts = Math.min(
-    ...recipe.materials.map((m) =>
-      Math.floor((availableMaterialQuantities[m.itemId] ?? 0) / m.quantity)
-    )
-  );
-  const goldLimitedCrafts = recipe.goldCost ? Math.floor(availableGold / recipe.goldCost) : Infinity;
-
-  const itemsCrafted = Math.max(0, Math.min(timeLimitedCrafts, materialLimitedCrafts, goldLimitedCrafts));
-
-  const tier = craftingColorTier(currentSkill, recipe.requiredSkill, colorBreakpoints);
-  const skillupChance = PROFESSION_SKILLUP_CHANCE_BY_TIER[tier];
-
-  return {
-    itemsCrafted,
-    skillupsGained: itemsCrafted * skillupChance,
-    skillupChance,
-    goldSpent: itemsCrafted * (recipe.goldCost ?? 0),
-    materialsConsumed: recipe.materials.map((m) => ({
-      itemId: m.itemId,
-      quantity: m.quantity * itemsCrafted,
-    })),
-  };
-}

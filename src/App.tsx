@@ -15,8 +15,6 @@ import { CombatScreen } from './components/CombatScreen';
 import { GatheringScreen } from './components/GatheringScreen';
 import { FishingScreen } from './components/FishingScreen';
 import { CraftingScreen } from './components/CraftingScreen';
-import { MasteryCraftingScreen } from './components/MasteryCraftingScreen';
-import { usesMasteryEngine } from './gameData/masteryEngine';
 import { DungeonScreen } from './components/DungeonScreen';
 import { WelcomeBackScreen, isLongAbsence } from './components/WelcomeBackScreen';
 import { ProfessionScreen } from './components/professions/ProfessionScreen';
@@ -229,7 +227,7 @@ function AppContent() {
     activityNode = <FishingScreen hole={FISHING_HOLES[activity.targetId]} />;
   } else if (activity.type === 'crafting' && activity.targetId && RECIPES[activity.targetId]) {
     const recipe = RECIPES[activity.targetId];
-    activityNode = usesMasteryEngine(recipe.profession) ? <MasteryCraftingScreen recipe={recipe} /> : <CraftingScreen recipe={recipe} />;
+    activityNode = <CraftingScreen recipe={recipe} />;
   }
 
   // Starting a gather/craft/fish from the Professions page used to leave the

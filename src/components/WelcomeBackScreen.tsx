@@ -1,12 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useCharacter } from '../hooks/useCharacter';
-import { resolveCrafting, LIVE_SESSION_THRESHOLD_SECONDS } from '../gameData/activityEngine';
-import {
-  resolveMasteryCraftingOffline,
-  usesMasteryEngine,
-  type MasteryCraftRecipeLike,
-} from '../gameData/masteryEngine';
+import { LIVE_SESSION_THRESHOLD_SECONDS } from '../gameData/activityEngine';
+import { resolveCraftingOffline, type CraftingRecipeLike } from '../gameData/craftingEngine';
 import { resolveGatheringOffline, type GatheringResourceLike } from '../gameData/gatheringEngine';
 import { MONSTERS } from '../gameData/monsters';
 import { GATHER_NODES, FISHING_HOLES } from '../gameData/zones';
@@ -144,57 +140,46 @@ export function WelcomeBackScreen({
           `While you were away, you gathered ${Math.floor(result.quantityGained)} ${itemName}.${levelUpNote}`
         );
       } else if (activity.type === 'crafting') {
+        // All 6 crafting professions now share craftingEngine.ts's 1-100
+        // XP+Mastery engine — Mining's Smelting recipes land here too
+        // (tagged to a gathering-category profession) but never earn
+        // Mining XP/Mastery of their own, per the same earnsProfessionXp
+        // split CraftingScreen uses. Purely a preview: nothing is persisted
+        // until the crafting screen itself mounts and runs its own first
+        // autosave from this same anchor.
         const recipe = RECIPES[activity.targetId];
         const inventory = user ? await getInventory(user.uid) : { items: {} };
-        if (usesMasteryEngine(recipe.profession)) {
-          const prof = getProfessionState(character.professions, recipe.profession);
-          const masteryState = prof.mastery?.[recipe.id] ?? { level: 0, xp: 0 };
-          const recipeLike: MasteryCraftRecipeLike = {
-            resultItemId: recipe.resultItemId,
-            resultQuantity: recipe.resultQuantity,
-            baseProfessionXp: recipe.xpAward,
-            craftSeconds: recipe.craftSeconds,
-            requiredSkill: recipe.requiredSkill,
-            colorBreakpoints: recipe.colorBreakpoints,
-            materials: recipe.materials,
-            goldCost: recipe.goldCost,
-          };
-          const result = resolveMasteryCraftingOffline(
-            activity.startedAt,
-            now,
-            recipeLike,
-            prof.level,
-            prof.xp,
-            masteryState.level,
-            masteryState.xp,
-            maxSkillForUnlockedTier(recipe.profession, prof.unlockedTier),
-            inventory.items,
-            character.gold
-          );
-          const levelUpNote = result.finalSkill !== prof.level ? ` Your ${recipe.profession} skill reached ${result.finalSkill}!` : '';
-          setSummary(
-            `While you were away, you crafted ${Math.floor(result.itemsCrafted)} ${recipe.name}.${levelUpNote}`
-          );
-        } else {
-          // Mining's Smelting recipes land here too now (Mining is no longer
-          // a Mastery-pilot profession) — see CraftingScreen's matching
-          // "earnsSkillup" comment for why they're gated on Mining level but
-          // never grant Mining skill/XP themselves.
-          const currentSkill = getProfessionState(character.professions, recipe.profession).level;
-          const result = resolveCrafting(
-            activity.startedAt,
-            now,
-            recipe,
-            currentSkill,
-            inventory.items,
-            recipe.colorBreakpoints
-          );
-          const earnsSkillup = PROFESSION_CATEGORY[recipe.profession] === 'production';
-          setSummary(
-            `While you were away, you crafted ${result.itemsCrafted} ${recipe.name}` +
-              (earnsSkillup ? `, gaining ${Math.floor(result.skillupsGained)} skill.` : '.')
-          );
-        }
+        const prof = getProfessionState(character.professions, recipe.profession);
+        const masteryState = prof.mastery?.[recipe.id] ?? { level: 0, xp: 0 };
+        const recipeLike: CraftingRecipeLike = {
+          resultItemId: recipe.resultItemId,
+          resultQuantity: recipe.resultQuantity,
+          baseXp: recipe.xpAward,
+          craftSeconds: recipe.craftSeconds,
+          requiredSkill: recipe.requiredSkill,
+          materials: recipe.materials,
+          goldCost: recipe.goldCost,
+        };
+        const result = resolveCraftingOffline(
+          activity.startedAt,
+          now,
+          recipeLike,
+          prof.level,
+          prof.xp,
+          masteryState.level,
+          masteryState.xp,
+          maxSkillForUnlockedTier(recipe.profession, prof.unlockedTier),
+          inventory.items,
+          character.gold
+        );
+        const earnsProfessionXp = PROFESSION_CATEGORY[recipe.profession] === 'production';
+        const levelUpNote =
+          earnsProfessionXp && result.finalSkill !== prof.level
+            ? ` Your ${recipe.profession} level reached ${result.finalSkill}!`
+            : '';
+        setSummary(
+          `While you were away, you crafted ${Math.floor(result.itemsCrafted)} ${recipe.name}.${levelUpNote}`
+        );
       } else if (activity.type === 'fishing') {
         // Fishing shares gatheringEngine.ts's engine with Mining/Herbalism/
         // Skinning — see the gathering branch above for the same preview

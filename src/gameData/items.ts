@@ -1157,6 +1157,48 @@ export const ITEMS: Record<string, ItemDef> = {
     stackable: true, sellValue: 20,
   },
 
+  // ── Cooking's non-fish ingredients — monster drops (boar_meat/raw_meat
+  // above already cover Greenhollow/Stonecrag/Emberfall; these fill in the
+  // three upper zones, which previously dropped nothing food-related at
+  // all) and two Seasoning tiers, so Cooking draws from combat across the
+  // whole level range, not just Fishing. See monsters.ts for which creature
+  // drops which.
+  scavenger_meat: {
+    id: 'scavenger_meat', name: 'Scavenger Meat', type: 'material',
+    description: 'Tough meat scavenged by Cinderfall’s ash-scavengers.',
+    stackable: true, sellValue: 2,
+  },
+  hound_meat: {
+    id: 'hound_meat', name: 'Magma Hound Meat', type: 'material',
+    description: 'Fire-toughened meat from a magma hound.',
+    stackable: true, sellValue: 3,
+  },
+  drake_meat: {
+    id: 'drake_meat', name: 'Scaleback Drake Meat', type: 'material',
+    description: 'Rich, marbled meat from a scaleback drake.',
+    stackable: true, sellValue: 4,
+  },
+  behemoth_flank: {
+    id: 'behemoth_flank', name: 'Charhide Behemoth Flank', type: 'material',
+    description: 'A heavy cut of flank from a charhide behemoth — enough to feed a crowd.',
+    stackable: true, sellValue: 6,
+  },
+  pyraxis_flank: {
+    id: 'pyraxis_flank', name: 'Pyraxis Flank', type: 'material',
+    description: 'A rare cut of drake meat, still warm with Pyraxis’s inner fire.',
+    stackable: true, sellValue: 15,
+  },
+  common_seasoning: {
+    id: 'common_seasoning', name: 'Common Seasoning', type: 'material',
+    description: 'A basic blend of salt and dried herbs, carried by Emberfall’s marauders.',
+    stackable: true, sellValue: 2,
+  },
+  rare_seasoning: {
+    id: 'rare_seasoning', name: 'Rare Seasoning', type: 'material',
+    description: 'A potent blend of exotic spices, found only on Cinderheart’s most dangerous foes.',
+    stackable: true, sellValue: 8,
+  },
+
   // ── Enchanting materials — produced by Disenchanting (see
   // gameData/enchanting.ts), consumed by enchant recipes. Three tiers
   // scale with the disenchanted item's own level, same convention as
@@ -1287,6 +1329,96 @@ export const ITEMS: Record<string, ItemDef> = {
     description: 'A banquet fit for the world’s molten heart. Restores 180 health and grants +10 Stamina (Well Fed) for 10 minutes.',
     stackable: true, sellValue: 40,
     consumableEffect: { healAmount: 180, cooldownSeconds: 30, buff: { category: 'well_fed', statBonuses: { STA: 10 }, durationSeconds: 600 } },
+  },
+
+  // ── More Cooking food — fills in Basic Food (cheap, pure heal, no buff —
+  // an alternative to the single-fish Stat Food dishes above for players
+  // who'd rather hunt than fish), Combination Meals (fish + monster drops +
+  // herbs/seasoning together, per the design brief's explicit "Wolf & Trout
+  // Stew"/"Hunter's Seafood Feast" examples — stronger buffs than any
+  // single-source dish at the same level), and Feasts (high-level,
+  // high-quantity, multi-source material sinks). Each recipe exists for a
+  // distinct reason rather than being a near-duplicate of its neighbors.
+  roasted_boar_meat: {
+    id: 'roasted_boar_meat', name: 'Roasted Boar Meat', type: 'consumable',
+    description: 'Simple roasted meat. Restores 20 health. No frills, no buff — just food.',
+    stackable: true, sellValue: 2,
+    consumableEffect: { healAmount: 20, cooldownSeconds: 30 },
+  },
+  hunters_jerky: {
+    id: 'hunters_jerky', name: 'Hunter’s Jerky', type: 'consumable',
+    description: 'Dried trail rations. Restores 35 health. No frills, no buff — just food.',
+    stackable: true, sellValue: 4,
+    consumableEffect: { healAmount: 35, cooldownSeconds: 30 },
+  },
+  wolf_trout_stew: {
+    id: 'wolf_trout_stew', name: 'Wolf & Trout Stew', type: 'consumable',
+    description: 'Trout, wolf meat, and wild herbs simmered together. Restores 40 health and grants +3 Strength and +3 Stamina (Well Fed) for 10 minutes.',
+    stackable: true, sellValue: 9,
+    consumableEffect: { healAmount: 40, cooldownSeconds: 30, buff: { category: 'well_fed', statBonuses: { STR: 3, STA: 3 }, durationSeconds: 600 } },
+  },
+  spiced_trail_soup: {
+    id: 'spiced_trail_soup', name: 'Spiced Trail Soup', type: 'consumable',
+    description: 'Mountain char and trail meat in a seasoned broth. Restores 65 health and grants +5 Intellect and +3 Spirit (Well Fed) for 10 minutes.',
+    stackable: true, sellValue: 14,
+    consumableEffect: { healAmount: 65, cooldownSeconds: 30, buff: { category: 'well_fed', statBonuses: { INT: 5, SPI: 3 }, durationSeconds: 600 } },
+  },
+  scavengers_broth: {
+    id: 'scavengers_broth', name: 'Scavenger’s Broth', type: 'consumable',
+    description: 'Ember eel and scavenged meat in a hearty broth. Restores 85 health and grants +6 Strength and +4 Stamina (Well Fed) for 10 minutes.',
+    stackable: true, sellValue: 19,
+    consumableEffect: { healAmount: 85, cooldownSeconds: 30, buff: { category: 'well_fed', statBonuses: { STR: 6, STA: 4 }, durationSeconds: 600 } },
+  },
+  charred_skewer: {
+    id: 'charred_skewer', name: 'Charred Skewer', type: 'consumable',
+    description: 'Skewered ashfin carp and charred meat. Restores 95 health and grants +6 Intellect and +5 Spirit (Well Fed) for 10 minutes.',
+    stackable: true, sellValue: 23,
+    consumableEffect: { healAmount: 95, cooldownSeconds: 30, buff: { category: 'well_fed', statBonuses: { INT: 6, SPI: 5 }, durationSeconds: 600 } },
+  },
+  hunters_seafood_feast: {
+    id: 'hunters_seafood_feast', name: 'Hunter’s Seafood Feast', type: 'consumable',
+    description: 'Magma darter and magma hound meat with rare seasoning. A true combination dish: restores 115 health and grants +7 Strength and +7 Intellect (Well Fed) for 10 minutes.',
+    stackable: true, sellValue: 28,
+    consumableEffect: { healAmount: 115, cooldownSeconds: 30, buff: { category: 'well_fed', statBonuses: { STR: 7, INT: 7 }, durationSeconds: 600 } },
+  },
+  drake_meat_platter: {
+    id: 'drake_meat_platter', name: 'Drake Meat Platter', type: 'consumable',
+    description: 'Scaleback drake meat seared with magma darter. Restores 125 health and grants +8 Strength and +8 Stamina (Well Fed) for 10 minutes.',
+    stackable: true, sellValue: 32,
+    consumableEffect: { healAmount: 125, cooldownSeconds: 30, buff: { category: 'well_fed', statBonuses: { STR: 8, STA: 8 }, durationSeconds: 600 } },
+  },
+  behemoth_feast: {
+    id: 'behemoth_feast', name: 'Behemoth Feast', type: 'consumable',
+    description: 'A feast of charhide behemoth flank, magma darter, and rare seasoning — enough for a whole party. Restores 160 health and grants +6 Strength and +14 Stamina (Well Fed) for 15 minutes.',
+    stackable: true, sellValue: 55,
+    consumableEffect: { healAmount: 160, cooldownSeconds: 30, buff: { category: 'well_fed', statBonuses: { STR: 6, STA: 14 }, durationSeconds: 900 } },
+  },
+  // Deliberately requires old low-level fish alongside high-level ones —
+  // per the design brief's "Master Fisherman's Feast" example, keeping
+  // demand for beginner materials alive even at the endgame.
+  master_fishermans_feast: {
+    id: 'master_fishermans_feast', name: 'Master Fisherman’s Feast', type: 'consumable',
+    description: 'A grand feast of emberheart koi, brook trout, and drake meat — a whole party could eat from this. Restores 170 health and grants +12 Stamina, +8 Intellect, and +8 Spirit (Well Fed) for 15 minutes.',
+    stackable: true, sellValue: 70,
+    consumableEffect: { healAmount: 170, cooldownSeconds: 30, buff: { category: 'well_fed', statBonuses: { STA: 12, INT: 8, SPI: 8 }, durationSeconds: 900 } },
+  },
+  pyraxis_flame_seared_flank: {
+    id: 'pyraxis_flame_seared_flank', name: 'Pyraxis Flame-Seared Flank', type: 'consumable',
+    description: 'Pyraxis’s own flank, seared over its still-smoldering embers with emberheart koi and rare seasoning. The finest meal in Cinderheart Crater: restores 200 health and grants +15 Strength, +15 Intellect, and +10 Stamina (Well Fed) for 15 minutes.',
+    stackable: true, sellValue: 120,
+    consumableEffect: {
+      healAmount: 200, cooldownSeconds: 30,
+      buff: { category: 'well_fed', statBonuses: { STR: 15, INT: 15, STA: 10 }, durationSeconds: 900 },
+    },
+  },
+  // The recipe itself is a rare boss drop, not trainer-taught — see
+  // recipes.ts's pyraxis_flame_seared_flank entry (learnedAutomatically:
+  // false) and monsters.ts's pyraxis lootTable, matching the design brief's
+  // "obtaining the recipe is only one part of the process" example.
+  recipe_pyraxis_flame_seared_flank: {
+    id: 'recipe_pyraxis_flame_seared_flank', name: 'Recipe: Pyraxis Flame-Seared Flank', type: 'recipe',
+    description: 'A scorched recipe card, pried from Pyraxis’s hoard. Use to learn the recipe.',
+    stackable: true, teachesRecipeId: 'pyraxis_flame_seared_flank', sellValue: 0,
   },
 
   // ── Tailoring bags — permanent inventory capacity, consumed on use (see

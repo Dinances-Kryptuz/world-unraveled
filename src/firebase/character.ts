@@ -1,10 +1,10 @@
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp, Timestamp, increment, arrayUnion } from 'firebase/firestore';
 import { db } from './config';
 import type { Character, CombatPreset } from '../types/character';
-import type { ProfessionId, ProfessionTierName, EquipmentSlot } from '../gameData/types';
+import type { ProfessionId, EquipmentSlot } from '../gameData/types';
 import type { ClassId, SpecId } from '../gameData/classStats';
 import type { TalentColumn } from '../gameData/talents';
-import { maxSkillForUnlockedTier, PROFESSION_CATEGORY, gatheringTierForLevel } from '../gameData/professionTiers';
+import { PROFESSION_CATEGORY, tierForLevel } from '../gameData/professionTiers';
 import { migrateLegacyGatheringLevel, migrateLegacyMasteryLevel } from '../gameData/gatheringEngine';
 import type { ProfessionState } from '../types/character';
 import { BASE_BANK_SLOTS } from '../gameData/bank';
@@ -28,25 +28,35 @@ import {
 
 export const BASE_BAG_SLOTS = 24;
 
-// The 4 gathering professions moved from a 1-300 skill scale (0-10 Mastery
-// for Mining) to gatheringEngine.ts's 1-100 scale (0-50 Mastery) — see
-// migrateLegacyGatheringLevel/migrateLegacyMasteryLevel's doc comments for
-// the rescale itself. Unlike every other backfill in getCharacter below,
-// this one is NOT idempotent (re-running a proportional rescale on already-
-// migrated data would silently shrink it again), so it runs at most once per
-// character, gated by — and persisting — the gatheringProfessionsMigratedV2
-// flag, rather than being patched in memory and left for "the next real
-// write" to catch up.
-async function migrateGatheringProfessions(
+// All 10 professions moved from a 1-300 skill scale (0-10 Mastery where any
+// existed — Mining and Smithing's respective Mastery pilots) to the shared
+// 1-100 scale (0-50 Mastery) gatheringEngine.ts/craftingEngine.ts now use —
+// see migrateLegacyGatheringLevel/migrateLegacyMasteryLevel's doc comments
+// for the rescale itself (the same /3 and x5 formulas apply regardless of
+// category, since the OLD scale was identical for gathering and crafting
+// before each got its own redesign). Unlike every other backfill in
+// getCharacter below, this one is NOT idempotent (re-running a proportional
+// rescale on already-migrated data would silently shrink it again), so each
+// category runs at most once per character, gated by — and persisting — its
+// own one-time flag, rather than being patched in memory and left for "the
+// next real write" to catch up. Two separate flags (not one) because
+// gathering shipped and may already be migrated on real characters before
+// crafting's redesign landed — a single shared flag would either skip
+// crafting's migration entirely (if set) or re-run gathering's (if not),
+// silently re-shrinking already-correct 1-100 data.
+async function migrateLegacyProfessions(
   uid: string,
   data: Record<string, any>
 ): Promise<Partial<Record<ProfessionId, ProfessionState>>> {
   const professions: Partial<Record<ProfessionId, ProfessionState>> = data.professions ?? {};
-  if (data.gatheringProfessionsMigratedV2) return professions;
+  const gatheringDone = !!data.gatheringProfessionsMigratedV2;
+  const craftingDone = !!data.craftingProfessionsMigratedV2;
+  if (gatheringDone && craftingDone) return professions;
 
   const migrated: Partial<Record<ProfessionId, ProfessionState>> = { ...professions };
   for (const id of Object.keys(migrated) as ProfessionId[]) {
-    if (PROFESSION_CATEGORY[id] === 'production') continue; // Smithing/the other 5 crafting professions are untouched
+    const alreadyDone = PROFESSION_CATEGORY[id] === 'production' ? craftingDone : gatheringDone;
+    if (alreadyDone) continue;
     const state = migrated[id]!;
     const level = migrateLegacyGatheringLevel(state.level);
     const mastery = state.mastery
@@ -54,16 +64,20 @@ async function migrateGatheringProfessions(
           Object.entries(state.mastery).map(([resourceId, m]) => [resourceId, { level: migrateLegacyMasteryLevel(m.level), xp: 0 }])
         )
       : undefined;
-    migrated[id] = { level, xp: 0, unlockedTier: gatheringTierForLevel(level), ...(mastery ? { mastery } : {}) };
+    migrated[id] = { level, xp: 0, unlockedTier: tierForLevel(level), ...(mastery ? { mastery } : {}) };
   }
 
   try {
-    await updateDoc(doc(db, 'characters', uid), { professions: migrated, gatheringProfessionsMigratedV2: true });
+    await updateDoc(doc(db, 'characters', uid), {
+      professions: migrated,
+      gatheringProfessionsMigratedV2: true,
+      craftingProfessionsMigratedV2: true,
+    });
   } catch (err) {
-    // Safe to retry on the next read — the flag is only set once this write
-    // actually succeeds, so a failure here just means the migration (and
-    // this same log) runs again next time.
-    console.error('Gathering profession migration failed, will retry next read:', err);
+    // Safe to retry on the next read — the flags are only set once this
+    // write actually succeeds, so a failure here just means the migration
+    // (and this same log) runs again next time.
+    console.error('Profession migration failed, will retry next read:', err);
     return professions;
   }
   return migrated;
@@ -74,7 +88,7 @@ export async function getCharacter(uid: string): Promise<Character | null> {
   if (!snap.exists()) return null;
 
   const data = snap.data();
-  const professions = await migrateGatheringProfessions(uid, data);
+  const professions = await migrateLegacyProfessions(uid, data);
 
   // Resolved lazily rather than written back — the same "patch the in-memory
   // return value, let the next real write catch Firestore up" approach every
@@ -105,7 +119,7 @@ export async function getCharacter(uid: string): Promise<Character | null> {
     // A character with no professions key yet (pre-overhaul save) starts
     // knowing nothing — same "no choice made yet" convention as
     // equippedAbilityIds below, not a default grant. Already migrated (if
-    // needed) by migrateGatheringProfessions above.
+    // needed) by migrateLegacyProfessions above.
     professions,
     enchantments: data.enchantments ?? {},
     learnedRecipeIds: data.learnedRecipeIds ?? [],
@@ -397,54 +411,10 @@ export async function acceptQuest(uid: string, questId: string): Promise<{ succe
   return { success: true };
 }
 
-// Crafting grants a discrete skill-up chance per craft now (see
-// activityEngine.ts's resolveCrafting/PROFESSION_SKILLUP_CHANCE_BY_TIER),
-// not XP toward a curve — same one-step pattern as applyGatheringResult
-// above. Skill can never climb past the ceiling of the CURRENTLY unlocked
-// rank — the whole point of "visit a trainer to unlock the next rank."
-//
-// Takes the current level/unlockedTier from the caller rather than reading
-// the character itself — same reasoning as applyGatheringResult above, to
-// avoid a second Firestore read of the same document every autosave cycle.
-export async function applyCraftingResult(
-  uid: string,
-  profession: ProfessionId,
-  result: {
-    skillupsGained: number;
-    resultItemId: string;
-    resultQuantity: number;
-    materialsConsumed: { itemId: string; quantity: number }[];
-    goldSpent?: number;
-    currentLevel: number;
-    unlockedTier: ProfessionTierName;
-  }
-): Promise<void> {
-  const cap = maxSkillForUnlockedTier(profession, result.unlockedTier);
-  const newLevel = Math.min(cap, result.currentLevel + result.skillupsGained);
-
-  const characterUpdate: Record<string, unknown> = {};
-  if (newLevel !== result.currentLevel) characterUpdate[`professions.${profession}.level`] = newLevel;
-  if (result.goldSpent) characterUpdate.gold = increment(-result.goldSpent);
-  if (Object.keys(characterUpdate).length > 0) {
-    await updateDoc(doc(db, 'characters', uid), characterUpdate);
-  }
-
-  const inventoryUpdates: Record<string, unknown> = {
-    [`items.${result.resultItemId}`]: increment(result.resultQuantity),
-  };
-  for (const m of result.materialsConsumed) {
-    inventoryUpdates[`items.${m.itemId}`] = increment(-m.quantity);
-  }
-  await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), inventoryUpdates);
-}
-
 // Mining/Herbalism/Skinning's shared 1-100 XP+Mastery engine
 // (gameData/gatheringEngine.ts) writes a continuous profession level+xp and
-// a per-resource Mastery level+xp, instead of applyCraftingResult's single
-// discrete skill-up count — see gatheringEngine.ts's module doc comment. The
-// caller (GatheringScreen) has already run resolveGatheringOffline and is
-// just persisting its final numbers, same "caller already did the
-// read/math, this just writes" shape as applyCraftingResult above.
+// a per-resource Mastery level+xp. The caller (GatheringScreen) has already
+// run resolveGatheringOffline and is just persisting its final numbers.
 export async function applyGatheringProfessionResult(
   uid: string,
   profession: ProfessionId,
@@ -476,9 +446,15 @@ export async function applyGatheringProfessionResult(
   }
 }
 
-// Smithing's side of the same Mastery-pilot engine — see
-// applyMasteryGatheringResult above for the shared design notes.
-export async function applyMasteryCraftingResult(
+// All 6 crafting professions' shared 1-100 XP+Mastery engine
+// (gameData/craftingEngine.ts) writes a continuous profession level+xp and
+// a per-recipe Mastery level+xp — generalizes the old Smithing-only
+// applyMasteryCraftingResult to every crafting profession. `earnsProfessionXp`
+// is false only for Mining's Smelting recipes (tagged to a gathering-
+// category profession whose level/XP/Mastery is owned entirely by
+// gatheringEngine.ts — see CraftingScreen's matching comment), in which case
+// this writes only the inventory/gold side, never the profession fields.
+export async function applyCraftingProfessionResult(
   uid: string,
   profession: ProfessionId,
   recipeId: string,
@@ -491,15 +467,22 @@ export async function applyMasteryCraftingResult(
     newSkillXp: number;
     newMasteryLevel: number;
     newMasteryXp: number;
+    earnsProfessionXp: boolean;
   }
 ): Promise<void> {
-  const characterUpdate: Record<string, unknown> = {
-    [`professions.${profession}.level`]: result.newSkillLevel,
-    [`professions.${profession}.xp`]: result.newSkillXp,
-    [`professions.${profession}.mastery.${recipeId}`]: { level: result.newMasteryLevel, xp: result.newMasteryXp },
-  };
+  const characterUpdate: Record<string, unknown> = {};
+  if (result.earnsProfessionXp) {
+    characterUpdate[`professions.${profession}.level`] = result.newSkillLevel;
+    characterUpdate[`professions.${profession}.xp`] = result.newSkillXp;
+    characterUpdate[`professions.${profession}.mastery.${recipeId}`] = {
+      level: result.newMasteryLevel,
+      xp: result.newMasteryXp,
+    };
+  }
   if (result.goldSpent) characterUpdate.gold = increment(-result.goldSpent);
-  await updateDoc(doc(db, 'characters', uid), characterUpdate);
+  if (Object.keys(characterUpdate).length > 0) {
+    await updateDoc(doc(db, 'characters', uid), characterUpdate);
+  }
 
   const inventoryUpdates: Record<string, unknown> = {
     [`items.${result.resultItemId}`]: increment(result.resultQuantity),

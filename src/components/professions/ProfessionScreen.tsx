@@ -4,9 +4,8 @@ import { startActivity } from '../../firebase/character';
 import { ZONES, GATHER_NODES, FISHING_HOLES } from '../../gameData/zones';
 import { RECIPES } from '../../gameData/recipes';
 import { PROFESSION_LABELS, PROFESSION_CATEGORY, getProfessionState } from '../../gameData/professionTiers';
-import { craftingColorTier } from '../../gameData/activityEngine';
-import { usesMasteryEngine, masteryColorTier, MASTERY_COLOR_XP_PCT } from '../../gameData/masteryEngine';
 import { gatheringColorTier, GATHERING_COLOR_XP_PCT } from '../../gameData/gatheringEngine';
+import { craftingColorTier, CRAFTING_COLOR_XP_PCT } from '../../gameData/craftingEngine';
 import { canUseRecipe } from '../../firebase/professions';
 import { ITEMS } from '../../gameData/items';
 import { describeItemStats } from '../../gameData/equipmentStats';
@@ -74,17 +73,17 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
             const meetsLevel = !recipe.requiredCharacterLevel || char.level >= recipe.requiredCharacterLevel;
             const meetsGold = !recipe.goldCost || char.gold >= recipe.goldCost;
             const canCraft = meetsSkill && meetsLevel && meetsGold;
-            // Mining's smelting recipes and Smithing recipes report a
-            // continuous XP-rate color instead of the discrete skill-up-
-            // chance tier every other crafting profession uses — see
-            // masteryEngine.ts's module doc comment. "red" (below
-            // requiredSkill) is still purely a gating display either way.
-            const tier = !meetsSkill
-              ? 'red'
-              : usesMasteryEngine(professionId)
-                ? masteryColorTier(professionLevel, recipe.colorBreakpoints)
-                : craftingColorTier(professionLevel, recipe.requiredSkill, recipe.colorBreakpoints);
+            // All 6 crafting professions now share craftingEngine.ts's
+            // level-delta color formula — "red" (below requiredSkill) stays
+            // a purely gating display on top of it. Mining's Smelting
+            // recipes land here too (tagged to a gathering-category
+            // profession) and still show a color/XP% for flavor even though
+            // they never actually earn Mining XP (see CraftingScreen's
+            // earnsProfessionXp comment) — harmless since the % is never
+            // read anywhere but this tooltip.
+            const tier = !meetsSkill ? 'red' : craftingColorTier(professionLevel, recipe.requiredSkill);
             const resultItem = ITEMS[recipe.resultItemId];
+            const masteryLevel = getProfessionState(char.professions, professionId).mastery?.[recipe.id]?.level ?? 0;
             return (
               <li key={recipe.id}>
                 <div className="item-row-main">
@@ -96,14 +95,13 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
                     >
                       {recipe.name}
                     </span>{' '}
-                    (requires skill {recipe.requiredSkill}
+                    (requires level {recipe.requiredSkill}
                     {recipe.requiredCharacterLevel ? `, Lv ${recipe.requiredCharacterLevel}` : ''}
-                    {meetsSkill && usesMasteryEngine(professionId)
-                      ? `, ${(MASTERY_COLOR_XP_PCT[tier as keyof typeof MASTERY_COLOR_XP_PCT] * 100).toFixed(0)}% XP`
-                      : ''}
+                    {meetsSkill ? `, ${(CRAFTING_COLOR_XP_PCT[tier as keyof typeof CRAFTING_COLOR_XP_PCT] * 100).toFixed(0)}% XP` : ''}
                     ) — materials:{' '}
                     {recipe.materials.map((m) => `${m.quantity}x ${ITEMS[m.itemId]?.name ?? m.itemId}`).join(', ')}
                     {recipe.goldCost ? ` + ${recipe.goldCost} gold` : ''}
+                    {known ? ` — Mastery ${masteryLevel}` : ''}
                   </span>
                 </div>
                 <button onClick={() => handleCraft(recipe.id)} disabled={!canCraft}>

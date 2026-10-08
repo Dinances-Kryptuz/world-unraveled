@@ -106,12 +106,8 @@ export interface ConsumableEffect {
 // boots); weapons and rings have no armorType and are unrestricted.
 export type ArmorType = 'cloth' | 'leather' | 'mail' | 'plate';
 
-// 'master' only exists for the 4 gathering professions' 5-rank/1-100 table
-// (professionTiers.ts's GATHERING_PROFESSION_TIERS) — the 6 crafting
-// professions' 4-rank/1-300 table (PROFESSION_TIERS) never produces or
-// expects it. One shared enum rather than two parallel ones since
-// ProfessionState.unlockedTier is a single field type across every
-// profession regardless of which table it's actually drawn from.
+// All 10 professions now share one 5-rank/1-100 table
+// (professionTiers.ts's PROFESSION_TIERS) and so all reach 'master'.
 export type ProfessionTierName = 'apprentice' | 'journeyman' | 'expert' | 'artisan' | 'master';
 
 export interface LootDrop {
@@ -295,6 +291,11 @@ export interface Recipe {
   id: string;
   name: string;
   profession: ProfessionId;
+  // Both the unlock gate AND the color-tier reference point on the shared
+  // 1-100 profession scale — see craftingEngine.ts's module doc comment.
+  // "Skill" rather than "Level" purely for naming continuity with this
+  // field's pre-overhaul meaning; semantically identical to GatherNode's
+  // requiredLevel.
   requiredSkill: number;
   requiredCharacterLevel?: number;
   resultItemId: string;
@@ -307,20 +308,13 @@ export interface Recipe {
   // materials to turn a damaged dungeon drop back into its real form.
   goldCost?: number;
   craftSeconds: number;
-  // No longer read by resolveCrafting (crafting grants a discrete skill-up
-  // chance per craft now, see colorBreakpoints below, not XP) — kept rather
-  // than removed from every recipe's data to avoid an otherwise-pointless
-  // mechanical edit across the ~100 entries in recipes.ts.
+  // The Orange (100%) base profession-XP award per craft on craftingEngine.ts's
+  // 1-100 curve — live again (not dead) now that every crafting profession
+  // resolves through that engine instead of the old discrete skill-up-chance
+  // model. colorBreakpoints was removed entirely once color became a
+  // universal level-delta formula (craftingColorTier) instead of a
+  // per-recipe breakpoint set.
   xpAward: number;
-  // Skill at/below orangeUntil = 100% skill-up chance per craft, up to
-  // yellowUntil = 80%, up to greenUntil = 30%, above that = 0% (grey — never
-  // provides a skillup, same as a trivial fish). See activityEngine.ts's
-  // craftingColorTier/PROFESSION_SKILLUP_CHANCE_BY_TIER.
-  colorBreakpoints: {
-    orangeUntil: number;
-    yellowUntil: number;
-    greenUntil: number;
-  };
   // Where this recipe is obtained, and whether just meeting requiredSkill
   // is enough to use it (true, the common case) or it also needs the
   // matching 'recipe' item consumed first (false — see
