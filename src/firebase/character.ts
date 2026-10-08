@@ -291,7 +291,16 @@ export async function createCharacter(uid: string, name: string, characterClass:
 
 export async function startActivity(
   uid: string,
-  activity: { type: 'combat' | 'gathering' | 'crafting' | 'fishing'; targetId: string; zoneId: string }
+  activity: {
+    type: 'combat' | 'gathering' | 'crafting' | 'fishing' | 'disenchanting';
+    targetId: string;
+    zoneId: string;
+    // Only meaningful for 'disenchanting' — the stack size chosen on the
+    // Enchanting tab's quantity slider (see DisenchantingScreen and
+    // firebase/enchanting.ts's module doc comment). Ignored for every other
+    // activity type, which runs until manually stopped like before.
+    quantity?: number;
+  }
 ): Promise<void> {
   await updateDoc(doc(db, 'characters', uid), {
     currentActivity: {
@@ -299,6 +308,7 @@ export async function startActivity(
       targetId: activity.targetId,
       zoneId: activity.zoneId,
       startedAt: serverTimestamp(),
+      ...(activity.quantity !== undefined ? { disenchantQuantity: activity.quantity } : {}),
     },
   });
 }

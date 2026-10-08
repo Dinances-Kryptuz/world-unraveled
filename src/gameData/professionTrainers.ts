@@ -17,7 +17,7 @@ export interface ProfessionTrainerDef {
   rank: ProfessionTierName;
 }
 
-const TRAINER_ZONE_BY_RANK: Record<ProfessionTierName, string> = {
+export const TRAINER_ZONE_BY_RANK: Record<ProfessionTierName, string> = {
   apprentice: 'greenhollow_fields',
   journeyman: 'stonecrag_foothills',
   expert: 'emberfall_ridge',

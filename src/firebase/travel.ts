@@ -21,7 +21,7 @@ export async function startTravel(
     return { success: false, reason: 'Finish your current activity before traveling.' };
   }
 
-  const minutes = travelMinutes(character.currentZoneId, toZoneId, bestMountSpeedBonusPct(character.mounts));
+  const minutes = travelMinutes(bestMountSpeedBonusPct(character.mounts));
   const departedAt = new Date();
   const arrivesAt = new Date(departedAt.getTime() + minutes * 60_000);
 

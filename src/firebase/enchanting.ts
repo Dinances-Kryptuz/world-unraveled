@@ -1,11 +1,8 @@
 import { doc, updateDoc, increment } from 'firebase/firestore';
 import { db } from './config';
-import { getCharacter } from './character';
 import { getInventory } from './inventory';
 import { ITEMS } from '../gameData/items';
-import { ENCHANTS, isDisenchantable, disenchantRequiredSkill, disenchantXpAward, disenchantYield } from '../gameData/enchanting';
-import { resolveEnchantApply, resolveDisenchant } from '../gameData/craftingEngine';
-import { getProfessionState, maxSkillForUnlockedTier } from '../gameData/professionTiers';
+import { ENCHANTS } from '../gameData/enchanting';
 import type { EquipmentSlot } from '../gameData/types';
 
 export interface EnchantActionResult {
@@ -13,52 +10,27 @@ export interface EnchantActionResult {
   reason?: string;
 }
 
-// Applies (or overwrites) the enchantment on a slot — see
-// Character.enchantments's doc comment for why this binds to the slot
-// rather than a specific item. Requires Enchanting skill, consumes
-// materials and gold, same validate-then-spend pattern as every other
-// profession action in this project. Grants profession XP (via
-// craftingEngine.ts's resolveEnchantApply, keyed to this one enchant's
-// Recipe Mastery) for the FIRST time — this used to only ever gate on
-// skill, never raise it.
-export async function applyEnchant(uid: string, enchantId: string): Promise<EnchantActionResult> {
-  const enchant = ENCHANTS[enchantId];
-  if (!enchant) return { success: false, reason: 'Unknown enchant.' };
-
-  const character = await getCharacter(uid);
-  if (!character) return { success: false, reason: 'Character not found.' };
-
-  const prof = getProfessionState(character.professions, 'enchanting');
-  if (prof.level < enchant.requiredSkill) {
-    return { success: false, reason: `Requires Enchanting skill ${enchant.requiredSkill} (have ${prof.level}).` };
-  }
-  if (character.gold < enchant.goldCost) {
-    return { success: false, reason: `Requires ${enchant.goldCost} gold.` };
-  }
+// Consuming a crafted scroll is free and instant — the skill/material/gold
+// cost was already paid once when the scroll itself was crafted (see
+// recipes.ts's "Enchanting scrolls" section, resolved through the normal
+// resolveCraftingOffline pipeline like any other profession's goods, same as
+// CraftingScreen.tsx). This replaces the old applyEnchant, which paid
+// materials/gold and rolled profession XP at APPLY time — see
+// gameData/enchanting.ts's module doc comment for the full reasoning.
+export async function useEnchantScroll(uid: string, scrollItemId: string): Promise<EnchantActionResult> {
+  const scrollItem = ITEMS[scrollItemId];
+  const enchant = scrollItem?.scrollEnchantId ? ENCHANTS[scrollItem.scrollEnchantId] : undefined;
+  if (!scrollItem || !enchant) return { success: false, reason: 'Unknown scroll.' };
 
   const inventory = await getInventory(uid);
-  for (const m of enchant.materials) {
-    if ((inventory.items[m.itemId] ?? 0) < m.quantity) {
-      return { success: false, reason: `Missing materials: ${ITEMS[m.itemId]?.name ?? m.itemId}.` };
-    }
-  }
-
-  const masteryState = prof.mastery?.[enchantId] ?? { level: 0, xp: 0 };
-  const cap = maxSkillForUnlockedTier('enchanting', prof.unlockedTier);
-  const xp = resolveEnchantApply(enchant.xpAward, enchant.requiredSkill, prof.level, prof.xp, masteryState.level, masteryState.xp, cap);
+  if ((inventory.items[scrollItemId] ?? 0) < 1) return { success: false, reason: "You don't have that scroll." };
 
   await updateDoc(doc(db, 'characters', uid), {
-    gold: increment(-enchant.goldCost),
-    [`enchantments.${enchant.slot}`]: enchantId,
-    [`professions.enchanting.level`]: xp.finalSkill,
-    [`professions.enchanting.xp`]: xp.finalSkillXp,
-    [`professions.enchanting.mastery.${enchantId}`]: { level: xp.finalMasteryLevel, xp: xp.finalMasteryXp },
+    [`enchantments.${enchant.slot}`]: enchant.id,
   });
-  const inventoryUpdates: Record<string, unknown> = {};
-  for (const m of enchant.materials) {
-    inventoryUpdates[`items.${m.itemId}`] = increment(-m.quantity);
-  }
-  await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), inventoryUpdates);
+  await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), {
+    [`items.${scrollItemId}`]: increment(-1),
+  });
   return { success: true };
 }
 
@@ -68,39 +40,28 @@ export async function removeEnchant(uid: string, slot: EquipmentSlot): Promise<v
   });
 }
 
-// Disenchants ONE unit of an equipment item from inventory into Enchanting
-// materials (dust/essence/crystal, per gameData/enchanting.ts's formula) —
-// not a Recipe, since any sufficiently-leveled equipment item qualifies,
-// not just a fixed, handwritten list. Grants profession XP (via
-// craftingEngine.ts's resolveDisenchant) but no Recipe Mastery — there's no
-// fixed recipe id to key it by.
-export async function disenchantItem(uid: string, itemId: string): Promise<EnchantActionResult> {
-  const item = ITEMS[itemId];
-  if (!item || !isDisenchantable(item)) return { success: false, reason: 'That can’t be disenchanted.' };
-
-  const character = await getCharacter(uid);
-  if (!character) return { success: false, reason: 'Character not found.' };
-
-  const prof = getProfessionState(character.professions, 'enchanting');
-  const required = disenchantRequiredSkill(item);
-  if (prof.level < required) {
-    return { success: false, reason: `Requires Enchanting skill ${required} (have ${prof.level}).` };
+// One autosave cycle's worth of a 'disenchanting' activity (see
+// gameData/craftingEngine.ts's resolveDisenchantOffline and
+// components/DisenchantingScreen.tsx, which computes `result` and calls
+// this the same way CraftingScreen calls applyCraftingProfessionResult) —
+// writes consumed stock, yielded materials, and profession XP/level.
+export async function applyDisenchantResult(
+  uid: string,
+  itemId: string,
+  result: {
+    itemsDisenchanted: number;
+    yieldItemId: string;
+    yieldQuantity: number;
+    newSkillLevel: number;
+    newSkillXp: number;
   }
-
-  const inventory = await getInventory(uid);
-  if ((inventory.items[itemId] ?? 0) <= 0) return { success: false, reason: 'You don’t have one.' };
-
-  const yielded = disenchantYield(item);
-  const cap = maxSkillForUnlockedTier('enchanting', prof.unlockedTier);
-  const xp = resolveDisenchant(disenchantXpAward(item), required, prof.level, prof.xp, cap);
-
+): Promise<void> {
   await updateDoc(doc(db, 'characters', uid), {
-    [`professions.enchanting.level`]: xp.finalSkill,
-    [`professions.enchanting.xp`]: xp.finalSkillXp,
+    'professions.enchanting.level': result.newSkillLevel,
+    'professions.enchanting.xp': result.newSkillXp,
   });
   await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), {
-    [`items.${itemId}`]: increment(-1),
-    [`items.${yielded.itemId}`]: increment(yielded.quantity),
+    [`items.${itemId}`]: increment(-result.itemsDisenchanted),
+    [`items.${result.yieldItemId}`]: increment(result.yieldQuantity),
   });
-  return { success: true };
 }

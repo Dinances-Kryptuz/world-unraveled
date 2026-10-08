@@ -40,6 +40,7 @@ export function getItemIcon(item: ItemDef): string {
   }
 
   if (item.type === 'recipe') return '📜';
+  if (item.type === 'enchant_scroll') return '🧻';
 
   if (item.type === 'consumable') {
     if (item.consumableEffect?.bagCapacityBonus) return '🎒';

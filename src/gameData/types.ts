@@ -17,7 +17,7 @@ export type ProfessionId =
   | 'enchanting'
   | 'cooking';
 
-export type ActivityType = 'combat' | 'gathering' | 'crafting' | 'fishing';
+export type ActivityType = 'combat' | 'gathering' | 'crafting' | 'fishing' | 'disenchanting';
 
 // 'tool' is a 7th-slot-adjacent equip slot for profession tools (mining
 // pick, skinning knife, fishing rod) — reuses the exact same equip/unequip
@@ -47,7 +47,17 @@ export type EquipmentSlot =
 // it names (Character.learnedRecipeIds) rather than being equipped or
 // consumed for an effect. Only recipes with learnedAutomatically === false
 // need one — see Recipe below.
-export type ItemType = 'material' | 'equipment' | 'consumable' | 'recipe';
+//
+// 'enchant_scroll' items are Enchanting's crafted output (see
+// gameData/enchanting.ts's module doc comment) — crafted through the normal
+// timed/offline recipe pipeline like any other crafting profession's goods
+// (ItemDef.scrollEnchantId below says which enchant it applies), then
+// consumed instantly on an equipped item via firebase/enchanting.ts's
+// useEnchantScroll. This replaces the old instant "pay materials, apply
+// enchant" single action with "craft scrolls while AFK, then use them" —
+// decoupling the time/material cost (paid once, at craft time) from
+// applying the effect (free and instant once you hold the scroll).
+export type ItemType = 'material' | 'equipment' | 'consumable' | 'recipe' | 'enchant_scroll';
 
 // Only one buff of a given category can be active at once (applying another
 // of the same category replaces it) — see combatEngine/buffs.ts. Open-ended
@@ -268,6 +278,10 @@ export interface ItemDef {
   // recipe id (see firebase/professions.ts's learnRecipe). Items of this
   // type are never equipped or stacked into a numeric effect.
   teachesRecipeId?: string;
+  // Only present when type === 'enchant_scroll' — which gameData/
+  // enchanting.ts ENCHANTS entry this scroll applies when used (see
+  // firebase/enchanting.ts's useEnchantScroll).
+  scrollEnchantId?: string;
   // Set on a boss/dungeon drop's "_damaged" variant — purely descriptive
   // (an item is actually unequippable because it has no equipSlot at all;
   // see items.ts's damaged-item convention). Points at the real item a

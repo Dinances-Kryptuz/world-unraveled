@@ -491,9 +491,10 @@ service cloud.firestore {
   }
 
   function isValidActivity(a) {
-    return a.type in [null, 'combat', 'gathering', 'crafting', 'fishing']
+    return a.type in [null, 'combat', 'gathering', 'crafting', 'fishing', 'disenchanting']
       && (a.targetId == null || a.targetId is string)
       && (a.zoneId == null || a.zoneId is string)
-      && (a.startedAt == null || a.startedAt is timestamp);
+      && (a.startedAt == null || a.startedAt is timestamp)
+      && (!('disenchantQuantity' in a) || a.disenchantQuantity is int);
   }
 }

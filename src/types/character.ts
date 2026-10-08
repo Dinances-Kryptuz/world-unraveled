@@ -34,6 +34,13 @@ export interface CurrentActivity {
   zoneId: string | null;
   startedAt: Date | null;
   recipeQueue?: { recipeId: string; quantity: number }[];
+  // Only set when type === 'disenchanting' — the stack size the player
+  // chose on the Enchanting tab's quantity slider (see DisenchantingScreen
+  // and firebase/enchanting.ts's startDisenchanting). The activity
+  // auto-stops once this many have been processed (or the stack runs out,
+  // whichever comes first) rather than running until manually stopped like
+  // every other activity.
+  disenchantQuantity?: number;
 }
 
 // A named snapshot of an equipped-ability loadout + its conditions (Phase 7)
