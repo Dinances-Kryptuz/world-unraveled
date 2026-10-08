@@ -2,10 +2,9 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useCharacter } from '../hooks/useCharacter';
 import { equipItem, unequipItem } from '../firebase/character';
-import { applyEnchant, removeEnchant } from '../firebase/enchanting';
 import { subscribeToInventory } from '../firebase/inventory';
 import { ITEMS } from '../gameData/items';
-import { ENCHANTS, enchantsForSlot } from '../gameData/enchanting';
+import { ENCHANTS } from '../gameData/enchanting';
 import { canClassEquip } from '../gameData/classStats';
 import { ItemSlot } from './ItemSlot';
 import type { Inventory } from '../types/character';
@@ -38,18 +37,6 @@ export function EquipmentScreen() {
     await refetch();
   }
 
-  async function handleApplyEnchant(enchantId: string) {
-    if (!user) return;
-    await applyEnchant(user.uid, enchantId);
-    await refetch();
-  }
-
-  async function handleRemoveEnchant(slot: EquipmentSlot) {
-    if (!user) return;
-    await removeEnchant(user.uid, slot);
-    await refetch();
-  }
-
   const equippableInInventory = Object.entries(inventory.items).filter(([itemId, quantity]) => {
     const item = ITEMS[itemId];
     return item?.type === 'equipment' && quantity > 0;
@@ -77,36 +64,16 @@ export function EquipmentScreen() {
                 <>
                   {' '}
                   — <em>{enchant.name}</em> ({enchant.description})
-                  <button onClick={() => handleRemoveEnchant(slot)}>Remove Enchant</button>
                 </>
               )}
             </li>
           );
         })}
       </ul>
-
       {character.professions.enchanting && (
-        <>
-          <h3>Enchanting</h3>
-          <ul>
-            {SLOT_ORDER.filter((slot) => slot !== 'tool').flatMap((slot) =>
-              enchantsForSlot(slot).map((enchant) => {
-                const skill = character.professions.enchanting!.level;
-                const meetsSkill = skill >= enchant.requiredSkill;
-                const alreadyActive = character.enchantments[slot] === enchant.id;
-                return (
-                  <li key={enchant.id}>
-                    {enchant.name} ({enchant.description}) — requires Enchanting {enchant.requiredSkill}, {enchant.goldCost}{' '}
-                    gold, {enchant.materials.map((m) => `${m.quantity}x ${ITEMS[m.itemId]?.name ?? m.itemId}`).join(', ')}
-                    <button onClick={() => handleApplyEnchant(enchant.id)} disabled={!meetsSkill || alreadyActive}>
-                      {alreadyActive ? 'Active' : meetsSkill ? 'Apply' : `Need skill ${enchant.requiredSkill}`}
-                    </button>
-                  </li>
-                );
-              })
-            )}
-          </ul>
-        </>
+        <p>
+          <small>Apply, remove, or disenchant enchants from the Enchanting tab.</small>
+        </p>
       )}
 
       <h3>Equip from inventory</h3>

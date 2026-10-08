@@ -1,5 +1,10 @@
 import type { BaseStat } from './classStats';
 import type { EquipmentSlot, ItemDef } from './types';
+import { RECIPES } from './recipes';
+import { MONSTERS } from './monsters';
+import { ZONE_TIER, DEFAULT_ZONE_ID } from './zones';
+import { tierForLevel } from './professionTiers';
+import { TRAINER_ZONE_BY_RANK } from './professionTrainers';
 
 // Enchantments bind to the equipment SLOT, not a specific item instance —
 // this engine has no concept of a unique item instance (every item of the
@@ -125,11 +130,12 @@ export function enchantsForSlot(slot: EquipmentSlot): EnchantDef[] {
 }
 
 // ── Disenchanting ──────────────────────────────────────────────────────
-// Deliberately a formula over the item's own statBonuses/sellValue rather
-// than a static per-item field — "any equipment item of sufficient level
-// should be disenchantable" (per the design brief) would otherwise mean
-// hand-tagging 100+ existing items. Tools are excluded (equipSlot ===
-// 'tool') — they're profession gear, not armor/weapons/jewelry.
+// Deliberately formulas over the item's own data (stat total for the reward
+// tier below, origin zone for the skill gate above) rather than static
+// per-item fields — "any item can be disenchanted" (per the design brief)
+// would otherwise mean hand-tagging 200+ existing items. Tools are excluded
+// (equipSlot === 'tool') — they're profession gear, not armor/weapons/
+// jewelry.
 export type DisenchantTier = 'dust' | 'essence' | 'crystal';
 
 function statTotal(item: ItemDef): number {
@@ -147,14 +153,54 @@ export function disenchantTier(item: ItemDef): DisenchantTier {
   return 'crystal';
 }
 
-// Required Enchanting level scales with the item's own power — a level-60
-// raid drop needs real Enchanting investment to break down, a starter
-// item needs none, matching "higher-level gear should require higher
-// Enchanting skill to disenchant." On the shared 1-100 profession scale
-// (rescaled from an original 1-300-shaped 280 cap/x6 multiplier by the same
-// /3 factor every other profession's old data was rescaled by).
+// The Enchanting skill required to disenchant gear scales with the ZONE the
+// gear came from, not the item's own stat total — "any item can be
+// disenchanted as long as your Enchanting is trained to the same level as
+// the zone the equipment came from," per the design brief. ZONE_TIER (1-6,
+// zones.ts) already orders zones by content progression; this maps that
+// ordering onto the shared 1-100 Enchanting scale using the same 20/40/60/
+// 80/100 rank ceilings the profession-trainer system uses for the 5 zones
+// that host a trainer (professionTrainers.ts's TRAINER_ZONE_BY_RANK), with
+// Molten Scar (tier 5, the one zone with no trainer of its own — it sits
+// between Cinderfall's Artisan gear and Cinderheart's Master gear) filling
+// the gap at 90.
+const ZONE_TIER_DISENCHANT_SKILL: Record<number, number> = {
+  1: 20, // Greenhollow Fields
+  2: 40, // Stonecrag Foothills
+  3: 60, // Emberfall Ridge
+  4: 80, // Cinderfall Depths
+  5: 90, // The Molten Scar
+  6: 100, // Cinderheart Crater
+};
+
+// Crafted gear "comes from" the zone whose trainer teaches the recipe that
+// makes it (by the recipe's requiredSkill rank band); dropped gear comes
+// from the lowest-tier zone among the monsters whose loot table includes it
+// (the earliest a player could plausibly have obtained it). Gear tied to
+// neither (starter/vendor/quest items) defaults to the game's starting
+// zone — never harder to disenchant than the easiest gear in the game.
+export function originZoneId(item: ItemDef): string {
+  const recipe = Object.values(RECIPES).find((r) => r.resultItemId === item.id);
+  if (recipe) return TRAINER_ZONE_BY_RANK[tierForLevel(recipe.requiredSkill)];
+
+  let bestZoneId: string | null = null;
+  let bestTier = Infinity;
+  for (const monster of Object.values(MONSTERS)) {
+    if (!monster.lootTable.some((drop) => drop.itemId === item.id)) continue;
+    for (const zoneId of monster.zoneIds) {
+      const tier = ZONE_TIER[zoneId] ?? Infinity;
+      if (tier < bestTier) {
+        bestTier = tier;
+        bestZoneId = zoneId;
+      }
+    }
+  }
+  return bestZoneId ?? DEFAULT_ZONE_ID;
+}
+
 export function disenchantRequiredSkill(item: ItemDef): number {
-  return Math.min(93, Math.round(statTotal(item) * 2));
+  const tier = ZONE_TIER[originZoneId(item)] ?? 1;
+  return ZONE_TIER_DISENCHANT_SKILL[tier] ?? 100;
 }
 
 // Profession XP for disenchanting one item — no separate Mastery (there's
