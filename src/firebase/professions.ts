@@ -4,8 +4,8 @@ import { getCharacter } from './character';
 import { getInventory } from './inventory';
 import { ITEMS } from '../gameData/items';
 import { RECIPES } from '../gameData/recipes';
-import { checkLearnProfession, checkRankUp, nextTier, maxSkillForUnlockedTier } from '../gameData/professionTiers';
-import type { ProfessionId, ProfessionTierName } from '../gameData/types';
+import { checkLearnProfession, checkRankUp, nextTier } from '../gameData/professionTiers';
+import type { ProfessionId } from '../gameData/types';
 import type { Character } from '../types/character';
 
 export interface ProfessionActionResult {
@@ -60,7 +60,7 @@ export async function advanceProfessionRank(uid: string, profession: ProfessionI
 
   const check = checkRankUp(profession, state.level, state.unlockedTier, character.level, character.gold);
   if (!check.ok) return { success: false, reason: check.reason };
-  const next = nextTier(state.unlockedTier)!;
+  const next = nextTier(profession, state.unlockedTier)!;
 
   await updateDoc(doc(db, 'characters', uid), {
     gold: increment(-check.goldCost),
@@ -104,11 +104,12 @@ export async function learnRecipe(uid: string, recipeItemId: string): Promise<Pr
   return { success: true };
 }
 
-// Every profession now resolves catches/gathers/crafts directly into whole
-// skill points (not XP) — see activityEngine.ts's resolveFishing/
-// resolveGathering/resolveCrafting and PROFESSION_SKILLUP_CHANCE_BY_TIER —
-// so this applies the skill gain and the rank-ceiling cap in one step, same
-// as firebase/character.ts's applyGatheringResult/applyCraftingResult.
+// Fishing runs on the same 1-100 XP+Mastery engine as Mining/Herbalism/
+// Skinning (gameData/gatheringEngine.ts) — see firebase/character.ts's
+// applyGatheringProfessionResult for the shared design notes. Kept as its
+// own function (rather than folded into that one) since Fishing's holes are
+// keyed by fishing-hole id, not a shared "nodeId" concept, and its writer
+// has always lived here alongside the rest of the profession actions.
 //
 // Takes the current level/unlockedTier from the caller rather than reading
 // the character itself — FishingScreen's autosave already has both (it just
@@ -121,27 +122,26 @@ export async function learnRecipe(uid: string, recipeItemId: string): Promise<Pr
 // simultaneously, which nothing else in this app guards against either.
 export async function applyFishingResult(
   uid: string,
+  holeId: string,
   result: {
-    skillupsGained: number;
-    catches: { itemId: string; quantity: number }[];
-    currentLevel: number;
-    unlockedTier: ProfessionTierName;
+    itemId: string;
+    quantity: number;
+    newSkillLevel: number;
+    newSkillXp: number;
+    newMasteryLevel: number;
+    newMasteryXp: number;
   }
 ): Promise<void> {
-  const cap = maxSkillForUnlockedTier(result.unlockedTier);
-  const newLevel = Math.min(cap, result.currentLevel + result.skillupsGained);
-  if (newLevel !== result.currentLevel) {
-    await updateDoc(doc(db, 'characters', uid), { 'professions.fishing.level': newLevel });
-  }
+  await updateDoc(doc(db, 'characters', uid), {
+    'professions.fishing.level': result.newSkillLevel,
+    'professions.fishing.xp': result.newSkillXp,
+    [`professions.fishing.mastery.${holeId}`]: { level: result.newMasteryLevel, xp: result.newMasteryXp },
+  });
 
-  if (result.catches.length > 0) {
-    const inventoryUpdates: Record<string, unknown> = {};
-    for (const c of result.catches) {
-      if (c.quantity > 0) inventoryUpdates[`items.${c.itemId}`] = increment(c.quantity);
-    }
-    if (Object.keys(inventoryUpdates).length > 0) {
-      await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), inventoryUpdates);
-    }
+  if (result.quantity > 0) {
+    await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), {
+      [`items.${result.itemId}`]: increment(result.quantity),
+    });
   }
 }
 

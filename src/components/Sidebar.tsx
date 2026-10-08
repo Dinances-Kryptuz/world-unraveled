@@ -1,5 +1,5 @@
 import { ALL_PROFESSION_IDS, PROFESSION_LABELS, maxSkillForUnlockedTier } from '../gameData/professionTiers';
-import { usesMasteryEngine, masteryProfessionXpForNextLevel } from '../gameData/masteryEngine';
+import { gatheringXpForNextLevel } from '../gameData/gatheringEngine';
 import type { Character } from '../types/character';
 import type { ProfessionId } from '../gameData/types';
 
@@ -91,21 +91,17 @@ function ProfessionNavButton({
 }) {
   const state = character.professions[professionId];
   const highlighted = active && isSelected;
-  // Every profession is a flat 0-300 skill number now (no more a sub-level
-  // XP curve on top — see activityEngine.ts's PROFESSION_SKILLUP_CHANCE_BY_TIER),
-  // so this is just current skill against the ceiling of your unlocked rank
-  // rather than "xp toward the next level."
-  const cap = state ? maxSkillForUnlockedTier(state.unlockedTier) : 0;
+  // Every profession is a flat 1-100 level against the ceiling of its
+  // currently unlocked rank — this bar is that tier-progress, separate from
+  // the XP-to-next-level bar below.
+  const cap = state ? maxSkillForUnlockedTier(professionId, state.unlockedTier) : 0;
   const progressPct = state ? Math.max(0, Math.min(100, (state.level / cap) * 100)) : 0;
 
-  // Mining/Smithing (the Mastery-engine pilot professions — see
-  // masteryEngine.ts) are the only two that actually track XP toward the
-  // next level; the other 8 level up via a discrete per-action skill-up
-  // chance with no XP counter at all (see applyGatheringResult/
-  // applyCraftingResult's "not XP toward a curve" comment), so there's
-  // nothing meaningful to show them beyond the tier-progress bar above.
-  const isMastery = usesMasteryEngine(professionId);
-  const xpForNextLevel = isMastery && state ? masteryProfessionXpForNextLevel(state.level) : null;
+  // All 10 professions now share gatheringEngine.ts's/craftingEngine.ts's
+  // same 1-100 XP curve (craftingXpForNextLevel is a direct re-export of
+  // gatheringXpForNextLevel), so every known profession tracks real XP
+  // toward its next level.
+  const xpForNextLevel = state ? gatheringXpForNextLevel(state.level) : null;
   const xpProgressPct = xpForNextLevel ? Math.max(0, Math.min(100, (state!.xp / xpForNextLevel) * 100)) : 0;
 
   return (

@@ -4,8 +4,8 @@ import { startActivity } from '../../firebase/character';
 import { ZONES, GATHER_NODES, FISHING_HOLES } from '../../gameData/zones';
 import { RECIPES } from '../../gameData/recipes';
 import { PROFESSION_LABELS, PROFESSION_CATEGORY, getProfessionState } from '../../gameData/professionTiers';
-import { craftingColorTier } from '../../gameData/activityEngine';
-import { usesMasteryEngine, masteryColorTier, MASTERY_COLOR_XP_PCT } from '../../gameData/masteryEngine';
+import { gatheringColorTier, GATHERING_COLOR_XP_PCT } from '../../gameData/gatheringEngine';
+import { craftingColorTier, CRAFTING_COLOR_XP_PCT } from '../../gameData/craftingEngine';
 import { canUseRecipe } from '../../firebase/professions';
 import { ITEMS } from '../../gameData/items';
 import { describeItemStats } from '../../gameData/equipmentStats';
@@ -73,17 +73,17 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
             const meetsLevel = !recipe.requiredCharacterLevel || char.level >= recipe.requiredCharacterLevel;
             const meetsGold = !recipe.goldCost || char.gold >= recipe.goldCost;
             const canCraft = meetsSkill && meetsLevel && meetsGold;
-            // Mining's smelting recipes and Smithing recipes report a
-            // continuous XP-rate color instead of the discrete skill-up-
-            // chance tier every other crafting profession uses — see
-            // masteryEngine.ts's module doc comment. "red" (below
-            // requiredSkill) is still purely a gating display either way.
-            const tier = !meetsSkill
-              ? 'red'
-              : usesMasteryEngine(professionId)
-                ? masteryColorTier(professionLevel, recipe.colorBreakpoints)
-                : craftingColorTier(professionLevel, recipe.requiredSkill, recipe.colorBreakpoints);
+            // All 6 crafting professions now share craftingEngine.ts's
+            // level-delta color formula — "red" (below requiredSkill) stays
+            // a purely gating display on top of it. Mining's Smelting
+            // recipes land here too (tagged to a gathering-category
+            // profession) and still show a color/XP% for flavor even though
+            // they never actually earn Mining XP (see CraftingScreen's
+            // earnsProfessionXp comment) — harmless since the % is never
+            // read anywhere but this tooltip.
+            const tier = !meetsSkill ? 'red' : craftingColorTier(professionLevel, recipe.requiredSkill);
             const resultItem = ITEMS[recipe.resultItemId];
+            const masteryLevel = getProfessionState(char.professions, professionId).mastery?.[recipe.id]?.level ?? 0;
             return (
               <li key={recipe.id}>
                 <div className="item-row-main">
@@ -95,14 +95,13 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
                     >
                       {recipe.name}
                     </span>{' '}
-                    (requires skill {recipe.requiredSkill}
+                    (requires level {recipe.requiredSkill}
                     {recipe.requiredCharacterLevel ? `, Lv ${recipe.requiredCharacterLevel}` : ''}
-                    {meetsSkill && usesMasteryEngine(professionId)
-                      ? `, ${(MASTERY_COLOR_XP_PCT[tier as keyof typeof MASTERY_COLOR_XP_PCT] * 100).toFixed(0)}% XP`
-                      : ''}
+                    {meetsSkill ? `, ${(CRAFTING_COLOR_XP_PCT[tier as keyof typeof CRAFTING_COLOR_XP_PCT] * 100).toFixed(0)}% XP` : ''}
                     ) — materials:{' '}
                     {recipe.materials.map((m) => `${m.quantity}x ${ITEMS[m.itemId]?.name ?? m.itemId}`).join(', ')}
                     {recipe.goldCost ? ` + ${recipe.goldCost} gold` : ''}
+                    {known ? ` — Mastery ${masteryLevel}` : ''}
                   </span>
                 </div>
                 <button onClick={() => handleCraft(recipe.id)} disabled={!canCraft}>
@@ -178,32 +177,28 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
                 );
               }
               const meetsLevel = professionLevel >= node.requiredLevel;
-              const tier = !meetsLevel
-                ? 'red'
-                : usesMasteryEngine(professionId)
-                  ? masteryColorTier(professionLevel, node.colorBreakpoints)
-                  : craftingColorTier(professionLevel, node.requiredLevel, node.colorBreakpoints);
+              const tier = !meetsLevel ? 'red' : gatheringColorTier(professionLevel, node.requiredLevel);
               const equippedTool = character.equipment.tool ? ITEMS[character.equipment.tool] : null;
               const hasRequiredTool = !node.requiredToolType || equippedTool?.toolType === node.requiredToolType;
               const canGather = meetsLevel && hasRequiredTool;
               const yieldItem = ITEMS[node.itemId];
               const bonusItem = node.rareBonus ? ITEMS[node.rareBonus.itemId] : null;
+              const masteryLevel = getProfessionState(char.professions, professionId).mastery?.[node.id]?.level ?? 0;
               return (
                 <li key={node.id}>
                   <div className="item-row-main">
                     {yieldItem && <ItemSlot item={yieldItem} />}
                     <span>
-                      <span style={{ color: TIER_COLORS[tier], fontWeight: 700 }}>{node.name}</span> (skill{' '}
+                      <span style={{ color: TIER_COLORS[tier], fontWeight: 700 }}>{node.name}</span> (level{' '}
                       {node.requiredLevel}+
-                      {meetsLevel && usesMasteryEngine(professionId)
-                        ? `, ${(MASTERY_COLOR_XP_PCT[tier as keyof typeof MASTERY_COLOR_XP_PCT] * 100).toFixed(0)}% XP`
-                        : ''}
+                      {meetsLevel ? `, ${(GATHERING_COLOR_XP_PCT[tier as keyof typeof GATHERING_COLOR_XP_PCT] * 100).toFixed(0)}% XP` : ''}
                       ) — yields {yieldItem?.name ?? node.itemId}
                       {bonusItem ? ` (+${(node.rareBonus!.chance * 100).toFixed(0)}% chance of ${bonusItem.name})` : ''}
+                      {known ? ` — Mastery ${masteryLevel}` : ''}
                     </span>
                   </div>
                   <button onClick={() => handleGather(node.id)} disabled={!canGather}>
-                    {!meetsLevel ? `Need skill ${node.requiredLevel}` : !hasRequiredTool ? 'Need tool equipped' : 'Gather'}
+                    {!meetsLevel ? `Need level ${node.requiredLevel}` : !hasRequiredTool ? 'Need tool equipped' : 'Gather'}
                   </button>
                 </li>
               );
@@ -239,19 +234,27 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
                 </li>
               );
             }
+            const meetsLevel = professionLevel >= hole.requiredLevel;
+            const tier = !meetsLevel ? 'red' : gatheringColorTier(professionLevel, hole.requiredLevel);
             const equippedTool = character.equipment.tool ? ITEMS[character.equipment.tool] : null;
             const hasRod = equippedTool?.toolType === 'fishing_rod';
+            const canFish = meetsLevel && hasRod;
+            const yieldItem = ITEMS[hole.itemId];
+            const masteryLevel = getProfessionState(char.professions, 'fishing').mastery?.[holeId]?.level ?? 0;
             return (
               <li key={holeId}>
                 <div className="item-row-main">
-                  {hole.lootTable.map((d) => {
-                    const lootItem = ITEMS[d.itemId];
-                    return lootItem ? <ItemSlot key={d.itemId} item={lootItem} /> : null;
-                  })}
-                  <span>{hole.name}</span>
+                  {yieldItem && <ItemSlot item={yieldItem} />}
+                  <span>
+                    <span style={{ color: TIER_COLORS[tier], fontWeight: 700 }}>{hole.name}</span> (level{' '}
+                    {hole.requiredLevel}+
+                    {meetsLevel ? `, ${(GATHERING_COLOR_XP_PCT[tier as keyof typeof GATHERING_COLOR_XP_PCT] * 100).toFixed(0)}% XP` : ''}
+                    ) — yields {yieldItem?.name ?? hole.itemId} ({(hole.catchChance * 100).toFixed(0)}% catch chance)
+                    {known ? ` — Mastery ${masteryLevel}` : ''}
+                  </span>
                 </div>
-                <button onClick={() => handleFish(holeId)} disabled={!hasRod}>
-                  {hasRod ? 'Fish' : 'Need Fishing Rod equipped'}
+                <button onClick={() => handleFish(holeId)} disabled={!canFish}>
+                  {!meetsLevel ? `Need level ${hole.requiredLevel}` : !hasRod ? 'Need Fishing Rod equipped' : 'Fish'}
                 </button>
               </li>
             );

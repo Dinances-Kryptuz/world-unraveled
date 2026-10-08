@@ -272,6 +272,7 @@ export const MONSTERS: Record<string, Monster> = {
     lootTable: [
       { itemId: 'heavy_cloth', chance: 0.45, minQty: 1, maxQty: 2 },
       { itemId: 'iron_ore', chance: 0.2, minQty: 1, maxQty: 1 },
+      { itemId: 'common_seasoning', chance: 0.25, minQty: 1, maxQty: 2 },
       { itemId: 'serrated_cleaver', chance: 0.06, minQty: 1, maxQty: 1 },
       { itemId: 'embertwined_rod', chance: 0.06, minQty: 1, maxQty: 1 },
     ],
@@ -406,6 +407,7 @@ export const MONSTERS: Record<string, Monster> = {
     lootTable: [
       { itemId: 'mithril_ore', chance: 0.4, minQty: 1, maxQty: 2 },
       { itemId: 'ashwoven_cloth', chance: 0.25, minQty: 1, maxQty: 1 },
+      { itemId: 'scavenger_meat', chance: 0.3, minQty: 1, maxQty: 2 },
       { itemId: 'scavenged_hatchet', chance: 0.06, minQty: 1, maxQty: 1 },
       { itemId: 'scavenged_focus', chance: 0.06, minQty: 1, maxQty: 1 },
     ],
@@ -525,6 +527,7 @@ export const MONSTERS: Record<string, Monster> = {
     lootTable: [
       { itemId: 'scaleback_hide', chance: 0.45, minQty: 1, maxQty: 2 },
       { itemId: 'cinderbloom', chance: 0.3, minQty: 1, maxQty: 2 },
+      { itemId: 'drake_meat', chance: 0.3, minQty: 1, maxQty: 2 },
     ],
     specialAbility: {
       name: 'Tail Sweep',
@@ -563,6 +566,7 @@ export const MONSTERS: Record<string, Monster> = {
     goldMax: 64,
     lootTable: [
       { itemId: 'scaleback_hide', chance: 0.35, minQty: 1, maxQty: 2 },
+      { itemId: 'hound_meat', chance: 0.35, minQty: 1, maxQty: 2 },
       { itemId: 'magma_heart', chance: 0.08, minQty: 1, maxQty: 1 },
       { itemId: 'magma_forged_band', chance: 0.08, minQty: 1, maxQty: 1 },
     ],
@@ -630,6 +634,7 @@ export const MONSTERS: Record<string, Monster> = {
     lootTable: [
       { itemId: 'emberscale_hide', chance: 0.45, minQty: 1, maxQty: 2 },
       { itemId: 'emberheart_bloom', chance: 0.3, minQty: 1, maxQty: 2 },
+      { itemId: 'behemoth_flank', chance: 0.3, minQty: 1, maxQty: 2 },
     ],
     specialAbility: {
       name: 'Crushing Charge',
@@ -650,6 +655,7 @@ export const MONSTERS: Record<string, Monster> = {
     voidShardsMax: 2,
     lootTable: [
       { itemId: 'ashenweave_cloth', chance: 0.4, minQty: 1, maxQty: 2 },
+      { itemId: 'rare_seasoning', chance: 0.2, minQty: 1, maxQty: 2 },
       { itemId: 'harbingers_talon', chance: 0.06, minQty: 1, maxQty: 1 },
       { itemId: 'harbingers_omen', chance: 0.06, minQty: 1, maxQty: 1 },
     ],
@@ -746,7 +752,13 @@ export const MONSTERS: Record<string, Monster> = {
     lootTable: [
       { itemId: 'ashenweave_cloth', chance: 0.5, minQty: 2, maxQty: 3 },
       { itemId: 'emberlords_ash', chance: 0.4, minQty: 1, maxQty: 2 },
+      { itemId: 'pyraxis_flank', chance: 0.3, minQty: 1, maxQty: 2 },
       { itemId: 'pyraxis_warblade_damaged', chance: 0.15, minQty: 1, maxQty: 1 },
+      // Rare recipe drop — matches the design brief's "obtaining the
+      // recipe is only one part of the process" example almost exactly
+      // (a boss-dropped formula for a dish that still needs its own
+      // boss-dropped meat plus other ingredients gathered separately).
+      { itemId: 'recipe_pyraxis_flame_seared_flank', chance: 0.08, minQty: 1, maxQty: 1 },
     ],
     specialAbility: {
       name: 'Warden of the Cinderheart',

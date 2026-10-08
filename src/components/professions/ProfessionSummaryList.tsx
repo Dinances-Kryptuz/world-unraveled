@@ -9,11 +9,10 @@ import type { ProfessionState } from '../../types/character';
 // The known-professions skill bars + Abandon buttons, filtered to one
 // category's ids — shared by all three Professions sub-pages so each one
 // only shows the skills it's actually about (Gathering doesn't need to
-// show your Blacksmithing level). A flat skill-vs-rank-ceiling bar, not an
-// XP-curve one — every profession (gathering/crafting/fishing alike) now
-// grants discrete skill-up chances rather than XP (see activityEngine.ts's
-// PROFESSION_SKILLUP_CHANCE_BY_TIER), so there's no "xp toward next level"
-// to show anymore.
+// show your Blacksmithing level). A flat skill-vs-rank-ceiling bar — the
+// separate XP-toward-next-level bar (every profession now tracks real XP on
+// the shared 1-100 curve — see gatheringEngine.ts/craftingEngine.ts) lives
+// in Sidebar.tsx and the per-profession activity screens, not here.
 export function ProfessionSummaryList({ professionIds }: { professionIds: ProfessionId[] }) {
   const { user } = useAuth();
   const { character, refetch } = useCharacter();
@@ -41,7 +40,7 @@ export function ProfessionSummaryList({ professionIds }: { professionIds: Profes
           <StatBar
             label={`${PROFESSION_LABELS[professionId]} (${state.unlockedTier})`}
             current={state.level}
-            max={maxSkillForUnlockedTier(state.unlockedTier)}
+            max={maxSkillForUnlockedTier(professionId, state.unlockedTier)}
             color="#6b4f2a"
           />
           <button onClick={() => handleAbandon(professionId)}>Abandon {PROFESSION_LABELS[professionId]}</button>

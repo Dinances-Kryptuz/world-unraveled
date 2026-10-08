@@ -3,7 +3,18 @@ import { useAuth } from '../hooks/useAuth';
 import { useCharacter } from '../hooks/useCharacter';
 import { applyFishingResult } from '../firebase/professions';
 import { stopActivity, getCharacter, advanceQuests } from '../firebase/character';
-import { resolveFishing, fishingSkillupChance, AUTOSAVE_INTERVAL_SECONDS } from '../gameData/activityEngine';
+import { AUTOSAVE_INTERVAL_SECONDS } from '../gameData/activityEngine';
+import {
+  resolveGatheringOffline,
+  gatheringColorTier,
+  gatheringMasterySpeedMultiplier,
+  gatheringMasteryBonusChance,
+  gatheringXpForNextLevel,
+  masteryXpForNextLevel,
+  MASTERY_MAX_LEVEL,
+  GATHERING_COLOR_XP_PCT,
+  type GatheringResourceLike,
+} from '../gameData/gatheringEngine';
 import { getProfessionState, maxSkillForUnlockedTier } from '../gameData/professionTiers';
 import { ITEMS } from '../gameData/items';
 import { notify } from '../utils/notifications';
@@ -12,11 +23,12 @@ import type { Character } from '../types/character';
 import type { User } from 'firebase/auth';
 import type { FishingHole } from '../gameData/types';
 
-// Deliberately not reusing GatheringScreen — Fishing resolves a whole loot
-// table per cast (not one guaranteed item) and banks whole SKILL POINTS
-// directly rather than XP toward professionXpForLevel, so the progress
-// display and the autosave payload are both shaped differently. See
-// activityEngine.ts's resolveFishing doc comment for why.
+// Fishing now shares gatheringEngine.ts's 1-100 XP+Mastery engine with
+// Mining/Herbalism/Skinning — structurally parallel to GatheringScreen, with
+// catchChance baked into the resolver as the one thing that still makes
+// Fishing different ("your fish got away": no fish, no XP, no Mastery).
+// Always uses the OFFLINE/batched resolver, even for a single ~20s autosave
+// chunk — same convention as GatheringScreen.
 export function FishingScreen({ hole }: { hole: FishingHole }) {
   const { user } = useAuth();
   const { character: characterOrNull, refetch, applyOptimisticUpdate } = useCharacter();
@@ -24,11 +36,8 @@ export function FishingScreen({ hole }: { hole: FishingHole }) {
   const [, setTick] = useState(0);
   const secondsSinceSaveRef = useRef(0);
 
-  const [bankedCatches, setBankedCatches] = useState<Record<string, number>>({});
-  const [bankedSkillups, setBankedSkillups] = useState(0);
+  const [bankedQuantity, setBankedQuantity] = useState(0);
   const anchorRef = useRef<Date | null>(character.currentActivity.startedAt);
-  const catchCarryRef = useRef<Record<string, number>>({});
-  const skillupCarryRef = useRef(0);
 
   const characterRef = useRef<Character | null>(character);
   const userRef = useRef<User | null>(user);
@@ -40,11 +49,8 @@ export function FishingScreen({ hole }: { hole: FishingHole }) {
   }, [user]);
 
   useEffect(() => {
-    setBankedCatches({});
-    setBankedSkillups(0);
+    setBankedQuantity(0);
     anchorRef.current = character.currentActivity.startedAt;
-    catchCarryRef.current = {};
-    skillupCarryRef.current = 0;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hole.id]);
 
@@ -61,6 +67,16 @@ export function FishingScreen({ hole }: { hole: FishingHole }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hole.id]);
 
+  function resourceLike(): GatheringResourceLike {
+    return {
+      itemId: hole.itemId,
+      baseXp: hole.baseXp,
+      secondsPerAction: hole.secondsPerAction,
+      requiredLevel: hole.requiredLevel,
+      catchChance: hole.catchChance,
+    };
+  }
+
   async function autosave() {
     const currentUser = userRef.current;
     const currentCharacter = characterRef.current;
@@ -68,42 +84,34 @@ export function FishingScreen({ hole }: { hole: FishingHole }) {
     if (!currentUser || !currentCharacter || !anchor) return;
 
     const now = new Date();
-    const currentSkill = getProfessionState(currentCharacter.professions, 'fishing').level;
+    const prof = getProfessionState(currentCharacter.professions, 'fishing');
+    const masteryState = prof.mastery?.[hole.id] ?? { level: 0, xp: 0 };
+    const cap = maxSkillForUnlockedTier('fishing', prof.unlockedTier);
     const equippedTool = currentCharacter.equipment.tool ? ITEMS[currentCharacter.equipment.tool] : null;
     const toolBonusPct = equippedTool?.toolType === 'fishing_rod' ? equippedTool.gatherBonusPct ?? 0 : 0;
-    const result = resolveFishing(anchor, now, hole, currentSkill, toolBonusPct);
 
-    if (result.actionsAttempted === 0) return;
+    const result = resolveGatheringOffline(
+      anchor,
+      now,
+      resourceLike(),
+      prof.level,
+      prof.xp,
+      masteryState.level,
+      masteryState.xp,
+      cap,
+      toolBonusPct
+    );
+
+    if (result.quantityGained === 0 && result.professionXpGained === 0) return;
 
     const previousAnchor = anchor;
-    const previousCatchCarry = { ...catchCarryRef.current };
-    const previousSkillupCarry = skillupCarryRef.current;
-
-    const wholeCatches: Record<string, number> = {};
-    for (const c of result.catches) {
-      const total = (catchCarryRef.current[c.itemId] ?? 0) + c.quantity;
-      const whole = Math.floor(total);
-      catchCarryRef.current[c.itemId] = total - whole;
-      if (whole > 0) wholeCatches[c.itemId] = whole;
-    }
-    const skillupTotal = skillupCarryRef.current + result.skillupsGained;
-    const wholeSkillups = Math.floor(skillupTotal);
-    skillupCarryRef.current = skillupTotal - wholeSkillups;
+    const wholeQuantity = Math.floor(result.quantityGained);
 
     anchorRef.current = now;
-    setBankedCatches((prev) => {
-      const next = { ...prev };
-      for (const [itemId, qty] of Object.entries(wholeCatches)) next[itemId] = (next[itemId] ?? 0) + qty;
-      return next;
-    });
-    setBankedSkillups((prev) => prev + wholeSkillups);
+    setBankedQuantity((prev) => prev + wholeQuantity);
 
-    if (Object.keys(wholeCatches).length === 0 && wholeSkillups === 0) return;
-
-    if (currentCharacter.notificationsEnabled) {
-      for (const [itemId, quantity] of Object.entries(wholeCatches)) {
-        notify(`${ITEMS[itemId]?.name ?? itemId} caught`, [`${quantity}x ${ITEMS[itemId]?.name ?? itemId}`]);
-      }
+    if (currentCharacter.notificationsEnabled && wholeQuantity > 0) {
+      notify(`${ITEMS[hole.itemId]?.name ?? hole.itemId} caught`, [`${wholeQuantity}x ${ITEMS[hole.itemId]?.name ?? hole.itemId}`]);
     }
 
     // A rough speculative estimate, superseded moments later by the
@@ -114,55 +122,66 @@ export function FishingScreen({ hole }: { hole: FishingHole }) {
         ...c.professions,
         fishing: {
           ...getProfessionState(c.professions, 'fishing'),
-          level: getProfessionState(c.professions, 'fishing').level + wholeSkillups,
+          level: result.finalSkill,
+          xp: result.finalSkillXp,
+          mastery: {
+            ...getProfessionState(c.professions, 'fishing').mastery,
+            [hole.id]: { level: result.finalMasteryLevel, xp: result.finalMasteryXp },
+          },
         },
       },
     }));
 
     try {
-      // One read per cycle, done up front — see GatheringScreen's matching
-      // comment for why this replaces three separate reads of the same
-      // document (one inside applyFishingResult, one for quests, one in
-      // refetch()) with exactly one.
+      // One read per cycle, done up front — quests ARE reachable while this
+      // runs in the background, so a stale local copy here risks silently
+      // reverting a concurrent Accept/Complete Quest click.
       const fresh = await getCharacter(currentUser.uid);
-      // Routes through the catch block below (rolling back the speculative
-      // optimistic update and re-queuing this cycle's gains for retry)
-      // rather than silently dropping them — see CombatScreen's matching
-      // comment.
       if (!fresh) throw new Error('Character not found during autosave');
-      const freshProf = getProfessionState(fresh.professions, 'fishing');
 
-      await applyFishingResult(currentUser.uid, {
-        skillupsGained: wholeSkillups,
-        catches: Object.entries(wholeCatches).map(([itemId, quantity]) => ({ itemId, quantity })),
-        currentLevel: freshProf.level,
-        unlockedTier: freshProf.unlockedTier,
+      await applyFishingResult(currentUser.uid, hole.id, {
+        itemId: hole.itemId,
+        quantity: wholeQuantity,
+        newSkillLevel: result.finalSkill,
+        newSkillXp: result.finalSkillXp,
+        newMasteryLevel: result.finalMasteryLevel,
+        newMasteryXp: result.finalMasteryXp,
       });
 
-      const events = Object.entries(wholeCatches).map(([itemId, count]) => ({ type: 'gather' as const, itemId, count }));
-      if (events.length > 0) await advanceQuests(currentUser.uid, fresh, events);
+      if (wholeQuantity > 0) {
+        await advanceQuests(currentUser.uid, fresh, [{ type: 'gather', itemId: hole.itemId, count: wholeQuantity }]);
+      }
 
-      const cap = maxSkillForUnlockedTier(freshProf.unlockedTier);
-      const newLevel = Math.min(cap, freshProf.level + wholeSkillups);
       applyOptimisticUpdate(() => ({
         ...fresh,
-        professions: { ...fresh.professions, fishing: { ...freshProf, level: newLevel } },
-        // See GatheringScreen's matching comment — fishing never touches
-        // currentActivity.startedAt server-side either, same latent
-        // isLongAbsence flicker risk without this.
+        professions: {
+          ...fresh.professions,
+          fishing: {
+            ...getProfessionState(fresh.professions, 'fishing'),
+            level: result.finalSkill,
+            xp: result.finalSkillXp,
+            mastery: {
+              ...getProfessionState(fresh.professions, 'fishing').mastery,
+              [hole.id]: { level: result.finalMasteryLevel, xp: result.finalMasteryXp },
+            },
+          },
+        },
+        // Fishing never touches currentActivity.startedAt server-side, so
+        // without refreshing it locally too it sits stale from whenever the
+        // activity started, risking a isLongAbsence flicker.
         currentActivity: { ...fresh.currentActivity, startedAt: now },
       }));
     } catch (err) {
       console.error('Fishing autosave failed, will retry next cycle:', err);
       anchorRef.current = previousAnchor;
-      catchCarryRef.current = previousCatchCarry;
-      skillupCarryRef.current = previousSkillupCarry;
-      setBankedCatches((prev) => {
-        const next = { ...prev };
-        for (const [itemId, qty] of Object.entries(wholeCatches)) next[itemId] = (next[itemId] ?? 0) - qty;
-        return next;
-      });
-      setBankedSkillups((prev) => prev - wholeSkillups);
+      setBankedQuantity((prev) => prev - wholeQuantity);
+      applyOptimisticUpdate((c) => ({
+        ...c,
+        professions: {
+          ...c.professions,
+          fishing: getProfessionState(currentCharacter.professions, 'fishing'),
+        },
+      }));
     }
   }
 
@@ -174,35 +193,42 @@ export function FishingScreen({ hole }: { hole: FishingHole }) {
 
   if (!character.currentActivity.startedAt) return null;
 
-  const currentSkill = getProfessionState(character.professions, 'fishing').level;
-  const skillupChance = fishingSkillupChance(currentSkill);
-
-  // Live preview since the last autosave, recomputed every render tick —
-  // same pattern as GatheringScreen/CraftingScreen, so "This session" counts
-  // up smoothly instead of jumping in a lump every autosave interval.
-  const equippedTool = character.equipment.tool ? ITEMS[character.equipment.tool] : null;
-  const toolBonusPct = equippedTool?.toolType === 'fishing_rod' ? equippedTool.gatherBonusPct ?? 0 : 0;
-  const sinceLastSave = anchorRef.current
-    ? resolveFishing(anchorRef.current, new Date(), hole, currentSkill, toolBonusPct)
-    : { catches: [], skillupsGained: 0, actionsAttempted: 0, catchChance: 0 };
-
-  const displayCatches: Record<string, number> = { ...bankedCatches };
-  for (const c of sinceLastSave.catches) {
-    const previewQty = (catchCarryRef.current[c.itemId] ?? 0) + c.quantity;
-    if (previewQty > 0) displayCatches[c.itemId] = (displayCatches[c.itemId] ?? 0) + previewQty;
-  }
-  const displaySkillups = bankedSkillups + skillupCarryRef.current + sinceLastSave.skillupsGained;
+  const prof = getProfessionState(character.professions, 'fishing');
+  const masteryState = prof.mastery?.[hole.id] ?? { level: 0, xp: 0 };
+  const tier = gatheringColorTier(prof.level, hole.requiredLevel);
+  const xpPct = GATHERING_COLOR_XP_PCT[tier];
+  const speedMult = gatheringMasterySpeedMultiplier(masteryState.level);
+  const bonusChance = gatheringMasteryBonusChance(masteryState.level);
+  const xpForNextSkillLevel = gatheringXpForNextLevel(prof.level);
+  const xpForNextMasteryLevel = masteryState.level < MASTERY_MAX_LEVEL ? masteryXpForNextLevel(masteryState.level) : null;
 
   return (
     <div className="fishing-screen">
       <h2>Fishing: {hole.name}</h2>
-      <TickBar seconds={hole.secondsPerAction} color="#2a5a6b" label="Casting" />
-      <p>Skill-up chance per catch at your skill: {(skillupChance * 100).toFixed(0)}%</p>
+      <TickBar seconds={hole.secondsPerAction / speedMult} color="#2a5a6b" label="Casting" />
       <p>
-        This session: {Object.entries(displayCatches).map(([id, qty]) => `${Math.floor(qty)}x ${ITEMS[id]?.name ?? id}`).join(', ') || 'nothing yet'},{' '}
-        +{Math.floor(displaySkillups)} skill
+        {tier[0].toUpperCase() + tier.slice(1)} — {(xpPct * 100).toFixed(0)}% profession XP, {(hole.catchChance * 100).toFixed(0)}% catch
+        chance
       </p>
-      <p>Fishing skill: {currentSkill}</p>
+      <p>
+        This session: {bankedQuantity}x {ITEMS[hole.itemId]?.name ?? hole.itemId}
+      </p>
+      <p>
+        Fishing level: {prof.level} ({Math.floor(prof.xp)} / {xpForNextSkillLevel} XP)
+      </p>
+      <div className="profession-xp-bar-track">
+        <div className="profession-xp-bar-fill" style={{ width: `${Math.min(100, (prof.xp / xpForNextSkillLevel) * 100)}%` }} />
+      </div>
+      <p>
+        {ITEMS[hole.itemId]?.name ?? hole.itemId} Mastery: {masteryState.level}/{MASTERY_MAX_LEVEL}
+        {xpForNextMasteryLevel !== null ? ` (${Math.floor(masteryState.xp)} / ${xpForNextMasteryLevel} XP)` : ' (max)'}
+        {' — '}+{((speedMult - 1) * 100).toFixed(0)}% speed, {(bonusChance * 100).toFixed(0)}% bonus yield
+      </p>
+      {xpForNextMasteryLevel !== null && (
+        <div className="profession-xp-bar-track">
+          <div className="profession-xp-bar-fill" style={{ width: `${Math.min(100, (masteryState.xp / xpForNextMasteryLevel) * 100)}%` }} />
+        </div>
+      )}
       <button onClick={handleStop}>Stop</button>
     </div>
   );

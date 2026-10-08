@@ -74,51 +74,75 @@ export const PROFESSION_CATEGORY: Record<ProfessionId, ProfessionCategory> = {
 
 // Character level required to TRAIN each rank (0 = no requirement). Keyed
 // by category rather than individual profession, per the design brief's
-// explicit per-category tables.
+// explicit per-category tables. All 10 professions now reach Master — the
+// crafting redesign that generalized gatheringEngine.ts's 1-100 system to
+// all 6 crafting professions (craftingEngine.ts) gave 'production' a real
+// requirement here too (continuing its existing 5/10/20/35 progression)
+// rather than the old unreachable 0 placeholder.
 export const RANK_LEVEL_REQUIREMENT: Record<ProfessionCategory, Record<ProfessionTierName, number>> = {
-  production: { apprentice: 5, journeyman: 10, expert: 20, artisan: 35 },
-  fishing: { apprentice: 0, journeyman: 10, expert: 10, artisan: 10 },
-  gathering: { apprentice: 0, journeyman: 0, expert: 10, artisan: 25 },
+  production: { apprentice: 5, journeyman: 10, expert: 20, artisan: 35, master: 50 },
+  fishing: { apprentice: 0, journeyman: 10, expert: 10, artisan: 10, master: 10 },
+  gathering: { apprentice: 0, journeyman: 0, expert: 10, artisan: 25, master: 40 },
 };
 
 export function requiredCharacterLevelForRank(profession: ProfessionId, rank: ProfessionTierName): number {
   return RANK_LEVEL_REQUIREMENT[PROFESSION_CATEGORY[profession]][rank];
 }
 
-// Skill bands and gold cost are universal across all 10 professions.
-// apprentice.goldCost is also the one-time cost to LEARN the profession in
-// the first place (there's no separate "learn" transaction in classic WoW —
-// becoming Apprentice IS learning it) — "very cheap," per the design brief.
-// The curve then rises to "expensive" at Artisan without approaching the
-// game's real gold sinks (respec, high-level vendor gear).
+// Skill bands and gold cost for ALL 10 professions on the shared 1-100
+// XP+Mastery system — see gatheringEngine.ts's module doc comment (the
+// gathering/fishing design) and craftingEngine.ts's (the crafting
+// generalization) for the full design. One table now that every profession
+// shares it; apprentice.goldCost is also the one-time cost to LEARN the
+// profession in the first place (there's no separate "learn" transaction in
+// classic WoW — becoming Apprentice IS learning it) — "very cheap," per the
+// original design brief, rising to "expensive" at Master without
+// approaching the game's real gold sinks (respec, high-level vendor gear).
 export const PROFESSION_TIERS: ProfessionTierDef[] = [
-  { tier: 'apprentice', minSkill: 1, maxSkill: 75, goldCost: 5 },
-  { tier: 'journeyman', minSkill: 76, maxSkill: 150, goldCost: 25 },
-  { tier: 'expert', minSkill: 151, maxSkill: 225, goldCost: 100 },
-  { tier: 'artisan', minSkill: 226, maxSkill: 300, goldCost: 400 },
+  { tier: 'apprentice', minSkill: 1, maxSkill: 20, goldCost: 5 },
+  { tier: 'journeyman', minSkill: 21, maxSkill: 40, goldCost: 25 },
+  { tier: 'expert', minSkill: 41, maxSkill: 60, goldCost: 100 },
+  { tier: 'artisan', minSkill: 61, maxSkill: 80, goldCost: 400 },
+  { tier: 'master', minSkill: 81, maxSkill: 100, goldCost: 1600 },
 ];
 
-export function getTierForSkillLevel(skill: number): ProfessionTierDef {
-  const tier = PROFESSION_TIERS.find((t) => skill >= t.minSkill && skill <= t.maxSkill);
-  return tier ?? PROFESSION_TIERS[PROFESSION_TIERS.length - 1];
+// One shared table for every profession now — kept as a function (rather
+// than every call site reading PROFESSION_TIERS directly) so a future
+// profession-specific divergence wouldn't need to touch every call site.
+function tiersFor(_profession: ProfessionId): ProfessionTierDef[] {
+  return PROFESSION_TIERS;
 }
 
-export function tierIndex(tier: ProfessionTierName): number {
-  return PROFESSION_TIERS.findIndex((t) => t.tier === tier);
+// Which rank a bare level number falls into on the 1-100 gathering table,
+// independent of what rank is actually unlocked — used by the one-time
+// legacy gathering/crafting-profession data migration (see
+// firebase/character.ts's getCharacter) to pick a sane unlockedTier for a
+// freshly-rescaled level, since a player's OLD unlockedTier (from either the
+// old 4-rank gathering table or the old 1-300 crafting table) doesn't
+// correspond to anything meaningful on the new shared 5-rank one.
+export function tierForLevel(level: number): ProfessionTierName {
+  const tier = PROFESSION_TIERS.find((t) => level >= t.minSkill && level <= t.maxSkill);
+  return (tier ?? PROFESSION_TIERS[PROFESSION_TIERS.length - 1]).tier;
 }
 
-export function nextTier(tier: ProfessionTierName): ProfessionTierDef | null {
-  const next = PROFESSION_TIERS[tierIndex(tier) + 1];
+export function tierIndex(profession: ProfessionId, tier: ProfessionTierName): number {
+  return tiersFor(profession).findIndex((t) => t.tier === tier);
+}
+
+export function nextTier(profession: ProfessionId, tier: ProfessionTierName): ProfessionTierDef | null {
+  const tiers = tiersFor(profession);
+  const next = tiers[tierIndex(profession, tier) + 1];
   return next ?? null;
 }
 
 // A profession's skill is only ever allowed to climb to the ceiling of its
-// CURRENTLY unlocked rank — e.g. stuck at 75 until Journeyman is trained —
+// CURRENTLY unlocked rank — e.g. stuck at 20 until Journeyman is trained —
 // which is the entire point of ranks gating content. See
-// firebase/character.ts's applyGatheringResult/applyCraftingResult and
-// firebase/professions.ts's applyFishingResult.
-export function maxSkillForUnlockedTier(unlockedTier: ProfessionTierName): number {
-  return (PROFESSION_TIERS.find((t) => t.tier === unlockedTier) ?? PROFESSION_TIERS[0]).maxSkill;
+// firebase/character.ts's applyCraftingResult/applyGatheringProfessionResult
+// and firebase/professions.ts's applyFishingResult.
+export function maxSkillForUnlockedTier(profession: ProfessionId, unlockedTier: ProfessionTierName): number {
+  const tiers = tiersFor(profession);
+  return (tiers.find((t) => t.tier === unlockedTier) ?? tiers[0]).maxSkill;
 }
 
 export interface RankUpCheck {
@@ -139,10 +163,13 @@ export function checkRankUp(
   characterLevel: number,
   gold: number
 ): RankUpCheck {
-  const next = nextTier(currentUnlockedTier);
-  if (!next) return { ok: false, reason: 'Already Artisan — no further rank to train.', goldCost: 0, requiredCharacterLevel: 0 };
+  const next = nextTier(profession, currentUnlockedTier);
+  if (!next) {
+    const topRank = PROFESSION_CATEGORY[profession] === 'production' ? 'Artisan' : 'Master';
+    return { ok: false, reason: `Already ${topRank} — no further rank to train.`, goldCost: 0, requiredCharacterLevel: 0 };
+  }
 
-  const currentTierDef = PROFESSION_TIERS.find((t) => t.tier === currentUnlockedTier)!;
+  const currentTierDef = tiersFor(profession).find((t) => t.tier === currentUnlockedTier)!;
   const requiredCharacterLevel = requiredCharacterLevelForRank(profession, next.tier);
 
   if (currentSkill < currentTierDef.maxSkill) {
@@ -187,7 +214,7 @@ export function checkLearnProfession(
   characterLevel: number,
   gold: number
 ): LearnProfessionCheck {
-  const apprentice = PROFESSION_TIERS[0];
+  const apprentice = tiersFor(profession)[0];
   if (alreadyKnown.includes(profession)) {
     return { ok: false, reason: 'Already known.', goldCost: apprentice.goldCost };
   }

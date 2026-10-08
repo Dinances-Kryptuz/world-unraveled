@@ -10,6 +10,7 @@ const PROFESSION_TIER_BELOW: Record<ProfessionTierName, ProfessionTierName> = {
   journeyman: 'apprentice',
   expert: 'journeyman',
   artisan: 'expert',
+  master: 'artisan',
 };
 
 // The "Learn X" / "Train <rank> X" trainer list, filtered to one
