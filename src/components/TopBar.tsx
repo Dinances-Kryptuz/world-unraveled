@@ -64,7 +64,7 @@ export function TopBar({
         {Object.values(ZONES).map((z) => {
           const unlocked = isZoneUnlocked(z, character.level);
           const isCurrent = z.id === character.currentZoneId;
-          const minutes = isCurrent ? 0 : travelMinutes(character.currentZoneId, z.id, speedBonusPct);
+          const minutes = isCurrent ? 0 : travelMinutes(speedBonusPct);
           const clickable = unlocked && !isCurrent && !traveling;
           let title: string | undefined;
           if (!unlocked) {

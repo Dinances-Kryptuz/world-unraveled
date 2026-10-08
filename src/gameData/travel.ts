@@ -1,20 +1,23 @@
-import { ZONE_TIER } from './zones';
-
-// 2 minutes per zone-tier step apart — adjacent zones (tier 1 to tier 2) are
-// a 2-minute flight, the two ends of the game (tier 1 to tier 6) are 10
-// minutes. A mount (gameData/mounts.ts) discounts this via speedBonusPct
-// below rather than replacing the formula.
-export const FLIGHT_MINUTES_PER_TIER = 2;
+// Flat 5 minutes to ANY other zone, regardless of how many tiers apart it
+// is — deliberately not distance-scaled. A per-tier formula (the original
+// 2min/tier) is actually exploitable once mounts are in the picture: each
+// individual hop's time is rounded (see the old Math.round below), so a
+// short adjacent-zone hop can round all the way down to 0 minutes at a high
+// mount speed bonus while a long direct flight covering the same total
+// distance still rounds up to something nonzero — making "hop through every
+// zone in between" strictly faster than flying there directly, which makes
+// no sense and trivializes the whole system. A flat base has no such
+// exploit: every flight, direct or chained, costs the same base time, so
+// chaining through intermediate zones can only ever be slower (each extra
+// hop adds another full flight), never faster.
+export const FLIGHT_MINUTES_FLAT = 5;
 
 // speedBonusPct comes from gameData/mounts.ts's bestMountSpeedBonusPct — 0
 // for a mountless character (the default), up to a mount's own
 // speedBonusPct for one who owns a mount. 50 means "flights take half as
 // long."
-export function travelMinutes(fromZoneId: string, toZoneId: string, speedBonusPct = 0): number {
-  const fromTier = ZONE_TIER[fromZoneId] ?? 1;
-  const toTier = ZONE_TIER[toZoneId] ?? 1;
-  const baseMinutes = FLIGHT_MINUTES_PER_TIER * Math.abs(toTier - fromTier);
-  return Math.round(baseMinutes * (1 - speedBonusPct / 100));
+export function travelMinutes(speedBonusPct = 0): number {
+  return Math.round(FLIGHT_MINUTES_FLAT * (1 - speedBonusPct / 100));
 }
 
 // Null means "not currently traveling" — same convention as
