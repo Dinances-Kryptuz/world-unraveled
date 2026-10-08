@@ -144,9 +144,11 @@ export function disenchantTier(item: ItemDef): DisenchantTier {
 // that host a trainer (professionTrainers.ts's TRAINER_ZONE_BY_RANK), with
 // Molten Scar (tier 5, the one zone with no trainer of its own — it sits
 // between Cinderfall's Artisan gear and Cinderheart's Master gear) filling
-// the gap at 90.
+// the gap at 90. Zone 1 (the starting zone) is 1, not 20 — a brand-new
+// Enchanter should be able to disenchant the starter gear they're already
+// standing on top of, not need to rank up first.
 const ZONE_TIER_DISENCHANT_SKILL: Record<number, number> = {
-  1: 20, // Greenhollow Fields
+  1: 1, // Greenhollow Fields
   2: 40, // Stonecrag Foothills
   3: 60, // Emberfall Ridge
   4: 80, // Cinderfall Depths
