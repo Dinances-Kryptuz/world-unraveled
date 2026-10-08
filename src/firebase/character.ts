@@ -25,6 +25,7 @@ import {
   acceptQuestInState,
   type QuestEvent,
 } from '../gameData/questEngine';
+import { grantInventoryItems } from './inventory';
 
 export const BASE_BAG_SLOTS = 24;
 
@@ -352,11 +353,7 @@ export async function applyCombatResult(
   await updateDoc(doc(db, 'characters', uid), characterUpdate);
 
   if (result.loot.length > 0) {
-    const inventoryUpdates: Record<string, unknown> = {};
-    for (const drop of result.loot) {
-      inventoryUpdates[`items.${drop.itemId}`] = increment(drop.quantity);
-    }
-    await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), inventoryUpdates);
+    await grantInventoryItems(uid, result.loot);
   }
 }
 
@@ -397,11 +394,7 @@ export async function completeQuest(uid: string, questId: string): Promise<{ suc
   await updateDoc(doc(db, 'characters', uid), characterUpdate);
 
   if (result.rewards.items.length > 0) {
-    const inventoryUpdates: Record<string, unknown> = {};
-    for (const item of result.rewards.items) {
-      inventoryUpdates[`items.${item.itemId}`] = increment(item.quantity);
-    }
-    await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), inventoryUpdates);
+    await grantInventoryItems(uid, result.rewards.items);
   }
 
   return { success: true };
@@ -446,13 +439,13 @@ export async function applyGatheringProfessionResult(
     [`professions.${profession}.mastery.${nodeId}`]: { level: result.newMasteryLevel, xp: result.newMasteryXp },
   });
 
-  const inventoryUpdates: Record<string, unknown> = {};
-  if (result.quantity > 0) inventoryUpdates[`items.${result.itemId}`] = increment(result.quantity);
+  const grants: { itemId: string; quantity: number }[] = [];
+  if (result.quantity > 0) grants.push({ itemId: result.itemId, quantity: result.quantity });
   if (result.rareBonusItemId && result.rareBonusQuantity > 0) {
-    inventoryUpdates[`items.${result.rareBonusItemId}`] = increment(result.rareBonusQuantity);
+    grants.push({ itemId: result.rareBonusItemId, quantity: result.rareBonusQuantity });
   }
-  if (Object.keys(inventoryUpdates).length > 0) {
-    await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), inventoryUpdates);
+  if (grants.length > 0) {
+    await grantInventoryItems(uid, grants);
   }
 }
 
@@ -494,13 +487,20 @@ export async function applyCraftingProfessionResult(
     await updateDoc(doc(db, 'characters', uid), characterUpdate);
   }
 
-  const inventoryUpdates: Record<string, unknown> = {
-    [`items.${result.resultItemId}`]: increment(result.resultQuantity),
-  };
-  for (const m of result.materialsConsumed) {
-    inventoryUpdates[`items.${m.itemId}`] = increment(-m.quantity);
+  // Materials are spent regardless of whether the result fits in the bag —
+  // consume them FIRST so a material dropping to 0 (freeing a bag slot) is
+  // already reflected before grantInventoryItems reads current occupancy,
+  // then let the capped grant decide whether the crafted item itself fits.
+  if (result.materialsConsumed.length > 0) {
+    const materialUpdates: Record<string, unknown> = {};
+    for (const m of result.materialsConsumed) {
+      materialUpdates[`items.${m.itemId}`] = increment(-m.quantity);
+    }
+    await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), materialUpdates);
   }
-  await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), inventoryUpdates);
+  if (result.resultQuantity > 0) {
+    await grantInventoryItems(uid, [{ itemId: result.resultItemId, quantity: result.resultQuantity }]);
+  }
 }
 
 export async function equipItem(uid: string, slot: EquipmentSlot, itemId: string): Promise<void> {

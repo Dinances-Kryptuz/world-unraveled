@@ -1,6 +1,6 @@
 import { doc, updateDoc, increment } from 'firebase/firestore';
 import { db } from './config';
-import { getInventory } from './inventory';
+import { getInventory, grantInventoryItems } from './inventory';
 import { ITEMS } from '../gameData/items';
 import { ENCHANTS } from '../gameData/enchanting';
 import type { EquipmentSlot } from '../gameData/types';
@@ -60,8 +60,13 @@ export async function applyDisenchantResult(
     'professions.enchanting.level': result.newSkillLevel,
     'professions.enchanting.xp': result.newSkillXp,
   });
+  // The disenchanted item is consumed regardless of whether the yield fits
+  // — write that FIRST so a stack dropping to 0 (freeing a bag slot) is
+  // already reflected before the capped grant below reads occupancy.
   await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), {
     [`items.${itemId}`]: increment(-result.itemsDisenchanted),
-    [`items.${result.yieldItemId}`]: increment(result.yieldQuantity),
   });
+  if (result.yieldQuantity > 0) {
+    await grantInventoryItems(uid, [{ itemId: result.yieldItemId, quantity: result.yieldQuantity }]);
+  }
 }
