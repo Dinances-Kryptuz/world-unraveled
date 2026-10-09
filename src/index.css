@@ -394,11 +394,24 @@ button.item-slot:active:not(:disabled) {
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3);
 }
 
-/* ── Equipment screen: icon-grid "paper doll" instead of a text list ── */
+/* ── Equipment screen: icon-grid "paper doll" instead of a text list.
+   Named grid-areas place each slot the way gear sits on a body — helmet
+   down through necklace/chest/legs/boots in the center column, weapon +
+   offhand flanking the chest, gloves/rings below those, tool/cape as the
+   two top corners. Each tile's inline `style={{ gridArea: slot }}` (see
+   EquipmentScreen.tsx) matches an EquipmentSlot id straight to its area
+   name below, so adding a slot here is just adding it to this map. ── */
 .equipment-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, 56px);
+  grid-template-columns: 56px 56px 56px;
+  grid-template-areas:
+    'cape    helmet   tool'
+    'weapon  necklace offhand'
+    'gloves  chest    ring'
+    '.       legs     ring2'
+    '.       boots    .';
   gap: 10px;
+  justify-content: center;
   margin-bottom: 16px;
 }
 

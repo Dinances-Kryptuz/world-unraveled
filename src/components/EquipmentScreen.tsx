@@ -102,13 +102,20 @@ export function EquipmentScreen() {
       {error && <p className="error">{error}</p>}
 
       <div className="equipment-grid">
+        {/* Cape isn't an equippable slot yet — a non-interactive placeholder
+            just holds its spot in the paper-doll layout until one exists. */}
+        <div className="equipment-grid-tile" style={{ gridArea: 'cape' }}>
+          <div className="item-slot item-slot-empty item-slot-disabled" title="Cape — coming soon">
+            <span className="item-slot-icon item-slot-placeholder">🧣</span>
+          </div>
+        </div>
         {SLOT_ORDER.map((slot) => {
           const equippedId = character.equipment[slot];
           const equippedItem = equippedId ? ITEMS[equippedId] : null;
           const enchantId = character.enchantments[slot];
           const enchant = enchantId ? ENCHANTS[enchantId] : null;
           return (
-            <div key={slot} className="equipment-grid-tile">
+            <div key={slot} className="equipment-grid-tile" style={{ gridArea: slot }}>
               {equippedItem ? (
                 <ItemSlot
                   item={equippedItem}
