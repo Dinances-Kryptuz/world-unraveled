@@ -93,7 +93,7 @@ export function ItemSlot({
       disabled={onClick ? disabled : undefined}
       type={onClick ? 'button' : undefined}
     >
-      <ItemIcon item={item} />
+      <ItemIcon key={item.id} item={item} />
       {quantity !== undefined && quantity > 1 && <span className="item-slot-qty">{quantity}</span>}
       {buildTooltip(item)}
       {children}
