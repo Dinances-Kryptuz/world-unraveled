@@ -257,7 +257,7 @@ function AppContent() {
       {section === 'profession' && <ProfessionScreen professionId={selectedProfessionId} zoneId={character.currentZoneId} />}
       {section === 'classTrainer' && <ClassTrainerScreen zoneId={character.currentZoneId} />}
       {section === 'mountTrainer' && <MountTrainerScreen zoneId={character.currentZoneId} />}
-      {section === 'professionsTrainer' && <ProfessionsTrainerScreen zoneId={character.currentZoneId} />}
+      {section === 'professionsTrainer' && <ProfessionsTrainerScreen />}
       {section === 'quests' && <QuestLog />}
       {section === 'settings' && <SettingsScreen />}
     </AppShell>

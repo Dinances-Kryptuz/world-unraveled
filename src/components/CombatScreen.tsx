@@ -3,7 +3,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useCharacter } from '../hooks/useCharacter';
 import { applyCombatResult, setCharacterLevel, stopActivity, getCharacter, advanceQuests } from '../firebase/character';
 import { subscribeToInventory } from '../firebase/inventory';
-import { recordConsumableUse, remainingCooldownSeconds, consumeBuffCharges } from '../firebase/consumables';
+import { recordConsumableUse, remainingCooldownSeconds, consumeBuffCharges, setEquippedConsumable } from '../firebase/consumables';
 import { MONSTERS } from '../gameData/monsters';
 import { ITEMS } from '../gameData/items';
 import { resolveSpecDef, getExtraDamageTakenPct } from '../gameData/combatProfileWithTalents';
@@ -388,6 +388,13 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
     void recordConsumableUse(currentUser.uid, itemId);
   }
 
+  async function handleEquipConsumable(slot: 'food' | 'potion', itemId: string | null) {
+    const currentUser = userRef.current;
+    if (!currentUser) return;
+    await setEquippedConsumable(currentUser.uid, slot, itemId);
+    await refetch();
+  }
+
   if (!character.currentActivity.startedAt || !combatStateRef.current) return null;
 
   const state = combatStateRef.current;
@@ -418,6 +425,7 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
             inventoryItems={inventory?.items ?? {}}
             allowMana={true}
             onUse={handleUseConsumable}
+            onEquip={handleEquipConsumable}
           />
         </>
       )}

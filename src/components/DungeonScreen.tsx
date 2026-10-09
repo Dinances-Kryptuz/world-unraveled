@@ -3,7 +3,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useCharacter } from '../hooks/useCharacter';
 import { applyCombatResult, setCharacterLevel, getCharacter, advanceQuests } from '../firebase/character';
 import { subscribeToInventory } from '../firebase/inventory';
-import { recordConsumableUse, remainingCooldownSeconds, consumeBuffCharges } from '../firebase/consumables';
+import { recordConsumableUse, remainingCooldownSeconds, consumeBuffCharges, setEquippedConsumable } from '../firebase/consumables';
 import { DUNGEONS } from '../gameData/dungeons';
 import { MONSTERS } from '../gameData/monsters';
 import { notify } from '../utils/notifications';
@@ -443,6 +443,13 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
     void recordConsumableUse(currentUser.uid, itemId);
   }
 
+  async function handleEquipConsumable(slot: 'food' | 'potion', itemId: string | null) {
+    const currentUser = userRef.current;
+    if (!currentUser) return;
+    await setEquippedConsumable(currentUser.uid, slot, itemId);
+    await refetch();
+  }
+
   if (!combatStateRef.current) return null;
 
   const state = combatStateRef.current;
@@ -501,6 +508,7 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
             inventoryItems={inventory?.items ?? {}}
             allowMana={true}
             onUse={handleUseConsumable}
+            onEquip={handleEquipConsumable}
           />
         </>
       )}

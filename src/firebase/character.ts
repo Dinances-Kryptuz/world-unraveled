@@ -14,7 +14,7 @@ import type { TravelState } from '../gameData/travel';
 import { maxHp } from '../gameData/combatFormulas';
 import { canClassEquip } from '../gameData/classStats';
 import { ITEMS } from '../gameData/items';
-import { getEquipmentStatBonuses } from '../gameData/equipmentStats';
+import { getEquipmentStatBonuses, isTwoHandedWeapon, canEquipInOffhand } from '../gameData/equipmentStats';
 import { maxEquippedSlots, unlockedAbilities, effectiveLoadout, MAX_COMBAT_PRESETS } from '../combatEngine/progression';
 import { ABILITIES } from '../combatEngine/abilities';
 import type { Condition, ConditionGroup, ConditionType, ResourceType } from '../combatEngine/types';
@@ -25,6 +25,7 @@ import {
   acceptQuestInState,
   type QuestEvent,
 } from '../gameData/questEngine';
+import { grantInventoryItems } from './inventory';
 
 export const BASE_BAG_SLOTS = 24;
 
@@ -136,6 +137,9 @@ export async function getCharacter(uid: string): Promise<Character | null> {
         return [category, expiresAt ? { ...rest, expiresAt: (expiresAt as Timestamp).toDate() } : rest];
       })
     ),
+    // Same backfill idea, for the quick-use food/potion slots — a character
+    // that existed before these did just has no pin yet, same as a fresh one.
+    equippedConsumables: data.equippedConsumables ?? { food: null, potion: null },
     // Same backfill idea for equippedAbilityIds, added after some characters
     // already existed — an empty list is itself a valid "no choice made
     // yet" state, so this only matters for a genuinely missing field.
@@ -264,6 +268,7 @@ export async function createCharacter(uid: string, name: string, characterClass:
     bagSlots: BASE_BAG_SLOTS,
     bankSlots: BASE_BANK_SLOTS,
     activeBuffs: {},
+    equippedConsumables: { food: null, potion: null },
     currentActivity: { type: null, targetId: null, zoneId: null, startedAt: null },
     equippedAbilityIds: [],
     abilityConditions: {},
@@ -352,11 +357,7 @@ export async function applyCombatResult(
   await updateDoc(doc(db, 'characters', uid), characterUpdate);
 
   if (result.loot.length > 0) {
-    const inventoryUpdates: Record<string, unknown> = {};
-    for (const drop of result.loot) {
-      inventoryUpdates[`items.${drop.itemId}`] = increment(drop.quantity);
-    }
-    await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), inventoryUpdates);
+    await grantInventoryItems(uid, result.loot);
   }
 }
 
@@ -397,11 +398,7 @@ export async function completeQuest(uid: string, questId: string): Promise<{ suc
   await updateDoc(doc(db, 'characters', uid), characterUpdate);
 
   if (result.rewards.items.length > 0) {
-    const inventoryUpdates: Record<string, unknown> = {};
-    for (const item of result.rewards.items) {
-      inventoryUpdates[`items.${item.itemId}`] = increment(item.quantity);
-    }
-    await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), inventoryUpdates);
+    await grantInventoryItems(uid, result.rewards.items);
   }
 
   return { success: true };
@@ -446,13 +443,13 @@ export async function applyGatheringProfessionResult(
     [`professions.${profession}.mastery.${nodeId}`]: { level: result.newMasteryLevel, xp: result.newMasteryXp },
   });
 
-  const inventoryUpdates: Record<string, unknown> = {};
-  if (result.quantity > 0) inventoryUpdates[`items.${result.itemId}`] = increment(result.quantity);
+  const grants: { itemId: string; quantity: number }[] = [];
+  if (result.quantity > 0) grants.push({ itemId: result.itemId, quantity: result.quantity });
   if (result.rareBonusItemId && result.rareBonusQuantity > 0) {
-    inventoryUpdates[`items.${result.rareBonusItemId}`] = increment(result.rareBonusQuantity);
+    grants.push({ itemId: result.rareBonusItemId, quantity: result.rareBonusQuantity });
   }
-  if (Object.keys(inventoryUpdates).length > 0) {
-    await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), inventoryUpdates);
+  if (grants.length > 0) {
+    await grantInventoryItems(uid, grants);
   }
 }
 
@@ -494,13 +491,20 @@ export async function applyCraftingProfessionResult(
     await updateDoc(doc(db, 'characters', uid), characterUpdate);
   }
 
-  const inventoryUpdates: Record<string, unknown> = {
-    [`items.${result.resultItemId}`]: increment(result.resultQuantity),
-  };
-  for (const m of result.materialsConsumed) {
-    inventoryUpdates[`items.${m.itemId}`] = increment(-m.quantity);
+  // Materials are spent regardless of whether the result fits in the bag —
+  // consume them FIRST so a material dropping to 0 (freeing a bag slot) is
+  // already reflected before grantInventoryItems reads current occupancy,
+  // then let the capped grant decide whether the crafted item itself fits.
+  if (result.materialsConsumed.length > 0) {
+    const materialUpdates: Record<string, unknown> = {};
+    for (const m of result.materialsConsumed) {
+      materialUpdates[`items.${m.itemId}`] = increment(-m.quantity);
+    }
+    await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), materialUpdates);
   }
-  await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), inventoryUpdates);
+  if (result.resultQuantity > 0) {
+    await grantInventoryItems(uid, [{ itemId: result.resultItemId, quantity: result.resultQuantity }]);
+  }
 }
 
 export async function equipItem(uid: string, slot: EquipmentSlot, itemId: string): Promise<void> {
@@ -512,6 +516,20 @@ export async function equipItem(uid: string, slot: EquipmentSlot, itemId: string
     throw new Error(`${character.class} cannot equip ${item?.name ?? itemId} (${item?.armorType} armor)`);
   }
 
+  // Offhand accepts a genuine offhand item (shield/tome/orb) OR a one-
+  // handed weapon (dual wielding two one-handers) — never a two-handed
+  // one, and never while a two-handed weapon already occupies 'weapon'.
+  // See equipmentStats.ts's canEquipInOffhand/isTwoHandedWeapon doc comments.
+  if (slot === 'offhand') {
+    if (!canEquipInOffhand(item)) {
+      throw new Error(`${item.name} can’t be equipped in the off-hand.`);
+    }
+    const mainHand = character.equipment.weapon ? ITEMS[character.equipment.weapon] : null;
+    if (mainHand && isTwoHandedWeapon(mainHand)) {
+      throw new Error('Unequip your two-handed weapon first.');
+    }
+  }
+
   const previouslyEquipped = character.equipment[slot];
 
   const inventoryUpdates: Record<string, unknown> = {
@@ -520,11 +538,22 @@ export async function equipItem(uid: string, slot: EquipmentSlot, itemId: string
   if (previouslyEquipped) {
     inventoryUpdates[`items.${previouslyEquipped}`] = increment(1);
   }
-  await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), inventoryUpdates);
 
-  await updateDoc(doc(db, 'characters', uid), {
+  const characterUpdates: Record<string, unknown> = {
     [`equipment.${slot}`]: itemId,
-  });
+  };
+
+  // Equipping a two-handed weapon can't coexist with an offhand — auto-
+  // unequip whatever's there back to inventory rather than blocking the
+  // equip outright, same "the game resolves it for you" posture a ring
+  // swap already has.
+  if (slot === 'weapon' && isTwoHandedWeapon(item) && character.equipment.offhand) {
+    inventoryUpdates[`items.${character.equipment.offhand}`] = increment(1);
+    characterUpdates['equipment.offhand'] = null;
+  }
+
+  await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), inventoryUpdates);
+  await updateDoc(doc(db, 'characters', uid), characterUpdates);
 }
 
 export async function unequipItem(uid: string, slot: EquipmentSlot): Promise<void> {

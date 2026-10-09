@@ -37,6 +37,31 @@ export function remainingCooldownSeconds(character: Character, itemId: string, c
   return Math.max(0, cooldownSeconds - elapsed);
 }
 
+// Pins a consumable to the Food or Potion quick-use slot (or clears it with
+// itemId === null) — see Character.equippedConsumables's doc comment. Purely
+// a UI pointer: using the pinned item still just decrements inventory by 1
+// like any other consumable use, so there's nothing to validate beyond
+// "this is actually a food/potion-shaped consumable," no ownership check
+// needed (pinning something you don't currently hold yet, e.g. you're about
+// to buy more, is harmless).
+export async function setEquippedConsumable(
+  uid: string,
+  slot: 'food' | 'potion',
+  itemId: string | null
+): Promise<{ success: boolean; reason?: string }> {
+  if (itemId !== null) {
+    const item = ITEMS[itemId];
+    if (!item || item.type !== 'consumable' || !item.consumableEffect) {
+      return { success: false, reason: 'That isn’t a consumable.' };
+    }
+    const isFood = item.consumableEffect.buff?.category === 'well_fed';
+    if (slot === 'food' && !isFood) return { success: false, reason: 'Not a food item.' };
+    if (slot === 'potion' && isFood) return { success: false, reason: 'Not a potion.' };
+  }
+  await updateDoc(doc(db, 'characters', uid), { [`equippedConsumables.${slot}`]: itemId });
+  return { success: true };
+}
+
 // Out-of-combat use (Inventory screen) — heals through the same
 // currentHp/hpCheckpointAt fields combat itself reads and writes. Only
 // meaningful for a healAmount consumable: mana has no persisted value

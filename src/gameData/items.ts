@@ -1714,8 +1714,8 @@ export const ITEMS: Record<string, ItemDef> = {
     stackable: true, equipSlot: 'offhand', armorType: 'plate', statBonuses: { STA: 3, STR: 3 }, sellValue: 18,
   },
   sacred_copper_shield: {
-    id: 'sacred_copper_shield', name: 'Sacred Copper Shield', type: 'equipment',
-    description: 'An orange, light-touched shield forged from Copper by a skilled blacksmith.',
+    id: 'sacred_copper_shield', name: 'Copper-Bound Tome', type: 'equipment',
+    description: 'A spellbook bound in orange Copper plating by a skilled blacksmith.',
     stackable: true, equipSlot: 'offhand', armorType: 'cloth', statBonuses: { INT: 3, SPI: 3 }, sellValue: 18,
   },
   copper_sword: {
@@ -1794,8 +1794,8 @@ export const ITEMS: Record<string, ItemDef> = {
     stackable: true, equipSlot: 'offhand', armorType: 'plate', statBonuses: { STA: 6, STR: 5 }, sellValue: 32,
   },
   sacred_bronze_shield: {
-    id: 'sacred_bronze_shield', name: 'Sacred Bronze Shield', type: 'equipment',
-    description: 'A brown, light-touched shield forged from Bronze by a skilled blacksmith.',
+    id: 'sacred_bronze_shield', name: 'Bronze-Rimmed Orb', type: 'equipment',
+    description: 'A focusing orb banded in brown Bronze by a skilled blacksmith.',
     stackable: true, equipSlot: 'offhand', armorType: 'cloth', statBonuses: { INT: 6, SPI: 5 }, sellValue: 32,
   },
   bronze_sword: {
@@ -1874,8 +1874,8 @@ export const ITEMS: Record<string, ItemDef> = {
     stackable: true, equipSlot: 'offhand', armorType: 'plate', statBonuses: { STA: 7, STR: 6 }, sellValue: 44,
   },
   sacred_iron_shield: {
-    id: 'sacred_iron_shield', name: 'Sacred Iron Shield', type: 'equipment',
-    description: 'A dark gray, light-touched shield forged from Iron by a skilled blacksmith.',
+    id: 'sacred_iron_shield', name: 'Iron-Clasped Tome', type: 'equipment',
+    description: 'A spellbook clasped in dark gray Iron by a skilled blacksmith.',
     stackable: true, equipSlot: 'offhand', armorType: 'cloth', statBonuses: { INT: 7, SPI: 6 }, sellValue: 44,
   },
   iron_sword: {
@@ -1954,8 +1954,8 @@ export const ITEMS: Record<string, ItemDef> = {
     stackable: true, equipSlot: 'offhand', armorType: 'plate', statBonuses: { STA: 9, STR: 7 }, sellValue: 56,
   },
   sacred_steel_shield: {
-    id: 'sacred_steel_shield', name: 'Sacred Steel Shield', type: 'equipment',
-    description: 'A light gray, light-touched shield forged from Steel by a skilled blacksmith.',
+    id: 'sacred_steel_shield', name: 'Steel-Banded Orb', type: 'equipment',
+    description: 'A focusing orb caged in light gray Steel by a skilled blacksmith.',
     stackable: true, equipSlot: 'offhand', armorType: 'cloth', statBonuses: { INT: 9, SPI: 7 }, sellValue: 56,
   },
   steel_sword: {
@@ -2034,8 +2034,8 @@ export const ITEMS: Record<string, ItemDef> = {
     stackable: true, equipSlot: 'offhand', armorType: 'plate', statBonuses: { STA: 10, STR: 9 }, sellValue: 68,
   },
   sacred_mithril_shield: {
-    id: 'sacred_mithril_shield', name: 'Sacred Mithril Shield', type: 'equipment',
-    description: 'A dark blue, light-touched shield forged from Mithril by a skilled blacksmith.',
+    id: 'sacred_mithril_shield', name: 'Mithril-Bound Tome', type: 'equipment',
+    description: 'A spellbook bound in dark blue Mithril by a skilled blacksmith.',
     stackable: true, equipSlot: 'offhand', armorType: 'cloth', statBonuses: { INT: 10, SPI: 9 }, sellValue: 68,
   },
   mithril_sword: {
@@ -2114,8 +2114,8 @@ export const ITEMS: Record<string, ItemDef> = {
     stackable: true, equipSlot: 'offhand', armorType: 'plate', statBonuses: { STA: 12, STR: 10 }, sellValue: 84,
   },
   sacred_thorium_shield: {
-    id: 'sacred_thorium_shield', name: 'Sacred Thorium Shield', type: 'equipment',
-    description: 'A light teal, light-touched shield forged from Thorium by a skilled blacksmith.',
+    id: 'sacred_thorium_shield', name: 'Thorium-Rimmed Orb', type: 'equipment',
+    description: 'A focusing orb banded in light teal Thorium by a skilled blacksmith.',
     stackable: true, equipSlot: 'offhand', armorType: 'cloth', statBonuses: { INT: 12, SPI: 10 }, sellValue: 84,
   },
   thorium_sword: {
@@ -2194,8 +2194,8 @@ export const ITEMS: Record<string, ItemDef> = {
     stackable: true, equipSlot: 'offhand', armorType: 'plate', statBonuses: { STA: 14, STR: 12 }, sellValue: 104,
   },
   sacred_obsidian_shield: {
-    id: 'sacred_obsidian_shield', name: 'Sacred Obsidian Shield', type: 'equipment',
-    description: 'A black, light-touched shield forged from Obsidian by a skilled blacksmith.',
+    id: 'sacred_obsidian_shield', name: 'Obsidian-Clasped Tome', type: 'equipment',
+    description: 'A spellbook clasped in black Obsidian by a skilled blacksmith.',
     stackable: true, equipSlot: 'offhand', armorType: 'cloth', statBonuses: { INT: 14, SPI: 12 }, sellValue: 104,
   },
   obsidian_sword: {

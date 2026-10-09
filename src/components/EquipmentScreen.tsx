@@ -2,20 +2,52 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useCharacter } from '../hooks/useCharacter';
 import { equipItem, unequipItem } from '../firebase/character';
+import { setEquippedConsumable, useConsumableOutOfCombat } from '../firebase/consumables';
 import { subscribeToInventory } from '../firebase/inventory';
 import { ITEMS } from '../gameData/items';
 import { ENCHANTS } from '../gameData/enchanting';
 import { canClassEquip } from '../gameData/classStats';
+import { canEquipInOffhand, isTwoHandedWeapon } from '../gameData/equipmentStats';
 import { ItemSlot } from './ItemSlot';
+import { ConsumablesBar } from './ConsumablesBar';
 import type { Inventory } from '../types/character';
-import type { EquipmentSlot } from '../gameData/types';
+import type { EquipmentSlot, ItemDef } from '../gameData/types';
 
 const SLOT_ORDER: EquipmentSlot[] = ['weapon', 'offhand', 'chest', 'helmet', 'gloves', 'legs', 'boots', 'necklace', 'ring', 'ring2', 'tool'];
 
+const SLOT_LABEL: Record<EquipmentSlot, string> = {
+  weapon: 'Weapon', offhand: 'Off Hand', chest: 'Chest', helmet: 'Helmet', gloves: 'Gloves',
+  legs: 'Legs', boots: 'Boots', ring: 'Ring', ring2: 'Ring', necklace: 'Necklace', tool: 'Tool',
+};
+
+// Shown on an empty slot tile so the grid still reads as "this is where
+// your helmet goes" rather than a row of identical blank boxes — purely
+// decorative placeholders, replaced by the item's own icon once equipped.
+const SLOT_PLACEHOLDER_ICON: Record<EquipmentSlot, string> = {
+  weapon: '⚔️', offhand: '🛡️', chest: '👕', helmet: '🪖', gloves: '🧤',
+  legs: '👖', boots: '🥾', ring: '💍', ring2: '💍', necklace: '📿', tool: '🛠️',
+};
+
+// An item is offered for `slot` if it's the slot's own type, OR (offhand
+// only) a one-handed weapon for dual wielding, OR (ring only) any ring item
+// — both independent ring slots draw from the same pool. See
+// equipmentStats.ts's canEquipInOffhand for the two-handed exclusion.
+function fitsSlot(item: ItemDef, slot: EquipmentSlot): boolean {
+  if (slot === 'offhand') return canEquipInOffhand(item);
+  if (slot === 'ring' || slot === 'ring2') return item.equipSlot === 'ring';
+  return item.equipSlot === slot;
+}
+
+// Icon-grid paper doll: one tile per slot, hover for name/stats (ItemSlot's
+// own tooltip), click to open a small picker of what from your inventory
+// fits there instead of a standing wall of text rows for all 11 slots plus
+// a second full-text "equip from inventory" list below it.
 export function EquipmentScreen() {
   const { user } = useAuth();
   const { character, refetch } = useCharacter();
   const [inventory, setInventory] = useState<Inventory | null>(null);
+  const [selectedSlot, setSelectedSlot] = useState<EquipmentSlot | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -27,7 +59,13 @@ export function EquipmentScreen() {
 
   async function handleEquip(slot: EquipmentSlot, itemId: string) {
     if (!user) return;
-    await equipItem(user.uid, slot, itemId);
+    setError(null);
+    try {
+      await equipItem(user.uid, slot, itemId);
+      setSelectedSlot(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not equip that.');
+    }
     await refetch();
   }
 
@@ -37,86 +75,102 @@ export function EquipmentScreen() {
     await refetch();
   }
 
-  const equippableInInventory = Object.entries(inventory.items).filter(([itemId, quantity]) => {
-    const item = ITEMS[itemId];
-    return item?.type === 'equipment' && quantity > 0;
-  });
+  async function handleUseConsumable(itemId: string) {
+    if (!user) return;
+    const result = await useConsumableOutOfCombat(user.uid, itemId);
+    if (!result.success) setError(result.reason ?? 'Could not use that item.');
+    await refetch();
+  }
+
+  async function handleEquipConsumable(slot: 'food' | 'potion', itemId: string | null) {
+    if (!user) return;
+    const result = await setEquippedConsumable(user.uid, slot, itemId);
+    if (!result.success) setError(result.reason ?? 'Could not equip that.');
+    await refetch();
+  }
+
+  const pickerSlot = selectedSlot;
+  const pickerOptions = pickerSlot
+    ? Object.entries(inventory.items)
+        .filter(([itemId, quantity]) => quantity > 0 && ITEMS[itemId] && fitsSlot(ITEMS[itemId]!, pickerSlot))
+        .map(([itemId, quantity]) => ({ item: ITEMS[itemId]!, quantity }))
+    : [];
 
   return (
     <div className="equipment-screen">
       <h2>Equipment</h2>
-      <ul>
+      {error && <p className="error">{error}</p>}
+
+      <div className="equipment-grid">
         {SLOT_ORDER.map((slot) => {
           const equippedId = character.equipment[slot];
           const equippedItem = equippedId ? ITEMS[equippedId] : null;
           const enchantId = character.enchantments[slot];
           const enchant = enchantId ? ENCHANTS[enchantId] : null;
           return (
-            <li key={slot}>
-              <div className="item-row-main">
-                {equippedItem ? <ItemSlot item={equippedItem} /> : <div className="item-slot item-slot-empty" />}
-                <span>
-                  {slot}: {equippedItem ? equippedItem.name : '(empty)'}
-                </span>
-              </div>
-              {equippedItem && <button onClick={() => handleUnequip(slot)}>Unequip</button>}
-              {enchant && (
-                <>
-                  {' '}
-                  — <em>{enchant.name}</em> ({enchant.description})
-                </>
+            <div key={slot} className="equipment-grid-tile">
+              {equippedItem ? (
+                <ItemSlot
+                  item={equippedItem}
+                  highlight={selectedSlot === slot}
+                  onClick={() => setSelectedSlot(selectedSlot === slot ? null : slot)}
+                >
+                  {enchant && <span className="item-slot-enchant-dot" title={`${enchant.name} — ${enchant.description}`} />}
+                </ItemSlot>
+              ) : (
+                <button
+                  className={`item-slot item-slot-empty${selectedSlot === slot ? ' item-slot-highlight' : ''}`}
+                  onClick={() => setSelectedSlot(selectedSlot === slot ? null : slot)}
+                  title={SLOT_LABEL[slot]}
+                  type="button"
+                >
+                  <span className="item-slot-icon item-slot-placeholder">{SLOT_PLACEHOLDER_ICON[slot]}</span>
+                </button>
               )}
-            </li>
+            </div>
           );
         })}
-      </ul>
+      </div>
+
+      {pickerSlot && (
+        <div className="equipment-picker">
+          <h3>{SLOT_LABEL[pickerSlot]}</h3>
+          {character.equipment[pickerSlot] && <button onClick={() => handleUnequip(pickerSlot)}>Unequip</button>}
+          {pickerOptions.length === 0 ? (
+            <p>Nothing in your inventory fits here.</p>
+          ) : (
+            <div className="item-grid">
+              {pickerOptions.map(({ item, quantity }) => {
+                const allowed = canClassEquip(character.class, item);
+                const willDropOffhand =
+                  pickerSlot === 'weapon' && isTwoHandedWeapon(item) && !!character.equipment.offhand;
+                return (
+                  <div key={item.id} className="loot-entry">
+                    <ItemSlot item={item} quantity={quantity} disabled={!allowed} onClick={() => handleEquip(pickerSlot, item.id)} />
+                    {!allowed && <small>{item.armorType} — not usable</small>}
+                    {allowed && willDropOffhand && <small>unequips off hand</small>}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
       {character.professions.enchanting && (
         <p>
           <small>Apply, remove, or disenchant enchants from the Enchanting tab.</small>
         </p>
       )}
 
-      <h3>Equip from inventory</h3>
-      {equippableInInventory.length === 0 ? (
-        <p>No equippable items in inventory.</p>
-      ) : (
-        <ul>
-          {equippableInInventory.map(([itemId, quantity]) => {
-            const item = ITEMS[itemId];
-            if (!item?.equipSlot) return null;
-            const allowed = canClassEquip(character.class, item);
-            // A ring item fits either independent ring slot (see types.ts's
-            // EquipmentSlot doc comment) — the inventory list can't guess
-            // which one the player wants, so it offers both rather than
-            // always targeting 'ring' and leaving 'ring2' unreachable here.
-            if (item.equipSlot === 'ring') {
-              return (
-                <li key={itemId}>
-                  <div className="item-row-main">
-                    <ItemSlot item={item} quantity={quantity} />
-                    <span>{item.name}</span>
-                  </div>
-                  <button onClick={() => handleEquip('ring', itemId)} disabled={!allowed}>
-                    {allowed ? 'Equip (Ring 1)' : `${item.armorType} — not usable`}
-                  </button>
-                  {allowed && <button onClick={() => handleEquip('ring2', itemId)}>Equip (Ring 2)</button>}
-                </li>
-              );
-            }
-            return (
-              <li key={itemId}>
-                <div className="item-row-main">
-                  <ItemSlot item={item} quantity={quantity} />
-                  <span>{item.name}</span>
-                </div>
-                <button onClick={() => handleEquip(item.equipSlot!, itemId)} disabled={!allowed}>
-                  {allowed ? 'Equip' : `${item.armorType} — not usable`}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+      <h3>Quick-use</h3>
+      <ConsumablesBar
+        character={character}
+        inventoryItems={inventory.items}
+        allowMana={false}
+        onUse={handleUseConsumable}
+        onEquip={handleEquipConsumable}
+      />
     </div>
   );
 }

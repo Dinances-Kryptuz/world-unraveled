@@ -1,82 +1,170 @@
 import { useAuth } from '../../hooks/useAuth';
 import { useCharacter } from '../../hooks/useCharacter';
-import { PROFESSION_LABELS, checkLearnProfession, checkRankUp } from '../../gameData/professionTiers';
-import { trainersInZone } from '../../gameData/professionTrainers';
+import {
+  PROFESSION_LABELS,
+  PROFESSION_TIERS,
+  checkLearnProfession,
+  checkRankUp,
+  requiredCharacterLevelForRank,
+} from '../../gameData/professionTiers';
+import { TRAINER_ZONE_BY_RANK } from '../../gameData/professionTrainers';
+import { ZONES } from '../../gameData/zones';
 import { learnProfession, advanceProfessionRank } from '../../firebase/professions';
 import type { ProfessionId, ProfessionTierName } from '../../gameData/types';
+import type { Character } from '../../types/character';
 
-const PROFESSION_TIER_BELOW: Record<ProfessionTierName, ProfessionTierName> = {
-  apprentice: 'apprentice', // unused — apprentice is handled by the learn-profession branch below
-  journeyman: 'apprentice',
-  expert: 'journeyman',
-  artisan: 'expert',
-  master: 'artisan',
+const RANK_ORDER: ProfessionTierName[] = ['apprentice', 'journeyman', 'expert', 'artisan', 'master'];
+const RANK_LABEL: Record<ProfessionTierName, string> = {
+  apprentice: 'Apprentice',
+  journeyman: 'Journeyman',
+  expert: 'Expert',
+  artisan: 'Artisan',
+  master: 'Master',
 };
 
-// The "Learn X" / "Train <rank> X" trainer list, filtered to one
-// profession-category's ids (gathering/fishing/crafting — see
-// gameData/professionTiers.ts's ProfessionCategory) and scoped to whichever
-// zone is currently selected (trainers are genuinely per-zone: Zone 1 =
-// Apprentice, Zone 2 = Journeyman, and so on — see professionTrainers.ts).
-// Shared by all three Professions sub-pages instead of copy-pasted three
-// times.
-export function ProfessionTrainerList({ zoneId, professionIds }: { zoneId: string; professionIds: ProfessionId[] }) {
-  const { user } = useAuth();
-  const { character, refetch } = useCharacter();
+function zoneName(zoneId: string): string {
+  return ZONES[zoneId]?.name ?? zoneId;
+}
 
-  async function handleLearn(professionId: ProfessionId) {
-    if (!user) return;
-    await learnProfession(user.uid, professionId);
-    await refetch();
-  }
-
-  async function handleAdvance(professionId: ProfessionId) {
-    if (!user) return;
-    await advanceProfessionRank(user.uid, professionId);
-    await refetch();
-  }
-
-  if (!character) return null;
-
-  const idSet = new Set(professionIds);
-  const entries = trainersInZone(zoneId).filter((t) => idSet.has(t.profession));
-  if (entries.length === 0) return null;
+// One profession's full 5-rank roadmap — shown regardless of which zone the
+// character is standing in, same "see the whole path up front" shape as
+// MountTrainerScreen (which lists all 5 mount ranks at once, not just the
+// one trainable from the current zone). Each row says the character level
+// AND the zone required, with a chained lockedNote exactly like Mount
+// Trainer's requiredPriorMountId logic: you can't see "Requires level 35"
+// for Artisan without also learning you need Expert first.
+function ProfessionRoadmap({ profession, character }: { profession: ProfessionId; character: Character }) {
+  const label = PROFESSION_LABELS[profession];
+  const state = character.professions[profession];
+  const currentRankIndex = state ? RANK_ORDER.indexOf(state.unlockedTier) : -1;
 
   return (
-    <>
-      <h2>Trainers</h2>
+    <details>
+      <summary>
+        {label}
+        {state ? ` — ${RANK_LABEL[state.unlockedTier]} (skill ${state.level})` : ' — not learned'}
+      </summary>
       <ul>
-        {entries.map(({ profession, rank }) => {
-          const label = PROFESSION_LABELS[profession];
-          const state = character.professions[profession];
+        {RANK_ORDER.map((rank, rankIndex) => {
+          const rankLabel = RANK_LABEL[rank];
+          const requiredZoneId = TRAINER_ZONE_BY_RANK[rank];
+          const requiredLevel = requiredCharacterLevelForRank(profession, rank);
+          const goldCost = PROFESSION_TIERS.find((t) => t.tier === rank)!.goldCost;
+          const inZone = character.currentZoneId === requiredZoneId;
+          const owned = rankIndex <= currentRankIndex;
 
-          if (rank === 'apprentice') {
-            if (state) return null; // already learned — nothing to do with this trainer
-            const check = checkLearnProfession(profession, Object.keys(character.professions) as ProfessionId[], character.level, character.gold);
+          if (owned) {
             return (
-              <li key={profession}>
-                Learn {label} ({check.goldCost} gold)
-                <button onClick={() => handleLearn(profession)} disabled={!check.ok}>
-                  Learn
-                </button>
-                {!check.ok && <small> — {check.reason}</small>}
+              <li key={rank}>
+                {rankLabel} {label} — trained ({zoneName(requiredZoneId)})
               </li>
             );
           }
 
-          if (!state || state.unlockedTier !== PROFESSION_TIER_BELOW[rank]) return null; // not relevant yet / already past
-          const check = checkRankUp(profession, state.level, state.unlockedTier, character.level, character.gold);
+          const isNextRank = rankIndex === currentRankIndex + 1;
+          if (!isNextRank) {
+            // Not reachable yet — a later rank than the one actually next.
+            const priorRankLabel = RANK_LABEL[RANK_ORDER[currentRankIndex + 1]];
+            return (
+              <li key={rank} style={{ opacity: 0.6 }}>
+                {rankLabel} {label} ({goldCost.toLocaleString()} gold) — requires level {requiredLevel}, train at{' '}
+                {zoneName(requiredZoneId)}
+                <small> — train {priorRankLabel} first</small>
+              </li>
+            );
+          }
+
+          // This IS the next actionable rank — a real check with a real button.
+          const check =
+            rank === 'apprentice'
+              ? checkLearnProfession(profession, Object.keys(character.professions) as ProfessionId[], character.level, character.gold)
+              : checkRankUp(profession, state!.level, state!.unlockedTier, character.level, character.gold);
+          const ok = check.ok && inZone;
+          const reason = !check.ok ? check.reason : !inZone ? `Train this at ${zoneName(requiredZoneId)}.` : undefined;
+
           return (
-            <li key={profession}>
-              Train {rank[0].toUpperCase() + rank.slice(1)} {label} ({check.goldCost} gold)
-              <button onClick={() => handleAdvance(profession)} disabled={!check.ok}>
-                Train
-              </button>
-              {!check.ok && <small> — {check.reason}</small>}
-            </li>
+            <ProfessionRankRow
+              key={rank}
+              profession={profession}
+              rank={rank}
+              rankLabel={rankLabel}
+              label={label}
+              goldCost={goldCost}
+              requiredLevel={requiredLevel}
+              requiredZoneId={requiredZoneId}
+              ok={ok}
+              reason={reason}
+            />
           );
         })}
       </ul>
+    </details>
+  );
+}
+
+function ProfessionRankRow({
+  profession,
+  rank,
+  rankLabel,
+  label,
+  goldCost,
+  requiredLevel,
+  requiredZoneId,
+  ok,
+  reason,
+}: {
+  profession: ProfessionId;
+  rank: ProfessionTierName;
+  rankLabel: string;
+  label: string;
+  goldCost: number;
+  requiredLevel: number;
+  requiredZoneId: string;
+  ok: boolean;
+  reason?: string;
+}) {
+  const { user } = useAuth();
+  const { refetch } = useCharacter();
+
+  async function handleTrain() {
+    if (!user) return;
+    if (rank === 'apprentice') {
+      await learnProfession(user.uid, profession);
+    } else {
+      await advanceProfessionRank(user.uid, profession);
+    }
+    await refetch();
+  }
+
+  return (
+    <li>
+      {rank === 'apprentice' ? 'Learn' : `Train ${rankLabel}`} {label} ({goldCost.toLocaleString()} gold) — requires
+      level {requiredLevel}, train at {zoneName(requiredZoneId)}
+      <button onClick={handleTrain} disabled={!ok}>
+        {rank === 'apprentice' ? 'Learn' : 'Train'}
+      </button>
+      {!ok && reason && <small> — {reason}</small>}
+    </li>
+  );
+}
+
+// The full trainer roadmap for every profession in `professionIds` —
+// visible from any zone (travel to the listed zone to actually train),
+// same posture as MountTrainerScreen. Shared by the Professions Trainer
+// screen instead of copy-pasted.
+export function ProfessionTrainerList({ professionIds }: { professionIds: ProfessionId[] }) {
+  const { character } = useCharacter();
+  if (!character) return null;
+
+  return (
+    <>
+      <h2>Trainers</h2>
+      <p>
+        <small>Shown for every zone — travel to the listed zone to actually train.</small>
+      </p>
+      {professionIds.map((profession) => (
+        <ProfessionRoadmap key={profession} profession={profession} character={character} />
+      ))}
     </>
   );
 }

@@ -1,10 +1,12 @@
 import { doc, updateDoc, increment, deleteField } from 'firebase/firestore';
 import { db } from './config';
 import { getCharacter } from './character';
-import { getInventory } from './inventory';
+import { getInventory, grantInventoryItems } from './inventory';
 import { ITEMS } from '../gameData/items';
 import { RECIPES } from '../gameData/recipes';
 import { checkLearnProfession, checkRankUp, nextTier } from '../gameData/professionTiers';
+import { TRAINER_ZONE_BY_RANK } from '../gameData/professionTrainers';
+import { ZONES } from '../gameData/zones';
 import type { ProfessionId } from '../gameData/types';
 import type { Character } from '../types/character';
 
@@ -16,7 +18,10 @@ export interface ProfessionActionResult {
 // Visiting an Apprentice trainer for the very first time in a profession —
 // see checkLearnProfession for the primary-slot-cap/level/gold gating this
 // re-validates server side (never trust the client's "can I afford this"
-// check alone, same posture as respecTalents/activateCombatPreset).
+// check alone, same posture as respecTalents/activateCombatPreset). The
+// zone check mirrors firebase/mounts.ts's trainMount — this used to be
+// enforced ONLY by the UI filtering the trainer list to the current zone
+// (ProfessionTrainerList), which a direct call could bypass entirely.
 export async function learnProfession(uid: string, profession: ProfessionId): Promise<ProfessionActionResult> {
   const character = await getCharacter(uid);
   if (!character) return { success: false, reason: 'Character not found.' };
@@ -24,6 +29,11 @@ export async function learnProfession(uid: string, profession: ProfessionId): Pr
   const known = Object.keys(character.professions) as ProfessionId[];
   const check = checkLearnProfession(profession, known, character.level, character.gold);
   if (!check.ok) return { success: false, reason: check.reason };
+
+  const requiredZoneId = TRAINER_ZONE_BY_RANK.apprentice;
+  if (character.currentZoneId !== requiredZoneId) {
+    return { success: false, reason: `Train this at ${ZONES[requiredZoneId]?.name ?? requiredZoneId}.` };
+  }
 
   await updateDoc(doc(db, 'characters', uid), {
     gold: increment(-check.goldCost),
@@ -61,6 +71,11 @@ export async function advanceProfessionRank(uid: string, profession: ProfessionI
   const check = checkRankUp(profession, state.level, state.unlockedTier, character.level, character.gold);
   if (!check.ok) return { success: false, reason: check.reason };
   const next = nextTier(profession, state.unlockedTier)!;
+
+  const requiredZoneId = TRAINER_ZONE_BY_RANK[next.tier];
+  if (character.currentZoneId !== requiredZoneId) {
+    return { success: false, reason: `Train this at ${ZONES[requiredZoneId]?.name ?? requiredZoneId}.` };
+  }
 
   await updateDoc(doc(db, 'characters', uid), {
     gold: increment(-check.goldCost),
@@ -139,9 +154,7 @@ export async function applyFishingResult(
   });
 
   if (result.quantity > 0) {
-    await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), {
-      [`items.${result.itemId}`]: increment(result.quantity),
-    });
+    await grantInventoryItems(uid, [{ itemId: result.itemId, quantity: result.quantity }]);
   }
 }
 

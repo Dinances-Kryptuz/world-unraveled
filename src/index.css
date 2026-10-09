@@ -379,6 +379,37 @@ button.item-slot:active:not(:disabled) {
   line-height: 1.4;
 }
 
+.item-slot-placeholder {
+  opacity: 0.35;
+}
+
+.item-slot-enchant-dot {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #7dd3fc;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3);
+}
+
+/* ── Equipment screen: icon-grid "paper doll" instead of a text list ── */
+.equipment-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 56px);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.equipment-picker {
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+}
+
 .item-tooltip {
   display: none;
   position: absolute;
@@ -1099,6 +1130,40 @@ button.class-card-selected:hover:not(:disabled) {
 .top-bar-xp-fill {
   height: 100%;
   transition: width 0.3s ease;
+}
+
+.active-buffs-bar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.active-buff-entry {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.active-buff-entry small {
+  font-variant-numeric: tabular-nums;
+  color: #4a4038;
+}
+
+.equipped-consumable-slots {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 10px;
+}
+
+.equipped-consumable-slot {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.equipped-consumable-slot select {
+  max-width: 160px;
 }
 
 /* ── Zone identity: tabs + themed banner (gameData/zoneThemes.ts) ── */
