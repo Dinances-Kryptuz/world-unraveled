@@ -3,6 +3,34 @@ import type { EquipmentSlot, ItemDef } from './types';
 import { ITEMS } from './items';
 import { ENCHANTS } from './enchanting';
 
+// Two-handed weapons — a small, deliberately short list rather than a
+// keyword guess across the whole weapon catalog: most of this game's
+// weapons (the paired sword/battleaxe lines every Blacksmithing tier
+// crafts, daggers, wands, scepters) are a one-handed progression line by
+// design, matched 1:1 across tiers, and reclassifying an entire line as
+// two-handed would silently cut its offhand pairing without any
+// compensating stat budget. These 4 are each already flavored as
+// unusually heavy/bulky in their own description ("too heavy for most",
+// "heavier...than anything else") or are the classic caster 2H
+// implement (a staff) — real candidates, not a guess. See the equip-rule
+// doc comment on canEquipInOffhand below for what this gates.
+const TWO_HANDED_WEAPON_IDS = new Set(['apprentice_staff', 'chieftains_warhammer', 'kaldrun_warhammer', 'overseers_greatmace']);
+
+export function isTwoHandedWeapon(item: Pick<ItemDef, 'id' | 'equipSlot'>): boolean {
+  return item.equipSlot === 'weapon' && TWO_HANDED_WEAPON_IDS.has(item.id);
+}
+
+// Whether `item` is allowed in the offhand slot at all — either a genuine
+// offhand item (a shield, or a cloth-flavored tome/orb for non-plate
+// casters) or a one-handed WEAPON (dual wielding two one-handers). A
+// two-handed weapon never fits here; see equipItem in firebase/character.ts
+// for the matching "equipping a 2H weapon auto-unequips the offhand, and
+// the offhand can't be equipped while a 2H weapon is already there" rules.
+export function canEquipInOffhand(item: Pick<ItemDef, 'id' | 'equipSlot'>): boolean {
+  if (item.equipSlot === 'offhand') return true;
+  return item.equipSlot === 'weapon' && !isTwoHandedWeapon(item);
+}
+
 const SLOT_LABELS: Record<EquipmentSlot, string> = {
   weapon: 'Weapon',
   offhand: 'Off Hand',

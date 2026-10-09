@@ -3,6 +3,7 @@ import { CLASS_LABELS, SPEC_LABELS } from '../gameData/classStats';
 import { ZONES, isZoneUnlocked } from '../gameData/zones';
 import { travelMinutes } from '../gameData/travel';
 import { bestMountSpeedBonusPct } from '../gameData/mounts';
+import { ActiveBuffsBar } from './ActiveBuffsBar';
 import type { Character } from '../types/character';
 
 // The one thing visible no matter which sidebar section is open — who you
@@ -60,6 +61,7 @@ export function TopBar({
         </div>
         <button onClick={() => signOut()}>Sign out</button>
       </div>
+      <ActiveBuffsBar character={character} />
       <div className="zone-tabs top-bar-zone-tabs">
         {Object.values(ZONES).map((z) => {
           const unlocked = isZoneUnlocked(z, character.level);

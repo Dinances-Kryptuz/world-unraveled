@@ -128,6 +128,14 @@ export interface Character {
   // combatEngine/buffs.ts). Charge-based buffs count down `charges`;
   // duration-based ones are pruned by `expiresAt`.
   activeBuffs: Partial<Record<import('../gameData/types').BuffCategory, { itemId: string; charges?: number; expiresAt?: Date }>>;
+  // The player's pinned quick-use consumable per slot — a chosen item id
+  // the ConsumablesBar surfaces first (with its current inventory quantity
+  // as a "stack" count) instead of making the player hunt through every
+  // owned consumable each time. Purely a UI pointer: it doesn't reserve or
+  // move the item, using it still just decrements inventory by 1 like any
+  // other consumable use (see firebase/consumables.ts's
+  // setEquippedConsumable). null means no pin for that slot.
+  equippedConsumables: { food: string | null; potion: string | null };
   currentActivity: CurrentActivity;
   // The player's saved priority list (highest priority first). See
   // combatEngine/progression.ts's effectiveLoadout() — an empty array is a

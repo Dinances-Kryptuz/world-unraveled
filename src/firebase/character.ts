@@ -14,7 +14,7 @@ import type { TravelState } from '../gameData/travel';
 import { maxHp } from '../gameData/combatFormulas';
 import { canClassEquip } from '../gameData/classStats';
 import { ITEMS } from '../gameData/items';
-import { getEquipmentStatBonuses } from '../gameData/equipmentStats';
+import { getEquipmentStatBonuses, isTwoHandedWeapon, canEquipInOffhand } from '../gameData/equipmentStats';
 import { maxEquippedSlots, unlockedAbilities, effectiveLoadout, MAX_COMBAT_PRESETS } from '../combatEngine/progression';
 import { ABILITIES } from '../combatEngine/abilities';
 import type { Condition, ConditionGroup, ConditionType, ResourceType } from '../combatEngine/types';
@@ -137,6 +137,9 @@ export async function getCharacter(uid: string): Promise<Character | null> {
         return [category, expiresAt ? { ...rest, expiresAt: (expiresAt as Timestamp).toDate() } : rest];
       })
     ),
+    // Same backfill idea, for the quick-use food/potion slots — a character
+    // that existed before these did just has no pin yet, same as a fresh one.
+    equippedConsumables: data.equippedConsumables ?? { food: null, potion: null },
     // Same backfill idea for equippedAbilityIds, added after some characters
     // already existed — an empty list is itself a valid "no choice made
     // yet" state, so this only matters for a genuinely missing field.
@@ -265,6 +268,7 @@ export async function createCharacter(uid: string, name: string, characterClass:
     bagSlots: BASE_BAG_SLOTS,
     bankSlots: BASE_BANK_SLOTS,
     activeBuffs: {},
+    equippedConsumables: { food: null, potion: null },
     currentActivity: { type: null, targetId: null, zoneId: null, startedAt: null },
     equippedAbilityIds: [],
     abilityConditions: {},
@@ -512,6 +516,20 @@ export async function equipItem(uid: string, slot: EquipmentSlot, itemId: string
     throw new Error(`${character.class} cannot equip ${item?.name ?? itemId} (${item?.armorType} armor)`);
   }
 
+  // Offhand accepts a genuine offhand item (shield/tome/orb) OR a one-
+  // handed weapon (dual wielding two one-handers) — never a two-handed
+  // one, and never while a two-handed weapon already occupies 'weapon'.
+  // See equipmentStats.ts's canEquipInOffhand/isTwoHandedWeapon doc comments.
+  if (slot === 'offhand') {
+    if (!canEquipInOffhand(item)) {
+      throw new Error(`${item.name} can’t be equipped in the off-hand.`);
+    }
+    const mainHand = character.equipment.weapon ? ITEMS[character.equipment.weapon] : null;
+    if (mainHand && isTwoHandedWeapon(mainHand)) {
+      throw new Error('Unequip your two-handed weapon first.');
+    }
+  }
+
   const previouslyEquipped = character.equipment[slot];
 
   const inventoryUpdates: Record<string, unknown> = {
@@ -520,11 +538,22 @@ export async function equipItem(uid: string, slot: EquipmentSlot, itemId: string
   if (previouslyEquipped) {
     inventoryUpdates[`items.${previouslyEquipped}`] = increment(1);
   }
-  await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), inventoryUpdates);
 
-  await updateDoc(doc(db, 'characters', uid), {
+  const characterUpdates: Record<string, unknown> = {
     [`equipment.${slot}`]: itemId,
-  });
+  };
+
+  // Equipping a two-handed weapon can't coexist with an offhand — auto-
+  // unequip whatever's there back to inventory rather than blocking the
+  // equip outright, same "the game resolves it for you" posture a ring
+  // swap already has.
+  if (slot === 'weapon' && isTwoHandedWeapon(item) && character.equipment.offhand) {
+    inventoryUpdates[`items.${character.equipment.offhand}`] = increment(1);
+    characterUpdates['equipment.offhand'] = null;
+  }
+
+  await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), inventoryUpdates);
+  await updateDoc(doc(db, 'characters', uid), characterUpdates);
 }
 
 export async function unequipItem(uid: string, slot: EquipmentSlot): Promise<void> {

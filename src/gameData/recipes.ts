@@ -1274,7 +1274,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   sacred_copper_shield: {
-    id: 'sacred_copper_shield', name: 'Sacred Copper Shield', profession: 'smithing', requiredSkill: 1,
+    id: 'sacred_copper_shield', name: 'Copper-Bound Tome', profession: 'smithing', requiredSkill: 1,
     resultItemId: 'sacred_copper_shield', resultQuantity: 1,
     materials: [{ itemId: 'copper_bar', quantity: 4 }],
     craftSeconds: 8, xpAward: 1,
@@ -1386,7 +1386,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   sacred_bronze_shield: {
-    id: 'sacred_bronze_shield', name: 'Sacred Bronze Shield', profession: 'smithing', requiredSkill: 4,
+    id: 'sacred_bronze_shield', name: 'Bronze-Rimmed Orb', profession: 'smithing', requiredSkill: 4,
     resultItemId: 'sacred_bronze_shield', resultQuantity: 1,
     materials: [{ itemId: 'bronze_bar', quantity: 4 }],
     craftSeconds: 8.5, xpAward: 6,
@@ -1498,7 +1498,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   sacred_iron_shield: {
-    id: 'sacred_iron_shield', name: 'Sacred Iron Shield', profession: 'smithing', requiredSkill: 10,
+    id: 'sacred_iron_shield', name: 'Iron-Clasped Tome', profession: 'smithing', requiredSkill: 10,
     resultItemId: 'sacred_iron_shield', resultQuantity: 1,
     materials: [{ itemId: 'iron_bar', quantity: 4 }],
     craftSeconds: 9.6, xpAward: 16,
@@ -1610,7 +1610,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   sacred_steel_shield: {
-    id: 'sacred_steel_shield', name: 'Sacred Steel Shield', profession: 'smithing', requiredSkill: 11,
+    id: 'sacred_steel_shield', name: 'Steel-Banded Orb', profession: 'smithing', requiredSkill: 11,
     resultItemId: 'sacred_steel_shield', resultQuantity: 1,
     materials: [{ itemId: 'steel_bar', quantity: 4 }],
     craftSeconds: 9.8, xpAward: 18,
@@ -1722,7 +1722,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   sacred_mithril_shield: {
-    id: 'sacred_mithril_shield', name: 'Sacred Mithril Shield', profession: 'smithing', requiredSkill: 12,
+    id: 'sacred_mithril_shield', name: 'Mithril-Bound Tome', profession: 'smithing', requiredSkill: 12,
     resultItemId: 'sacred_mithril_shield', resultQuantity: 1,
     materials: [{ itemId: 'mithril_bar', quantity: 4 }],
     craftSeconds: 10, xpAward: 20,
@@ -1834,7 +1834,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   sacred_thorium_shield: {
-    id: 'sacred_thorium_shield', name: 'Sacred Thorium Shield', profession: 'smithing', requiredSkill: 16,
+    id: 'sacred_thorium_shield', name: 'Thorium-Rimmed Orb', profession: 'smithing', requiredSkill: 16,
     resultItemId: 'sacred_thorium_shield', resultQuantity: 1,
     materials: [{ itemId: 'thorium_bar', quantity: 4 }],
     craftSeconds: 10.7, xpAward: 27,
@@ -1946,7 +1946,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   sacred_obsidian_shield: {
-    id: 'sacred_obsidian_shield', name: 'Sacred Obsidian Shield', profession: 'smithing', requiredSkill: 19,
+    id: 'sacred_obsidian_shield', name: 'Obsidian-Clasped Tome', profession: 'smithing', requiredSkill: 19,
     resultItemId: 'sacred_obsidian_shield', resultQuantity: 1,
     materials: [{ itemId: 'obsidian_bar', quantity: 4 }],
     craftSeconds: 11.3, xpAward: 33,

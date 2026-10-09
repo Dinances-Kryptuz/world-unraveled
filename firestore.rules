@@ -142,6 +142,7 @@ service cloud.firestore {
       && data.bagSlots == 24
       && data.bankSlots == 4
       && data.activeBuffs == {}
+      && data.equippedConsumables == { 'food': null, 'potion': null }
       && data.currentActivity.type == null
       && data.equippedAbilityIds == []
       && data.abilityConditions == {}
@@ -196,6 +197,7 @@ service cloud.firestore {
       && isValidBagSlots(after)
       && isValidBankSlots(after)
       && isValidActiveBuffs(after)
+      && isValidEquippedConsumables(after)
       && isValidActivity(after.currentActivity)
       && isValidEquippedAbilityIds(after)
       && isValidAbilityConditions(after)
@@ -242,6 +244,17 @@ service cloud.firestore {
 
   function isValidNotificationsEnabled(after) {
     return !('notificationsEnabled' in after) || after.notificationsEnabled is bool;
+  }
+
+  // Same "may not exist yet on an old character" treatment as
+  // isValidNotificationsEnabled above — a pin is just a UI pointer (see
+  // firebase/consumables.ts's setEquippedConsumable), so there's nothing
+  // more to validate than its shape.
+  function isValidEquippedConsumables(after) {
+    return !('equippedConsumables' in after)
+      || (after.equippedConsumables.keys().hasOnly(['food', 'potion'])
+        && (!('food' in after.equippedConsumables) || after.equippedConsumables.food == null || after.equippedConsumables.food is string)
+        && (!('potion' in after.equippedConsumables) || after.equippedConsumables.potion == null || after.equippedConsumables.potion is string));
   }
 
   // Same "may not exist yet on an old character" treatment and ownership-

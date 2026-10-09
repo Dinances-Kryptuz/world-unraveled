@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useCharacter } from '../hooks/useCharacter';
 import { subscribeToInventory } from '../firebase/inventory';
-import { useConsumableOutOfCombat } from '../firebase/consumables';
+import { useConsumableOutOfCombat, setEquippedConsumable } from '../firebase/consumables';
 import { ITEMS } from '../gameData/items';
 import { ConsumablesBar } from './ConsumablesBar';
 import { ItemSlot } from './ItemSlot';
@@ -42,6 +42,13 @@ export function InventoryScreen() {
     await refetch();
   }
 
+  async function handleEquipConsumable(slot: 'food' | 'potion', itemId: string | null) {
+    if (!user) return;
+    const result = await setEquippedConsumable(user.uid, slot, itemId);
+    if (!result.success) setError(result.reason ?? 'Could not equip that.');
+    await refetch();
+  }
+
   const distinctItemCount = Object.values(inventory.items).filter((q) => q > 0).length;
 
   const entries = Object.entries(inventory.items)
@@ -60,7 +67,13 @@ export function InventoryScreen() {
           {distinctItemCount} / {character.bagSlots} item slots used
         </small>
       </p>
-      <ConsumablesBar character={character} inventoryItems={inventory.items} allowMana={false} onUse={handleUseConsumable} />
+      <ConsumablesBar
+        character={character}
+        inventoryItems={inventory.items}
+        allowMana={false}
+        onUse={handleUseConsumable}
+        onEquip={handleEquipConsumable}
+      />
       {error && <p className="error">{error}</p>}
       {entries.length === 0 ? (
         <p>Empty so far — go fight or gather something.</p>
