@@ -318,6 +318,13 @@ button.item-slot {
 button.item-slot:hover:not(:disabled) {
   border-color: var(--zone-primary, #b08d4f);
   transform: translateY(-2px);
+  /* `transform` makes this tile its own stacking context, which otherwise
+     traps the tooltip's z-index:20 inside it — the tile (as one atomic
+     unit) would then stack against sibling tiles purely by DOM order, so
+     a later tile (e.g. Chest, next to Weapon in the equipment grid) could
+     paint over this one's tooltip. Lifting the whole hovered tile above
+     its siblings keeps the tooltip on top regardless of DOM order. */
+  z-index: 30;
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) inset, 0 4px 8px rgba(60, 45, 20, 0.18);
 }
 
