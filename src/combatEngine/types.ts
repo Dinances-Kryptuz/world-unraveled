@@ -178,6 +178,15 @@ export interface CasterProfile {
   // elemental damage); set from Monster.damageSchool for a monster — see
   // engine.ts's buildMonsterProfile.
   damageSchool: DamageSchool;
+  // AGI-driven (gameData/combatFormulas.ts's critChanceFromAgi/
+  // dodgeChanceFromAgi, added for the Leatherworking overhaul) — 0 for
+  // every monster (buildMonsterProfile) and, for the player/companions,
+  // whatever their current total AGI resolves to (flat 5 baseline until
+  // AGI gear is equipped — see classStats.ts's CLASS_GROWTH.AGI). critChance
+  // is checked on the ATTACKER in computeEffectDamage; dodgeChance is
+  // checked on the DEFENDER, alongside (not replacing) avoidance.
+  critChance: number;
+  dodgeChance: number;
   healFrac: number;
   passiveHealPct: number;
   // Multiplies every kind of healing this combatant produces — see

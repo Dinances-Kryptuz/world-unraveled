@@ -34,8 +34,33 @@ export const MATERIALS: MaterialDef[] = [
   { id: 'platinum', name: 'Platinum', barItemId: 'platinum_bar' },
 ];
 
-const MATERIALS_BY_ID: Record<string, MaterialDef> = Object.fromEntries(MATERIALS.map((m) => [m.id, m]));
+// Leatherworking's own material registry — kept SEPARATE from MATERIALS
+// (not appended to it) so Blacksmithing-only generators that read MATERIALS
+// directly (SMITHING_TIER_ORDER/JEWELRY_MATERIAL_IDS in ProfessionScreen.tsx,
+// MASTER_BLACKSMITH_ACHIEVEMENT in achievements.ts, the Blacksmith-mastery
+// check in firebase/character.ts) never pick up leather tiers. Leatherworking
+// gets its own parallel generators (generateLeatherMasteryAchievements,
+// generateLeatherMaterialTitles, MASTER_LEATHERWORKER_ACHIEVEMENT) over this
+// array instead — same pattern, different registry. barItemId points at
+// each tier's primary leather item (items.ts); id slugs match the user's
+// exact "Master of {name}" title wording.
+export const LEATHER_MATERIALS: MaterialDef[] = [
+  { id: 'light_leather', name: 'Light Leather', barItemId: 'skinned_light_leather' },
+  { id: 'medium_leather', name: 'Medium Leather', barItemId: 'medium_leather' },
+  { id: 'heavy_leather', name: 'Heavy Leather', barItemId: 'heavy_leather' },
+  { id: 'thick_leather', name: 'Thick Leather', barItemId: 'thick_leather' },
+  { id: 'rugged_leather', name: 'Rugged Leather', barItemId: 'rugged_leather' },
+  { id: 'emberscar_leather', name: 'Emberscar Leather', barItemId: 'emberscar_leather' },
+];
 
+const MATERIALS_BY_ID: Record<string, MaterialDef> = Object.fromEntries(
+  [...MATERIALS, ...LEATHER_MATERIALS].map((m) => [m.id, m])
+);
+
+// Resolves across BOTH registries — CraftingScreen.tsx calls this generically
+// for any recipe.materialId regardless of profession, so Leatherworking
+// recipes need to resolve here too or their Mastery wiring would silently
+// never build (see MaterialMasteryInput construction in CraftingScreen.tsx).
 export function getMaterial(materialId: string): MaterialDef | undefined {
   return MATERIALS_BY_ID[materialId];
 }

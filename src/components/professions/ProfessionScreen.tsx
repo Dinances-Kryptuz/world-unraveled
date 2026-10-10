@@ -14,7 +14,7 @@ import { ENCHANTS, isDisenchantable, disenchantRequiredSkill, disenchantTier } f
 import { ITEMS } from '../../gameData/items';
 import { equippedItemId } from '../../gameData/equipmentStats';
 import { describeItemStats } from '../../gameData/equipmentStats';
-import { MATERIALS } from '../../gameData/materials';
+import { MATERIALS, LEATHER_MATERIALS, type MaterialDef } from '../../gameData/materials';
 import {
   materialMasteryPercent,
   materialMasterySpeedMultiplier,
@@ -45,6 +45,32 @@ const JEWELRY_MATERIAL_IDS = new Set(['silver', 'gold', 'platinum']);
 const SMITHING_TIER_LABELS: Record<string, string> = Object.fromEntries(
   MATERIALS.map((m) => [m.id, JEWELRY_MATERIAL_IDS.has(m.id) ? `${m.name} Jewelry` : m.name])
 );
+
+// Same grouping pattern for Leatherworking's own 6-tier armor buildout (see
+// recipes.ts's Leatherworking-overhaul module comment) — no jewelry-style
+// suffix needed since Leatherworking has no jewelry tier. Deliberately a
+// SEPARATE id list from LEATHER_MATERIALS (used only by the Mastery panel
+// below): recipe/item ids are prefixed by the tier's EQUIPMENT-LINE name
+// (handstitched_leather_helm, etc.) while LEATHER_MATERIALS' ids are the
+// MASTERY slugs (light_leather, etc.) — the two namespaces only happen to
+// coincide for the 6th tier (both "emberscar_leather"), per materials.ts's
+// own module comment on why the two are independent.
+const LEATHERWORKING_TIER_ORDER = [
+  'handstitched_leather',
+  'fine_leather',
+  'barbaric_leather',
+  'nightscape_leather',
+  'wicked_leather',
+  'emberscar_leather',
+];
+const LEATHERWORKING_TIER_LABELS: Record<string, string> = {
+  handstitched_leather: 'Handstitched Leather',
+  fine_leather: 'Fine Leather',
+  barbaric_leather: 'Barbaric Leather',
+  nightscape_leather: 'Nightscape Leather',
+  wicked_leather: 'Wicked Leather',
+  emberscar_leather: 'Emberscar Leather',
+};
 
 // A single profession's own page — one per sidebar nav item (see
 // Sidebar.tsx), replacing the old three-category pages (Gathering/Fishing/
@@ -181,11 +207,14 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
   // Smelting section below. A recipe not matching any known tier slug
   // (the two Blacksmith repair recipes, the quest-taught Emberforged
   // Gauntlets) falls into a final ungrouped section rather than vanishing.
-  function renderGroupedSmithingRecipes() {
+  // Generalized (tierOrder/tierLabels params) so Leatherworking's own
+  // 42-recipe, 6-tier buildout reuses the exact same grouping — see the
+  // professionId === 'leatherworking' dispatch below.
+  function renderGroupedRecipesByTier(tierOrder: string[], tierLabels: Record<string, string>) {
     const grouped = new Map<string, typeof recipesForProfession>();
     const ungrouped: typeof recipesForProfession = [];
     for (const recipe of recipesForProfession) {
-      const slug = SMITHING_TIER_ORDER.find((s) => {
+      const slug = tierOrder.find((s) => {
         const stripped = recipe.id.startsWith('sacred_') ? recipe.id.slice('sacred_'.length) : recipe.id;
         return stripped.startsWith(`${s}_`);
       });
@@ -198,9 +227,9 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
     }
     return (
       <>
-        {SMITHING_TIER_ORDER.filter((slug) => grouped.has(slug)).map((slug) => (
+        {tierOrder.filter((slug) => grouped.has(slug)).map((slug) => (
           <details key={slug}>
-            <summary>{SMITHING_TIER_LABELS[slug]}</summary>
+            <summary>{tierLabels[slug]}</summary>
             {renderRecipeList(grouped.get(slug))}
           </details>
         ))}
@@ -218,13 +247,16 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
   // no per-metal component, so a future material shows up here automatically
   // the moment it's registered. Mastery is strictly optional/completionist
   // (see types/character.ts's materialMastery doc comment) and fully
-  // independent of Blacksmithing's own 1-100 level/XP shown above.
-  function renderMaterialMasteryPanel() {
+  // independent of the profession's own 1-100 level/XP shown above.
+  // Generalized (registry param) so Leatherworking's LEATHER_MATERIALS
+  // reuses the exact same panel as Blacksmithing's MATERIALS — see the
+  // professionId === 'leatherworking' dispatch below.
+  function renderMaterialMasteryPanel(registry: MaterialDef[]) {
     return (
       <details open>
         <summary>Material Mastery</summary>
         <ul>
-          {MATERIALS.map((material) => {
+          {registry.map((material) => {
             const xp = char.materialMastery?.[material.id]?.xp ?? 0;
             const threshold = MATERIAL_MASTERY_XP_THRESHOLDS[material.id] ?? 0;
             const pct = materialMasteryPercent(xp, material.id);
@@ -485,8 +517,13 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
           {known &&
             (professionId === 'smithing' ? (
               <>
-                {renderGroupedSmithingRecipes()}
-                {renderMaterialMasteryPanel()}
+                {renderGroupedRecipesByTier(SMITHING_TIER_ORDER, SMITHING_TIER_LABELS)}
+                {renderMaterialMasteryPanel(MATERIALS)}
+              </>
+            ) : professionId === 'leatherworking' ? (
+              <>
+                {renderGroupedRecipesByTier(LEATHERWORKING_TIER_ORDER, LEATHERWORKING_TIER_LABELS)}
+                {renderMaterialMasteryPanel(LEATHER_MATERIALS)}
               </>
             ) : (
               renderRecipeList()

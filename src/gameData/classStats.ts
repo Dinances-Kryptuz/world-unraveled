@@ -18,21 +18,27 @@ export type SpecId =
   | 'mage_fire'
   | 'mage_frost';
 
-export type BaseStat = 'STR' | 'STA' | 'INT' | 'SPI';
+export type BaseStat = 'STR' | 'STA' | 'INT' | 'SPI' | 'AGI';
 
 // Per-level growth rate for each base stat, by class. Every character starts
 // at 5 in each stat at level 1; stat(level) = 5 + (level - 1) * growth.
 // Paladin STA deliberately matches Warrior's — plate-wearer parity, fixed
 // during Pass 1 calibration (Prot Paladin was underwater at Warrior-equal STA).
+// AGI is deliberately 0 growth for every class — no class currently grants
+// AGI from leveling, so every character sits at the flat level-1 baseline
+// (5) until they equip AGI gear (Leatherworking's rollable stat — see
+// equipmentRolls.ts's ARMOR_STATS). This is what keeps adding AGI/crit/dodge
+// from silently shifting existing combat balance: nothing changes for a
+// character with no AGI gear equipped.
 export const CLASS_GROWTH: Record<ClassId, Record<BaseStat, number>> = {
-  warrior: { STR: 1.2, STA: 1.0, INT: 0.2, SPI: 0.2 },
-  priest: { STR: 0.2, STA: 0.5, INT: 1.2, SPI: 1.0 },
-  paladin: { STR: 0.8, STA: 1.0, INT: 0.6, SPI: 0.6 },
+  warrior: { STR: 1.2, STA: 1.0, INT: 0.2, SPI: 0.2, AGI: 0 },
+  priest: { STR: 0.2, STA: 0.5, INT: 1.2, SPI: 1.0, AGI: 0 },
+  paladin: { STR: 0.8, STA: 1.0, INT: 0.6, SPI: 0.6, AGI: 0 },
   // A pure caster DPS class with no healing spec — all the INT a Priest
   // gets, none of the SPI (nothing of Mage's ever reads SPI), and the
   // thinnest STA of any class (a Priest at least has healing to offset
   // being squishy; a Mage companion leans on the group's tank instead).
-  mage: { STR: 0.2, STA: 0.4, INT: 1.4, SPI: 0.1 },
+  mage: { STR: 0.2, STA: 0.4, INT: 1.4, SPI: 0.1, AGI: 0 },
 };
 
 export const PRIMARY_STAT: Record<ClassId, BaseStat> = {

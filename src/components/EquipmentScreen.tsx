@@ -43,9 +43,9 @@ const SLOT_PLACEHOLDER_ICON: Record<EquipmentSlot, string> = {
   belt: '🎗', ammo: '🏹',
 };
 
-const BASE_STATS: BaseStat[] = ['STR', 'STA', 'INT', 'SPI'];
+const BASE_STATS: BaseStat[] = ['STR', 'STA', 'INT', 'SPI', 'AGI'];
 const BASE_STAT_LABEL: Record<BaseStat, string> = {
-  STR: 'Strength', STA: 'Stamina', INT: 'Intellect', SPI: 'Spirit',
+  STR: 'Strength', STA: 'Stamina', INT: 'Intellect', SPI: 'Spirit', AGI: 'Agility',
 };
 
 // An item is offered for `slot` if it's the slot's own type, OR (offhand
@@ -115,6 +115,7 @@ export function EquipmentScreen() {
     STA: statAtLevel(character.class, 'STA', character.level) + (equipmentBonuses.STA ?? 0),
     INT: statAtLevel(character.class, 'INT', character.level) + (equipmentBonuses.INT ?? 0),
     SPI: statAtLevel(character.class, 'SPI', character.level) + (equipmentBonuses.SPI ?? 0),
+    AGI: statAtLevel(character.class, 'AGI', character.level) + (equipmentBonuses.AGI ?? 0),
   };
 
   function renderSlotTile(slot: EquipmentSlot) {
