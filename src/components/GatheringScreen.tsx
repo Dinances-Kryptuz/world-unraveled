@@ -17,10 +17,12 @@ import {
   type GatheringResourceLike,
   type GatheringOfflineResult,
   type HerbalismOverride,
+  type GatheringShirtBonuses,
 } from '../gameData/gatheringEngine';
 import { getProfessionState, maxSkillForUnlockedTier, PROFESSION_LABELS } from '../gameData/professionTiers';
 import { ITEMS } from '../gameData/items';
 import { equippedItemId } from '../gameData/equipmentStats';
+import { shirtBonusForItemId, shirtBonusPct } from '../gameData/shirts';
 import { herbZoneOf } from '../gameData/herbs';
 import { ZONES } from '../gameData/zones';
 import { notify } from '../utils/notifications';
@@ -82,6 +84,20 @@ export function GatheringScreen({ node }: { node: GatherNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [node.id]);
 
+  // Built from CurrentActivity.equippedShirtItemId — the snapshot taken
+  // when this activity started, never the character's live equipped
+  // shirt — so switching shirts mid-session can't retroactively change
+  // rewards already in flight for this activity (see types/character.ts's
+  // doc comment on that field, and shirts.ts's shirtBonusForItemId).
+  function gatheringShirtBonuses(shirtItemId: string | null | undefined): GatheringShirtBonuses {
+    const shirtBonus = shirtBonusForItemId(shirtItemId);
+    return {
+      gatheringSpeedPct: shirtBonusPct(shirtBonus, 'gathering_speed'),
+      professionXpPct: shirtBonusPct(shirtBonus, 'profession_xp'),
+      masteryXpPct: shirtBonusPct(shirtBonus, 'mastery_xp'),
+    };
+  }
+
   function resourceLike(): GatheringResourceLike {
     return {
       itemId: node.itemId,
@@ -132,7 +148,8 @@ export function GatheringScreen({ node }: { node: GatherNode }) {
       masteryState.xp,
       cap,
       toolBonusPct,
-      herbalismOverride
+      herbalismOverride,
+      gatheringShirtBonuses(currentCharacter.currentActivity.equippedShirtItemId)
     );
 
     if (result.quantityGained === 0 && result.rareBonusQuantity === 0 && result.professionXpGained === 0) return;
@@ -313,7 +330,8 @@ export function GatheringScreen({ node }: { node: GatherNode }) {
         masteryState.xp,
         cap,
         previewToolBonusPct,
-        previewHerbalismOverride
+        previewHerbalismOverride,
+        gatheringShirtBonuses(character.currentActivity.equippedShirtItemId)
       )
     );
   }

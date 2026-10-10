@@ -56,6 +56,11 @@ export interface OfflineCombatInput {
   // consumption exact rather than an aggregate approximation: this loop calls
   // advanceCombat once per simulated second, same as a live 1s tick.
   consumableState?: ConsumableAutomationRuntimeState;
+  // Tailoring overhaul's Shirt of Fortune — see TickContext.goldFindPct's
+  // doc comment. Resolved by the caller from whichever shirt-snapshot
+  // mechanism applies (CurrentActivity.equippedShirtItemId for ordinary
+  // offline combat, or the dungeon's own entry-time snapshot).
+  goldFindPct?: number;
 }
 
 export interface OfflineCombatResult {
@@ -125,6 +130,7 @@ export function simulateOfflineCombat(input: OfflineCombatInput): OfflineCombatR
     playerLevel: level,
     playerCombatType: input.specDef.combatType,
     consumableState: input.consumableState,
+    goldFindPct: input.goldFindPct,
   };
 
   let elapsed = 0;

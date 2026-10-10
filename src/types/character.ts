@@ -68,6 +68,16 @@ export interface CurrentActivity {
   // decrement, so two different rolls of the same base item are never
   // conflated (see firebase/enchanting.ts's applyDisenchantResult).
   disenchantInstanceId?: string;
+  // Tailoring overhaul's profession shirts — a SNAPSHOT of whichever shirt
+  // (if any) was equipped the moment this activity started (see
+  // firebase/character.ts's startActivity), read by every resolver
+  // instead of the character's current equipment.shirt. This is what makes
+  // "finish 8 offline hours, then swap shirts" not retroactively change
+  // the bonus already earned: the activity's own bonus is fixed for its
+  // entire duration, same posture as talents/buffs/equipment being
+  // snapshotted once at encounter/batch setup everywhere else in this
+  // codebase. Absent/null means no shirt was equipped when it started.
+  equippedShirtItemId?: string | null;
 }
 
 // A named snapshot of an equipped-ability loadout + its conditions (Phase 7)

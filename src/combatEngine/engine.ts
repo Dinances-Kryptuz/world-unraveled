@@ -554,6 +554,13 @@ export interface TickContext {
   // approximations. Absent for every encounter before this field existed,
   // and for any character with no consumableAutomation configured yet.
   consumableState?: ConsumableAutomationRuntimeState;
+  // Tailoring overhaul's Shirt of Fortune — a flat % bonus to gold gained
+  // per kill, read from CurrentActivity.equippedShirtItemId (or, for a
+  // dungeon run, DungeonScreen's own local-state snapshot taken at entry —
+  // see its doc comment) rather than the character's LIVE equipped shirt,
+  // same anti-retroactive-exploit snapshot convention as every other shirt
+  // bonus (gameData/shirts.ts).
+  goldFindPct?: number;
 }
 
 export function advanceCombat(state: CombatState, ctx: TickContext, deltaSeconds: number): TickResult {
@@ -699,7 +706,7 @@ function tickDots(c: Combatant, deltaSeconds: number, ctx: TickContext, events: 
       if (c.hp <= 0 && c.isAlive) {
         c.isAlive = false;
         events.push({ message: `${c.name} is defeated!`, kind: 'death' });
-        if (!c.isPlayer) kills.push(rollKillReward(ctx.monster, ctx.monster.level - ctx.playerLevel));
+        if (!c.isPlayer) kills.push(rollKillReward(ctx.monster, ctx.monster.level - ctx.playerLevel, ctx.goldFindPct));
       }
     }
   }
@@ -817,7 +824,7 @@ export function useAbility(
           if (target.hp <= 0 && target.isAlive) {
             target.isAlive = false;
             events.push({ message: `${target.name} is defeated!`, kind: 'death' });
-            if (!target.isPlayer) kills.push(rollKillReward(ctx.monster, levelDiff));
+            if (!target.isPlayer) kills.push(rollKillReward(ctx.monster, levelDiff, ctx.goldFindPct));
           }
           break;
         }
@@ -905,8 +912,10 @@ export function useAbility(
   }
 }
 
-function rollKillReward(monster: Monster, levelDiff: number): KillReward {
-  const goldGained = Math.round(monster.goldMin + Math.random() * (monster.goldMax - monster.goldMin));
+function rollKillReward(monster: Monster, levelDiff: number, goldFindPct = 0): KillReward {
+  const goldGained = Math.round(
+    (monster.goldMin + Math.random() * (monster.goldMax - monster.goldMin)) * (1 + goldFindPct / 100)
+  );
   const xpGained = Math.round(50 * monster.level * xpModifier(levelDiff));
   const voidShardsGained = monster.voidShardsMin
     ? Math.round(monster.voidShardsMin + Math.random() * ((monster.voidShardsMax ?? monster.voidShardsMin) - monster.voidShardsMin))

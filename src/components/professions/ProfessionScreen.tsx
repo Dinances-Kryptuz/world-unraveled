@@ -103,19 +103,34 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
 
   async function handleGather(nodeId: string) {
     if (!user) return;
-    await startActivity(user.uid, { type: 'gathering', targetId: nodeId, zoneId: zone.id });
+    await startActivity(user.uid, {
+      type: 'gathering',
+      targetId: nodeId,
+      zoneId: zone.id,
+      equippedShirtItemId: equippedItemId(character?.equipment.shirt),
+    });
     await refetch();
   }
 
   async function handleFish(holeId: string) {
     if (!user) return;
-    await startActivity(user.uid, { type: 'fishing', targetId: holeId, zoneId: zone.id });
+    await startActivity(user.uid, {
+      type: 'fishing',
+      targetId: holeId,
+      zoneId: zone.id,
+      equippedShirtItemId: equippedItemId(character?.equipment.shirt),
+    });
     await refetch();
   }
 
   async function handleCraft(recipeId: string) {
     if (!user) return;
-    await startActivity(user.uid, { type: 'crafting', targetId: recipeId, zoneId });
+    await startActivity(user.uid, {
+      type: 'crafting',
+      targetId: recipeId,
+      zoneId,
+      equippedShirtItemId: equippedItemId(character?.equipment.shirt),
+    });
     await refetch();
   }
 
@@ -133,7 +148,14 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
 
   async function handleStartDisenchanting(itemId: string, quantity: number, instanceId?: string) {
     if (!user) return;
-    await startActivity(user.uid, { type: 'disenchanting', targetId: itemId, zoneId, quantity, instanceId });
+    await startActivity(user.uid, {
+      type: 'disenchanting',
+      targetId: itemId,
+      zoneId,
+      quantity,
+      instanceId,
+      equippedShirtItemId: equippedItemId(character?.equipment.shirt),
+    });
     await refetch();
   }
 

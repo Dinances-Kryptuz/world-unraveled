@@ -17,6 +17,7 @@ import {
   type CraftingOfflineResult,
   type MaterialMasteryInput,
   type AlchemyZoneMasteryInput,
+  type CraftingShirtBonuses,
 } from '../gameData/craftingEngine';
 import { getProfessionState, maxSkillForUnlockedTier, PROFESSION_CATEGORY, PROFESSION_LABELS } from '../gameData/professionTiers';
 import { ITEMS } from '../gameData/items';
@@ -25,6 +26,7 @@ import { materialMasteryPercent, materialMasterySpeedMultiplier, materialMastery
 import { herbZoneOf } from '../gameData/herbs';
 import { alchemyZoneMasteryPercent, alchemyMasteryMilestone } from '../gameData/alchemyMastery';
 import { ZONES } from '../gameData/zones';
+import { shirtBonusForItemId, shirtBonusPct } from '../gameData/shirts';
 import { ItemSlot } from './ItemSlot';
 import { TickBar } from './TickBar';
 import { notify } from '../utils/notifications';
@@ -106,6 +108,20 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recipe.id]);
 
+  // Built from CurrentActivity.equippedShirtItemId — the snapshot taken
+  // when this activity started, never the character's live equipped
+  // shirt — see GatheringScreen's matching gatheringShirtBonuses helper
+  // and types/character.ts's doc comment on that field.
+  function craftingShirtBonuses(shirtItemId: string | null | undefined): CraftingShirtBonuses {
+    const shirtBonus = shirtBonusForItemId(shirtItemId);
+    return {
+      craftingSpeedPct: shirtBonusPct(shirtBonus, 'crafting_speed'),
+      professionXpPct: shirtBonusPct(shirtBonus, 'profession_xp'),
+      masteryXpPct: shirtBonusPct(shirtBonus, 'mastery_xp'),
+      materialPreservePct: shirtBonusPct(shirtBonus, 'material_preserve'),
+    };
+  }
+
   function recipeLike(): CraftingRecipeLike {
     return {
       resultItemId: recipe.resultItemId,
@@ -158,7 +174,8 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
       materialsRef.current,
       goldRef.current,
       materialMasteryInput,
-      alchemyZoneMasteryInput
+      alchemyZoneMasteryInput,
+      craftingShirtBonuses(currentCharacter.currentActivity.equippedShirtItemId)
     );
 
     if (result.itemsCrafted === 0) {
@@ -394,10 +411,15 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
         materialsRef.current,
         goldRef.current,
         previewMaterialMasteryInput,
-        previewAlchemyZoneMasteryInput
+        previewAlchemyZoneMasteryInput,
+        craftingShirtBonuses(character.currentActivity.equippedShirtItemId)
       )
     );
   }
+  const previewShirtSpeedPct = shirtBonusPct(
+    shirtBonusForItemId(character.currentActivity.equippedShirtItemId),
+    'crafting_speed'
+  );
   const displayCrafted = bankedCrafted + Math.floor(livePreview?.itemsCrafted ?? 0);
   const previewConsumedByItem: Record<string, number> = {};
   for (const c of livePreview?.materialsConsumed ?? []) previewConsumedByItem[c.itemId] = c.quantity;
@@ -426,9 +448,10 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
       {!outOfMaterials && (
         <TickBar
           seconds={
-            displayAlchemyZone
+            (displayAlchemyZone
               ? recipe.craftSeconds * (1 - alchemyMilestoneInfo!.craftTimeReductionPct / 100)
-              : recipe.craftSeconds / (earnsProfessionXp ? speedMult : 1)
+              : recipe.craftSeconds / (earnsProfessionXp ? speedMult : 1)) /
+            (1 + previewShirtSpeedPct / 100)
           }
           color="#6b4f2a"
           label="Crafting"

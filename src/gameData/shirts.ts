@@ -8,6 +8,8 @@
 // (zones 1-6) — see items.ts's generated shirt items. A shirt contributes
 // to its own tier's cloth material Mastery when crafted (same materialId
 // as that tier's armor/capes) and has no mastery bar of its own.
+import { ITEMS } from './items';
+
 export type ShirtBonusType =
   | 'mastery_xp'
   | 'gathering_speed'
@@ -20,6 +22,16 @@ export type ShirtBonusType =
 export interface ShirtBonus {
   type: ShirtBonusType;
   pct: number;
+}
+
+// Resolves a snapshotted CurrentActivity.equippedShirtItemId (never the
+// character's LIVE equipped shirt — see that field's doc comment) down to
+// the ShirtBonus every call site actually wants. Importing ITEMS here (not
+// the reverse) avoids a runtime cycle: items.ts only references
+// ShirtBonusType as a type, which TypeScript erases at compile time.
+export function shirtBonusForItemId(itemId: string | null | undefined): ShirtBonus | undefined {
+  if (!itemId) return undefined;
+  return ITEMS[itemId]?.shirtBonus;
 }
 
 // Reads whichever shirt is equipped (if any) and returns its bonus pct

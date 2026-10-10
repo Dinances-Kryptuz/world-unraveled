@@ -27,6 +27,8 @@ import { maxHp, resolveCurrentHp, ATTACK_INTERVAL_SECONDS } from '../gameData/co
 import { getEquipmentStatBonuses } from '../gameData/equipmentStats';
 import { characterXpForLevelV2, MAX_CHARACTER_LEVEL } from '../gameData/xpTables';
 import { checkAndUnlockNextSlot, resolveActiveAltSetups } from '../firebase/characterSlots';
+import { equippedItemId } from '../gameData/equipmentStats';
+import { shirtBonusForItemId, shirtBonusPct } from '../gameData/shirts';
 import type { QuestEvent } from '../gameData/questEngine';
 import {
   createEncounterState,
@@ -115,6 +117,13 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
   // and mutated in place through every tick/manual-use via ctx.
   const consumableStateRef = useRef<ConsumableAutomationRuntimeState>(emptyConsumableAutomationState());
   const retreatedRef = useRef(false);
+  // Dungeons never write to Character.currentActivity (see this component's
+  // own doc comment above), so there's no CurrentActivity.equippedShirtItemId
+  // snapshot to read here — this ref plays the same role, captured once at
+  // run entry (the dungeonId setup effect below) rather than read live every
+  // tick, so re-equipping a shirt mid-run (if the player even can) can't
+  // retroactively change a run already in progress.
+  const goldFindPctRef = useRef(0);
 
   const characterRef = useRef<Character | null>(character);
   const userRef = useRef<User | null>(user);
@@ -240,6 +249,7 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
     currentMonsterRef.current = MONSTERS[dungeon.stages[0]];
     combatStateRef.current = null;
     consumableStateRef.current = buildConsumableAutomationState(character, inventory ?? { items: {} }, new Date());
+    goldFindPctRef.current = shirtBonusPct(shirtBonusForItemId(equippedItemId(character.equipment.shirt)), 'gold_find');
     let cancelled = false;
     void (async () => {
       altSetupsRef.current = user ? await resolveActiveAltSetups(user.uid, character) : [];
@@ -266,6 +276,7 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
         encounterSize: currentEncounterSize(),
         monsterHpMultiplier: currentMonsterHpMultiplier(companionCount),
         consumableState: consumableStateRef.current,
+        goldFindPct: goldFindPctRef.current,
       };
       const result = advanceCombat(combatStateRef.current, ctx, 1);
       pendingKillsRef.current.push(...result.kills);
@@ -434,6 +445,7 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
       encounterSize: currentEncounterSize(),
       monsterHpMultiplier: currentMonsterHpMultiplier(state.party.length - 1),
       consumableState: consumableStateRef.current,
+      goldFindPct: goldFindPctRef.current,
     };
     const result = tryManualUseAbility(state, 'player', abilityId, ctx);
     if (!result) return;

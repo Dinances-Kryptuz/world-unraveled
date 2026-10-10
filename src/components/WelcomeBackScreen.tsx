@@ -2,8 +2,13 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useCharacter } from '../hooks/useCharacter';
 import { LIVE_SESSION_THRESHOLD_SECONDS } from '../gameData/activityEngine';
-import { resolveCraftingOffline, resolveDisenchantOffline, type CraftingRecipeLike } from '../gameData/craftingEngine';
-import { resolveGatheringOffline, type GatheringResourceLike } from '../gameData/gatheringEngine';
+import {
+  resolveCraftingOffline,
+  resolveDisenchantOffline,
+  type CraftingRecipeLike,
+  type CraftingShirtBonuses,
+} from '../gameData/craftingEngine';
+import { resolveGatheringOffline, type GatheringResourceLike, type GatheringShirtBonuses } from '../gameData/gatheringEngine';
 import { MONSTERS } from '../gameData/monsters';
 import { GATHER_NODES, FISHING_HOLES } from '../gameData/zones';
 import { RECIPES } from '../gameData/recipes';
@@ -22,6 +27,7 @@ import { applyConsumableAutomationUsage } from '../firebase/consumables';
 import { checkAndUnlockNextSlot } from '../firebase/characterSlots';
 import { MAX_CHARACTER_LEVEL } from '../gameData/xpTables';
 import { buildConsumableAutomationState } from '../gameData/consumableAutomation';
+import { shirtBonusForItemId, shirtBonusPct } from '../gameData/shirts';
 import type { Character, CurrentActivity } from '../types/character';
 
 export function isLongAbsence(activity: CurrentActivity): boolean {
@@ -40,6 +46,27 @@ export function WelcomeBackScreen({
   const { user } = useAuth();
   const { refetch } = useCharacter();
   const [summary, setSummary] = useState<string | null>(null);
+
+  // Previews only (see each branch's own comment) — built from the same
+  // CurrentActivity.equippedShirtItemId snapshot the real screens use, so
+  // this estimate matches what the real autosave will actually persist.
+  function gatheringShirtBonuses(shirtItemId: string | null | undefined): GatheringShirtBonuses {
+    const shirtBonus = shirtBonusForItemId(shirtItemId);
+    return {
+      gatheringSpeedPct: shirtBonusPct(shirtBonus, 'gathering_speed'),
+      professionXpPct: shirtBonusPct(shirtBonus, 'profession_xp'),
+      masteryXpPct: shirtBonusPct(shirtBonus, 'mastery_xp'),
+    };
+  }
+  function craftingShirtBonuses(shirtItemId: string | null | undefined): CraftingShirtBonuses {
+    const shirtBonus = shirtBonusForItemId(shirtItemId);
+    return {
+      craftingSpeedPct: shirtBonusPct(shirtBonus, 'crafting_speed'),
+      professionXpPct: shirtBonusPct(shirtBonus, 'profession_xp'),
+      masteryXpPct: shirtBonusPct(shirtBonus, 'mastery_xp'),
+      materialPreservePct: shirtBonusPct(shirtBonus, 'material_preserve'),
+    };
+  }
 
   useEffect(() => {
     async function compute() {
@@ -89,6 +116,7 @@ export function WelcomeBackScreen({
           disabledAbilityIds: character.disabledAbilityIds,
           monster,
           consumableState,
+          goldFindPct: shirtBonusPct(shirtBonusForItemId(activity.equippedShirtItemId), 'gold_find'),
           // Companions only fight in dungeons — idle/offline catch-up is
           // always open-world solo, same as live open-world combat.
         });
@@ -157,7 +185,10 @@ export function WelcomeBackScreen({
           prof.xp,
           masteryState.level,
           masteryState.xp,
-          maxSkillForUnlockedTier(node.profession, prof.unlockedTier)
+          maxSkillForUnlockedTier(node.profession, prof.unlockedTier),
+          0,
+          undefined,
+          gatheringShirtBonuses(activity.equippedShirtItemId)
         );
         const levelUpNote = result.finalSkill !== prof.level ? ` Your ${node.profession} level reached ${result.finalSkill}!` : '';
         setSummary(
@@ -194,7 +225,10 @@ export function WelcomeBackScreen({
           masteryState.xp,
           maxSkillForUnlockedTier(recipe.profession, prof.unlockedTier),
           inventory.items,
-          character.gold
+          character.gold,
+          undefined,
+          undefined,
+          craftingShirtBonuses(activity.equippedShirtItemId)
         );
         const earnsProfessionXp = PROFESSION_CATEGORY[recipe.profession] === 'production';
         const levelUpNote =
@@ -227,7 +261,10 @@ export function WelcomeBackScreen({
           prof.xp,
           masteryState.level,
           masteryState.xp,
-          maxSkillForUnlockedTier('fishing', prof.unlockedTier)
+          maxSkillForUnlockedTier('fishing', prof.unlockedTier),
+          0,
+          undefined,
+          gatheringShirtBonuses(activity.equippedShirtItemId)
         );
         const levelUpNote = result.finalSkill !== prof.level ? ` Your Fishing level reached ${result.finalSkill}!` : '';
         setSummary(
@@ -258,7 +295,8 @@ export function WelcomeBackScreen({
             Math.min(requested, owned),
             prof.level,
             prof.xp,
-            maxSkillForUnlockedTier('enchanting', prof.unlockedTier)
+            maxSkillForUnlockedTier('enchanting', prof.unlockedTier),
+            shirtBonusPct(shirtBonusForItemId(activity.equippedShirtItemId), 'salvage_bonus')
           );
           const levelUpNote =
             result.finalSkill !== prof.level ? ` Your Enchanting level reached ${result.finalSkill}!` : '';

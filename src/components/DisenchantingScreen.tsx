@@ -19,6 +19,7 @@ import { ITEMS } from '../gameData/items';
 import { ItemSlot } from './ItemSlot';
 import { TickBar } from './TickBar';
 import { notify } from '../utils/notifications';
+import { shirtBonusForItemId, shirtBonusPct } from '../gameData/shirts';
 import type { Character } from '../types/character';
 import type { User } from 'firebase/auth';
 
@@ -120,7 +121,8 @@ export function DisenchantingScreen({ itemId, instanceId }: { itemId: string; in
       maxQuantity,
       prof.level,
       prof.xp,
-      cap
+      cap,
+      shirtBonusPct(shirtBonusForItemId(currentCharacter.currentActivity.equippedShirtItemId), 'salvage_bonus')
     );
 
     if (result.itemsDisenchanted === 0) return;
@@ -136,7 +138,7 @@ export function DisenchantingScreen({ itemId, instanceId }: { itemId: string; in
     setLivePreview(null);
 
     if (currentCharacter.notificationsEnabled) {
-      notify('Disenchanted', [`${result.itemsDisenchanted}x ${item.name} -> ${result.yieldQuantity}x ${ITEMS[yieldRange.itemId]?.name ?? yieldRange.itemId}`]);
+      notify('Disenchanted', [`${result.itemsDisenchanted}x ${item.name} -> ${Math.floor(result.yieldQuantity)}x ${ITEMS[yieldRange.itemId]?.name ?? yieldRange.itemId}`]);
     }
     if (currentCharacter.skillXpNotificationsEnabled && result.professionXpGained > 0) {
       notify('Enchanting XP gained', [`+${result.professionXpGained} XP`]);
@@ -160,7 +162,7 @@ export function DisenchantingScreen({ itemId, instanceId }: { itemId: string; in
         {
           itemsDisenchanted: result.itemsDisenchanted,
           yieldItemId: yieldRange.itemId,
-          yieldQuantity: result.yieldQuantity,
+          yieldQuantity: Math.floor(result.yieldQuantity),
           newSkillLevel: result.finalSkill,
           newSkillXp: result.finalSkillXp,
         },
@@ -225,7 +227,8 @@ export function DisenchantingScreen({ itemId, instanceId }: { itemId: string; in
         previewMaxQuantity,
         prof.level,
         prof.xp,
-        cap
+        cap,
+        shirtBonusPct(shirtBonusForItemId(character.currentActivity.equippedShirtItemId), 'salvage_bonus')
       )
     );
   }

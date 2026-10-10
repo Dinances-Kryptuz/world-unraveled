@@ -362,6 +362,13 @@ export async function startActivity(
     // specific randomized-stat roll rather than a plain stack (see
     // CurrentActivity.disenchantInstanceId's doc comment).
     instanceId?: string;
+    // A snapshot of whatever shirt (if any) is equipped RIGHT NOW, at the
+    // moment this activity starts — see CurrentActivity.equippedShirtItemId's
+    // doc comment for why every resolver reads this instead of the
+    // character's live equipment.shirt. Callers pass
+    // equippedItemId(character.equipment.shirt) — undefined/null both mean
+    // "no shirt."
+    equippedShirtItemId?: string | null;
   }
 ): Promise<void> {
   await updateDoc(doc(db, 'characters', uid), {
@@ -372,6 +379,7 @@ export async function startActivity(
       startedAt: serverTimestamp(),
       ...(activity.quantity !== undefined ? { disenchantQuantity: activity.quantity } : {}),
       ...(activity.instanceId !== undefined ? { disenchantInstanceId: activity.instanceId } : {}),
+      equippedShirtItemId: activity.equippedShirtItemId ?? null,
     },
   });
 }

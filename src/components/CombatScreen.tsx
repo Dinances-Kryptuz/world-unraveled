@@ -49,6 +49,7 @@ import { AbilityBar } from './AbilityBar';
 import { ConsumablesBar } from './ConsumablesBar';
 import { CombatLog } from './CombatLog';
 import { notify } from '../utils/notifications';
+import { shirtBonusForItemId, shirtBonusPct } from '../gameData/shirts';
 
 const MAX_LOG_LINES = 30;
 
@@ -118,6 +119,14 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
     return resolveSpecDef(c.class, c.spec).combatType;
   }
 
+  // Snapshot of CurrentActivity.equippedShirtItemId (taken at activity
+  // start, never the character's LIVE equipped shirt) — same anti-
+  // retroactive-exploit convention as every other shirt bonus consumer.
+  function currentGoldFindPct() {
+    const c = characterRef.current ?? character;
+    return shirtBonusPct(shirtBonusForItemId(c.currentActivity.equippedShirtItemId), 'gold_find');
+  }
+
   function buildEncounterInput(c: Character): EncounterSetupInput {
     const specDef = resolveSpecDef(c.class, c.spec);
     const talentTotals = c.spec ? evaluateTalents(c.spec, c.talentPicks).totals : EMPTY_TALENT_TOTALS;
@@ -176,6 +185,7 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
         playerLevel: characterRef.current?.level ?? character.level,
         playerCombatType: currentPlayerCombatType(),
         consumableState: consumableStateRef.current,
+        goldFindPct: currentGoldFindPct(),
       };
       const result = advanceCombat(combatStateRef.current, ctx, 1);
       pendingKillsRef.current.push(...result.kills);
@@ -384,6 +394,7 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
       playerLevel: characterRef.current?.level ?? character.level,
       playerCombatType: currentPlayerCombatType(),
       consumableState: consumableStateRef.current,
+      goldFindPct: currentGoldFindPct(),
     };
     const result = tryManualUseAbility(state, 'player', abilityId, ctx);
     if (!result) return;
