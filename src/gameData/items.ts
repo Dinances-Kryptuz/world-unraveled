@@ -2393,23 +2393,127 @@ export const ITEMS: Record<string, ItemDef> = {
   },
 
   // ── Enchanting materials — produced by Disenchanting (see
-  // gameData/enchanting.ts), consumed by enchant recipes. Three tiers
-  // scale with the disenchanted item's own level, same convention as
-  // every other material tier in this game.
+  // gameData/enchanting.ts's widened ZONE_DISENCHANT_MATERIALS), consumed
+  // by enchant-scroll recipes (recipes.ts). Six zone-specific families now
+  // (one per real zone, Greenhollow Fields through Cinderheart Crater),
+  // widening the original 3 generic tiers rather than replacing them —
+  // arcane_dust/arcane_essence/arcane_crystal (below) are those original
+  // items, kept exactly as-is and simply reassigned to zone 1 (dust/lesser
+  // essence) and zone 5 (crystal, now Zone 5's "shard" tier) so no existing
+  // player's stock or recipe reference silently breaks. Each zone's dust
+  // and essence scale the disenchanted item's own level the same way the
+  // old 3 tiers did; essence additionally splits Lesser/Greater (ordinary
+  // vs. advanced recipes) for zones 1-5, collapsing to one tier for zone 6
+  // (Ember Essence — no Lesser/Greater split there). A shard tier only
+  // exists from zone 3 onward (no low-zone equivalent, same posture as a
+  // classic MMO's own low-level disenchant table); zone 6's shard (Ember
+  // Shards) is a wholly new material, not a reuse — see this file's
+  // ember_shard (singular, Emberfall Ridge loot, zone 3, unrelated) for why
+  // the plural id avoids colliding with it.
   arcane_dust: {
     id: 'arcane_dust', name: 'Arcane Dust', type: 'material',
-    description: 'A fine, faintly glowing dust left over from disenchanting lesser equipment.',
+    description: 'A fine, faintly glowing dust left over from disenchanting lesser Greenhollow Fields equipment.',
     stackable: true, sellValue: 3,
   },
   arcane_essence: {
-    id: 'arcane_essence', name: 'Arcane Essence', type: 'material',
-    description: 'A condensed mote of magical residue, disenchanted from mid-tier equipment.',
+    id: 'arcane_essence', name: 'Lesser Arcane Essence', type: 'material',
+    description: 'A condensed mote of magical residue, disenchanted from ordinary Greenhollow Fields equipment.',
     stackable: true, sellValue: 9,
+  },
+  greater_arcane_essence: {
+    id: 'greater_arcane_essence', name: 'Greater Arcane Essence', type: 'material',
+    description: 'A potent mote of magical residue, disenchanted only from Greenhollow Fields’ finest equipment.',
+    stackable: true, sellValue: 16,
+  },
+  faded_dust: {
+    id: 'faded_dust', name: 'Faded Dust', type: 'material',
+    description: 'A fine, faintly glowing dust left over from disenchanting lesser Stonecrag Foothills equipment.',
+    stackable: true, sellValue: 5,
+  },
+  lesser_faded_essence: {
+    id: 'lesser_faded_essence', name: 'Lesser Faded Essence', type: 'material',
+    description: 'A condensed mote of magical residue, disenchanted from ordinary Stonecrag Foothills equipment.',
+    stackable: true, sellValue: 13,
+  },
+  greater_faded_essence: {
+    id: 'greater_faded_essence', name: 'Greater Faded Essence', type: 'material',
+    description: 'A potent mote of magical residue, disenchanted only from Stonecrag Foothills’ finest equipment.',
+    stackable: true, sellValue: 22,
+  },
+  smoldering_dust: {
+    id: 'smoldering_dust', name: 'Smoldering Dust', type: 'material',
+    description: 'A fine, faintly glowing dust left over from disenchanting lesser Emberfall Ridge equipment.',
+    stackable: true, sellValue: 7,
+  },
+  lesser_smoldering_essence: {
+    id: 'lesser_smoldering_essence', name: 'Lesser Smoldering Essence', type: 'material',
+    description: 'A condensed mote of magical residue, disenchanted from ordinary Emberfall Ridge equipment.',
+    stackable: true, sellValue: 18,
+  },
+  greater_smoldering_essence: {
+    id: 'greater_smoldering_essence', name: 'Greater Smoldering Essence', type: 'material',
+    description: 'A potent mote of magical residue, disenchanted only from Emberfall Ridge’s finest equipment.',
+    stackable: true, sellValue: 30,
+  },
+  smoldering_shard: {
+    id: 'smoldering_shard', name: 'Smoldering Shard', type: 'material',
+    description: 'A hardened shard of enchanting power, disenchanted only from Emberfall Ridge’s rarest equipment.',
+    stackable: true, sellValue: 40,
+  },
+  charred_dust: {
+    id: 'charred_dust', name: 'Charred Dust', type: 'material',
+    description: 'A fine, faintly glowing dust left over from disenchanting lesser Cinderfall Depths equipment.',
+    stackable: true, sellValue: 10,
+  },
+  lesser_charred_essence: {
+    id: 'lesser_charred_essence', name: 'Lesser Charred Essence', type: 'material',
+    description: 'A condensed mote of magical residue, disenchanted from ordinary Cinderfall Depths equipment.',
+    stackable: true, sellValue: 24,
+  },
+  greater_charred_essence: {
+    id: 'greater_charred_essence', name: 'Greater Charred Essence', type: 'material',
+    description: 'A potent mote of magical residue, disenchanted only from Cinderfall Depths’ finest equipment.',
+    stackable: true, sellValue: 40,
+  },
+  charred_shard: {
+    id: 'charred_shard', name: 'Charred Shard', type: 'material',
+    description: 'A hardened shard of enchanting power, disenchanted only from Cinderfall Depths’ rarest equipment.',
+    stackable: true, sellValue: 52,
+  },
+  molten_dust: {
+    id: 'molten_dust', name: 'Molten Dust', type: 'material',
+    description: 'A fine, faintly glowing dust left over from disenchanting lesser Molten Scar equipment.',
+    stackable: true, sellValue: 14,
+  },
+  lesser_molten_essence: {
+    id: 'lesser_molten_essence', name: 'Lesser Molten Essence', type: 'material',
+    description: 'A condensed mote of magical residue, disenchanted from ordinary Molten Scar equipment.',
+    stackable: true, sellValue: 32,
+  },
+  greater_molten_essence: {
+    id: 'greater_molten_essence', name: 'Greater Molten Essence', type: 'material',
+    description: 'A potent mote of magical residue, disenchanted only from the Molten Scar’s finest equipment.',
+    stackable: true, sellValue: 52,
   },
   arcane_crystal: {
     id: 'arcane_crystal', name: 'Arcane Crystal', type: 'material',
-    description: 'A hardened crystal of pure enchanting power, disenchanted only from the finest equipment.',
+    description: 'A hardened crystal of enchanting power, disenchanted only from the Molten Scar’s rarest equipment.',
     stackable: true, sellValue: 25,
+  },
+  ember_dust: {
+    id: 'ember_dust', name: 'Ember Dust', type: 'material',
+    description: 'A fine, faintly glowing dust left over from disenchanting lesser Cinderheart Crater equipment.',
+    stackable: true, sellValue: 20,
+  },
+  ember_essence: {
+    id: 'ember_essence', name: 'Ember Essence', type: 'material',
+    description: 'A blazing mote of magical residue, disenchanted from Cinderheart Crater equipment.',
+    stackable: true, sellValue: 48,
+  },
+  ember_shards: {
+    id: 'ember_shards', name: 'Ember Shards', type: 'material',
+    description: 'Searing fragments of enchanting power, disenchanted only from Cinderheart Crater’s rarest equipment.',
+    stackable: true, sellValue: 75,
   },
 
   // ── Enchanting scrolls — Enchanting's actual crafted output (see

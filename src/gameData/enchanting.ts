@@ -112,12 +112,56 @@ export function enchantsForSlot(slot: EquipmentSlot): EnchantDef[] {
 
 // ── Disenchanting ──────────────────────────────────────────────────────
 // Deliberately formulas over the item's own data (stat total for the reward
-// tier below, origin zone for the skill gate above) rather than static
+// category below, origin zone for the skill gate above) rather than static
 // per-item fields — "any item can be disenchanted" (per the design brief)
 // would otherwise mean hand-tagging 200+ existing items. Tools are excluded
 // (equipSlot === 'tool') — they're profession gear, not armor/weapons/
 // jewelry.
-export type DisenchantTier = 'dust' | 'essence' | 'crystal';
+//
+// Widened (Enchanting overhaul) from 3 generic tiers to a 2-axis system:
+// WHICH ZONE's material family (dust/essence/shard all come in one of 6
+// zone-specific flavors, see items.ts's "Enchanting materials" section) ×
+// WHICH CATEGORY within that family (dust/lesser essence/greater essence/
+// shard). The original 3-tier DisenchantTier type/ZONE_TIER_DISENCHANT_TIER
+// mapping is gone (both axes below now fully replace what it only
+// approximated), but the original arcane_dust/arcane_essence/arcane_crystal
+// ITEMS are kept exactly as-is — just reassigned into this new table (zone 1
+// dust/lesser essence, zone 5 shard) — so nothing already in a player's
+// inventory or an existing scroll recipe's material list silently breaks.
+export type DisenchantCategory = 'dust' | 'lesser_essence' | 'greater_essence' | 'shard';
+
+// Zone tier (1-6, via ZONE_TIER) -> which actual item each category yields
+// in that zone's family. Zones 1-2 have no shard tier at all (same "shards
+// only start appearing partway through the game" posture as a classic
+// MMO's own disenchant table); zone 6 collapses lesser/greater essence into
+// one tier (Ember Essence) per the design brief's explicit zone-6 note.
+const ZONE_DISENCHANT_MATERIALS: Record<number, Partial<Record<DisenchantCategory, string>>> = {
+  1: { dust: 'arcane_dust', lesser_essence: 'arcane_essence', greater_essence: 'greater_arcane_essence' },
+  2: { dust: 'faded_dust', lesser_essence: 'lesser_faded_essence', greater_essence: 'greater_faded_essence' },
+  3: {
+    dust: 'smoldering_dust', lesser_essence: 'lesser_smoldering_essence',
+    greater_essence: 'greater_smoldering_essence', shard: 'smoldering_shard',
+  },
+  4: {
+    dust: 'charred_dust', lesser_essence: 'lesser_charred_essence',
+    greater_essence: 'greater_charred_essence', shard: 'charred_shard',
+  },
+  5: {
+    dust: 'molten_dust', lesser_essence: 'lesser_molten_essence',
+    greater_essence: 'greater_molten_essence', shard: 'arcane_crystal',
+  },
+  6: { dust: 'ember_dust', lesser_essence: 'ember_essence', greater_essence: 'ember_essence', shard: 'ember_shards' },
+};
+
+// Per-category yield range, independent of zone — a rarer category always
+// yields fewer units per item, same escalating-scarcity shape the original
+// 3-tier table had (dust > essence > crystal).
+const CATEGORY_YIELD_RANGE: Record<DisenchantCategory, { min: number; max: number }> = {
+  dust: { min: 2, max: 4 },
+  lesser_essence: { min: 1, max: 3 },
+  greater_essence: { min: 1, max: 2 },
+  shard: { min: 1, max: 1 },
+};
 
 function statTotal(item: ItemDef): number {
   return Object.values(item.statBonuses ?? {}).reduce((sum, v) => sum + (v ?? 0), 0);
@@ -127,46 +171,44 @@ export function isDisenchantable(item: ItemDef): boolean {
   return item.type === 'equipment' && item.equipSlot !== undefined && item.equipSlot !== 'tool';
 }
 
-// Every result item id of a Recipe.materialId-tagged recipe — the
-// consolidated, randomized-stat armor/jewelry set (see types.ts's Recipe
-// comment). Computed once from recipe data rather than hand-maintained, so
-// this never drifts out of sync with which items are actually randomized.
-let randomizedArmorItemIds: Set<string> | null = null;
-function isRandomizedArmorItem(itemId: string): boolean {
-  if (!randomizedArmorItemIds) {
-    randomizedArmorItemIds = new Set(
+// Result item id -> Recipe.rarity, for every Recipe.materialId-tagged
+// recipe (the consolidated, randomized-stat armor/jewelry set — see
+// types.ts's Recipe comment). Computed once from recipe data rather than
+// hand-maintained, so this never drifts out of sync with which items are
+// actually randomized, or with a recipe's own rarity tuning.
+let randomizedArmorRarityByItemId: Map<string, 'common' | 'uncommon' | 'rare'> | null = null;
+function randomizedArmorRarity(itemId: string): 'common' | 'uncommon' | 'rare' | undefined {
+  if (!randomizedArmorRarityByItemId) {
+    randomizedArmorRarityByItemId = new Map(
       Object.values(RECIPES)
         .filter((r) => r.materialId)
-        .map((r) => r.resultItemId)
+        .map((r) => [r.resultItemId, r.rarity])
     );
   }
-  return randomizedArmorItemIds.has(itemId);
+  return randomizedArmorRarityByItemId.get(itemId);
 }
 
-// Zone tier (1-6) -> disenchant reward tier, mirroring
-// ZONE_TIER_DISENCHANT_SKILL's "2 zones per bracket" shape below.
-const ZONE_TIER_DISENCHANT_TIER: Record<number, DisenchantTier> = {
-  1: 'dust', 2: 'dust', 3: 'essence', 4: 'essence', 5: 'crystal', 6: 'crystal',
-};
-
+// Which DisenchantCategory a given item falls into, independent of zone.
 // Randomized-stat armor (gameData/equipmentRolls.ts) has no fixed
-// statBonuses to sum — its stats vary per roll — so its disenchant reward
-// must depend on tier/material cost instead (the requirement: two
-// different rolls of the same base item disenchant into the same
-// materials). It reuses originZoneId's existing recipe-tier signal (the
-// same one disenchantRequiredSkill already derives from) rather than
-// statTotal. Every other item (weapons, pre-overhaul "Sacred" legacy
-// items, monster-drop jewelry) keeps the original statTotal-based rule
-// completely unchanged.
-export function disenchantTier(item: ItemDef): DisenchantTier {
-  if (isRandomizedArmorItem(item.id)) {
-    const zoneTier = ZONE_TIER[originZoneId(item)] ?? 1;
-    return ZONE_TIER_DISENCHANT_TIER[zoneTier] ?? 'dust';
+// statBonuses to sum — its stats vary per roll — so it uses the recipe's
+// own authored rarity instead (previously unused by disenchanting at all):
+// common->dust, uncommon->lesser essence, rare->greater essence/shard when
+// that zone has a shard tier, else greater essence. Every other item
+// (weapons, pre-overhaul "Sacred" legacy items, monster-drop jewelry) keeps
+// the original statTotal-based thresholds, now mapped onto 4 categories
+// instead of 3 (same cutoffs, shard only when the zone's family has one).
+function disenchantCategory(item: ItemDef, zoneTier: number): DisenchantCategory {
+  const hasShard = !!ZONE_DISENCHANT_MATERIALS[zoneTier]?.shard;
+  const rarity = randomizedArmorRarity(item.id);
+  if (rarity) {
+    if (rarity === 'rare') return hasShard ? 'shard' : 'greater_essence';
+    if (rarity === 'uncommon') return 'lesser_essence';
+    return 'dust';
   }
   const total = statTotal(item);
-  if (total < 10) return 'dust';
-  if (total < 20) return 'essence';
-  return 'crystal';
+  if (total >= 20) return hasShard ? 'shard' : 'greater_essence';
+  if (total >= 10) return 'lesser_essence';
+  return 'dust';
 }
 
 // The Enchanting skill required to disenchant gear scales with the ZONE the
@@ -230,17 +272,16 @@ export function disenchantXpAward(item: ItemDef): number {
   return Math.max(1, Math.round(3 + disenchantRequiredSkill(item) * 2.1));
 }
 
-const DISENCHANT_YIELD: Record<DisenchantTier, { itemId: string; min: number; max: number }> = {
-  dust: { itemId: 'arcane_dust', min: 2, max: 4 },
-  essence: { itemId: 'arcane_essence', min: 1, max: 3 },
-  crystal: { itemId: 'arcane_crystal', min: 1, max: 2 },
-};
-
 // The deterministic {itemId, min, max} range disenchanting this item rolls
 // from, per unit disenchanted — resolveDisenchantOffline (craftingEngine.ts)
 // rolls its own random quantity in that range once per item inside its
 // batch loop (a single stack-wide roll wouldn't reflect "N independent
-// disenchants" the way a real batch should).
+// disenchants" the way a real batch should). Combines both axes: zone tier
+// picks the material FAMILY, disenchantCategory picks which member of that
+// family.
 export function disenchantYieldRange(item: ItemDef): { itemId: string; min: number; max: number } {
-  return DISENCHANT_YIELD[disenchantTier(item)];
+  const zoneTier = ZONE_TIER[originZoneId(item)] ?? 1;
+  const category = disenchantCategory(item, zoneTier);
+  const itemId = ZONE_DISENCHANT_MATERIALS[zoneTier]?.[category] ?? 'arcane_dust';
+  return { itemId, ...CATEGORY_YIELD_RANGE[category] };
 }

@@ -10,7 +10,7 @@ import { craftingColorTier, CRAFTING_COLOR_XP_PCT } from '../../gameData/craftin
 import { canUseRecipe } from '../../firebase/professions';
 import { useEnchantScroll, removeEnchant } from '../../firebase/enchanting';
 import { subscribeToInventory } from '../../firebase/inventory';
-import { ENCHANTS, isDisenchantable, disenchantRequiredSkill, disenchantTier } from '../../gameData/enchanting';
+import { ENCHANTS, isDisenchantable, disenchantRequiredSkill, disenchantYieldRange } from '../../gameData/enchanting';
 import { ITEMS } from '../../gameData/items';
 import { equippedItemId } from '../../gameData/equipmentStats';
 import { describeItemStats } from '../../gameData/equipmentStats';
@@ -432,7 +432,7 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
                   <button
                     onClick={() => handleStartDisenchanting(itemId, qty, instanceId)}
                     disabled={!meetsSkill}
-                    title={`Disenchants into ${disenchantTier(item)} (requires Enchanting ${requiredSkill})`}
+                    title={`Disenchants into ${ITEMS[disenchantYieldRange(item).itemId]?.name ?? 'materials'} (requires Enchanting ${requiredSkill})`}
                   >
                     {meetsSkill ? `Disenchant ${qty}` : `Needs skill ${requiredSkill}`}
                   </button>
