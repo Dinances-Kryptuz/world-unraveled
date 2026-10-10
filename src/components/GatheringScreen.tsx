@@ -13,6 +13,7 @@ import {
   MASTERY_MAX_LEVEL,
   GATHERING_COLOR_XP_PCT,
   type GatheringResourceLike,
+  type GatheringOfflineResult,
 } from '../gameData/gatheringEngine';
 import { getProfessionState, maxSkillForUnlockedTier, PROFESSION_LABELS } from '../gameData/professionTiers';
 import { ITEMS } from '../gameData/items';
@@ -40,6 +41,10 @@ export function GatheringScreen({ node }: { node: GatherNode }) {
 
   const [bankedQuantity, setBankedQuantity] = useState(0);
   const [bankedBonusQuantity, setBankedBonusQuantity] = useState(0);
+  // Updated only from TickBar's onIteration below (the bar's own compositor
+  // clock) — see TickBar.tsx's doc comment / CraftingScreen's matching
+  // comment for why an independent JS timer would drift against the bar.
+  const [livePreview, setLivePreview] = useState<GatheringOfflineResult | null>(null);
   const anchorRef = useRef<Date | null>(character.currentActivity.startedAt);
 
   const characterRef = useRef<Character | null>(character);
@@ -54,6 +59,7 @@ export function GatheringScreen({ node }: { node: GatherNode }) {
   useEffect(() => {
     setBankedQuantity(0);
     setBankedBonusQuantity(0);
+    setLivePreview(null);
     anchorRef.current = character.currentActivity.startedAt;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [node.id]);
@@ -119,6 +125,7 @@ export function GatheringScreen({ node }: { node: GatherNode }) {
     anchorRef.current = now;
     setBankedQuantity((prev) => prev + wholeQuantity);
     setBankedBonusQuantity((prev) => prev + wholeBonus);
+    setLivePreview(null);
 
     if (currentCharacter.notificationsEnabled && wholeQuantity > 0) {
       notify(`${ITEMS[node.itemId]?.name ?? node.itemId} gathered`, [`${wholeQuantity}x ${ITEMS[node.itemId]?.name ?? node.itemId}`]);
@@ -194,6 +201,7 @@ export function GatheringScreen({ node }: { node: GatherNode }) {
       anchorRef.current = previousAnchor;
       setBankedQuantity((prev) => prev - wholeQuantity);
       setBankedBonusQuantity((prev) => prev - wholeBonus);
+      setLivePreview(null);
       applyOptimisticUpdate((c) => ({
         ...c,
         professions: {
@@ -222,10 +230,11 @@ export function GatheringScreen({ node }: { node: GatherNode }) {
   const xpForNextMasteryLevel = masteryState.level < MASTERY_MAX_LEVEL ? masteryXpForNextLevel(masteryState.level) : null;
   const label = PROFESSION_LABELS[node.profession];
 
-  // Live preview, recomputed on every ~1s render tick (same reasoning as
-  // CraftingScreen's matching comment) — purely for DISPLAY, so "This
-  // session" advances in step with the TickBar's own loop instead of only
-  // jumping once every AUTOSAVE_INTERVAL_SECONDS when autosave() commits.
+  // Recomputed from TickBar's onIteration below — fired by the bar's own
+  // CSS animation completing a loop (the compositor clock), not by the
+  // separate 1s setInterval that drives the real 20s autosave cadence —
+  // see TickBar.tsx's doc comment for why mixing in an independent JS timer
+  // would drift against the bar's visual completion.
   const previewEquippedToolId = equippedItemId(character.equipment.tool);
   const previewEquippedTool = previewEquippedToolId ? ITEMS[previewEquippedToolId] : null;
   const previewToolBonusPct =
@@ -233,8 +242,10 @@ export function GatheringScreen({ node }: { node: GatherNode }) {
       ? previewEquippedTool.gatherBonusPct ?? 0
       : 0;
   const cap = maxSkillForUnlockedTier(node.profession, prof.unlockedTier);
-  const livePreview = anchorRef.current
-    ? resolveGatheringOffline(
+  function handleTickIteration() {
+    if (!anchorRef.current) return;
+    setLivePreview(
+      resolveGatheringOffline(
         anchorRef.current,
         new Date(),
         resourceLike(),
@@ -245,7 +256,8 @@ export function GatheringScreen({ node }: { node: GatherNode }) {
         cap,
         previewToolBonusPct
       )
-    : null;
+    );
+  }
   const displayQuantity = bankedQuantity + Math.floor(livePreview?.quantityGained ?? 0);
   const displayBonusQuantity = bankedBonusQuantity + Math.floor(livePreview?.rareBonusQuantity ?? 0);
 
@@ -254,7 +266,7 @@ export function GatheringScreen({ node }: { node: GatherNode }) {
       <h2>
         {label}: {node.name}
       </h2>
-      <TickBar seconds={node.secondsPerAction / speedMult} color="#6b4f2a" label={label} />
+      <TickBar seconds={node.secondsPerAction / speedMult} color="#6b4f2a" label={label} onIteration={handleTickIteration} />
       <p>
         {tier[0].toUpperCase() + tier.slice(1)} — {(xpPct * 100).toFixed(0)}% profession XP
       </p>

@@ -14,6 +14,7 @@ import {
   MASTERY_MAX_LEVEL,
   GATHERING_COLOR_XP_PCT,
   type GatheringResourceLike,
+  type GatheringOfflineResult,
 } from '../gameData/gatheringEngine';
 import { getProfessionState, maxSkillForUnlockedTier } from '../gameData/professionTiers';
 import { ITEMS } from '../gameData/items';
@@ -38,6 +39,10 @@ export function FishingScreen({ hole }: { hole: FishingHole }) {
   const secondsSinceSaveRef = useRef(0);
 
   const [bankedQuantity, setBankedQuantity] = useState(0);
+  // Updated only from TickBar's onIteration below (the bar's own compositor
+  // clock) — see TickBar.tsx's doc comment for why an independent JS timer
+  // would drift against the bar's visual completion.
+  const [livePreview, setLivePreview] = useState<GatheringOfflineResult | null>(null);
   const anchorRef = useRef<Date | null>(character.currentActivity.startedAt);
 
   const characterRef = useRef<Character | null>(character);
@@ -51,6 +56,7 @@ export function FishingScreen({ hole }: { hole: FishingHole }) {
 
   useEffect(() => {
     setBankedQuantity(0);
+    setLivePreview(null);
     anchorRef.current = character.currentActivity.startedAt;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hole.id]);
@@ -111,6 +117,7 @@ export function FishingScreen({ hole }: { hole: FishingHole }) {
 
     anchorRef.current = now;
     setBankedQuantity((prev) => prev + wholeQuantity);
+    setLivePreview(null);
 
     if (currentCharacter.notificationsEnabled && wholeQuantity > 0) {
       notify(`${ITEMS[hole.itemId]?.name ?? hole.itemId} caught`, [`${wholeQuantity}x ${ITEMS[hole.itemId]?.name ?? hole.itemId}`]);
@@ -183,6 +190,7 @@ export function FishingScreen({ hole }: { hole: FishingHole }) {
       console.error('Fishing autosave failed, will retry next cycle:', err);
       anchorRef.current = previousAnchor;
       setBankedQuantity((prev) => prev - wholeQuantity);
+      setLivePreview(null);
       applyOptimisticUpdate((c) => ({
         ...c,
         professions: {
@@ -210,16 +218,19 @@ export function FishingScreen({ hole }: { hole: FishingHole }) {
   const xpForNextSkillLevel = gatheringXpForNextLevel(prof.level);
   const xpForNextMasteryLevel = masteryState.level < MASTERY_MAX_LEVEL ? masteryXpForNextLevel(masteryState.level) : null;
 
-  // Live preview, recomputed on every ~1s render tick (same reasoning as
-  // CraftingScreen's matching comment) — purely for DISPLAY, so "This
-  // session" advances in step with the TickBar's own loop instead of only
-  // jumping once every AUTOSAVE_INTERVAL_SECONDS when autosave() commits.
+  // Recomputed from TickBar's onIteration below — fired by the bar's own
+  // CSS animation completing a loop (the compositor clock), not by the
+  // separate 1s setInterval that drives the real 20s autosave cadence —
+  // see TickBar.tsx's doc comment for why an independent JS timer would
+  // drift against the bar's visual completion.
   const previewEquippedToolId = equippedItemId(character.equipment.tool);
   const previewEquippedTool = previewEquippedToolId ? ITEMS[previewEquippedToolId] : null;
   const previewToolBonusPct = previewEquippedTool?.toolType === 'fishing_rod' ? previewEquippedTool.gatherBonusPct ?? 0 : 0;
   const cap = maxSkillForUnlockedTier('fishing', prof.unlockedTier);
-  const livePreview = anchorRef.current
-    ? resolveGatheringOffline(
+  function handleTickIteration() {
+    if (!anchorRef.current) return;
+    setLivePreview(
+      resolveGatheringOffline(
         anchorRef.current,
         new Date(),
         resourceLike(),
@@ -230,13 +241,14 @@ export function FishingScreen({ hole }: { hole: FishingHole }) {
         cap,
         previewToolBonusPct
       )
-    : null;
+    );
+  }
   const displayQuantity = bankedQuantity + Math.floor(livePreview?.quantityGained ?? 0);
 
   return (
     <div className="fishing-screen">
       <h2>Fishing: {hole.name}</h2>
-      <TickBar seconds={hole.secondsPerAction / speedMult} color="#2a5a6b" label="Casting" />
+      <TickBar seconds={hole.secondsPerAction / speedMult} color="#2a5a6b" label="Casting" onIteration={handleTickIteration} />
       <p>
         {tier[0].toUpperCase() + tier.slice(1)} — {(xpPct * 100).toFixed(0)}% profession XP, {(hole.catchChance * 100).toFixed(0)}% catch
         chance

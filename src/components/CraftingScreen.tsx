@@ -14,6 +14,7 @@ import {
   RECIPE_MASTERY_MAX_LEVEL,
   CRAFTING_COLOR_XP_PCT,
   type CraftingRecipeLike,
+  type CraftingOfflineResult,
   type MaterialMasteryInput,
 } from '../gameData/craftingEngine';
 import { getProfessionState, maxSkillForUnlockedTier, PROFESSION_CATEGORY, PROFESSION_LABELS } from '../gameData/professionTiers';
@@ -54,6 +55,10 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
 
   const [bankedCrafted, setBankedCrafted] = useState(0);
   const [outOfMaterials, setOutOfMaterials] = useState(false);
+  // Updated only from TickBar's onIteration below (the bar's own compositor
+  // clock), never from the 1s setInterval poll — see TickBar.tsx's doc
+  // comment for why mixing an independent JS timer into this would drift.
+  const [livePreview, setLivePreview] = useState<CraftingOfflineResult | null>(null);
   const anchorRef = useRef<Date | null>(character.currentActivity.startedAt);
   const materialsRef = useRef<Record<string, number>>({});
   const goldRef = useRef(character.gold);
@@ -73,6 +78,7 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
   useEffect(() => {
     setBankedCrafted(0);
     setOutOfMaterials(false);
+    setLivePreview(null);
     anchorRef.current = character.currentActivity.startedAt;
     goldRef.current = character.gold;
     if (user) {
@@ -158,6 +164,11 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
     goldRef.current -= result.goldSpent;
     const wholeCrafted = Math.floor(result.itemsCrafted);
     setBankedCrafted((prev) => prev + wholeCrafted);
+    // The anchor just moved to `now` — any prior preview was relative to the
+    // OLD anchor and is stale the instant this commits; clear it so display
+    // falls back to the just-updated bankedCrafted/materialsRef until the
+    // next TickBar loop completion computes a fresh one from the new anchor.
+    setLivePreview(null);
 
     if (currentCharacter.notificationsEnabled) {
       const resultQty = recipe.resultQuantity * wholeCrafted;
@@ -269,6 +280,7 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
       materialsRef.current = previousMaterials;
       goldRef.current = previousGold;
       setBankedCrafted((prev) => prev - wholeCrafted);
+      setLivePreview(null);
       applyOptimisticUpdate((c) => ({
         ...c,
         professions: {
@@ -309,13 +321,12 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
     masteryState.level < RECIPE_MASTERY_MAX_LEVEL ? recipeMasteryXpForNextLevel(masteryState.level) : null;
   const resultItem = ITEMS[recipe.resultItemId];
 
-  // Live preview, recomputed on every ~1s render tick (the setInterval above
-  // forces one via setTick) — purely for DISPLAY, so "This session: N
-  // crafted" and the remaining-material counts above advance in step with
-  // the TickBar's own CSS loop instead of only jumping once every
-  // AUTOSAVE_INTERVAL_SECONDS when autosave() actually commits. Same
-  // deterministic pure resolver, same frozen anchor, nothing written —
-  // cheap to call this often since the window is always well under 20s.
+  // Recomputed from TickBar's onIteration below — fired by the bar's own
+  // CSS animation completing a loop (the compositor clock), NOT by the
+  // separate 1s setInterval that drives the real 20s autosave cadence.
+  // Driving this from an independent JS timer instead would have its own
+  // callback-delay jitter drift against the bar's visual completion,
+  // producing a lag that grows then resyncs — see TickBar.tsx's doc comment.
   const cap = maxSkillForUnlockedTier(recipe.profession, prof.unlockedTier);
   const previewMaterialMasteryInput: MaterialMasteryInput | undefined = displayMaterial
     ? {
@@ -324,8 +335,10 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
         barsPerCraft: recipe.materials.find((m) => m.itemId === displayMaterial.barItemId)?.quantity ?? 0,
       }
     : undefined;
-  const livePreview = anchorRef.current
-    ? resolveCraftingOffline(
+  function handleTickIteration() {
+    if (!anchorRef.current) return;
+    setLivePreview(
+      resolveCraftingOffline(
         anchorRef.current,
         new Date(),
         recipeLike(),
@@ -338,7 +351,8 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
         goldRef.current,
         previewMaterialMasteryInput
       )
-    : null;
+    );
+  }
   const displayCrafted = bankedCrafted + Math.floor(livePreview?.itemsCrafted ?? 0);
   const previewConsumedByItem: Record<string, number> = {};
   for (const c of livePreview?.materialsConsumed ?? []) previewConsumedByItem[c.itemId] = c.quantity;
@@ -365,7 +379,12 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
         </div>
       </div>
       {!outOfMaterials && (
-        <TickBar seconds={recipe.craftSeconds / (earnsProfessionXp ? speedMult : 1)} color="#6b4f2a" label="Crafting" />
+        <TickBar
+          seconds={recipe.craftSeconds / (earnsProfessionXp ? speedMult : 1)}
+          color="#6b4f2a"
+          label="Crafting"
+          onIteration={handleTickIteration}
+        />
       )}
       <p>This session: {displayCrafted} crafted</p>
       <p>
