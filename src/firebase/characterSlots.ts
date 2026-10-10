@@ -1,6 +1,6 @@
 import { doc, getDoc, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
 import { db } from './config';
-import { createCharacter } from './character';
+import { createCharacter, normalizeEquipment } from './character';
 import type { ClassId } from '../gameData/classStats';
 import { MAX_ACTIVE_COMPANIONS, buildAltCombatSetup, type CompanionCombatSetup } from '../gameData/companions';
 import type { Character } from '../types/character';
@@ -216,7 +216,7 @@ export async function resolveActiveAltSetups(uid: string, character: Character):
         // buildAltCombatSetup), just leveled to match whoever's actually
         // running the dungeon.
         level: character.level,
-        equipment: data.equipment,
+        equipment: normalizeEquipment(data.equipment),
         enchantments: data.enchantments,
         talentPicks: data.talentPicks,
         equippedAbilityIds: data.equippedAbilityIds,

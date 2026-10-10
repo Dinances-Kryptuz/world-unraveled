@@ -16,6 +16,7 @@ import {
 } from '../gameData/gatheringEngine';
 import { getProfessionState, maxSkillForUnlockedTier, PROFESSION_LABELS } from '../gameData/professionTiers';
 import { ITEMS } from '../gameData/items';
+import { equippedItemId } from '../gameData/equipmentStats';
 import { notify } from '../utils/notifications';
 import { TickBar } from './TickBar';
 import type { Character } from '../types/character';
@@ -90,7 +91,8 @@ export function GatheringScreen({ node }: { node: GatherNode }) {
     const prof = getProfessionState(currentCharacter.professions, node.profession);
     const masteryState = prof.mastery?.[node.id] ?? { level: 0, xp: 0 };
     const cap = maxSkillForUnlockedTier(node.profession, prof.unlockedTier);
-    const equippedTool = currentCharacter.equipment.tool ? ITEMS[currentCharacter.equipment.tool] : null;
+    const equippedToolId = equippedItemId(currentCharacter.equipment.tool);
+    const equippedTool = equippedToolId ? ITEMS[equippedToolId] : null;
     const toolBonusPct =
       equippedTool && node.requiredToolType && equippedTool.toolType === node.requiredToolType
         ? equippedTool.gatherBonusPct ?? 0

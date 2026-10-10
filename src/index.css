@@ -318,6 +318,13 @@ button.item-slot {
 button.item-slot:hover:not(:disabled) {
   border-color: var(--zone-primary, #b08d4f);
   transform: translateY(-2px);
+  /* `transform` makes this tile its own stacking context, which otherwise
+     traps the tooltip's z-index:20 inside it — the tile (as one atomic
+     unit) would then stack against sibling tiles purely by DOM order, so
+     a later tile (e.g. Chest, next to Weapon in the equipment grid) could
+     paint over this one's tooltip. Lifting the whole hovered tile above
+     its siblings keeps the tooltip on top regardless of DOM order. */
+  z-index: 30;
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) inset, 0 4px 8px rgba(60, 45, 20, 0.18);
 }
 
@@ -394,11 +401,25 @@ button.item-slot:active:not(:disabled) {
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3);
 }
 
-/* ── Equipment screen: icon-grid "paper doll" instead of a text list ── */
+/* ── Equipment screen: icon-grid "paper doll" instead of a text list.
+   Named grid-areas place each slot the way gear sits on a body — helmet
+   down through necklace/chest/legs/boots in the center column, with the
+   left (cape/weapon/gloves) and right (tool/offhand/ring/ring2) columns
+   sitting one row lower than center so they read as flanking the torso
+   rather than the head. Each tile's inline `style={{ gridArea: slot }}`
+   (see EquipmentScreen.tsx) matches an EquipmentSlot id straight to its
+   area name below, so adding a slot here is just adding it to this map. ── */
 .equipment-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, 56px);
+  grid-template-columns: 56px 56px 56px;
+  grid-template-areas:
+    '.       helmet   .'
+    'cape    necklace tool'
+    'weapon  chest    offhand'
+    'gloves  legs     ring'
+    '.       boots    ring2';
   gap: 10px;
+  justify-content: center;
   margin-bottom: 16px;
 }
 
@@ -1106,6 +1127,11 @@ button.class-card-selected:hover:not(:disabled) {
 
 .top-bar-identity {
   flex: 1 1 auto;
+}
+
+.top-bar-title {
+  font-style: italic;
+  color: var(--zone-primary, #8a6d3b);
 }
 
 .top-bar-stats {

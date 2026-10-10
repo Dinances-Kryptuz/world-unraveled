@@ -255,6 +255,28 @@ export interface Zone {
   fishingHoleIds: string[];
 }
 
+// What occupies one equipment slot — on Character.equipment AND
+// CompanionState.equipment (same shape, same equip/unequip rules for both;
+// see firebase/character.ts's equipItem/firebase/companions.ts's
+// equipCompanionItem). `instanceId` is present only for a randomized-roll
+// item (see gameData/equipmentRolls.ts) and names which bucket in
+// Inventory.equipmentInstances this came from — purely for inventory
+// bookkeeping (which stack to return on unequip, which to block from
+// disenchanting while equipped). `rolls` is a denormalized copy of that
+// same instance's rolled stats, carried on the equipped ref itself rather
+// than looked up live from inventory at stat-calc time, because
+// getEquipmentStatBonuses (equipmentStats.ts) is called from a dozen sites
+// that have the equipment map in scope but not the inventory doc — see that
+// file's module comment. A ref with no `instanceId`/`rolls` is a
+// static/legacy item (a weapon, a monster-drop ring, or a pre-overhaul
+// "Sacred"-variant item kept around for old saves) and resolves its stats
+// from ITEMS[itemId].statBonuses exactly as before this type existed.
+export interface EquippedItemRef {
+  itemId: string;
+  instanceId?: string;
+  rolls?: Partial<Record<import('./classStats').BaseStat, number>>;
+}
+
 export interface ItemDef {
   id: string;
   name: string;
@@ -315,6 +337,15 @@ export interface Recipe {
   resultItemId: string;
   resultQuantity: number;
   materials: { itemId: string; quantity: number }[];
+  // Which gameData/materials.ts MaterialDef this recipe's crafts count
+  // toward for material Mastery (Character.materialMastery) — set only on
+  // the Blacksmithing armor/jewelry recipes that consolidate a metal/gem
+  // tier's gear (see craftingEngine.ts's resolveCraftingOffline). Absent
+  // means this recipe doesn't feed any material Mastery track (every other
+  // profession's recipes, plus Blacksmith repairs). Explicit rather than
+  // inferred from `materials[0]` so a recipe needing more than one material
+  // type is never ambiguous about which one counts.
+  materialId?: string;
   // Gold consumed per item crafted, in addition to materials — undefined/0
   // for the overwhelming majority of recipes (materials alone). Currently
   // only set on the Blacksmith repair recipes (see the "Blacksmith

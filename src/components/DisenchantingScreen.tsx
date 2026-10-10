@@ -22,7 +22,7 @@ import type { User } from 'firebase/auth';
 // runs out, rather than running until manually stopped. This is what turns
 // "disenchant my whole stack" from N individual clicks into one slider pick
 // and an idle/AFK wait, per the design brief's explicit ask.
-export function DisenchantingScreen({ itemId }: { itemId: string }) {
+export function DisenchantingScreen({ itemId, instanceId }: { itemId: string; instanceId?: string }) {
   const { user } = useAuth();
   const { character: characterOrNull, refetch, applyOptimisticUpdate } = useCharacter();
   const character = characterOrNull!;
@@ -58,11 +58,11 @@ export function DisenchantingScreen({ itemId }: { itemId: string }) {
     remainingRequestedRef.current = character.currentActivity.disenchantQuantity ?? 1;
     if (user) {
       getInventory(user.uid).then((inv) => {
-        stockRef.current = inv.items[itemId] ?? 0;
+        stockRef.current = instanceId ? inv.equipmentInstances?.[instanceId]?.quantity ?? 0 : inv.items[itemId] ?? 0;
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [itemId]);
+  }, [itemId, instanceId]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -138,13 +138,18 @@ export function DisenchantingScreen({ itemId }: { itemId: string }) {
       const fresh = await getCharacter(currentUser.uid);
       if (!fresh) throw new Error('Character not found during autosave');
 
-      await applyDisenchantResult(currentUser.uid, itemId, {
-        itemsDisenchanted: result.itemsDisenchanted,
-        yieldItemId: yieldRange.itemId,
-        yieldQuantity: result.yieldQuantity,
-        newSkillLevel: result.finalSkill,
-        newSkillXp: result.finalSkillXp,
-      });
+      await applyDisenchantResult(
+        currentUser.uid,
+        itemId,
+        {
+          itemsDisenchanted: result.itemsDisenchanted,
+          yieldItemId: yieldRange.itemId,
+          yieldQuantity: result.yieldQuantity,
+          newSkillLevel: result.finalSkill,
+          newSkillXp: result.finalSkillXp,
+        },
+        instanceId
+      );
 
       applyOptimisticUpdate(() => ({
         ...fresh,

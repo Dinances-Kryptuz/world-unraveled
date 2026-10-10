@@ -1,7 +1,7 @@
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp, Timestamp, increment, arrayUnion } from 'firebase/firestore';
 import { db } from './config';
-import type { Character, CombatPreset } from '../types/character';
-import type { ProfessionId, EquipmentSlot } from '../gameData/types';
+import type { Character, CombatPreset, MaterialMasteryState } from '../types/character';
+import type { ProfessionId, EquipmentSlot, EquippedItemRef } from '../gameData/types';
 import type { ClassId, SpecId } from '../gameData/classStats';
 import type { TalentColumn } from '../gameData/talents';
 import { PROFESSION_CATEGORY, tierForLevel } from '../gameData/professionTiers';
@@ -14,7 +14,7 @@ import type { TravelState } from '../gameData/travel';
 import { maxHp } from '../gameData/combatFormulas';
 import { canClassEquip } from '../gameData/classStats';
 import { ITEMS } from '../gameData/items';
-import { getEquipmentStatBonuses, isTwoHandedWeapon, canEquipInOffhand } from '../gameData/equipmentStats';
+import { getEquipmentStatBonuses, isTwoHandedWeapon, canEquipInOffhand, equippedItemId } from '../gameData/equipmentStats';
 import { maxEquippedSlots, unlockedAbilities, effectiveLoadout, MAX_COMBAT_PRESETS } from '../combatEngine/progression';
 import { ABILITIES } from '../combatEngine/abilities';
 import type { Condition, ConditionGroup, ConditionType, ResourceType } from '../combatEngine/types';
@@ -25,7 +25,10 @@ import {
   acceptQuestInState,
   type QuestEvent,
 } from '../gameData/questEngine';
-import { grantInventoryItems } from './inventory';
+import { grantInventoryItems, grantEquipmentInstances, getInventory } from './inventory';
+import { equipmentRefInventoryDelta, resolveEquippedRef } from './equipmentInstances';
+import { MATERIALS } from '../gameData/materials';
+import { MATERIAL_MASTERY_XP_THRESHOLDS, rollArmorStats, canonicalInstanceId } from '../gameData/equipmentRolls';
 
 export const BASE_BAG_SLOTS = 24;
 
@@ -122,6 +125,10 @@ export async function getCharacter(uid: string): Promise<Character | null> {
     // equippedAbilityIds below, not a default grant. Already migrated (if
     // needed) by migrateLegacyProfessions above.
     professions,
+    // Lazily normalized in memory (never written back) so a slot still
+    // holding the old bare-string shape keeps working — see
+    // normalizeEquipment's doc comment above.
+    equipment: normalizeEquipment(data.equipment),
     enchantments: data.enchantments ?? {},
     learnedRecipeIds: data.learnedRecipeIds ?? [],
     bagSlots: data.bagSlots ?? BASE_BAG_SLOTS,
@@ -164,7 +171,12 @@ export async function getCharacter(uid: string): Promise<Character | null> {
     // as professions above. A character saved before multi-companion
     // parties existed may still have the old singular activeCompanionId —
     // carry it over as a one-member array rather than dropping it.
-    companions: data.companions ?? {},
+    companions: Object.fromEntries(
+      Object.entries(data.companions ?? {}).map(([id, state]: [string, any]) => [
+        id,
+        { ...state, equipment: normalizeEquipment(state.equipment) },
+      ])
+    ),
     activeCompanionIds: data.activeCompanionIds ?? (data.activeCompanionId ? [data.activeCompanionId] : []),
     // Same backfill idea again, for Phase 4's alt recruiting.
     activeAltSlots: data.activeAltSlots ?? [],
@@ -172,6 +184,11 @@ export async function getCharacter(uid: string): Promise<Character | null> {
     dungeonClears: data.dungeonClears ?? {},
     collectedItemIds: data.collectedItemIds ?? [],
     unlockedAchievementIds: data.unlockedAchievementIds ?? [],
+    // Same backfill idea again, for the material-Mastery titles system — an
+    // old character has unlocked none yet and has no active one, same "no
+    // choice made yet" convention as equippedConsumables above.
+    unlockedTitleIds: data.unlockedTitleIds ?? [],
+    equippedTitleId: data.equippedTitleId ?? null,
     // Same backfill idea again, for the notification toggle — an old
     // character read before this field existed defaults to on.
     notificationsEnabled: data.notificationsEnabled ?? true,
@@ -215,20 +232,34 @@ export async function getCharacter(uid: string): Promise<Character | null> {
 // small starter kit closes most of that gap. novice_tunic/novice_boots are
 // cloth, which every class can equip, so only the weapon differs by class
 // (primary-stat weapon: STR for the physical classes, INT for Priest).
-function starterEquipment(cls: ClassId): Record<EquipmentSlot, string | null> {
+function starterEquipment(cls: ClassId): Record<EquipmentSlot, EquippedItemRef | null> {
   return {
-    weapon: cls === 'priest' ? 'novice_focus' : 'novice_blade',
-    chest: 'novice_tunic',
+    weapon: { itemId: cls === 'priest' ? 'novice_focus' : 'novice_blade' },
+    chest: { itemId: 'novice_tunic' },
     helmet: null,
     gloves: null,
     legs: null,
-    boots: 'novice_boots',
+    boots: { itemId: 'novice_boots' },
     ring: null,
     ring2: null,
     necklace: null,
     offhand: null,
     tool: null,
   };
+}
+
+// Wraps every still-bare-string equipment slot value (the shape every save
+// used before per-instance rolls existed) into { itemId } in memory, never
+// written back — fully idempotent, same "patch the return value, let the
+// next real write catch up" posture as every other backfill in getCharacter.
+// A slot already in the new object shape, or already null, passes through
+// unchanged. See gameData/types.ts's EquippedItemRef doc comment.
+export function normalizeEquipment(raw: Record<string, unknown> | undefined): Record<EquipmentSlot, EquippedItemRef | null> {
+  const result = {} as Record<EquipmentSlot, EquippedItemRef | null>;
+  for (const [slot, value] of Object.entries(raw ?? {})) {
+    result[slot as EquipmentSlot] = typeof value === 'string' ? { itemId: value } : (value as EquippedItemRef | null) ?? null;
+  }
+  return result;
 }
 
 export async function createCharacter(uid: string, name: string, characterClass: ClassId): Promise<void> {
@@ -282,6 +313,8 @@ export async function createCharacter(uid: string, name: string, characterClass:
     dungeonClears: {},
     collectedItemIds: [],
     unlockedAchievementIds: [],
+    unlockedTitleIds: [],
+    equippedTitleId: null,
     notificationsEnabled: true,
     mounts: [],
     trainedAbilityIds: [],
@@ -305,6 +338,10 @@ export async function startActivity(
     // firebase/enchanting.ts's module doc comment). Ignored for every other
     // activity type, which runs until manually stopped like before.
     quantity?: number;
+    // Only meaningful for 'disenchanting' — present when targeting a
+    // specific randomized-stat roll rather than a plain stack (see
+    // CurrentActivity.disenchantInstanceId's doc comment).
+    instanceId?: string;
   }
 ): Promise<void> {
   await updateDoc(doc(db, 'characters', uid), {
@@ -314,6 +351,7 @@ export async function startActivity(
       zoneId: activity.zoneId,
       startedAt: serverTimestamp(),
       ...(activity.quantity !== undefined ? { disenchantQuantity: activity.quantity } : {}),
+      ...(activity.instanceId !== undefined ? { disenchantInstanceId: activity.instanceId } : {}),
     },
   });
 }
@@ -453,6 +491,15 @@ export async function applyGatheringProfessionResult(
   }
 }
 
+// Checks whether every CURRENTLY REGISTERED material is already mastered
+// as of `mastery` (a hypothetical/updated materialMastery map, not
+// necessarily yet persisted) — shared by the eager in-crafting check below
+// and gameData/achievements.ts's MASTER_BLACKSMITH_ACHIEVEMENT so the two
+// can never disagree.
+function allMaterialsMastered(mastery: MaterialMasteryState | undefined): boolean {
+  return MATERIALS.every((m) => (mastery?.[m.id]?.xp ?? 0) >= (MATERIAL_MASTERY_XP_THRESHOLDS[m.id] ?? Infinity));
+}
+
 // All 6 crafting professions' shared 1-100 XP+Mastery engine
 // (gameData/craftingEngine.ts) writes a continuous profession level+xp and
 // a per-recipe Mastery level+xp — generalizes the old Smithing-only
@@ -461,10 +508,17 @@ export async function applyGatheringProfessionResult(
 // category profession whose level/XP/Mastery is owned entirely by
 // gatheringEngine.ts — see CraftingScreen's matching comment), in which case
 // this writes only the inventory/gold side, never the profession fields.
+//
+// `character` is the SAME fresh snapshot the caller already fetched to
+// compute `result` in the first place (see CraftingScreen.tsx's autosave) —
+// never re-read here — used only to (a) read its CURRENT materialMastery/
+// unlockedAchievementIds so the eager achievement/title check below needs
+// no second read, and (b) roll fresh item instances for a materialId recipe.
 export async function applyCraftingProfessionResult(
   uid: string,
   profession: ProfessionId,
   recipeId: string,
+  character: Character,
   result: {
     resultItemId: string;
     resultQuantity: number;
@@ -475,16 +529,56 @@ export async function applyCraftingProfessionResult(
     newMasteryLevel: number;
     newMasteryXp: number;
     earnsProfessionXp: boolean;
+    // Only set for a Recipe.materialId-tagged recipe — see
+    // craftingEngine.ts's resolveCraftingOffline/MaterialMasteryInput.
+    materialMastery?: {
+      materialId: string;
+      newMaterialMasteryXp: number;
+      batches: { quantity: number; masteryPercentAtCraft: number }[];
+    };
   }
 ): Promise<void> {
   const characterUpdate: Record<string, unknown> = {};
   if (result.earnsProfessionXp) {
     characterUpdate[`professions.${profession}.level`] = result.newSkillLevel;
     characterUpdate[`professions.${profession}.xp`] = result.newSkillXp;
-    characterUpdate[`professions.${profession}.mastery.${recipeId}`] = {
-      level: result.newMasteryLevel,
-      xp: result.newMasteryXp,
-    };
+    if (result.materialMastery) {
+      // A materialId-tagged recipe no longer populates the old per-recipe
+      // Mastery bucket at all — see ProfessionState.mastery's doc comment.
+      characterUpdate[`materialMastery.${result.materialMastery.materialId}`] = {
+        xp: result.materialMastery.newMaterialMasteryXp,
+      };
+
+      // Eager unlock check, scoped to just mastery/Master-Blacksmith (not
+      // the full ACHIEVEMENTS list, and no getAccount() read) so an
+      // entirely-offline crafting session unlocks its title immediately
+      // rather than waiting for a Collection Log visit — folded into this
+      // SAME updateDoc, no extra write or read.
+      const hypotheticalMastery: MaterialMasteryState = {
+        ...character.materialMastery,
+        [result.materialMastery.materialId]: { xp: result.materialMastery.newMaterialMasteryXp },
+      };
+      const newlyUnlockedIds: string[] = [];
+      for (const m of MATERIALS) {
+        const id = `mastery_${m.id}`;
+        if (character.unlockedAchievementIds.includes(id)) continue;
+        if ((hypotheticalMastery[m.id]?.xp ?? 0) >= (MATERIAL_MASTERY_XP_THRESHOLDS[m.id] ?? Infinity)) {
+          newlyUnlockedIds.push(id);
+        }
+      }
+      if (!character.unlockedAchievementIds.includes('master_blacksmith') && allMaterialsMastered(hypotheticalMastery)) {
+        newlyUnlockedIds.push('master_blacksmith');
+      }
+      if (newlyUnlockedIds.length > 0) {
+        characterUpdate.unlockedAchievementIds = arrayUnion(...newlyUnlockedIds);
+        characterUpdate.unlockedTitleIds = arrayUnion(...newlyUnlockedIds); // same ids reused 1:1 as titles
+      }
+    } else {
+      characterUpdate[`professions.${profession}.mastery.${recipeId}`] = {
+        level: result.newMasteryLevel,
+        xp: result.newMasteryXp,
+      };
+    }
   }
   if (result.goldSpent) characterUpdate.gold = increment(-result.goldSpent);
   if (Object.keys(characterUpdate).length > 0) {
@@ -493,8 +587,8 @@ export async function applyCraftingProfessionResult(
 
   // Materials are spent regardless of whether the result fits in the bag —
   // consume them FIRST so a material dropping to 0 (freeing a bag slot) is
-  // already reflected before grantInventoryItems reads current occupancy,
-  // then let the capped grant decide whether the crafted item itself fits.
+  // already reflected before the result grant reads current occupancy, then
+  // let the capped grant decide whether the crafted item itself fits.
   if (result.materialsConsumed.length > 0) {
     const materialUpdates: Record<string, unknown> = {};
     for (const m of result.materialsConsumed) {
@@ -502,12 +596,65 @@ export async function applyCraftingProfessionResult(
     }
     await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), materialUpdates);
   }
-  if (result.resultQuantity > 0) {
+
+  if (result.materialMastery) {
+    // Roll one instance per batch entry at THAT batch's own mastery%, not
+    // the final mastery% — see CraftingOfflineResult.materialMasteryBatches'
+    // doc comment for why. Fractional quantity (the Mastery bonus-output
+    // share) carries across batches the same way itemsCrafted already
+    // accumulates as a float elsewhere, floored only once instances are
+    // actually rolled.
+    const grantsByInstance = new Map<string, { rolls: ReturnType<typeof rollArmorStats>['rolls']; quantity: number }>();
+    let carry = 0;
+    for (const batch of result.materialMastery.batches) {
+      carry += batch.quantity;
+      const whole = Math.floor(carry);
+      carry -= whole;
+      for (let i = 0; i < whole; i++) {
+        const { rolls } = rollArmorStats(result.resultItemId, batch.masteryPercentAtCraft);
+        const instanceId = canonicalInstanceId(result.resultItemId, rolls);
+        const existing = grantsByInstance.get(instanceId);
+        if (existing) existing.quantity++;
+        else grantsByInstance.set(instanceId, { rolls, quantity: 1 });
+      }
+    }
+    if (grantsByInstance.size > 0) {
+      await grantEquipmentInstances(
+        uid,
+        result.resultItemId,
+        Array.from(grantsByInstance, ([instanceId, g]) => ({ instanceId, rolls: g.rolls, quantity: g.quantity }))
+      );
+    }
+  } else if (result.resultQuantity > 0) {
     await grantInventoryItems(uid, [{ itemId: result.resultItemId, quantity: result.resultQuantity }]);
   }
 }
 
-export async function equipItem(uid: string, slot: EquipmentSlot, itemId: string): Promise<void> {
+// Shared by equipItem/equipCompanionItem (firebase/companions.ts) — both
+// validate class/item eligibility differently (a companion's own class vs
+// the player's), so only the actually-identical "resolve the ref, move it
+// between inventory and the equipment slot" core lives here. See
+// firebase/equipmentInstances.ts.
+async function resolveAndEquip(
+  uid: string,
+  itemId: string,
+  instanceId: string | undefined
+): Promise<{ ref: EquippedItemRef; inventoryDelta: Record<string, unknown> }> {
+  let ref: EquippedItemRef = { itemId };
+  if (instanceId) {
+    const inventory = await getInventory(uid);
+    ref = resolveEquippedRef(itemId, instanceId, inventory);
+  }
+  return { ref, inventoryDelta: equipmentRefInventoryDelta(ref, -1) };
+}
+
+// `instanceId` is present only when equipping a specific randomized-stat
+// roll (gameData/equipmentRolls.ts) rather than a static/legacy item — see
+// gameData/types.ts's EquippedItemRef doc comment. Omitting it keeps every
+// existing non-randomized equip (weapons, jewelry, a pre-overhaul legacy
+// stack) exactly as fast as before this field existed: no extra inventory
+// read, just the original items.{itemId} increment/decrement.
+export async function equipItem(uid: string, slot: EquipmentSlot, itemId: string, instanceId?: string): Promise<void> {
   const character = await getCharacter(uid);
   if (!character) return;
 
@@ -524,23 +671,23 @@ export async function equipItem(uid: string, slot: EquipmentSlot, itemId: string
     if (!canEquipInOffhand(item)) {
       throw new Error(`${item.name} can’t be equipped in the off-hand.`);
     }
-    const mainHand = character.equipment.weapon ? ITEMS[character.equipment.weapon] : null;
+    const mainHandId = equippedItemId(character.equipment.weapon);
+    const mainHand = mainHandId ? ITEMS[mainHandId] : null;
     if (mainHand && isTwoHandedWeapon(mainHand)) {
       throw new Error('Unequip your two-handed weapon first.');
     }
   }
 
+  const { ref: newRef, inventoryDelta } = await resolveAndEquip(uid, itemId, instanceId);
   const previouslyEquipped = character.equipment[slot];
 
-  const inventoryUpdates: Record<string, unknown> = {
-    [`items.${itemId}`]: increment(-1),
-  };
+  const inventoryUpdates: Record<string, unknown> = { ...inventoryDelta };
   if (previouslyEquipped) {
-    inventoryUpdates[`items.${previouslyEquipped}`] = increment(1);
+    Object.assign(inventoryUpdates, equipmentRefInventoryDelta(previouslyEquipped, 1));
   }
 
   const characterUpdates: Record<string, unknown> = {
-    [`equipment.${slot}`]: itemId,
+    [`equipment.${slot}`]: newRef,
   };
 
   // Equipping a two-handed weapon can't coexist with an offhand — auto-
@@ -548,7 +695,7 @@ export async function equipItem(uid: string, slot: EquipmentSlot, itemId: string
   // equip outright, same "the game resolves it for you" posture a ring
   // swap already has.
   if (slot === 'weapon' && isTwoHandedWeapon(item) && character.equipment.offhand) {
-    inventoryUpdates[`items.${character.equipment.offhand}`] = increment(1);
+    Object.assign(inventoryUpdates, equipmentRefInventoryDelta(character.equipment.offhand, 1));
     characterUpdates['equipment.offhand'] = null;
   }
 
@@ -562,9 +709,7 @@ export async function unequipItem(uid: string, slot: EquipmentSlot): Promise<voi
   const currentlyEquipped = character.equipment[slot];
   if (!currentlyEquipped) return;
 
-  await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), {
-    [`items.${currentlyEquipped}`]: increment(1),
-  });
+  await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), equipmentRefInventoryDelta(currentlyEquipped, 1));
   await updateDoc(doc(db, 'characters', uid), {
     [`equipment.${slot}`]: null,
   });

@@ -7,11 +7,12 @@ import { subscribeToInventory } from '../firebase/inventory';
 import { ITEMS } from '../gameData/items';
 import { ENCHANTS } from '../gameData/enchanting';
 import { canClassEquip } from '../gameData/classStats';
-import { canEquipInOffhand, isTwoHandedWeapon } from '../gameData/equipmentStats';
+import { canEquipInOffhand, isTwoHandedWeapon, equippedItemId } from '../gameData/equipmentStats';
 import { ItemSlot } from './ItemSlot';
 import { ConsumablesBar } from './ConsumablesBar';
 import type { Inventory } from '../types/character';
 import type { EquipmentSlot, ItemDef } from '../gameData/types';
+import type { BaseStat } from '../gameData/classStats';
 
 const SLOT_ORDER: EquipmentSlot[] = ['weapon', 'offhand', 'chest', 'helmet', 'gloves', 'legs', 'boots', 'necklace', 'ring', 'ring2', 'tool'];
 
@@ -57,11 +58,11 @@ export function EquipmentScreen() {
 
   if (!character || !inventory) return null;
 
-  async function handleEquip(slot: EquipmentSlot, itemId: string) {
+  async function handleEquip(slot: EquipmentSlot, itemId: string, instanceId?: string) {
     if (!user) return;
     setError(null);
     try {
-      await equipItem(user.uid, slot, itemId);
+      await equipItem(user.uid, slot, itemId, instanceId);
       setSelectedSlot(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not equip that.');
@@ -90,10 +91,28 @@ export function EquipmentScreen() {
   }
 
   const pickerSlot = selectedSlot;
-  const pickerOptions = pickerSlot
-    ? Object.entries(inventory.items)
-        .filter(([itemId, quantity]) => quantity > 0 && ITEMS[itemId] && fitsSlot(ITEMS[itemId]!, pickerSlot))
-        .map(([itemId, quantity]) => ({ item: ITEMS[itemId]!, quantity }))
+  const pickerOptions: {
+    item: ItemDef;
+    quantity: number;
+    instanceId?: string;
+    rolls?: Partial<Record<BaseStat, number>>;
+  }[] = pickerSlot
+    ? [
+        ...Object.entries(inventory.items)
+          .filter(([itemId, quantity]) => quantity > 0 && ITEMS[itemId] && fitsSlot(ITEMS[itemId]!, pickerSlot))
+          .map(([itemId, quantity]) => ({ item: ITEMS[itemId]!, quantity })),
+        // Randomized-roll equipment (gameData/equipmentRolls.ts) lives in its
+        // own instanceId-keyed bucket, not inventory.items — see
+        // types/character.ts's Inventory.equipmentInstances doc comment.
+        ...Object.entries(inventory.equipmentInstances ?? {})
+          .filter(([, inst]) => inst.quantity > 0 && ITEMS[inst.itemId] && fitsSlot(ITEMS[inst.itemId]!, pickerSlot))
+          .map(([instanceId, inst]) => ({
+            item: ITEMS[inst.itemId]!,
+            quantity: inst.quantity,
+            instanceId,
+            rolls: inst.rolls,
+          })),
+      ]
     : [];
 
   return (
@@ -102,17 +121,25 @@ export function EquipmentScreen() {
       {error && <p className="error">{error}</p>}
 
       <div className="equipment-grid">
+        {/* Cape isn't an equippable slot yet — a non-interactive placeholder
+            just holds its spot in the paper-doll layout until one exists. */}
+        <div className="equipment-grid-tile" style={{ gridArea: 'cape' }}>
+          <div className="item-slot item-slot-empty item-slot-disabled" title="Cape — coming soon">
+            <span className="item-slot-icon item-slot-placeholder">🧣</span>
+          </div>
+        </div>
         {SLOT_ORDER.map((slot) => {
-          const equippedId = character.equipment[slot];
+          const equippedId = equippedItemId(character.equipment[slot]);
           const equippedItem = equippedId ? ITEMS[equippedId] : null;
           const enchantId = character.enchantments[slot];
           const enchant = enchantId ? ENCHANTS[enchantId] : null;
           return (
-            <div key={slot} className="equipment-grid-tile">
+            <div key={slot} className="equipment-grid-tile" style={{ gridArea: slot }}>
               {equippedItem ? (
                 <ItemSlot
                   item={equippedItem}
                   highlight={selectedSlot === slot}
+                  statOverride={character.equipment[slot]?.rolls}
                   onClick={() => setSelectedSlot(selectedSlot === slot ? null : slot)}
                 >
                   {enchant && <span className="item-slot-enchant-dot" title={`${enchant.name} — ${enchant.description}`} />}
@@ -140,13 +167,19 @@ export function EquipmentScreen() {
             <p>Nothing in your inventory fits here.</p>
           ) : (
             <div className="item-grid">
-              {pickerOptions.map(({ item, quantity }) => {
+              {pickerOptions.map(({ item, quantity, instanceId, rolls }) => {
                 const allowed = canClassEquip(character.class, item);
                 const willDropOffhand =
                   pickerSlot === 'weapon' && isTwoHandedWeapon(item) && !!character.equipment.offhand;
                 return (
-                  <div key={item.id} className="loot-entry">
-                    <ItemSlot item={item} quantity={quantity} disabled={!allowed} onClick={() => handleEquip(pickerSlot, item.id)} />
+                  <div key={instanceId ?? item.id} className="loot-entry">
+                    <ItemSlot
+                      item={item}
+                      quantity={quantity}
+                      disabled={!allowed}
+                      statOverride={rolls}
+                      onClick={() => handleEquip(pickerSlot, item.id, instanceId)}
+                    />
                     {!allowed && <small>{item.armorType} — not usable</small>}
                     {allowed && willDropOffhand && <small>unequips off hand</small>}
                   </div>

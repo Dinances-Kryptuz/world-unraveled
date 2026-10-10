@@ -5,6 +5,8 @@ import { ALL_PROFESSION_IDS } from './professionTiers';
 import { COMPANIONS } from './companions';
 import { DUNGEONS } from './dungeons';
 import { MAX_CHARACTER_SLOTS } from './characterSlots';
+import { MATERIALS } from './materials';
+import { MATERIAL_MASTERY_XP_THRESHOLDS } from './equipmentRolls';
 
 // Snapshot-checked, not event-driven: each check() reads CURRENT persisted
 // state and either is or isn't true right now. "Unlocked" is still
@@ -30,7 +32,44 @@ function maxProfessionSkill(character: Character): number {
   return Object.values(character.professions).reduce((max, p) => Math.max(max, p?.level ?? 0), 0);
 }
 
+export function isMaterialMastered(character: Character, materialId: string): boolean {
+  const xp = character.materialMastery?.[materialId]?.xp ?? 0;
+  return xp >= (MATERIAL_MASTERY_XP_THRESHOLDS[materialId] ?? Infinity);
+}
+
+// One "Master of {name}" achievement per gameData/materials.ts MaterialDef
+// — fully data-driven, no per-material id/condition hand-written here. A
+// future material only needs registering in MATERIALS to get its own
+// achievement (and, via gameData/titles.ts's matching 1:1 id, its own
+// title) automatically — see this file's module comment at the top for why
+// a later MATERIALS addition can never revoke one of these once earned.
+function generateMasteryAchievements(): AchievementDef[] {
+  return MATERIALS.map((material) => ({
+    id: `mastery_${material.id}`,
+    name: `Master of ${material.name}`,
+    description: `Reach 100% ${material.name} Mastery.`,
+    check: (c: Character) => isMaterialMastered(c, material.id),
+  }));
+}
+
+// Unlocks once every CURRENTLY REGISTERED material is mastered. Relies
+// entirely on checkNewlyUnlocked's existing property (check() is never
+// re-evaluated for an id already in unlockedAchievementIds — see this
+// file's module comment) to stay earned forever once awarded: a later
+// expansion registering an 11th material makes this check() harder to
+// satisfy for players who haven't earned it yet, but can never revoke it
+// from someone who already has. No separate "completion set" snapshot or
+// version flag is needed for that guarantee.
+const MASTER_BLACKSMITH_ACHIEVEMENT: AchievementDef = {
+  id: 'master_blacksmith',
+  name: 'Master Blacksmith',
+  description: 'Reach 100% Mastery in every Blacksmithing material.',
+  check: (c) => MATERIALS.every((m) => isMaterialMastered(c, m.id)),
+};
+
 export const ACHIEVEMENTS: AchievementDef[] = [
+  ...generateMasteryAchievements(),
+  MASTER_BLACKSMITH_ACHIEVEMENT,
   { id: 'first_steps', name: 'First Steps', description: 'Reach character level 5.', check: (c) => c.level >= 5 },
   { id: 'adventurer', name: 'Adventurer', description: 'Reach character level 25.', check: (c) => c.level >= 25 },
   { id: 'veteran', name: 'Veteran', description: 'Reach character level 40.', check: (c) => c.level >= 40 },
