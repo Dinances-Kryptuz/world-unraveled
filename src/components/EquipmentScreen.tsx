@@ -6,19 +6,31 @@ import { setEquippedConsumable, useConsumableOutOfCombat } from '../firebase/con
 import { subscribeToInventory } from '../firebase/inventory';
 import { ITEMS } from '../gameData/items';
 import { ENCHANTS } from '../gameData/enchanting';
-import { canClassEquip } from '../gameData/classStats';
-import { canEquipInOffhand, isTwoHandedWeapon, equippedItemId } from '../gameData/equipmentStats';
+import { canClassEquip, statAtLevel } from '../gameData/classStats';
+import { canEquipInOffhand, isTwoHandedWeapon, equippedItemId, getEquipmentStatBonuses } from '../gameData/equipmentStats';
 import { ItemSlot } from './ItemSlot';
 import { ConsumablesBar } from './ConsumablesBar';
 import type { Inventory } from '../types/character';
 import type { EquipmentSlot, ItemDef } from '../gameData/types';
 import type { BaseStat } from '../gameData/classStats';
 
-const SLOT_ORDER: EquipmentSlot[] = ['weapon', 'offhand', 'chest', 'helmet', 'gloves', 'legs', 'boots', 'necklace', 'ring', 'ring2', 'tool'];
+// Three groups matching the paper-doll reference layout: a left column, a
+// right column (flanking the center stat sheet), and a bottom row for
+// weapon/offhand/ammo — see index.css's .equipment-grid for how these are
+// actually arranged on screen. 'tool' (profession gear — pick/knife/rod)
+// isn't part of the character's "worn gear" silhouette at all, so it's
+// surfaced separately below the main doll instead of claiming one of the
+// picture's numbered slots (13/14 in the reference image are intentionally
+// left unused, matching the same "we don't need these" call).
+const LEFT_COLUMN: EquipmentSlot[] = ['helmet', 'necklace', 'shoulders', 'cape', 'chest', 'shirt', 'tabard', 'bracers'];
+const RIGHT_COLUMN: EquipmentSlot[] = ['gloves', 'belt', 'legs', 'boots', 'ring', 'ring2'];
+const BOTTOM_ROW: EquipmentSlot[] = ['weapon', 'offhand', 'ammo'];
 
 const SLOT_LABEL: Record<EquipmentSlot, string> = {
   weapon: 'Weapon', offhand: 'Off Hand', chest: 'Chest', helmet: 'Helmet', gloves: 'Gloves',
   legs: 'Legs', boots: 'Boots', ring: 'Ring', ring2: 'Ring', necklace: 'Necklace', tool: 'Tool',
+  shoulders: 'Shoulders', cape: 'Cape', shirt: 'Shirt', tabard: 'Tabard', bracers: 'Bracers',
+  belt: 'Belt', ammo: 'Ammo',
 };
 
 // Shown on an empty slot tile so the grid still reads as "this is where
@@ -27,6 +39,13 @@ const SLOT_LABEL: Record<EquipmentSlot, string> = {
 const SLOT_PLACEHOLDER_ICON: Record<EquipmentSlot, string> = {
   weapon: '⚔️', offhand: '🛡️', chest: '👕', helmet: '🪖', gloves: '🧤',
   legs: '👖', boots: '🥾', ring: '💍', ring2: '💍', necklace: '📿', tool: '🛠️',
+  shoulders: '🛡', cape: '🧣', shirt: '👕', tabard: '🏳', bracers: '⌚',
+  belt: '🎗', ammo: '🏹',
+};
+
+const BASE_STATS: BaseStat[] = ['STR', 'STA', 'INT', 'SPI'];
+const BASE_STAT_LABEL: Record<BaseStat, string> = {
+  STR: 'Strength', STA: 'Stamina', INT: 'Intellect', SPI: 'Spirit',
 };
 
 // An item is offered for `slot` if it's the slot's own type, OR (offhand
@@ -90,6 +109,44 @@ export function EquipmentScreen() {
     await refetch();
   }
 
+  const equipmentBonuses = getEquipmentStatBonuses(character.equipment, character.enchantments);
+  const totalStats: Record<BaseStat, number> = {
+    STR: statAtLevel(character.class, 'STR', character.level) + (equipmentBonuses.STR ?? 0),
+    STA: statAtLevel(character.class, 'STA', character.level) + (equipmentBonuses.STA ?? 0),
+    INT: statAtLevel(character.class, 'INT', character.level) + (equipmentBonuses.INT ?? 0),
+    SPI: statAtLevel(character.class, 'SPI', character.level) + (equipmentBonuses.SPI ?? 0),
+  };
+
+  function renderSlotTile(slot: EquipmentSlot) {
+    const equippedId = equippedItemId(character!.equipment[slot]);
+    const equippedItem = equippedId ? ITEMS[equippedId] : null;
+    const enchantId = character!.enchantments[slot];
+    const enchant = enchantId ? ENCHANTS[enchantId] : null;
+    return (
+      <div key={slot} className="equipment-grid-tile">
+        {equippedItem ? (
+          <ItemSlot
+            item={equippedItem}
+            highlight={selectedSlot === slot}
+            statOverride={character!.equipment[slot]?.rolls}
+            onClick={() => setSelectedSlot(selectedSlot === slot ? null : slot)}
+          >
+            {enchant && <span className="item-slot-enchant-dot" title={`${enchant.name} — ${enchant.description}`} />}
+          </ItemSlot>
+        ) : (
+          <button
+            className={`item-slot item-slot-empty${selectedSlot === slot ? ' item-slot-highlight' : ''}`}
+            onClick={() => setSelectedSlot(selectedSlot === slot ? null : slot)}
+            title={SLOT_LABEL[slot]}
+            type="button"
+          >
+            <span className="item-slot-icon item-slot-placeholder">{SLOT_PLACEHOLDER_ICON[slot]}</span>
+          </button>
+        )}
+      </div>
+    );
+  }
+
   const pickerSlot = selectedSlot;
   const pickerOptions: {
     item: ItemDef;
@@ -121,43 +178,23 @@ export function EquipmentScreen() {
       {error && <p className="error">{error}</p>}
 
       <div className="equipment-grid">
-        {/* Cape isn't an equippable slot yet — a non-interactive placeholder
-            just holds its spot in the paper-doll layout until one exists. */}
-        <div className="equipment-grid-tile" style={{ gridArea: 'cape' }}>
-          <div className="item-slot item-slot-empty item-slot-disabled" title="Cape — coming soon">
-            <span className="item-slot-icon item-slot-placeholder">🧣</span>
-          </div>
-        </div>
-        {SLOT_ORDER.map((slot) => {
-          const equippedId = equippedItemId(character.equipment[slot]);
-          const equippedItem = equippedId ? ITEMS[equippedId] : null;
-          const enchantId = character.enchantments[slot];
-          const enchant = enchantId ? ENCHANTS[enchantId] : null;
-          return (
-            <div key={slot} className="equipment-grid-tile" style={{ gridArea: slot }}>
-              {equippedItem ? (
-                <ItemSlot
-                  item={equippedItem}
-                  highlight={selectedSlot === slot}
-                  statOverride={character.equipment[slot]?.rolls}
-                  onClick={() => setSelectedSlot(selectedSlot === slot ? null : slot)}
-                >
-                  {enchant && <span className="item-slot-enchant-dot" title={`${enchant.name} — ${enchant.description}`} />}
-                </ItemSlot>
-              ) : (
-                <button
-                  className={`item-slot item-slot-empty${selectedSlot === slot ? ' item-slot-highlight' : ''}`}
-                  onClick={() => setSelectedSlot(selectedSlot === slot ? null : slot)}
-                  title={SLOT_LABEL[slot]}
-                  type="button"
-                >
-                  <span className="item-slot-icon item-slot-placeholder">{SLOT_PLACEHOLDER_ICON[slot]}</span>
-                </button>
-              )}
+        <div className="equipment-col">{LEFT_COLUMN.map(renderSlotTile)}</div>
+
+        <div className="equipment-stats-panel">
+          <h3>Character Stats</h3>
+          {BASE_STATS.map((stat) => (
+            <div key={stat} className="equipment-stat-row">
+              <span>{BASE_STAT_LABEL[stat]}</span>
+              <span className="equipment-stat-value">{totalStats[stat]}</span>
             </div>
-          );
-        })}
+          ))}
+        </div>
+
+        <div className="equipment-col">{RIGHT_COLUMN.map(renderSlotTile)}</div>
       </div>
+
+      <div className="equipment-bottom-row">{BOTTOM_ROW.map(renderSlotTile)}</div>
+      <div className="equipment-bottom-row equipment-tool-row">{renderSlotTile('tool')}</div>
 
       {pickerSlot && (
         <div className="equipment-picker">

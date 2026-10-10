@@ -1905,6 +1905,11 @@ export const ITEMS: Record<string, ItemDef> = {
     description: 'An orange, light-touched gauntlets forged from Copper by a skilled blacksmith.',
     stackable: true, equipSlot: 'gloves', armorType: 'cloth', statBonuses: { INT: 2, SPI: 2 }, sellValue: 12,
   },
+  copper_bracers: {
+    id: 'copper_bracers', name: 'Copper Bracers', type: 'equipment',
+    description: 'An orange bracers forged from Copper by a skilled blacksmith.',
+    stackable: true, equipSlot: 'bracers', statBonuses: { STA: 2, STR: 2 }, sellValue: 12,
+  },
   copper_legplates: {
     id: 'copper_legplates', name: 'Copper Legplates', type: 'equipment',
     description: 'An orange legplates forged from Copper by a skilled blacksmith.',
@@ -1984,6 +1989,11 @@ export const ITEMS: Record<string, ItemDef> = {
     id: 'sacred_bronze_gauntlets', name: 'Sacred Bronze Gauntlets', type: 'equipment',
     description: 'A brown, light-touched gauntlets forged from Bronze by a skilled blacksmith.',
     stackable: true, equipSlot: 'gloves', armorType: 'cloth', statBonuses: { INT: 4, SPI: 3 }, sellValue: 22,
+  },
+  bronze_bracers: {
+    id: 'bronze_bracers', name: 'Bronze Bracers', type: 'equipment',
+    description: 'A brown bracers forged from Bronze by a skilled blacksmith.',
+    stackable: true, equipSlot: 'bracers', statBonuses: { STA: 4, STR: 3 }, sellValue: 22,
   },
   bronze_legplates: {
     id: 'bronze_legplates', name: 'Bronze Legplates', type: 'equipment',
@@ -2065,6 +2075,11 @@ export const ITEMS: Record<string, ItemDef> = {
     description: 'A dark gray, light-touched gauntlets forged from Iron by a skilled blacksmith.',
     stackable: true, equipSlot: 'gloves', armorType: 'cloth', statBonuses: { INT: 5, SPI: 4 }, sellValue: 31,
   },
+  iron_bracers: {
+    id: 'iron_bracers', name: 'Iron Bracers', type: 'equipment',
+    description: 'A dark gray bracers forged from Iron by a skilled blacksmith.',
+    stackable: true, equipSlot: 'bracers', statBonuses: { STA: 5, STR: 4 }, sellValue: 31,
+  },
   iron_legplates: {
     id: 'iron_legplates', name: 'Iron Legplates', type: 'equipment',
     description: 'A dark gray legplates forged from Iron by a skilled blacksmith.',
@@ -2144,6 +2159,11 @@ export const ITEMS: Record<string, ItemDef> = {
     id: 'sacred_steel_gauntlets', name: 'Sacred Steel Gauntlets', type: 'equipment',
     description: 'A light gray, light-touched gauntlets forged from Steel by a skilled blacksmith.',
     stackable: true, equipSlot: 'gloves', armorType: 'cloth', statBonuses: { INT: 6, SPI: 5 }, sellValue: 39,
+  },
+  steel_bracers: {
+    id: 'steel_bracers', name: 'Steel Bracers', type: 'equipment',
+    description: 'A light gray bracers forged from Steel by a skilled blacksmith.',
+    stackable: true, equipSlot: 'bracers', statBonuses: { STA: 6, STR: 5 }, sellValue: 39,
   },
   steel_legplates: {
     id: 'steel_legplates', name: 'Steel Legplates', type: 'equipment',
@@ -2225,6 +2245,11 @@ export const ITEMS: Record<string, ItemDef> = {
     description: 'A dark blue, light-touched gauntlets forged from Mithril by a skilled blacksmith.',
     stackable: true, equipSlot: 'gloves', armorType: 'cloth', statBonuses: { INT: 7, SPI: 6 }, sellValue: 47,
   },
+  mithril_bracers: {
+    id: 'mithril_bracers', name: 'Mithril Bracers', type: 'equipment',
+    description: 'A dark blue bracers forged from Mithril by a skilled blacksmith.',
+    stackable: true, equipSlot: 'bracers', statBonuses: { STA: 7, STR: 6 }, sellValue: 47,
+  },
   mithril_legplates: {
     id: 'mithril_legplates', name: 'Mithril Legplates', type: 'equipment',
     description: 'A dark blue legplates forged from Mithril by a skilled blacksmith.',
@@ -2305,6 +2330,11 @@ export const ITEMS: Record<string, ItemDef> = {
     description: 'A light teal, light-touched gauntlets forged from Thorium by a skilled blacksmith.',
     stackable: true, equipSlot: 'gloves', armorType: 'cloth', statBonuses: { INT: 8, SPI: 7 }, sellValue: 57,
   },
+  thorium_bracers: {
+    id: 'thorium_bracers', name: 'Thorium Bracers', type: 'equipment',
+    description: 'A light teal bracers forged from Thorium by a skilled blacksmith.',
+    stackable: true, equipSlot: 'bracers', statBonuses: { STA: 8, STR: 7 }, sellValue: 57,
+  },
   thorium_legplates: {
     id: 'thorium_legplates', name: 'Thorium Legplates', type: 'equipment',
     description: 'A light teal legplates forged from Thorium by a skilled blacksmith.',
@@ -2384,6 +2414,11 @@ export const ITEMS: Record<string, ItemDef> = {
     id: 'sacred_obsidian_gauntlets', name: 'Sacred Obsidian Gauntlets', type: 'equipment',
     description: 'A black, light-touched gauntlets forged from Obsidian by a skilled blacksmith.',
     stackable: true, equipSlot: 'gloves', armorType: 'cloth', statBonuses: { INT: 10, SPI: 8 }, sellValue: 72,
+  },
+  obsidian_bracers: {
+    id: 'obsidian_bracers', name: 'Obsidian Bracers', type: 'equipment',
+    description: 'A black bracers forged from Obsidian by a skilled blacksmith.',
+    stackable: true, equipSlot: 'bracers', statBonuses: { STA: 10, STR: 8 }, sellValue: 72,
   },
   obsidian_legplates: {
     id: 'obsidian_legplates', name: 'Obsidian Legplates', type: 'equipment',

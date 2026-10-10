@@ -193,6 +193,7 @@ export function emptyCompanionEquipment(): Record<EquipmentSlot, string | null> 
   return {
     weapon: null, offhand: null, chest: null, helmet: null, gloves: null, legs: null, boots: null,
     ring: null, ring2: null, necklace: null, tool: null,
+    shoulders: null, cape: null, shirt: null, tabard: null, bracers: null, belt: null, ammo: null,
   };
 }
 

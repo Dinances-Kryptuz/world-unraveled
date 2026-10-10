@@ -550,7 +550,10 @@ service cloud.firestore {
   // combat/gather/craft autosave — a real, production-blocking bug, not an
   // emulator artifact.
   function isValidEquipment(e) {
-    return e is map && e.keys().hasOnly(['weapon','offhand','chest','helmet','gloves','legs','boots','ring','ring2','necklace','tool']);
+    return e is map && e.keys().hasOnly([
+      'weapon','offhand','chest','helmet','gloves','legs','boots','ring','ring2','necklace','tool',
+      'shoulders','cape','shirt','tabard','bracers','belt','ammo'
+    ]);
   }
 
   // weapon/chest/boots may already be filled at creation — createCharacter()
@@ -562,7 +565,9 @@ service cloud.firestore {
   function isValidNewEquipment(e) {
     return isValidEquipment(e)
       && e.helmet == null && e.gloves == null && e.legs == null && e.ring == null && e.ring2 == null
-      && e.necklace == null && e.offhand == null && e.tool == null;
+      && e.necklace == null && e.offhand == null && e.tool == null
+      && e.shoulders == null && e.cape == null && e.shirt == null && e.tabard == null
+      && e.bracers == null && e.belt == null && e.ammo == null;
   }
 
   // A character now starts knowing NO professions at all (see

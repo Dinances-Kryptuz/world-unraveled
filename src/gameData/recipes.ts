@@ -1268,6 +1268,14 @@ export const RECIPES: Record<string, Recipe> = {
     materialId: 'copper',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
+  copper_bracers: {
+    id: 'copper_bracers', name: 'Copper Bracers', profession: 'smithing', requiredSkill: 1,
+    resultItemId: 'copper_bracers', resultQuantity: 1,
+    materials: [{ itemId: 'copper_bar', quantity: 3 }],
+    craftSeconds: 8, xpAward: 1,
+    materialId: 'copper',
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
   copper_legplates: {
     id: 'copper_legplates', name: 'Copper Legplates', profession: 'smithing', requiredSkill: 1,
     resultItemId: 'copper_legplates', resultQuantity: 1,
@@ -1339,6 +1347,14 @@ export const RECIPES: Record<string, Recipe> = {
   bronze_gauntlets: {
     id: 'bronze_gauntlets', name: 'Bronze Gauntlets', profession: 'smithing', requiredSkill: 4,
     resultItemId: 'bronze_gauntlets', resultQuantity: 1,
+    materials: [{ itemId: 'bronze_bar', quantity: 3 }],
+    craftSeconds: 8.5, xpAward: 6,
+    materialId: 'bronze',
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  bronze_bracers: {
+    id: 'bronze_bracers', name: 'Bronze Bracers', profession: 'smithing', requiredSkill: 4,
+    resultItemId: 'bronze_bracers', resultQuantity: 1,
     materials: [{ itemId: 'bronze_bar', quantity: 3 }],
     craftSeconds: 8.5, xpAward: 6,
     materialId: 'bronze',
@@ -1420,6 +1436,14 @@ export const RECIPES: Record<string, Recipe> = {
     materialId: 'iron',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
+  iron_bracers: {
+    id: 'iron_bracers', name: 'Iron Bracers', profession: 'smithing', requiredSkill: 10,
+    resultItemId: 'iron_bracers', resultQuantity: 1,
+    materials: [{ itemId: 'iron_bar', quantity: 3 }],
+    craftSeconds: 9.6, xpAward: 16,
+    materialId: 'iron',
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
   iron_legplates: {
     id: 'iron_legplates', name: 'Iron Legplates', profession: 'smithing', requiredSkill: 10,
     resultItemId: 'iron_legplates', resultQuantity: 1,
@@ -1491,6 +1515,14 @@ export const RECIPES: Record<string, Recipe> = {
   steel_gauntlets: {
     id: 'steel_gauntlets', name: 'Steel Gauntlets', profession: 'smithing', requiredSkill: 11,
     resultItemId: 'steel_gauntlets', resultQuantity: 1,
+    materials: [{ itemId: 'steel_bar', quantity: 3 }],
+    craftSeconds: 9.8, xpAward: 18,
+    materialId: 'steel',
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  steel_bracers: {
+    id: 'steel_bracers', name: 'Steel Bracers', profession: 'smithing', requiredSkill: 11,
+    resultItemId: 'steel_bracers', resultQuantity: 1,
     materials: [{ itemId: 'steel_bar', quantity: 3 }],
     craftSeconds: 9.8, xpAward: 18,
     materialId: 'steel',
@@ -1572,6 +1604,14 @@ export const RECIPES: Record<string, Recipe> = {
     materialId: 'mithril',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
+  mithril_bracers: {
+    id: 'mithril_bracers', name: 'Mithril Bracers', profession: 'smithing', requiredSkill: 12,
+    resultItemId: 'mithril_bracers', resultQuantity: 1,
+    materials: [{ itemId: 'mithril_bar', quantity: 3 }],
+    craftSeconds: 10, xpAward: 20,
+    materialId: 'mithril',
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
   mithril_legplates: {
     id: 'mithril_legplates', name: 'Mithril Legplates', profession: 'smithing', requiredSkill: 12,
     resultItemId: 'mithril_legplates', resultQuantity: 1,
@@ -1648,6 +1688,14 @@ export const RECIPES: Record<string, Recipe> = {
     materialId: 'thorium',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
+  thorium_bracers: {
+    id: 'thorium_bracers', name: 'Thorium Bracers', profession: 'smithing', requiredSkill: 16,
+    resultItemId: 'thorium_bracers', resultQuantity: 1,
+    materials: [{ itemId: 'thorium_bar', quantity: 3 }],
+    craftSeconds: 10.7, xpAward: 27,
+    materialId: 'thorium',
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
   thorium_legplates: {
     id: 'thorium_legplates', name: 'Thorium Legplates', profession: 'smithing', requiredSkill: 16,
     resultItemId: 'thorium_legplates', resultQuantity: 1,
@@ -1719,6 +1767,14 @@ export const RECIPES: Record<string, Recipe> = {
   obsidian_gauntlets: {
     id: 'obsidian_gauntlets', name: 'Obsidian Gauntlets', profession: 'smithing', requiredSkill: 19,
     resultItemId: 'obsidian_gauntlets', resultQuantity: 1,
+    materials: [{ itemId: 'obsidian_bar', quantity: 3 }],
+    craftSeconds: 11.3, xpAward: 33,
+    materialId: 'obsidian',
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  obsidian_bracers: {
+    id: 'obsidian_bracers', name: 'Obsidian Bracers', profession: 'smithing', requiredSkill: 19,
+    resultItemId: 'obsidian_bracers', resultQuantity: 1,
     materials: [{ itemId: 'obsidian_bar', quantity: 3 }],
     craftSeconds: 11.3, xpAward: 33,
     materialId: 'obsidian',
