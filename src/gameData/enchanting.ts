@@ -26,11 +26,29 @@ import { TRAINER_ZONE_BY_RANK } from './professionTrainers';
 // cost was already paid once, at craft time, matching a classic MMO's
 // enchanting-vellum workflow and the "far less daunting, more AFK" goal
 // this redesign was built for.
+//
+// Which of 3 charge-consumption rules this enchant follows (Enchanting
+// overhaul's charge model — see Character.enchantmentCharges's doc
+// comment) — 'passive' for every enchant below right now (plain always-on
+// stat bonuses, consuming 1 charge per completed combat encounter); the
+// full 6-zone catalog (Phase E6) adds real 'offensive' (1 charge per
+// eligible outgoing attack, proc or not) and 'defensive' (1 charge only on
+// a successful incoming hit) enchants alongside more 'passive' ones.
+export type EnchantCategory = 'offensive' | 'defensive' | 'passive';
+
+// Every enchant scroll always grants exactly this many charges when used —
+// never more, never fewer, regardless of Mastery (gameData/enchanting.ts's
+// scroll-crafting Mastery track, Phase E7, only ever affects crafting
+// speed/ingredient-preservation, NEVER this number) — per the design
+// brief's explicit, repeated "always exactly 100 charges" rule.
+export const ENCHANT_SCROLL_CHARGES = 100;
+
 export interface EnchantDef {
   id: string;
   name: string;
   description: string;
   slot: EquipmentSlot;
+  category: EnchantCategory;
   statBonuses: Partial<Record<BaseStat, number>>;
   // The enchant_scroll item (items.ts) that applies this enchant when used.
   scrollItemId: string;
@@ -45,64 +63,64 @@ export interface EnchantDef {
 export const ENCHANTS: Record<string, EnchantDef> = {
   enchant_weapon_minor_might: {
     id: 'enchant_weapon_minor_might', name: 'Enchant Weapon: Minor Might',
-    description: '+4 Strength', slot: 'weapon', statBonuses: { STR: 4 }, scrollItemId: 'scroll_weapon_minor_might',
+    description: '+4 Strength', slot: 'weapon', category: 'passive', statBonuses: { STR: 4 }, scrollItemId: 'scroll_weapon_minor_might',
   },
   enchant_weapon_greater_might: {
     id: 'enchant_weapon_greater_might', name: 'Enchant Weapon: Greater Might',
-    description: '+10 Strength', slot: 'weapon', statBonuses: { STR: 10 }, scrollItemId: 'scroll_weapon_greater_might',
+    description: '+10 Strength', slot: 'weapon', category: 'passive', statBonuses: { STR: 10 }, scrollItemId: 'scroll_weapon_greater_might',
   },
   enchant_weapon_superior_might: {
     id: 'enchant_weapon_superior_might', name: 'Enchant Weapon: Superior Might',
-    description: '+18 Strength', slot: 'weapon', statBonuses: { STR: 18 }, scrollItemId: 'scroll_weapon_superior_might',
+    description: '+18 Strength', slot: 'weapon', category: 'passive', statBonuses: { STR: 18 }, scrollItemId: 'scroll_weapon_superior_might',
   },
 
   enchant_chest_minor_stats: {
     id: 'enchant_chest_minor_stats', name: 'Enchant Chest: Minor Vigor',
-    description: '+5 Stamina', slot: 'chest', statBonuses: { STA: 5 }, scrollItemId: 'scroll_chest_minor_stats',
+    description: '+5 Stamina', slot: 'chest', category: 'passive', statBonuses: { STA: 5 }, scrollItemId: 'scroll_chest_minor_stats',
   },
   enchant_chest_greater_stats: {
     id: 'enchant_chest_greater_stats', name: 'Enchant Chest: Greater Vigor',
-    description: '+12 Stamina', slot: 'chest', statBonuses: { STA: 12 }, scrollItemId: 'scroll_chest_greater_stats',
+    description: '+12 Stamina', slot: 'chest', category: 'passive', statBonuses: { STA: 12 }, scrollItemId: 'scroll_chest_greater_stats',
   },
   enchant_chest_superior_stats: {
     id: 'enchant_chest_superior_stats', name: 'Enchant Chest: Superior Vigor',
-    description: '+20 Stamina', slot: 'chest', statBonuses: { STA: 20 }, scrollItemId: 'scroll_chest_superior_stats',
+    description: '+20 Stamina', slot: 'chest', category: 'passive', statBonuses: { STA: 20 }, scrollItemId: 'scroll_chest_superior_stats',
   },
 
   enchant_gloves_minor_focus: {
     id: 'enchant_gloves_minor_focus', name: 'Enchant Gloves: Minor Focus',
-    description: '+4 Intellect', slot: 'gloves', statBonuses: { INT: 4 }, scrollItemId: 'scroll_gloves_minor_focus',
+    description: '+4 Intellect', slot: 'gloves', category: 'passive', statBonuses: { INT: 4 }, scrollItemId: 'scroll_gloves_minor_focus',
   },
   enchant_gloves_greater_focus: {
     id: 'enchant_gloves_greater_focus', name: 'Enchant Gloves: Greater Focus',
-    description: '+9 Intellect', slot: 'gloves', statBonuses: { INT: 9 }, scrollItemId: 'scroll_gloves_greater_focus',
+    description: '+9 Intellect', slot: 'gloves', category: 'passive', statBonuses: { INT: 9 }, scrollItemId: 'scroll_gloves_greater_focus',
   },
 
   enchant_legs_minor_vitality: {
     id: 'enchant_legs_minor_vitality', name: 'Enchant Legs: Minor Vitality',
-    description: '+6 Stamina', slot: 'legs', statBonuses: { STA: 6 }, scrollItemId: 'scroll_legs_minor_vitality',
+    description: '+6 Stamina', slot: 'legs', category: 'passive', statBonuses: { STA: 6 }, scrollItemId: 'scroll_legs_minor_vitality',
   },
   enchant_legs_greater_vitality: {
     id: 'enchant_legs_greater_vitality', name: 'Enchant Legs: Greater Vitality',
-    description: '+14 Stamina', slot: 'legs', statBonuses: { STA: 14 }, scrollItemId: 'scroll_legs_greater_vitality',
+    description: '+14 Stamina', slot: 'legs', category: 'passive', statBonuses: { STA: 14 }, scrollItemId: 'scroll_legs_greater_vitality',
   },
 
   enchant_boots_minor_spirit: {
     id: 'enchant_boots_minor_spirit', name: 'Enchant Boots: Minor Spirit',
-    description: '+4 Spirit', slot: 'boots', statBonuses: { SPI: 4 }, scrollItemId: 'scroll_boots_minor_spirit',
+    description: '+4 Spirit', slot: 'boots', category: 'passive', statBonuses: { SPI: 4 }, scrollItemId: 'scroll_boots_minor_spirit',
   },
   enchant_boots_greater_spirit: {
     id: 'enchant_boots_greater_spirit', name: 'Enchant Boots: Greater Spirit',
-    description: '+9 Spirit', slot: 'boots', statBonuses: { SPI: 9 }, scrollItemId: 'scroll_boots_greater_spirit',
+    description: '+9 Spirit', slot: 'boots', category: 'passive', statBonuses: { SPI: 9 }, scrollItemId: 'scroll_boots_greater_spirit',
   },
 
   enchant_ring_minor_power: {
     id: 'enchant_ring_minor_power', name: 'Enchant Ring: Minor Power',
-    description: '+3 Strength, +3 Intellect', slot: 'ring', statBonuses: { STR: 3, INT: 3 }, scrollItemId: 'scroll_ring_minor_power',
+    description: '+3 Strength, +3 Intellect', slot: 'ring', category: 'passive', statBonuses: { STR: 3, INT: 3 }, scrollItemId: 'scroll_ring_minor_power',
   },
   enchant_ring_greater_power: {
     id: 'enchant_ring_greater_power', name: 'Enchant Ring: Greater Power',
-    description: '+7 Strength, +7 Intellect', slot: 'ring', statBonuses: { STR: 7, INT: 7 }, scrollItemId: 'scroll_ring_greater_power',
+    description: '+7 Strength, +7 Intellect', slot: 'ring', category: 'passive', statBonuses: { STR: 7, INT: 7 }, scrollItemId: 'scroll_ring_greater_power',
   },
 };
 

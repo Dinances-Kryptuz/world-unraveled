@@ -136,6 +136,7 @@ export async function getCharacter(uid: string): Promise<Character | null> {
     // normalizeEquipment's doc comment above.
     equipment: normalizeEquipment(data.equipment),
     enchantments: data.enchantments ?? {},
+    enchantmentCharges: data.enchantmentCharges ?? {},
     learnedRecipeIds: data.learnedRecipeIds ?? [],
     bagSlots: data.bagSlots ?? BASE_BAG_SLOTS,
     bankSlots: data.bankSlots ?? BASE_BANK_SLOTS,

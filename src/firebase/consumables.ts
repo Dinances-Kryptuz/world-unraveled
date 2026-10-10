@@ -90,7 +90,7 @@ export async function useConsumableOutOfCombat(uid: string, itemId: string): Pro
     ...buffUpdateForItem(item, itemId, now),
   };
   if (item.consumableEffect.healAmount !== undefined) {
-    const equipBonuses = getEquipmentStatBonuses(character.equipment, character.enchantments);
+    const equipBonuses = getEquipmentStatBonuses(character.equipment, character.enchantments, character.enchantmentCharges);
     const talentTotals = character.spec ? evaluateTalents(character.spec, character.talentPicks).totals : EMPTY_TALENT_TOTALS;
     const charMaxHp = maxHp(character.class, character.level, equipBonuses, talentTotals.hpMultPct);
     const currentHp = resolveCurrentHp(character.currentHp, charMaxHp, character.hpCheckpointAt, now);

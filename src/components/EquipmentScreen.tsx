@@ -109,7 +109,7 @@ export function EquipmentScreen() {
     await refetch();
   }
 
-  const equipmentBonuses = getEquipmentStatBonuses(character.equipment, character.enchantments);
+  const equipmentBonuses = getEquipmentStatBonuses(character.equipment, character.enchantments, character.enchantmentCharges);
   const totalStats: Record<BaseStat, number> = {
     STR: statAtLevel(character.class, 'STR', character.level) + (equipmentBonuses.STR ?? 0),
     STA: statAtLevel(character.class, 'STA', character.level) + (equipmentBonuses.STA ?? 0),
@@ -123,6 +123,9 @@ export function EquipmentScreen() {
     const equippedItem = equippedId ? ITEMS[equippedId] : null;
     const enchantId = character!.enchantments[slot];
     const enchant = enchantId ? ENCHANTS[enchantId] : null;
+    // Absent (not yet migrated to the charge model) reads as "still active"
+    // — see getEquipmentStatBonuses's matching doc comment.
+    const enchantCharges = character!.enchantmentCharges?.[slot];
     return (
       <div key={slot} className="equipment-grid-tile">
         {equippedItem ? (
@@ -132,7 +135,12 @@ export function EquipmentScreen() {
             statOverride={character!.equipment[slot]?.rolls}
             onClick={() => setSelectedSlot(selectedSlot === slot ? null : slot)}
           >
-            {enchant && <span className="item-slot-enchant-dot" title={`${enchant.name} — ${enchant.description}`} />}
+            {enchant && (
+              <span
+                className="item-slot-enchant-dot"
+                title={`${enchant.name} — ${enchant.description}${enchantCharges !== undefined ? ` (${enchantCharges} charges left)` : ''}`}
+              />
+            )}
           </ItemSlot>
         ) : (
           <button

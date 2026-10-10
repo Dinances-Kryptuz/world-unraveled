@@ -237,6 +237,7 @@ export interface AltCharacterSnapshot {
   level: number;
   equipment: Record<EquipmentSlot, EquippedItemRef | null>;
   enchantments?: Partial<Record<EquipmentSlot, string>>;
+  enchantmentCharges?: Partial<Record<EquipmentSlot, number>>;
   talentPicks?: TalentPicks;
   equippedAbilityIds?: string[];
 }
@@ -266,7 +267,7 @@ export function buildAltCombatSetup(slot: number, alt: AltCharacterSnapshot): Co
     specId,
     specDef: SPECS[specId],
     level: alt.level,
-    equipmentBonuses: getEquipmentStatBonuses(alt.equipment, alt.enchantments),
+    equipmentBonuses: getEquipmentStatBonuses(alt.equipment, alt.enchantments, alt.enchantmentCharges),
     talentTotals,
     savedEquippedAbilityIds: alt.equippedAbilityIds ?? [],
   };

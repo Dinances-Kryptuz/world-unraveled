@@ -434,9 +434,13 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
             const enchant = ENCHANTS[char.enchantments[slot]!];
             const equippedSlotItemId = equippedItemId(char.equipment[slot]);
             const equippedItem = equippedSlotItemId ? ITEMS[equippedSlotItemId] : null;
+            // Absent (not yet migrated to the charge model) reads as "still
+            // active" — see getEquipmentStatBonuses's matching doc comment.
+            const charges = char.enchantmentCharges?.[slot];
             return (
               <li key={slot}>
                 {slot} ({equippedItem ? equippedItem.name : 'empty'}): <em>{enchant.name}</em> ({enchant.description})
+                {charges !== undefined ? ` — ${charges} charges left` : ''}
                 <button onClick={() => handleRemoveEnchant(slot)}>Remove Enchant</button>
               </li>
             );

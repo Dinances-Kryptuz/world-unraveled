@@ -2,7 +2,7 @@ import { doc, updateDoc, increment } from 'firebase/firestore';
 import { db } from './config';
 import { getInventory, grantInventoryItems } from './inventory';
 import { ITEMS } from '../gameData/items';
-import { ENCHANTS } from '../gameData/enchanting';
+import { ENCHANTS, ENCHANT_SCROLL_CHARGES } from '../gameData/enchanting';
 import type { EquipmentSlot } from '../gameData/types';
 
 export interface EnchantActionResult {
@@ -27,6 +27,12 @@ export async function useEnchantScroll(uid: string, scrollItemId: string): Promi
 
   await updateDoc(doc(db, 'characters', uid), {
     [`enchantments.${enchant.slot}`]: enchant.id,
+    // Enchanting overhaul's charge model — ALWAYS exactly 100, a flat
+    // overwrite never an increment, so replacing a slot's enchant (even
+    // with the same one) discards whatever charges were left rather than
+    // refunding or combining them — see Character.enchantmentCharges's
+    // doc comment and ENCHANT_SCROLL_CHARGES below.
+    [`enchantmentCharges.${enchant.slot}`]: ENCHANT_SCROLL_CHARGES,
   });
   await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), {
     [`items.${scrollItemId}`]: increment(-1),
@@ -37,6 +43,7 @@ export async function useEnchantScroll(uid: string, scrollItemId: string): Promi
 export async function removeEnchant(uid: string, slot: EquipmentSlot): Promise<void> {
   await updateDoc(doc(db, 'characters', uid), {
     [`enchantments.${slot}`]: null,
+    [`enchantmentCharges.${slot}`]: null,
   });
 }
 

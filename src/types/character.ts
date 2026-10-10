@@ -158,6 +158,23 @@ export interface Character {
   // whatever was there; unequipping does not clear it, matching "enchants
   // persist on the item" as closely as a non-instanced item model allows.
   enchantments: Partial<Record<EquipmentSlot, string>>;
+  // Enchanting overhaul's charge model — remaining charges for whichever
+  // enchant currently occupies that slot (enchantments[slot] above).
+  // Crafting/using an enchant scroll (firebase/enchanting.ts's
+  // useEnchantScroll) always SETS this to exactly 100, never increments or
+  // combines it with whatever was left on the enchant it replaces — "never
+  // refunding/combining" per the design brief. An offensive enchant loses 1
+  // charge per eligible outgoing attack regardless of whether its chance-
+  // based proc actually fires; a defensive enchant loses 1 only on a
+  // successful (non-avoided) incoming hit; a passive stat enchant loses 1
+  // per completed combat encounter (see combatEngine's kill-count-driven
+  // consumption, not per attack) — see gameData/enchanting.ts's
+  // EnchantDef.category. A slot present in `enchantments` but ABSENT here
+  // means "not yet migrated to the charge model" and is treated as still
+  // fully active (getEquipmentStatBonuses's "absence is the old/default
+  // state" convention) rather than silently losing its bonus; reaching 0
+  // (present, but zero) is what actually turns an enchant off.
+  enchantmentCharges: Partial<Record<EquipmentSlot, number>>;
   // Recipe ids learned via a 'recipe' item (Recipe.learnedAutomatically ===
   // false) — see firebase/professions.ts's learnRecipe. A recipe with
   // learnedAutomatically === true never appears here; meeting its

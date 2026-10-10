@@ -195,6 +195,7 @@ service cloud.firestore {
       && isValidEquipment(after.equipment)
       && isValidProfessions(after.professions)
       && isValidEnchantments(after)
+      && isValidEnchantmentCharges(after)
       && isValidLearnedRecipeIds(after)
       && isValidBagSlots(after)
       && isValidBankSlots(after)
@@ -407,6 +408,14 @@ service cloud.firestore {
   // write these fields.
   function isValidEnchantments(after) {
     return !('enchantments' in after) || (after.enchantments is map && after.enchantments.size() <= 8);
+  }
+
+  // Enchanting overhaul's charge model — same ownership-scoped posture as
+  // isValidEnchantments above (full validation of "always exactly 100 on
+  // use, never more" happens in firebase/enchanting.ts, the only path that
+  // writes this field).
+  function isValidEnchantmentCharges(after) {
+    return !('enchantmentCharges' in after) || (after.enchantmentCharges is map && after.enchantmentCharges.size() <= 8);
   }
 
   function isValidLearnedRecipeIds(after) {

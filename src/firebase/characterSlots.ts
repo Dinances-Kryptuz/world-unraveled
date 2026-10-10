@@ -218,6 +218,7 @@ export async function resolveActiveAltSetups(uid: string, character: Character):
         level: character.level,
         equipment: normalizeEquipment(data.equipment),
         enchantments: data.enchantments,
+        enchantmentCharges: data.enchantmentCharges,
         talentPicks: data.talentPicks,
         equippedAbilityIds: data.equippedAbilityIds,
       })
