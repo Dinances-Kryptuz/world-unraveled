@@ -14,7 +14,7 @@ import { ENCHANTS, isDisenchantable, disenchantRequiredSkill, disenchantTier } f
 import { ITEMS } from '../../gameData/items';
 import { equippedItemId } from '../../gameData/equipmentStats';
 import { describeItemStats } from '../../gameData/equipmentStats';
-import { MATERIALS, LEATHER_MATERIALS, type MaterialDef } from '../../gameData/materials';
+import { MATERIALS, LEATHER_MATERIALS, CLOTH_MATERIALS, type MaterialDef } from '../../gameData/materials';
 import {
   materialMasteryPercent,
   materialMasterySpeedMultiplier,
@@ -70,6 +70,26 @@ const LEATHERWORKING_TIER_LABELS: Record<string, string> = {
   nightscape_leather: 'Nightscape Leather',
   wicked_leather: 'Wicked Leather',
   emberscar_leather: 'Emberscar Leather',
+};
+
+// Same grouping pattern again for Tailoring's own 84-recipe buildout (36
+// cloth armor + 6 capes + 42 shirts) — the armor/shirt recipe ids are
+// prefixed by the cloth tier's own slug (tailored_linen_helm,
+// wool_shirt_of_mastery, etc.), close to but not identical to
+// CLOTH_MATERIALS' own ids (runecloth/ember_cloth vs. this slug's
+// runecloth/ember — see materials.ts's doc comment on why item/recipe-id
+// prefixes and Mastery material ids are independent namespaces). Capes
+// (cape_of_linen, etc.) and the 4 bag recipes don't match any tier prefix
+// and fall into the existing "Other" bucket, same as Smithing's repair
+// recipes.
+const TAILORING_TIER_ORDER = ['tailored_linen', 'wool', 'silk', 'mageweave', 'runecloth', 'ember'];
+const TAILORING_TIER_LABELS: Record<string, string> = {
+  tailored_linen: 'Linen',
+  wool: 'Wool',
+  silk: 'Silk',
+  mageweave: 'Mageweave',
+  runecloth: 'Runecloth',
+  ember: 'Ember',
 };
 
 // A single profession's own page — one per sidebar nav item (see
@@ -546,6 +566,11 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
               <>
                 {renderGroupedRecipesByTier(LEATHERWORKING_TIER_ORDER, LEATHERWORKING_TIER_LABELS)}
                 {renderMaterialMasteryPanel(LEATHER_MATERIALS)}
+              </>
+            ) : professionId === 'tailoring' ? (
+              <>
+                {renderGroupedRecipesByTier(TAILORING_TIER_ORDER, TAILORING_TIER_LABELS)}
+                {renderMaterialMasteryPanel(CLOTH_MATERIALS)}
               </>
             ) : (
               renderRecipeList()

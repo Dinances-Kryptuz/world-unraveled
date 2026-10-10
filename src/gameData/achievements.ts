@@ -5,7 +5,7 @@ import { ALL_PROFESSION_IDS } from './professionTiers';
 import { COMPANIONS } from './companions';
 import { DUNGEONS } from './dungeons';
 import { MAX_CHARACTER_SLOTS } from './characterSlots';
-import { MATERIALS, LEATHER_MATERIALS } from './materials';
+import { MATERIALS, LEATHER_MATERIALS, CLOTH_MATERIALS } from './materials';
 import { MATERIAL_MASTERY_XP_THRESHOLDS } from './equipmentRolls';
 import { ZONES } from './zones';
 import { HERBALISM_ZONE_MASTERY_THRESHOLD } from './gatheringEngine';
@@ -91,6 +91,26 @@ const MASTER_LEATHERWORKER_ACHIEVEMENT: AchievementDef = {
   check: (c) => LEATHER_MATERIALS.every((m) => isMaterialMastered(c, m.id)),
 };
 
+// Mirrors generateLeatherMasteryAchievements/MASTER_LEATHERWORKER_ACHIEVEMENT
+// exactly, over CLOTH_MATERIALS instead of LEATHER_MATERIALS — same
+// isMaterialMastered check (MATERIAL_MASTERY_XP_THRESHOLDS already has
+// entries for all 6 cloth materialIds, see equipmentRolls.ts).
+function generateClothMasteryAchievements(): AchievementDef[] {
+  return CLOTH_MATERIALS.map((material) => ({
+    id: `mastery_${material.id}`,
+    name: `Master of ${material.name}`,
+    description: `Reach 100% ${material.name} Mastery.`,
+    check: (c: Character) => isMaterialMastered(c, material.id),
+  }));
+}
+
+const MASTER_TAILOR_ACHIEVEMENT: AchievementDef = {
+  id: 'master_tailor',
+  name: 'Master Tailor',
+  description: 'Reach 100% Mastery in every Tailoring material.',
+  check: (c) => CLOTH_MATERIALS.every((m) => isMaterialMastered(c, m.id)),
+};
+
 export function isHerbalismZoneMastered(character: Character, zoneId: string): boolean {
   const xp = character.herbalismZoneMastery?.[zoneId]?.xp ?? 0;
   return xp >= HERBALISM_ZONE_MASTERY_THRESHOLD;
@@ -142,6 +162,8 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   MASTER_BLACKSMITH_ACHIEVEMENT,
   ...generateLeatherMasteryAchievements(),
   MASTER_LEATHERWORKER_ACHIEVEMENT,
+  ...generateClothMasteryAchievements(),
+  MASTER_TAILOR_ACHIEVEMENT,
   ...generateForagerAchievements(),
   GRANDMASTER_FORAGER_ACHIEVEMENT,
   ...generateAlchemistAchievements(),

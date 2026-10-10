@@ -600,6 +600,7 @@ service cloud.firestore {
       && (a.targetId == null || a.targetId is string)
       && (a.zoneId == null || a.zoneId is string)
       && (a.startedAt == null || a.startedAt is timestamp)
-      && (!('disenchantQuantity' in a) || a.disenchantQuantity is int);
+      && (!('disenchantQuantity' in a) || a.disenchantQuantity is int)
+      && (!('equippedShirtItemId' in a) || a.equippedShirtItemId == null || a.equippedShirtItemId is string);
   }
 }
