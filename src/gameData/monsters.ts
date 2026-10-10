@@ -200,6 +200,7 @@ export const MONSTERS: Record<string, Monster> = {
   cinder_wolf: {
     id: 'cinder_wolf',
     name: 'Cinder Wolf',
+    damageSchool: 'fire',
     zoneIds: ['emberfall_ridge'],
     levelRange: [25, 29],
     level: 27,
@@ -242,6 +243,7 @@ export const MONSTERS: Record<string, Monster> = {
   molten_crawler: {
     id: 'molten_crawler',
     name: 'Molten Crawler',
+    damageSchool: 'fire',
     zoneIds: ['emberfall_ridge'],
     levelRange: [30, 34],
     level: 33,
@@ -286,6 +288,7 @@ export const MONSTERS: Record<string, Monster> = {
   scorched_drake: {
     id: 'scorched_drake',
     name: 'Scorched Drake',
+    damageSchool: 'fire',
     zoneIds: ['emberfall_ridge'],
     levelRange: [36, 40],
     level: 39,
@@ -354,6 +357,7 @@ export const MONSTERS: Record<string, Monster> = {
   forgemaster_kaldrun: {
     id: 'forgemaster_kaldrun',
     name: 'Forgemaster Kaldrun',
+    damageSchool: 'fire',
     zoneIds: ['emberfall_ridge'],
     levelRange: [40, 40],
     level: 40,
@@ -379,6 +383,7 @@ export const MONSTERS: Record<string, Monster> = {
   ash_wraith: {
     id: 'ash_wraith',
     name: 'Ash Wraith',
+    damageSchool: 'shadow',
     zoneIds: ['cinderfall_depths'],
     levelRange: [30, 34],
     level: 31,
@@ -398,6 +403,7 @@ export const MONSTERS: Record<string, Monster> = {
   cinder_scavenger: {
     id: 'cinder_scavenger',
     name: 'Cinder Scavenger',
+    damageSchool: 'fire',
     zoneIds: ['cinderfall_depths'],
     levelRange: [31, 36],
     level: 33,
@@ -439,6 +445,7 @@ export const MONSTERS: Record<string, Monster> = {
   ember_stalker: {
     id: 'ember_stalker',
     name: 'Ember Stalker',
+    damageSchool: 'fire',
     zoneIds: ['cinderfall_depths'],
     levelRange: [36, 40],
     level: 38,
@@ -480,6 +487,7 @@ export const MONSTERS: Record<string, Monster> = {
   cultist_adept: {
     id: 'cultist_adept',
     name: 'Cultist Adept',
+    damageSchool: 'fire',
     zoneIds: ['molten_scar'],
     levelRange: [40, 44],
     level: 41,
@@ -499,6 +507,7 @@ export const MONSTERS: Record<string, Monster> = {
   living_ember: {
     id: 'living_ember',
     name: 'Living Ember',
+    damageSchool: 'fire',
     zoneIds: ['molten_scar'],
     levelRange: [41, 46],
     level: 43,
@@ -558,6 +567,7 @@ export const MONSTERS: Record<string, Monster> = {
   magma_hound: {
     id: 'magma_hound',
     name: 'Magma Hound',
+    damageSchool: 'fire',
     zoneIds: ['molten_scar'],
     levelRange: [48, 54],
     level: 50,
@@ -581,6 +591,7 @@ export const MONSTERS: Record<string, Monster> = {
   emberlord_cultist: {
     id: 'emberlord_cultist',
     name: 'Emberlord Cultist',
+    damageSchool: 'fire',
     zoneIds: ['cinderheart_crater'],
     levelRange: [48, 52],
     level: 49,
@@ -602,6 +613,7 @@ export const MONSTERS: Record<string, Monster> = {
   flamewalker: {
     id: 'flamewalker',
     name: 'Flamewalker',
+    damageSchool: 'fire',
     zoneIds: ['cinderheart_crater'],
     levelRange: [50, 54],
     level: 52,
@@ -645,6 +657,7 @@ export const MONSTERS: Record<string, Monster> = {
   ashfall_harbinger: {
     id: 'ashfall_harbinger',
     name: 'Ashfall Harbinger',
+    damageSchool: 'fire',
     zoneIds: ['cinderheart_crater'],
     levelRange: [54, 58],
     level: 56,
@@ -691,6 +704,7 @@ export const MONSTERS: Record<string, Monster> = {
   ashen_overseer: {
     id: 'ashen_overseer',
     name: 'Ashen Overseer',
+    damageSchool: 'fire',
     zoneIds: ['cinderfall_depths'],
     levelRange: [44, 44],
     level: 44,
@@ -714,6 +728,7 @@ export const MONSTERS: Record<string, Monster> = {
   molten_herald: {
     id: 'molten_herald',
     name: 'Molten Herald',
+    damageSchool: 'fire',
     zoneIds: ['molten_scar'],
     levelRange: [54, 54],
     level: 54,
@@ -736,6 +751,7 @@ export const MONSTERS: Record<string, Monster> = {
   pyraxis: {
     id: 'pyraxis',
     name: 'Pyraxis, Warden of the Cinderheart',
+    damageSchool: 'fire',
     zoneIds: ['cinderheart_crater'],
     levelRange: [60, 60],
     level: 60,

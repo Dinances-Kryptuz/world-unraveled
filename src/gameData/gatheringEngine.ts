@@ -34,6 +34,36 @@ export function gatheringXpForNextLevel(level: number): number {
   return Math.round(GATHERING_XP_BASE * Math.pow(level, GATHERING_XP_EXPONENT));
 }
 
+// Herbalism gets its OWN profession-XP curve (NOT the shared one above) —
+// the Herbalism/Alchemy overhaul's per-zone XP/time table (herbs.ts) is
+// design-mandated and fixed, so the shared curve's base had to move instead:
+// the shared GATHERING_XP_BASE calibrated for Mining/Skinning's ~40h target
+// resolves to ~44h for Herbalism against those fixed numbers, 3x the
+// spec's 12-15h target. A Phase-0 simulation (see session notes) found
+// base=2.5 (same exponent, same curve SHAPE, just a lower coefficient)
+// lands at ~13.25h — confirmed/locked before this was written. Mining/
+// Skinning/Fishing are completely unaffected; this function is used only
+// when resolveGatheringOffline's herbalismOverride param is supplied.
+const HERBALISM_XP_BASE = 2.5;
+
+export function herbalismXpForNextLevel(level: number): number {
+  return Math.round(HERBALISM_XP_BASE * Math.pow(level, GATHERING_XP_EXPONENT));
+}
+
+// ── Herbalism zone Mastery (shared per-zone, NOT per-node) ────────────────
+// Deliberately separate from the per-resource 0-50 Mastery above — every
+// primary herb in a zone (herbs.ts) feeds ONE shared zone bar instead of
+// each herb tracking its own. Flat accrual, no speed/bonus-chance bonuses
+// at all (cosmetic-only, per the design brief's explicit "do not add
+// gathering-speed bonuses, increased yields, or combat bonuses through
+// Herbalism mastery") — this is the simplest axis in the whole overhaul.
+export const HERBALISM_ZONE_MASTERY_XP_PER_HARVEST = 10;
+export const HERBALISM_ZONE_MASTERY_THRESHOLD = 10000; // 1,000 harvests/zone
+
+export function herbalismZoneMasteryPercent(xp: number): number {
+  return Math.min(100, (xp / HERBALISM_ZONE_MASTERY_THRESHOLD) * 100);
+}
+
 // ── Difficulty colors — level-DELTA driven, not per-resource breakpoints ──
 // A resource's own requiredLevel is also "the level this is appropriate
 // for" — orange covers the full gap up to the next tier unlocking (20
@@ -169,6 +199,22 @@ export interface GatheringOfflineResult {
   startColorTier: GatheringColorTier;
   finalColorTier: GatheringColorTier;
   didNotConverge: boolean;
+  // Only populated when resolveGatheringOffline is called with
+  // `herbalismOverride` — the old per-node masteryXpGained/finalMasteryLevel/
+  // finalMasteryXp above are frozen at their starting values in that case
+  // (see HerbalismOverride's doc comment), and these fields carry the real
+  // result instead.
+  herbalismZoneMasteryXpGained?: number;
+  finalHerbalismZoneMasteryXp?: number;
+}
+
+// Passed to resolveGatheringOffline only for a Herbalism primary-herb node
+// — everything the function needs to run the Herbalism-specific profession
+// curve and the shared zone-Mastery axis instead of (not in addition to)
+// gatheringXpForNextLevel and the old per-node 0-50 Mastery. Mirrors
+// craftingEngine.ts's MaterialMasteryInput pattern exactly.
+export interface HerbalismOverride {
+  zoneMasteryStartingXp: number;
 }
 
 // Belt-and-suspenders only, same role as offlineCombat.ts's MAX_TICKS and
@@ -192,16 +238,24 @@ export function resolveGatheringOffline(
   startingMasteryLevel: number,
   startingMasteryXp: number,
   skillCap: number,
-  toolBonusPct = 0
+  toolBonusPct = 0,
+  herbalismOverride?: HerbalismOverride
 ): GatheringOfflineResult {
   const progress = resolveElapsedProgress(startedAt, now);
   let remainingSeconds = progress.effectiveHours * 3600;
   const catchChance = resource.catchChance ?? 1.0;
+  const xpForNextLevel = herbalismOverride ? herbalismXpForNextLevel : gatheringXpForNextLevel;
 
   let skill = startingSkill;
   let skillXp = startingSkillXp;
+  // The old per-node 0-50 Mastery axis is frozen (never advanced) when
+  // herbalismOverride is supplied — a Herbalism primary-herb node
+  // contributes only to the shared zone-Mastery axis instead, see
+  // HerbalismOverride's doc comment. zoneMasteryXp is that new axis's own
+  // running total.
   let masteryLevel = startingMasteryLevel;
   let masteryXp = startingMasteryXp;
+  let zoneMasteryXp = herbalismOverride?.zoneMasteryStartingXp ?? 0;
   const startColorTier = gatheringColorTier(skill, resource.requiredLevel);
   const bankedCap = bankedXpCapAt(skillCap);
 
@@ -209,6 +263,7 @@ export function resolveGatheringOffline(
   let rareBonusQuantity = 0;
   let professionXpGained = 0;
   let masteryXpGained = 0;
+  let herbalismZoneMasteryXpGained = 0;
   let iterations = 0;
 
   while (remainingSeconds > 0 && iterations < MAX_BATCH_ITERATIONS) {
@@ -233,11 +288,11 @@ export function resolveGatheringOffline(
     // risking MAX_BATCH_ITERATIONS on an otherwise ordinary multi-hour gap.
     const belowCap = skill < skillCap;
     const bankNotFull = skillXp < bankedCap;
-    const skillXpRoom = belowCap ? gatheringXpForNextLevel(skill) - skillXp : bankedCap - skillXp;
+    const skillXpRoom = belowCap ? xpForNextLevel(skill) - skillXp : bankedCap - skillXp;
     const actionsToSkillCapOrLevel =
       belowCap || bankNotFull ? Math.max(1, Math.ceil(skillXpRoom / xpPerAction)) : Infinity;
     const actionsToMasteryUp =
-      masteryLevel < MASTERY_MAX_LEVEL
+      !herbalismOverride && masteryLevel < MASTERY_MAX_LEVEL
         ? Math.max(1, Math.ceil((masteryXpForNextLevel(masteryLevel) - masteryXp) / masteryXpPerAction))
         : Infinity;
 
@@ -252,18 +307,26 @@ export function resolveGatheringOffline(
     // still happen every action regardless.
     const skillXpThisBatch = belowCap || bankNotFull ? actionsThisBatch * xpPerAction : 0;
     professionXpGained += skillXpThisBatch;
-    masteryXpGained += actionsThisBatch * masteryXpPerAction;
-
     skillXp = belowCap ? skillXp + skillXpThisBatch : Math.min(bankedCap, skillXp + skillXpThisBatch);
-    masteryXp += actionsThisBatch * masteryXpPerAction;
 
-    while (skill < skillCap && skillXp >= gatheringXpForNextLevel(skill)) {
-      skillXp -= gatheringXpForNextLevel(skill);
+    if (herbalismOverride) {
+      const zoneMasteryXpThisBatch = actionsThisBatch * HERBALISM_ZONE_MASTERY_XP_PER_HARVEST * catchChance;
+      herbalismZoneMasteryXpGained += zoneMasteryXpThisBatch;
+      zoneMasteryXp += zoneMasteryXpThisBatch;
+    } else {
+      masteryXpGained += actionsThisBatch * masteryXpPerAction;
+      masteryXp += actionsThisBatch * masteryXpPerAction;
+    }
+
+    while (skill < skillCap && skillXp >= xpForNextLevel(skill)) {
+      skillXp -= xpForNextLevel(skill);
       skill++;
     }
-    while (masteryLevel < MASTERY_MAX_LEVEL && masteryXp >= masteryXpForNextLevel(masteryLevel)) {
-      masteryXp -= masteryXpForNextLevel(masteryLevel);
-      masteryLevel++;
+    if (!herbalismOverride) {
+      while (masteryLevel < MASTERY_MAX_LEVEL && masteryXp >= masteryXpForNextLevel(masteryLevel)) {
+        masteryXp -= masteryXpForNextLevel(masteryLevel);
+        masteryLevel++;
+      }
     }
   }
 
@@ -279,5 +342,6 @@ export function resolveGatheringOffline(
     startColorTier,
     finalColorTier: gatheringColorTier(skill, resource.requiredLevel),
     didNotConverge: iterations >= MAX_BATCH_ITERATIONS,
+    ...(herbalismOverride ? { herbalismZoneMasteryXpGained, finalHerbalismZoneMasteryXp: zoneMasteryXp } : {}),
   };
 }

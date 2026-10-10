@@ -7,6 +7,9 @@ import { DUNGEONS } from './dungeons';
 import { MAX_CHARACTER_SLOTS } from './characterSlots';
 import { MATERIALS } from './materials';
 import { MATERIAL_MASTERY_XP_THRESHOLDS } from './equipmentRolls';
+import { ZONES } from './zones';
+import { HERBALISM_ZONE_MASTERY_THRESHOLD } from './gatheringEngine';
+import { ALCHEMY_ZONE_MASTERY_THRESHOLD } from './alchemyMastery';
 
 // Snapshot-checked, not event-driven: each check() reads CURRENT persisted
 // state and either is or isn't true right now. "Unlocked" is still
@@ -67,9 +70,59 @@ const MASTER_BLACKSMITH_ACHIEVEMENT: AchievementDef = {
   check: (c) => MATERIALS.every((m) => isMaterialMastered(c, m.id)),
 };
 
+export function isHerbalismZoneMastered(character: Character, zoneId: string): boolean {
+  const xp = character.herbalismZoneMastery?.[zoneId]?.xp ?? 0;
+  return xp >= HERBALISM_ZONE_MASTERY_THRESHOLD;
+}
+
+export function isAlchemyZoneMastered(character: Character, zoneId: string): boolean {
+  const xp = character.alchemyZoneMastery?.[zoneId]?.xp ?? 0;
+  return xp >= ALCHEMY_ZONE_MASTERY_THRESHOLD;
+}
+
+// One "Master Forager of {zone.name}" achievement per gameData/zones.ts
+// ZONE — same fully data-driven, zero-per-zone-hardcoding pattern as
+// generateMasteryAchievements above, reading the real ZONES registry
+// instead of MATERIALS.
+function generateForagerAchievements(): AchievementDef[] {
+  return Object.values(ZONES).map((zone) => ({
+    id: `forager_${zone.id}`,
+    name: `Master Forager of ${zone.name}`,
+    description: `Reach 100% Herbalism Mastery in ${zone.name}.`,
+    check: (c: Character) => isHerbalismZoneMastered(c, zone.id),
+  }));
+}
+
+const GRANDMASTER_FORAGER_ACHIEVEMENT: AchievementDef = {
+  id: 'grandmaster_forager',
+  name: 'Grandmaster Forager',
+  description: 'Reach 100% Herbalism Mastery in every zone.',
+  check: (c) => Object.values(ZONES).every((z) => isHerbalismZoneMastered(c, z.id)),
+};
+
+function generateAlchemistAchievements(): AchievementDef[] {
+  return Object.values(ZONES).map((zone) => ({
+    id: `alchemist_${zone.id}`,
+    name: `Master Alchemist of ${zone.name}`,
+    description: `Reach 100% Alchemy Mastery in ${zone.name}.`,
+    check: (c: Character) => isAlchemyZoneMastered(c, zone.id),
+  }));
+}
+
+const GRANDMASTER_ALCHEMIST_ACHIEVEMENT: AchievementDef = {
+  id: 'grandmaster_alchemist',
+  name: 'Grandmaster Alchemist',
+  description: 'Reach 100% Alchemy Mastery in every zone.',
+  check: (c) => Object.values(ZONES).every((z) => isAlchemyZoneMastered(c, z.id)),
+};
+
 export const ACHIEVEMENTS: AchievementDef[] = [
   ...generateMasteryAchievements(),
   MASTER_BLACKSMITH_ACHIEVEMENT,
+  ...generateForagerAchievements(),
+  GRANDMASTER_FORAGER_ACHIEVEMENT,
+  ...generateAlchemistAchievements(),
+  GRANDMASTER_ALCHEMIST_ACHIEVEMENT,
   { id: 'first_steps', name: 'First Steps', description: 'Reach character level 5.', check: (c) => c.level >= 5 },
   { id: 'adventurer', name: 'Adventurer', description: 'Reach character level 25.', check: (c) => c.level >= 25 },
   { id: 'veteran', name: 'Veteran', description: 'Reach character level 40.', check: (c) => c.level >= 40 },

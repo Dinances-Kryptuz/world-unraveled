@@ -34,8 +34,8 @@ service cloud.firestore {
 
       match /inventory/{docId} {
         allow read: if request.auth != null && request.auth.uid == uid;
-        allow create: if request.auth != null && request.auth.uid == uid && request.resource.data.keys().hasOnly(['items', 'equipmentInstances']);
-        allow update: if request.auth != null && request.auth.uid == uid && request.resource.data.keys().hasOnly(['items', 'equipmentInstances']);
+        allow create: if request.auth != null && request.auth.uid == uid && request.resource.data.keys().hasOnly(['items', 'equipmentInstances', 'chargedConsumables']);
+        allow update: if request.auth != null && request.auth.uid == uid && request.resource.data.keys().hasOnly(['items', 'equipmentInstances', 'chargedConsumables']);
         allow delete: if false;
       }
 
@@ -44,8 +44,8 @@ service cloud.firestore {
       // a different document shape.
       match /bank/{docId} {
         allow read: if request.auth != null && request.auth.uid == uid;
-        allow create: if request.auth != null && request.auth.uid == uid && request.resource.data.keys().hasOnly(['items', 'equipmentInstances']);
-        allow update: if request.auth != null && request.auth.uid == uid && request.resource.data.keys().hasOnly(['items', 'equipmentInstances']);
+        allow create: if request.auth != null && request.auth.uid == uid && request.resource.data.keys().hasOnly(['items', 'equipmentInstances', 'chargedConsumables']);
+        allow update: if request.auth != null && request.auth.uid == uid && request.resource.data.keys().hasOnly(['items', 'equipmentInstances', 'chargedConsumables']);
         allow delete: if false;
       }
 
@@ -69,12 +69,12 @@ service cloud.firestore {
 
         match /inventory/{docId} {
           allow read: if request.auth != null && request.auth.uid == uid;
-          allow create, update: if request.auth != null && request.auth.uid == uid && request.resource.data.keys().hasOnly(['items', 'equipmentInstances']);
+          allow create, update: if request.auth != null && request.auth.uid == uid && request.resource.data.keys().hasOnly(['items', 'equipmentInstances', 'chargedConsumables']);
           allow delete: if request.auth != null && request.auth.uid == uid;
         }
         match /bank/{docId} {
           allow read: if request.auth != null && request.auth.uid == uid;
-          allow create, update: if request.auth != null && request.auth.uid == uid && request.resource.data.keys().hasOnly(['items', 'equipmentInstances']);
+          allow create, update: if request.auth != null && request.auth.uid == uid && request.resource.data.keys().hasOnly(['items', 'equipmentInstances', 'chargedConsumables']);
           allow delete: if request.auth != null && request.auth.uid == uid;
         }
       }
@@ -216,6 +216,9 @@ service cloud.firestore {
       && isValidCollectedItemIds(after)
       && isValidUnlockedAchievementIds(after)
       && isValidMaterialMastery(after)
+      && isValidHerbalismZoneMastery(after)
+      && isValidAlchemyZoneMastery(after)
+      && isValidConsumableAutomation(after)
       && isValidUnlockedTitleIds(after)
       && isValidEquippedTitleId(after)
       && isValidNotificationsEnabled(after)
@@ -255,6 +258,51 @@ service cloud.firestore {
   // that writes this field.
   function isValidMaterialMastery(after) {
     return !('materialMastery' in after) || after.materialMastery is map;
+  }
+
+  // Same shape-only treatment as isValidMaterialMastery above — one shared
+  // bar per zone (not per-herb), so this is bounded by the ZONES registry
+  // (6) rather than by any per-item catalog. Full validation (that a zone
+  // id is real, that xp only ever increases) happens in
+  // firebase/character.ts's applyGatheringProfessionResult, the only path
+  // that writes this field.
+  function isValidHerbalismZoneMastery(after) {
+    return !('herbalismZoneMastery' in after) || (after.herbalismZoneMastery is map && after.herbalismZoneMastery.size() <= 6);
+  }
+
+  // Same treatment as isValidHerbalismZoneMastery above — Alchemy's own
+  // independent 6-zone-bar axis. Full validation happens in
+  // firebase/character.ts's applyCraftingProfessionResult, the only path
+  // that writes this field.
+  function isValidAlchemyZoneMastery(after) {
+    return !('alchemyZoneMastery' in after) || (after.alchemyZoneMastery is map && after.alchemyZoneMastery.size() <= 6);
+  }
+
+  // Herbalism/Alchemy overhaul's Part 8 automation settings — a player-
+  // editable settings object (SettingsScreen), not a server-computed one,
+  // so unlike the sibling maps above this DOES check its own keys/types
+  // (still ownership-scoped, not "is this item id actually a consumable the
+  // player owns" — that's firebase/consumables.ts's
+  // buildConsumableAutomationState's job at read time, same posture as
+  // equippedConsumables/equippedAbilityIds trusting their own write paths
+  // for anything deeper than shape).
+  function isValidConsumableAutomation(after) {
+    return !('consumableAutomation' in after)
+      || (after.consumableAutomation.keys().hasOnly([
+            'offensiveItemId', 'defensiveItemId', 'healingItemId', 'manaItemId',
+            'healingThresholdPct', 'manaThresholdPct',
+            'autoOffensiveEnabled', 'autoDefensiveEnabled', 'autoHealingEnabled', 'autoManaEnabled'
+          ])
+          && (after.consumableAutomation.offensiveItemId == null || after.consumableAutomation.offensiveItemId is string)
+          && (after.consumableAutomation.defensiveItemId == null || after.consumableAutomation.defensiveItemId is string)
+          && (after.consumableAutomation.healingItemId == null || after.consumableAutomation.healingItemId is string)
+          && (after.consumableAutomation.manaItemId == null || after.consumableAutomation.manaItemId is string)
+          && after.consumableAutomation.healingThresholdPct is number
+          && after.consumableAutomation.manaThresholdPct is number
+          && after.consumableAutomation.autoOffensiveEnabled is bool
+          && after.consumableAutomation.autoDefensiveEnabled is bool
+          && after.consumableAutomation.autoHealingEnabled is bool
+          && after.consumableAutomation.autoManaEnabled is bool);
   }
 
   // Same treatment as isValidUnlockedAchievementIds above — unlockedTitleIds

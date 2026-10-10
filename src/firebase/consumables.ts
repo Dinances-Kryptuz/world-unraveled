@@ -6,9 +6,10 @@ import { ITEMS } from '../gameData/items';
 import { maxHp, resolveCurrentHp } from '../gameData/combatFormulas';
 import { getEquipmentStatBonuses } from '../gameData/equipmentStats';
 import { evaluateTalents, EMPTY_TALENT_TOTALS } from '../utils/talentEvaluator';
-import type { Character } from '../types/character';
+import type { Character, ConsumableAutomationSettings } from '../types/character';
 import type { ItemDef, BuffCategory } from '../gameData/types';
 import { BUFF_CATEGORY_TRIGGER } from '../gameData/buffs';
+import { applyChargeConsumption, chargedInstanceId } from '../gameData/consumableCharges';
 
 // Builds the activeBuffs.<category> write for a consumable with a buff
 // effect — charge-based (offensive/defensive potions) stores `charges`,
@@ -150,4 +151,79 @@ export async function recordConsumableUse(uid: string, itemId: string): Promise<
   await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), {
     [`items.${itemId}`]: increment(-1),
   });
+}
+
+// Resolves however many charges a batch of combat (one online autosave
+// cycle, or one offline-claim window) actually consumed from an automation-
+// selected item's flat charge pool (gameData/consumableAutomation.ts) back
+// into real chargedConsumables bucket deltas — one Firestore write, at the
+// end of the batch, same "never write per-attack" rule every other part of
+// this overhaul follows. Reads the current buckets fresh rather than being
+// handed the snapshot the engine started from, since nothing else writes
+// this item's buckets between batch start and here (single writer per
+// character, same assumption firebase/inventory.ts's grant functions make).
+async function consumeChargedConsumable(uid: string, itemId: string, totalCharges: number): Promise<void> {
+  const inventory = await getInventory(uid);
+  const buckets = Object.values(inventory.chargedConsumables ?? {})
+    .filter((b) => b.itemId === itemId)
+    .map((b) => ({ remainingCharges: b.remainingCharges, quantity: b.quantity }));
+  if (buckets.length === 0) return;
+
+  const { newBuckets } = applyChargeConsumption(buckets, totalCharges);
+  const updates: Record<string, unknown> = {};
+  for (const b of buckets) {
+    updates[`chargedConsumables.${chargedInstanceId(itemId, b.remainingCharges)}`] = deleteField();
+  }
+  for (const b of newBuckets) {
+    updates[`chargedConsumables.${chargedInstanceId(itemId, b.remainingCharges)}`] = {
+      itemId,
+      remainingCharges: b.remainingCharges,
+      quantity: b.quantity,
+    };
+  }
+  await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), updates);
+}
+
+// Persists one batch's worth of Part 8 automation usage — the engine
+// (combatEngine/engine.ts, both online and offline) only ever mutates an
+// in-memory ConsumableAutomationRuntimeState; this is the single place that
+// turns its accumulated tallies into real inventory/cooldown writes, called
+// once per autosave cycle (CombatScreen/DungeonScreen) or once per offline
+// claim (WelcomeBackScreen) — never per tick/hit.
+export async function applyConsumableAutomationUsage(
+  uid: string,
+  automation: ConsumableAutomationSettings,
+  usage: { offensiveChargesConsumed: number; defensiveChargesConsumed: number; healingUsed: number; manaUsed: number }
+): Promise<void> {
+  if (usage.offensiveChargesConsumed > 0 && automation.offensiveItemId) {
+    await consumeChargedConsumable(uid, automation.offensiveItemId, usage.offensiveChargesConsumed);
+  }
+  if (usage.defensiveChargesConsumed > 0 && automation.defensiveItemId) {
+    await consumeChargedConsumable(uid, automation.defensiveItemId, usage.defensiveChargesConsumed);
+  }
+
+  const characterUpdate: Record<string, unknown> = {};
+  const inventoryUpdate: Record<string, unknown> = {};
+  if (usage.healingUsed > 0 && automation.healingItemId) {
+    inventoryUpdate[`items.${automation.healingItemId}`] = increment(-usage.healingUsed);
+    characterUpdate[`itemCooldowns.${automation.healingItemId}`] = serverTimestamp();
+  }
+  if (usage.manaUsed > 0 && automation.manaItemId) {
+    inventoryUpdate[`items.${automation.manaItemId}`] = increment(-usage.manaUsed);
+    characterUpdate[`itemCooldowns.${automation.manaItemId}`] = serverTimestamp();
+  }
+  if (Object.keys(characterUpdate).length > 0) {
+    await updateDoc(doc(db, 'characters', uid), characterUpdate);
+  }
+  if (Object.keys(inventoryUpdate).length > 0) {
+    await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), inventoryUpdate);
+  }
+}
+
+// Sets (or clears, with null/0) the Part 8 automation settings — one write,
+// validated just enough to keep the shape sane; the actual item-selection
+// UI (SettingsScreen) is responsible for only ever offering a real
+// offensive/defensive/healing/mana consumable id.
+export async function setConsumableAutomation(uid: string, automation: ConsumableAutomationSettings): Promise<void> {
+  await updateDoc(doc(db, 'characters', uid), { consumableAutomation: automation });
 }

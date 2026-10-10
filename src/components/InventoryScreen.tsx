@@ -50,14 +50,18 @@ export function InventoryScreen() {
   }
 
   // A base item already counts as one occupied slot whether it's a plain
-  // stack, one or more randomized-roll instances, or both — see
-  // firebase/inventory.ts's grantEquipmentInstances, which enforces the
-  // same accounting server-side.
-  const instanceBaseItemIds = new Set(Object.values(inventory.equipmentInstances ?? {}).map((inst) => inst.itemId));
+  // stack, one or more randomized-roll instances, one or more charge
+  // buckets, or any combination — see firebase/inventory.ts's
+  // grantEquipmentInstances/grantChargedConsumables, which enforce the same
+  // accounting server-side.
+  const instanceBaseItemIds = new Set([
+    ...Object.values(inventory.equipmentInstances ?? {}).map((inst) => inst.itemId),
+    ...Object.values(inventory.chargedConsumables ?? {}).map((bucket) => bucket.itemId),
+  ]);
   for (const itemId of Object.keys(inventory.items)) instanceBaseItemIds.delete(itemId);
   const distinctItemCount = Object.values(inventory.items).filter((q) => q > 0).length + instanceBaseItemIds.size;
 
-  const entries: { key: string; itemId: string; quantity: number; rolls?: Record<string, number> }[] = [
+  const entries: { key: string; itemId: string; quantity: number; rolls?: Record<string, number>; remainingCharges?: number }[] = [
     ...Object.entries(inventory.items)
       .filter(([, quantity]) => quantity > 0)
       .map(([itemId, quantity]) => ({ key: itemId, itemId, quantity })),
@@ -68,6 +72,18 @@ export function InventoryScreen() {
     ...Object.entries(inventory.equipmentInstances ?? {})
       .filter(([, inst]) => inst.quantity > 0)
       .map(([instanceId, inst]) => ({ key: instanceId, itemId: inst.itemId, quantity: inst.quantity, rolls: inst.rolls })),
+    // Charge-count-distinguished offensive/defensive potions
+    // (gameData/consumableCharges.ts) — same "each distinct bucket its own
+    // row" treatment, so a player can see which stack is nearly spent
+    // before using it.
+    ...Object.entries(inventory.chargedConsumables ?? {})
+      .filter(([, bucket]) => bucket.quantity > 0)
+      .map(([instanceId, bucket]) => ({
+        key: instanceId,
+        itemId: bucket.itemId,
+        quantity: bucket.quantity,
+        remainingCharges: bucket.remainingCharges,
+      })),
   ].sort((a, b) => (ITEMS[a.itemId]?.name ?? a.itemId).localeCompare(ITEMS[b.itemId]?.name ?? b.itemId));
 
   return (
@@ -90,7 +106,7 @@ export function InventoryScreen() {
         <p>Empty so far — go fight or gather something.</p>
       ) : (
         <ul>
-          {entries.map(({ key, itemId, quantity, rolls }) => {
+          {entries.map(({ key, itemId, quantity, rolls, remainingCharges }) => {
             const item = ITEMS[itemId];
             if (!item) {
               return (
@@ -102,7 +118,7 @@ export function InventoryScreen() {
             return (
               <li key={key}>
                 <div className="item-row-main">
-                  <ItemSlot item={item} quantity={quantity} statOverride={rolls} />
+                  <ItemSlot item={item} quantity={quantity} statOverride={rolls} remainingCharges={remainingCharges} />
                   <span>{item.name}</span>
                 </div>
               </li>

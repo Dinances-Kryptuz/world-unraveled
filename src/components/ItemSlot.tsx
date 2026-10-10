@@ -17,7 +17,16 @@ const TYPE_LABEL: Record<ItemDef['type'], string> = {
 // Inventory.equipmentInstances entry or an equipped EquippedItemRef with
 // `rolls`. Omitted, this falls back to the item's own static definition
 // exactly as before this prop existed.
-function buildTooltip(item: ItemDef, statOverride?: Partial<Record<BaseStat, number>>): ReactNode {
+// `remainingCharges` is this specific chargedConsumables bucket's charge
+// count (gameData/consumableCharges.ts) — only ever passed for an
+// offensive/defensive potion stack, since resource (heal/mana) potions
+// never carry charges at all (see ConsumableEffect's doc comment), so there
+// is nothing else to gate this on.
+function buildTooltip(
+  item: ItemDef,
+  statOverride?: Partial<Record<BaseStat, number>>,
+  remainingCharges?: number
+): ReactNode {
   const stats = statOverride ?? item.statBonuses;
   const statLine = stats
     ? Object.entries(stats)
@@ -39,6 +48,11 @@ function buildTooltip(item: ItemDef, statOverride?: Partial<Record<BaseStat, num
       ) : null}
       {item.consumableEffect?.manaAmount ? (
         <div className="item-tooltip-stats">Restores {item.consumableEffect.manaAmount} mana</div>
+      ) : null}
+      {remainingCharges !== undefined ? (
+        <div className="item-tooltip-stats">
+          {remainingCharges} charge{remainingCharges === 1 ? '' : 's'} remaining
+        </div>
       ) : null}
       <div className="item-tooltip-desc">{item.description}</div>
       <div className="item-tooltip-sell">Sells for {item.sellValue} gold</div>
@@ -85,6 +99,7 @@ export function ItemSlot({
   disabled,
   onClick,
   statOverride,
+  remainingCharges,
   children,
 }: {
   item: ItemDef;
@@ -95,6 +110,11 @@ export function ItemSlot({
   // The actual rolled stats of a specific randomized-equipment instance
   // (gameData/equipmentRolls.ts) — see buildTooltip's doc comment above.
   statOverride?: Partial<Record<BaseStat, number>>;
+  // This specific chargedConsumables bucket's charge count — see
+  // buildTooltip's doc comment above. Shown as a small corner badge (like
+  // quantity) PLUS the tooltip line, since "which stack has more charges
+  // left" is exactly the kind of thing worth seeing without hovering.
+  remainingCharges?: number;
   children?: ReactNode;
 }) {
   const Tag = onClick ? 'button' : 'div';
@@ -107,7 +127,8 @@ export function ItemSlot({
     >
       <ItemIcon key={item.id} item={item} />
       {quantity !== undefined && quantity > 1 && <span className="item-slot-qty">{quantity}</span>}
-      {buildTooltip(item, statOverride)}
+      {remainingCharges !== undefined && <span className="item-slot-charges">{remainingCharges}c</span>}
+      {buildTooltip(item, statOverride, remainingCharges)}
       {children}
     </Tag>
   );

@@ -44,6 +44,11 @@ export interface ProfessionState {
 // "absence is the zero state" convention as everywhere else in this file.
 export type MaterialMasteryState = Record<string, { xp: number }>;
 
+// Same shape, keyed by gameData/zones.ts ZONE id instead of materialId —
+// used by both of the Herbalism/Alchemy overhaul's zone-Mastery axes
+// (Character.herbalismZoneMastery/alchemyZoneMastery below).
+export type ZoneMasteryState = Record<string, { xp: number }>;
+
 export interface CurrentActivity {
   type: ActivityType | null;
   targetId: string | null;
@@ -129,6 +134,14 @@ export interface Character {
   // for a character who's never crafted a material-linked recipe, same
   // "absence is the zero state" convention as `professions`.
   materialMastery?: MaterialMasteryState;
+  // Herbalism/Alchemy overhaul's two zone-Mastery axes — SHARED per zone
+  // (not per-node/per-recipe like materialMastery above), keyed by
+  // gameData/zones.ts ZONE id. herbalismZoneMastery is cosmetic-only
+  // (titles); alchemyZoneMastery drives charge-count/craft-time milestones
+  // (gameData/alchemyMastery.ts). Same "absence is the zero state"
+  // convention as materialMastery.
+  herbalismZoneMastery?: ZoneMasteryState;
+  alchemyZoneMastery?: ZoneMasteryState;
   // Enchantment id per equipment slot — bound to the SLOT, not a unique item
   // instance (this engine doesn't instance equipment; see gameData/
   // enchanting.ts's doc comment for why). Re-enchanting a slot overwrites
@@ -186,6 +199,15 @@ export interface Character {
   // never been used and is always off cooldown. See
   // firebase/consumables.ts's remainingCooldownSeconds().
   itemCooldowns: Record<string, Date>;
+  // Herbalism/Alchemy overhaul's Part 8 automation settings — one selected
+  // item id + enable flag per category, plus a %-of-max threshold for the
+  // two resource categories. Absent entirely (every character before this
+  // field existed, or one who's never opened the automation settings)
+  // means every category is off — same "absence is the zero state"
+  // convention as everywhere else, and matches today's fully-manual
+  // behavior exactly, so nothing changes for a character who never touches
+  // this.
+  consumableAutomation?: ConsumableAutomationSettings;
   // Quest progress — see QuestState above.
   quests: QuestState;
   // Recruited companions, keyed by CompanionDef.id (gameData/companions.ts)
@@ -310,4 +332,35 @@ export interface Inventory {
     rolls: Partial<Record<BaseStat, number>>;
     quantity: number;
   }>;
+  // Charge-count-distinguished offensive/defensive potions (Herbalism/
+  // Alchemy overhaul) — same bucketing pattern as equipmentInstances
+  // above, keyed by gameData/consumableCharges.ts's chargedInstanceId
+  // (`${itemId}:c${remainingCharges}`) instead of a stat roll, so e.g. 10
+  // Fire Protection Potions at 4 charges and 5 at 3 charges (from charges
+  // already spent) stay in separate, distinguishable stacks. See
+  // firebase/inventory.ts's grantChargedConsumables.
+  chargedConsumables?: Record<string, {
+    itemId: string;
+    remainingCharges: number;
+    quantity: number;
+  }>;
+}
+
+// Herbalism/Alchemy overhaul's Part 8 "potion automation" settings — one
+// selected item id (or null) + enable flag per consumable category, plus a
+// %-of-max activation threshold for the two resource categories. Offline
+// combat (combatEngine/offlineCombat.ts) and online combat
+// (combatEngine/engine.ts) both read the exact same object, so there is
+// only ever one set of automation rules, never two that could drift apart.
+export interface ConsumableAutomationSettings {
+  offensiveItemId: string | null;
+  defensiveItemId: string | null;
+  healingItemId: string | null;
+  manaItemId: string | null;
+  healingThresholdPct: number;
+  manaThresholdPct: number;
+  autoOffensiveEnabled: boolean;
+  autoDefensiveEnabled: boolean;
+  autoHealingEnabled: boolean;
+  autoManaEnabled: boolean;
 }

@@ -80,6 +80,23 @@ export interface BuffEffect {
   mitigationMultiplierPct?: number; // e.g. 15 = -15% damage taken
   healthRegenPerSecond?: number;
   manaRegenPerSecond?: number;
+  // Herbalism/Alchemy overhaul additions — all four are transient, applied
+  // only to the single hit/action that consumes the charge (never a
+  // persistent stat change), per the charge-based defensive-potion design.
+  // armorBonusPct/maxHpBonusPct scale the DEFENDER's effective armor/max-HP
+  // for that one hit's calculation only (combatEngine/engine.ts); fire/
+  // shadowResistancePct feed a new, consumable-only resistance pipeline
+  // (clamped to a combined 75% cap, matching the game's existing avoidance
+  // cap) applied only against a matching Monster.damageSchool attacker.
+  armorBonusPct?: number;
+  maxHpBonusPct?: number;
+  fireResistancePct?: number;
+  shadowResistancePct?: number;
+  // Weak Troll's Blood Elixir's "+3% HP regen, classified defensive" — the
+  // closest honest fit for a charge-based (not duration-based) regen is a
+  // small heal bundled into the same hit-taken event that consumes the
+  // charge, sized as a % of max HP.
+  healOnTriggerPct?: number;
   // Charge-based buffs (offensive/defensive potions, some foods) consume one
   // charge per matching combat trigger instead of expiring on a timer —
   // exactly one of charges/durationSeconds is set.
@@ -102,6 +119,13 @@ export interface BuffEffect {
 export interface ConsumableEffect {
   healAmount?: number;
   manaAmount?: number;
+  // Herbalism/Alchemy overhaul resource potions restore a PERCENTAGE of max
+  // HP/mana (per the design's "Restore 55% max HP" style) rather than a flat
+  // amount — new, separate fields so the old flat-amount potions keep
+  // working byte-for-byte; a consumer checks these first, falling back to
+  // the flat healAmount/manaAmount only when absent.
+  healPctMax?: number;
+  manaPctMax?: number;
   cooldownSeconds: number;
   buff?: BuffEffect;
   // One-time permanent inventory capacity increase, consumed on use — how
@@ -162,7 +186,16 @@ export interface Monster {
   // this field existed. Only dungeon bosses (Phase 8) set this.
   equippedAbilityIds?: string[];
   isBoss?: boolean;
+  // Herbalism/Alchemy overhaul's minimal elemental-resistance mechanic —
+  // absent (every monster not explicitly tagged) means 'physical', which
+  // nothing resists specially (zero behavior change for the ~20 untagged
+  // monsters). Tagged only on monsters whose name/kit are already
+  // thematically fire- or shadow-coded (see combatEngine/engine.ts's
+  // resistance pipeline) — not retrofitted onto the whole roster.
+  damageSchool?: DamageSchool;
 }
+
+export type DamageSchool = 'physical' | 'fire' | 'shadow';
 
 export interface Dungeon {
   id: string;
@@ -346,6 +379,16 @@ export interface Recipe {
   // inferred from `materials[0]` so a recipe needing more than one material
   // type is never ambiguous about which one counts.
   materialId?: string;
+  // Which zone (gameData/zones.ts ZONE id) this Alchemy recipe's charge-
+  // count/craft-time Mastery milestones are looked up against — set only on
+  // the 30 Herbalism-overhaul Alchemy recipes. For a recipe whose herbs span
+  // two zones (one recipe does: Fire Protection Potion), this is the zone of
+  // its MAJORITY ingredient by unit count; Mastery XP itself is still
+  // credited per-ingredient's own herb zone (see herbs.ts's herbZoneOf),
+  // not funneled entirely through this field — this field only answers
+  // "whose 25/60/90% milestone table governs this recipe's own charges and
+  // speed." Absent for every other profession's recipes.
+  alchemyZoneId?: string;
   // Gold consumed per item crafted, in addition to materials — undefined/0
   // for the overwhelming majority of recipes (materials alone). Currently
   // only set on the Blacksmith repair recipes (see the "Blacksmith

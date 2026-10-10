@@ -3,7 +3,13 @@ import { useAuth } from '../hooks/useAuth';
 import { useCharacter } from '../hooks/useCharacter';
 import { applyCombatResult, setCharacterLevel, getCharacter, advanceQuests } from '../firebase/character';
 import { subscribeToInventory } from '../firebase/inventory';
-import { recordConsumableUse, remainingCooldownSeconds, consumeBuffCharges, setEquippedConsumable } from '../firebase/consumables';
+import {
+  recordConsumableUse,
+  remainingCooldownSeconds,
+  consumeBuffCharges,
+  setEquippedConsumable,
+  applyConsumableAutomationUsage,
+} from '../firebase/consumables';
 import { DUNGEONS } from '../gameData/dungeons';
 import { MONSTERS } from '../gameData/monsters';
 import { notify } from '../utils/notifications';
@@ -11,6 +17,11 @@ import { ITEMS } from '../gameData/items';
 import { resolveSpecDef, getExtraDamageTakenPct } from '../gameData/combatProfileWithTalents';
 import { evaluateTalents, EMPTY_TALENT_TOTALS } from '../utils/talentEvaluator';
 import { evaluateActiveBuffs } from '../gameData/buffs';
+import {
+  buildConsumableAutomationState,
+  emptyConsumableAutomationState,
+  type ConsumableAutomationRuntimeState,
+} from '../gameData/consumableAutomation';
 import { resolveActiveCompanionSetups, type CompanionCombatSetup } from '../gameData/companions';
 import { maxHp, resolveCurrentHp, ATTACK_INTERVAL_SECONDS } from '../gameData/combatFormulas';
 import { getEquipmentStatBonuses } from '../gameData/equipmentStats';
@@ -99,6 +110,10 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
     offensive_action: 0,
     damage_taken: 0,
   });
+  // Herbalism/Alchemy overhaul's Part 8 automation — see CombatScreen.tsx's
+  // matching comment; built once per run (the dungeonId setup effect below)
+  // and mutated in place through every tick/manual-use via ctx.
+  const consumableStateRef = useRef<ConsumableAutomationRuntimeState>(emptyConsumableAutomationState());
   const retreatedRef = useRef(false);
 
   const characterRef = useRef<Character | null>(character);
@@ -224,6 +239,7 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
     pendingDungeonClearsRef.current = 0;
     currentMonsterRef.current = MONSTERS[dungeon.stages[0]];
     combatStateRef.current = null;
+    consumableStateRef.current = buildConsumableAutomationState(character, inventory ?? { items: {} }, new Date());
     let cancelled = false;
     void (async () => {
       altSetupsRef.current = user ? await resolveActiveAltSetups(user.uid, character) : [];
@@ -249,6 +265,7 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
         nextMonster,
         encounterSize: currentEncounterSize(),
         monsterHpMultiplier: currentMonsterHpMultiplier(companionCount),
+        consumableState: consumableStateRef.current,
       };
       const result = advanceCombat(combatStateRef.current, ctx, 1);
       pendingKillsRef.current.push(...result.kills);
@@ -290,15 +307,35 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
     const kills = pendingKillsRef.current;
     const questSignals = pendingQuestSignalsRef.current;
     const buffTriggers = pendingBuffTriggersRef.current;
+    const consumableState = consumableStateRef.current;
     const hasQuestSignals = questSignals.healingDone > 0 || Object.keys(questSignals.abilityUseCounts).length > 0;
     const hasBuffTriggers = buffTriggers.offensive_action > 0 || buffTriggers.damage_taken > 0;
-    if (kills.length === 0 && !hasQuestSignals && !hasBuffTriggers) return;
+    const hasConsumableUsage =
+      consumableState.offensiveChargesConsumed > 0 ||
+      consumableState.defensiveChargesConsumed > 0 ||
+      consumableState.healingUsed > 0 ||
+      consumableState.manaUsed > 0;
+    if (kills.length === 0 && !hasQuestSignals && !hasBuffTriggers && !hasConsumableUsage) return;
     pendingKillsRef.current = [];
     pendingQuestSignalsRef.current = { healingDone: 0, abilityUseCounts: {} };
     pendingBuffTriggersRef.current = { offensive_action: 0, damage_taken: 0 };
     const dungeonClearsGained = pendingDungeonClearsRef.current;
     pendingDungeonClearsRef.current = 0;
-    if (hasBuffTriggers) void consumeBuffCharges(currentUser.uid, characterRef.current ?? character, buffTriggers);
+    const currentCharacterForBuffs = characterRef.current ?? character;
+    if (hasBuffTriggers) void consumeBuffCharges(currentUser.uid, currentCharacterForBuffs, buffTriggers);
+    if (hasConsumableUsage && currentCharacterForBuffs.consumableAutomation) {
+      const usage = {
+        offensiveChargesConsumed: consumableState.offensiveChargesConsumed,
+        defensiveChargesConsumed: consumableState.defensiveChargesConsumed,
+        healingUsed: consumableState.healingUsed,
+        manaUsed: consumableState.manaUsed,
+      };
+      consumableState.offensiveChargesConsumed = 0;
+      consumableState.defensiveChargesConsumed = 0;
+      consumableState.healingUsed = 0;
+      consumableState.manaUsed = 0;
+      void applyConsumableAutomationUsage(currentUser.uid, currentCharacterForBuffs.consumableAutomation, usage);
+    }
 
     const xpGained = Math.round(kills.reduce((sum, k) => sum + k.xpGained, 0));
     const goldGained = Math.round(kills.reduce((sum, k) => sum + k.goldGained, 0));
@@ -396,6 +433,7 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
       nextMonster,
       encounterSize: currentEncounterSize(),
       monsterHpMultiplier: currentMonsterHpMultiplier(state.party.length - 1),
+      consumableState: consumableStateRef.current,
     };
     const result = tryManualUseAbility(state, 'player', abilityId, ctx);
     if (!result) return;

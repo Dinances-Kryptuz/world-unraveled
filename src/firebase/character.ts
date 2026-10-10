@@ -1,11 +1,15 @@
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp, Timestamp, increment, arrayUnion } from 'firebase/firestore';
 import { db } from './config';
-import type { Character, CombatPreset, MaterialMasteryState } from '../types/character';
+import type { Character, CombatPreset, MaterialMasteryState, ZoneMasteryState } from '../types/character';
 import type { ProfessionId, EquipmentSlot, EquippedItemRef } from '../gameData/types';
 import type { ClassId, SpecId } from '../gameData/classStats';
 import type { TalentColumn } from '../gameData/talents';
 import { PROFESSION_CATEGORY, tierForLevel } from '../gameData/professionTiers';
-import { migrateLegacyGatheringLevel, migrateLegacyMasteryLevel } from '../gameData/gatheringEngine';
+import {
+  migrateLegacyGatheringLevel,
+  migrateLegacyMasteryLevel,
+  HERBALISM_ZONE_MASTERY_THRESHOLD,
+} from '../gameData/gatheringEngine';
 import type { ProfessionState } from '../types/character';
 import { BASE_BANK_SLOTS } from '../gameData/bank';
 import { DEFAULT_ZONE_ID, ZONES } from '../gameData/zones';
@@ -25,10 +29,12 @@ import {
   acceptQuestInState,
   type QuestEvent,
 } from '../gameData/questEngine';
-import { grantInventoryItems, grantEquipmentInstances, getInventory } from './inventory';
+import { grantInventoryItems, grantEquipmentInstances, grantChargedConsumables, getInventory } from './inventory';
 import { equipmentRefInventoryDelta, resolveEquippedRef } from './equipmentInstances';
 import { MATERIALS } from '../gameData/materials';
 import { MATERIAL_MASTERY_XP_THRESHOLDS, rollArmorStats, canonicalInstanceId } from '../gameData/equipmentRolls';
+import { herbZoneOf } from '../gameData/herbs';
+import { ALCHEMY_ZONE_MASTERY_THRESHOLD } from '../gameData/alchemyMastery';
 
 export const BASE_BAG_SLOTS = 24;
 
@@ -467,10 +473,16 @@ export async function acceptQuest(uid: string, questId: string): Promise<{ succe
 // (gameData/gatheringEngine.ts) writes a continuous profession level+xp and
 // a per-resource Mastery level+xp. The caller (GatheringScreen) has already
 // run resolveGatheringOffline and is just persisting its final numbers.
+//
+// `character` is the SAME fresh snapshot the caller already fetched to
+// compute `result` (see applyCraftingProfessionResult's matching comment) —
+// used only to read its current herbalismZoneMastery/unlockedAchievementIds
+// for the eager Forager unlock check below, no second read needed.
 export async function applyGatheringProfessionResult(
   uid: string,
   profession: ProfessionId,
   nodeId: string,
+  character: Character,
   result: {
     itemId: string;
     quantity: number;
@@ -480,13 +492,56 @@ export async function applyGatheringProfessionResult(
     newSkillXp: number;
     newMasteryLevel: number;
     newMasteryXp: number;
+    // Only set for a Herbalism primary-herb node — see
+    // gatheringEngine.ts's resolveGatheringOffline/HerbalismOverride. The
+    // old per-node 0-50 Mastery axis (newMasteryLevel/newMasteryXp above)
+    // is frozen at its starting value in that case, exactly like
+    // materialMastery freezes the old per-recipe axis in
+    // applyCraftingProfessionResult.
+    herbalismZoneMastery?: { zoneId: string; xpGained: number };
   }
 ): Promise<void> {
-  await updateDoc(doc(db, 'characters', uid), {
+  const characterUpdate: Record<string, unknown> = {
     [`professions.${profession}.level`]: result.newSkillLevel,
     [`professions.${profession}.xp`]: result.newSkillXp,
-    [`professions.${profession}.mastery.${nodeId}`]: { level: result.newMasteryLevel, xp: result.newMasteryXp },
-  });
+  };
+  if (result.herbalismZoneMastery) {
+    const { zoneId, xpGained } = result.herbalismZoneMastery;
+    if (xpGained > 0) {
+      characterUpdate[`herbalismZoneMastery.${zoneId}.xp`] = increment(xpGained);
+
+      // Eager unlock check, same shape as applyCraftingProfessionResult's —
+      // folded into this same updateDoc, no extra write or read.
+      const hypotheticalZoneMastery: ZoneMasteryState = {
+        ...character.herbalismZoneMastery,
+        [zoneId]: { xp: (character.herbalismZoneMastery?.[zoneId]?.xp ?? 0) + xpGained },
+      };
+      const newlyUnlockedIds: string[] = [];
+      const foragerId = `forager_${zoneId}`;
+      if (
+        !character.unlockedAchievementIds.includes(foragerId) &&
+        (hypotheticalZoneMastery[zoneId]?.xp ?? 0) >= HERBALISM_ZONE_MASTERY_THRESHOLD
+      ) {
+        newlyUnlockedIds.push(foragerId);
+      }
+      if (
+        !character.unlockedAchievementIds.includes('grandmaster_forager') &&
+        Object.keys(ZONES).every((z) => (hypotheticalZoneMastery[z]?.xp ?? 0) >= HERBALISM_ZONE_MASTERY_THRESHOLD)
+      ) {
+        newlyUnlockedIds.push('grandmaster_forager');
+      }
+      if (newlyUnlockedIds.length > 0) {
+        characterUpdate.unlockedAchievementIds = arrayUnion(...newlyUnlockedIds);
+        characterUpdate.unlockedTitleIds = arrayUnion(...newlyUnlockedIds);
+      }
+    }
+  } else {
+    characterUpdate[`professions.${profession}.mastery.${nodeId}`] = {
+      level: result.newMasteryLevel,
+      xp: result.newMasteryXp,
+    };
+  }
+  await updateDoc(doc(db, 'characters', uid), characterUpdate);
 
   const grants: { itemId: string; quantity: number }[] = [];
   if (result.quantity > 0) grants.push({ itemId: result.itemId, quantity: result.quantity });
@@ -503,6 +558,10 @@ export async function applyGatheringProfessionResult(
 // necessarily yet persisted) — shared by the eager in-crafting check below
 // and gameData/achievements.ts's MASTER_BLACKSMITH_ACHIEVEMENT so the two
 // can never disagree.
+function allAlchemyZonesMastered(mastery: ZoneMasteryState | undefined): boolean {
+  return Object.keys(ZONES).every((zoneId) => (mastery?.[zoneId]?.xp ?? 0) >= ALCHEMY_ZONE_MASTERY_THRESHOLD);
+}
+
 function allMaterialsMastered(mastery: MaterialMasteryState | undefined): boolean {
   return MATERIALS.every((m) => (mastery?.[m.id]?.xp ?? 0) >= (MATERIAL_MASTERY_XP_THRESHOLDS[m.id] ?? Infinity));
 }
@@ -543,6 +602,13 @@ export async function applyCraftingProfessionResult(
       newMaterialMasteryXp: number;
       batches: { quantity: number; masteryPercentAtCraft: number }[];
     };
+    // Only set for a Recipe.alchemyZoneId-tagged recipe — see
+    // craftingEngine.ts's resolveCraftingOffline/AlchemyZoneMasteryInput.
+    // Mutually exclusive with materialMastery (a recipe is never tagged
+    // with both a materialId and an alchemyZoneId).
+    alchemyZoneMastery?: {
+      batches: { quantity: number; chargesAtCraft: number }[];
+    };
   }
 ): Promise<void> {
   const characterUpdate: Record<string, unknown> = {};
@@ -579,6 +645,47 @@ export async function applyCraftingProfessionResult(
       if (newlyUnlockedIds.length > 0) {
         characterUpdate.unlockedAchievementIds = arrayUnion(...newlyUnlockedIds);
         characterUpdate.unlockedTitleIds = arrayUnion(...newlyUnlockedIds); // same ids reused 1:1 as titles
+      }
+    } else if (result.alchemyZoneMastery) {
+      // Alchemy's zone-Mastery axis credits EACH ingredient's own herb zone
+      // (herbZoneOf), not just the recipe's single alchemyZoneId — handles
+      // the one cross-zone recipe (Fire Protection Potion) correctly, and is
+      // why this is computed from materialsConsumed rather than from a
+      // single zone id. increment() (not an absolute overwrite) per touched
+      // zone so two zones touched by the same craft can never race/clobber
+      // each other.
+      const zoneDeltas: Record<string, number> = {};
+      for (const m of result.materialsConsumed) {
+        const zoneId = herbZoneOf(m.itemId);
+        if (!zoneId) continue;
+        zoneDeltas[zoneId] = (zoneDeltas[zoneId] ?? 0) + m.quantity;
+      }
+      const hypotheticalZoneMastery: ZoneMasteryState = { ...character.alchemyZoneMastery };
+      for (const [zoneId, delta] of Object.entries(zoneDeltas)) {
+        characterUpdate[`alchemyZoneMastery.${zoneId}.xp`] = increment(delta);
+        hypotheticalZoneMastery[zoneId] = { xp: (hypotheticalZoneMastery[zoneId]?.xp ?? 0) + delta };
+      }
+
+      // Same eager-unlock treatment as the materialMastery branch above —
+      // one touched zone can cross its own 100% threshold, or (rarely) be
+      // the last zone needed for Grandmaster Alchemist.
+      const newlyUnlockedIds: string[] = [];
+      for (const zoneId of Object.keys(zoneDeltas)) {
+        const id = `alchemist_${zoneId}`;
+        if (character.unlockedAchievementIds.includes(id)) continue;
+        if ((hypotheticalZoneMastery[zoneId]?.xp ?? 0) >= ALCHEMY_ZONE_MASTERY_THRESHOLD) {
+          newlyUnlockedIds.push(id);
+        }
+      }
+      if (
+        !character.unlockedAchievementIds.includes('grandmaster_alchemist') &&
+        allAlchemyZonesMastered(hypotheticalZoneMastery)
+      ) {
+        newlyUnlockedIds.push('grandmaster_alchemist');
+      }
+      if (newlyUnlockedIds.length > 0) {
+        characterUpdate.unlockedAchievementIds = arrayUnion(...newlyUnlockedIds);
+        characterUpdate.unlockedTitleIds = arrayUnion(...newlyUnlockedIds);
       }
     } else {
       characterUpdate[`professions.${profession}.mastery.${recipeId}`] = {
@@ -630,6 +737,30 @@ export async function applyCraftingProfessionResult(
         uid,
         result.resultItemId,
         Array.from(grantsByInstance, ([instanceId, g]) => ({ instanceId, rolls: g.rolls, quantity: g.quantity }))
+      );
+    }
+  } else if (result.alchemyZoneMastery) {
+    // Same batch-carry/floor treatment as the materialMastery branch above,
+    // but keyed by charge count instead of by rolled stats — each batch was
+    // crafted at THAT batch's own milestone (see
+    // CraftingOfflineResult.alchemyZoneMasteryBatches' doc comment), so an
+    // earlier batch crafted before a milestone boundary must keep its lower
+    // charge count rather than being up-leveled to the run's final tier.
+    const grantsByCharges = new Map<number, number>();
+    let carry = 0;
+    for (const batch of result.alchemyZoneMastery.batches) {
+      carry += batch.quantity;
+      const whole = Math.floor(carry);
+      carry -= whole;
+      if (whole > 0) {
+        grantsByCharges.set(batch.chargesAtCraft, (grantsByCharges.get(batch.chargesAtCraft) ?? 0) + whole);
+      }
+    }
+    if (grantsByCharges.size > 0) {
+      await grantChargedConsumables(
+        uid,
+        result.resultItemId,
+        Array.from(grantsByCharges, ([remainingCharges, quantity]) => ({ remainingCharges, quantity }))
       );
     }
   } else if (result.resultQuantity > 0) {

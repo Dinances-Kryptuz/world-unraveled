@@ -294,71 +294,230 @@ export const RECIPES: Record<string, Recipe> = {
     learnedAutomatically: true,
   },
 
-  // ── Alchemy ───────────────────────────────────────────────────────────
-  minor_healing_draught: {
-    id: 'minor_healing_draught',
-    name: 'Minor Healing Draught',
-    profession: 'alchemy',
-    requiredSkill: 1,
-    resultItemId: 'minor_healing_draught',
-    resultQuantity: 1,
-    materials: [
-      { itemId: 'peacebloom', quantity: 3 },
-      { itemId: 'wildroot', quantity: 1 },
-    ],
-    craftSeconds: 6,
-    xpAward: 2,
-    source: 'trainer',
-    rarity: 'common',
-    learnedAutomatically: true,
+  // ── Alchemy overhaul — 30 recipes, 5 per zone, replacing the old 17 below
+  // (retired recipes are deleted here but their ITEMS stay in items.ts
+  // untouched, same "frozen" treatment as Blacksmithing's Sacred items —
+  // recipes carry no inventory data, so deleting them has zero migration
+  // risk). `alchemyZoneId` drives which zone's Mastery milestone table
+  // governs this recipe's charge-count/craft-time (see types.ts's doc
+  // comment) — for the one cross-zone recipe (Fire Protection Potion) this
+  // is its MAJORITY ingredient's zone (2 Firebloom/Cinderfall Depths vs 1
+  // Purple Lotus/The Molten Scar), while Mastery XP itself still splits
+  // per-ingredient's own herb zone (see herbs.ts's herbZoneOf).
+  minor_healing_potion: {
+    id: 'minor_healing_potion', name: 'Minor Healing Potion', profession: 'alchemy', requiredSkill: 1,
+    resultItemId: 'minor_healing_potion', resultQuantity: 1,
+    materials: [{ itemId: 'peacebloom', quantity: 2 }, { itemId: 'silverleaf', quantity: 1 }],
+    alchemyZoneId: 'greenhollow_fields', craftSeconds: 7, xpAward: 3,
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
-  minor_mana_draught: {
-    id: 'minor_mana_draught',
-    name: 'Minor Mana Draught',
-    profession: 'alchemy',
-    requiredSkill: 3,
-    resultItemId: 'minor_mana_draught',
-    resultQuantity: 1,
-    materials: [{ itemId: 'peacebloom', quantity: 4 }],
-    craftSeconds: 6.3,
-    xpAward: 6,
-    source: 'trainer',
-    rarity: 'common',
-    learnedAutomatically: true,
+  minor_mana_potion: {
+    id: 'minor_mana_potion', name: 'Minor Mana Potion', profession: 'alchemy', requiredSkill: 5,
+    resultItemId: 'minor_mana_potion', resultQuantity: 1,
+    materials: [{ itemId: 'silverleaf', quantity: 2 }, { itemId: 'earthroot', quantity: 1 }],
+    alchemyZoneId: 'greenhollow_fields', craftSeconds: 7, xpAward: 7,
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
-  sage_healing_potion: {
-    id: 'sage_healing_potion',
-    name: 'Sage Healing Potion',
-    profession: 'alchemy',
-    requiredSkill: 5,
-    resultItemId: 'sage_healing_potion',
-    resultQuantity: 1,
-    materials: [
-      { itemId: 'mountain_sage', quantity: 3 },
-      { itemId: 'frostcap', quantity: 1 },
-    ],
-    craftSeconds: 6.5,
-    xpAward: 9,
-    source: 'trainer',
-    rarity: 'common',
-    learnedAutomatically: true,
+  elixir_of_lions_strength: {
+    id: 'elixir_of_lions_strength', name: "Elixir of Lion's Strength", profession: 'alchemy', requiredSkill: 9,
+    resultItemId: 'elixir_of_lions_strength', resultQuantity: 1,
+    materials: [{ itemId: 'earthroot', quantity: 2 }, { itemId: 'silverleaf', quantity: 1 }],
+    alchemyZoneId: 'greenhollow_fields', craftSeconds: 7, xpAward: 11,
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
-  sunpetal_elixir: {
-    id: 'sunpetal_elixir',
-    name: 'Sunpetal Elixir',
-    profession: 'alchemy',
-    requiredSkill: 10,
-    resultItemId: 'sunpetal_elixir',
-    resultQuantity: 1,
-    materials: [
-      { itemId: 'sunpetal', quantity: 4 },
-      { itemId: 'emberleaf', quantity: 2 },
-    ],
-    craftSeconds: 7.2,
-    xpAward: 16,
-    source: 'trainer',
-    rarity: 'common',
-    learnedAutomatically: true,
+  elixir_of_minor_defense: {
+    id: 'elixir_of_minor_defense', name: 'Elixir of Minor Defense', profession: 'alchemy', requiredSkill: 13,
+    resultItemId: 'elixir_of_minor_defense', resultQuantity: 1,
+    materials: [{ itemId: 'silverleaf', quantity: 2 }, { itemId: 'earthroot', quantity: 2 }],
+    alchemyZoneId: 'greenhollow_fields', craftSeconds: 8, xpAward: 16,
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  weak_trolls_blood_elixir: {
+    id: 'weak_trolls_blood_elixir', name: "Weak Troll's Blood Elixir", profession: 'alchemy', requiredSkill: 16,
+    resultItemId: 'weak_trolls_blood_elixir', resultQuantity: 1,
+    materials: [{ itemId: 'peacebloom', quantity: 2 }, { itemId: 'earthroot', quantity: 2 }],
+    alchemyZoneId: 'greenhollow_fields', craftSeconds: 8, xpAward: 19,
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+
+  lesser_healing_potion: {
+    id: 'lesser_healing_potion', name: 'Lesser Healing Potion', profession: 'alchemy', requiredSkill: 18,
+    resultItemId: 'lesser_healing_potion', resultQuantity: 1,
+    materials: [{ itemId: 'briarthorn', quantity: 2 }, { itemId: 'mageroyal', quantity: 1 }],
+    alchemyZoneId: 'stonecrag_foothills', craftSeconds: 8, xpAward: 21,
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  lesser_mana_potion: {
+    id: 'lesser_mana_potion', name: 'Lesser Mana Potion', profession: 'alchemy', requiredSkill: 22,
+    resultItemId: 'lesser_mana_potion', resultQuantity: 1,
+    materials: [{ itemId: 'mageroyal', quantity: 2 }, { itemId: 'bruiseweed', quantity: 1 }],
+    alchemyZoneId: 'stonecrag_foothills', craftSeconds: 9, xpAward: 25,
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  swiftness_potion: {
+    id: 'swiftness_potion', name: 'Swiftness Potion', profession: 'alchemy', requiredSkill: 26,
+    resultItemId: 'swiftness_potion', resultQuantity: 1,
+    materials: [{ itemId: 'briarthorn', quantity: 2 }, { itemId: 'swiftthistle', quantity: 1 }],
+    alchemyZoneId: 'stonecrag_foothills', craftSeconds: 9, xpAward: 29,
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  healing_potion: {
+    id: 'healing_potion', name: 'Healing Potion', profession: 'alchemy', requiredSkill: 30,
+    resultItemId: 'healing_potion', resultQuantity: 1,
+    materials: [{ itemId: 'bruiseweed', quantity: 2 }, { itemId: 'briarthorn', quantity: 2 }],
+    alchemyZoneId: 'stonecrag_foothills', craftSeconds: 10, xpAward: 34,
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  elixir_of_lesser_agility: {
+    id: 'elixir_of_lesser_agility', name: 'Elixir of Lesser Agility', profession: 'alchemy', requiredSkill: 33,
+    resultItemId: 'elixir_of_lesser_agility', resultQuantity: 1,
+    materials: [{ itemId: 'bruiseweed', quantity: 2 }, { itemId: 'swiftthistle', quantity: 1 }],
+    alchemyZoneId: 'stonecrag_foothills', craftSeconds: 10, xpAward: 37,
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+
+  greater_healing_potion: {
+    id: 'greater_healing_potion', name: 'Greater Healing Potion', profession: 'alchemy', requiredSkill: 35,
+    resultItemId: 'greater_healing_potion', resultQuantity: 1,
+    materials: [{ itemId: 'liferoot', quantity: 2 }, { itemId: 'kingsblood', quantity: 1 }],
+    alchemyZoneId: 'emberfall_ridge', craftSeconds: 11, xpAward: 39,
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  greater_mana_potion: {
+    id: 'greater_mana_potion', name: 'Greater Mana Potion', profession: 'alchemy', requiredSkill: 39,
+    resultItemId: 'greater_mana_potion', resultQuantity: 1,
+    materials: [{ itemId: 'kingsblood', quantity: 2 }, { itemId: 'liferoot', quantity: 2 }],
+    alchemyZoneId: 'emberfall_ridge', craftSeconds: 11, xpAward: 43,
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  shadow_protection_potion: {
+    id: 'shadow_protection_potion', name: 'Shadow Protection Potion', profession: 'alchemy', requiredSkill: 43,
+    resultItemId: 'shadow_protection_potion', resultQuantity: 1,
+    materials: [{ itemId: 'kingsblood', quantity: 2 }, { itemId: 'grave_moss', quantity: 1 }],
+    alchemyZoneId: 'emberfall_ridge', craftSeconds: 12, xpAward: 47,
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  elixir_of_fortitude: {
+    id: 'elixir_of_fortitude', name: 'Elixir of Fortitude', profession: 'alchemy', requiredSkill: 47,
+    resultItemId: 'elixir_of_fortitude', resultQuantity: 1,
+    materials: [{ itemId: 'goldthorn', quantity: 2 }, { itemId: 'liferoot', quantity: 1 }],
+    alchemyZoneId: 'emberfall_ridge', craftSeconds: 12, xpAward: 51,
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  elixir_of_agility: {
+    id: 'elixir_of_agility', name: 'Elixir of Agility', profession: 'alchemy', requiredSkill: 50,
+    resultItemId: 'elixir_of_agility', resultQuantity: 1,
+    materials: [{ itemId: 'goldthorn', quantity: 2 }, { itemId: 'stranglekelp', quantity: 1 }],
+    alchemyZoneId: 'emberfall_ridge', craftSeconds: 13, xpAward: 55,
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+
+  superior_healing_potion: {
+    id: 'superior_healing_potion', name: 'Superior Healing Potion', profession: 'alchemy', requiredSkill: 52,
+    resultItemId: 'superior_healing_potion', resultQuantity: 1,
+    materials: [{ itemId: 'sungrass', quantity: 2 }, { itemId: 'khadgars_whisker', quantity: 1 }],
+    alchemyZoneId: 'cinderfall_depths', craftSeconds: 13, xpAward: 57,
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  superior_mana_potion: {
+    id: 'superior_mana_potion', name: 'Superior Mana Potion', profession: 'alchemy', requiredSkill: 56,
+    resultItemId: 'superior_mana_potion', resultQuantity: 1,
+    materials: [{ itemId: 'khadgars_whisker', quantity: 2 }, { itemId: 'sungrass', quantity: 1 }],
+    alchemyZoneId: 'cinderfall_depths', craftSeconds: 13, xpAward: 61,
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  elixir_of_firepower: {
+    id: 'elixir_of_firepower', name: 'Elixir of Firepower', profession: 'alchemy', requiredSkill: 60,
+    resultItemId: 'elixir_of_firepower', resultQuantity: 1,
+    materials: [{ itemId: 'firebloom', quantity: 2 }, { itemId: 'fadeleaf', quantity: 1 }],
+    alchemyZoneId: 'cinderfall_depths', craftSeconds: 14, xpAward: 65,
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  fire_protection_potion: {
+    id: 'fire_protection_potion', name: 'Fire Protection Potion', profession: 'alchemy', requiredSkill: 64,
+    resultItemId: 'fire_protection_potion', resultQuantity: 1,
+    materials: [{ itemId: 'firebloom', quantity: 2 }, { itemId: 'purple_lotus', quantity: 1 }],
+    alchemyZoneId: 'cinderfall_depths', craftSeconds: 14, xpAward: 69,
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  elixir_of_greater_defense: {
+    id: 'elixir_of_greater_defense', name: 'Elixir of Greater Defense', profession: 'alchemy', requiredSkill: 67,
+    resultItemId: 'elixir_of_greater_defense', resultQuantity: 1,
+    materials: [{ itemId: 'sungrass', quantity: 2 }, { itemId: 'khadgars_whisker', quantity: 2 }],
+    alchemyZoneId: 'cinderfall_depths', craftSeconds: 15, xpAward: 72,
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+
+  major_healing_potion: {
+    id: 'major_healing_potion', name: 'Major Healing Potion', profession: 'alchemy', requiredSkill: 69,
+    resultItemId: 'major_healing_potion', resultQuantity: 1,
+    materials: [{ itemId: 'blindweed', quantity: 2 }, { itemId: 'ghost_mushroom', quantity: 1 }],
+    alchemyZoneId: 'molten_scar', craftSeconds: 15, xpAward: 74,
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  major_mana_potion: {
+    id: 'major_mana_potion', name: 'Major Mana Potion', profession: 'alchemy', requiredSkill: 73,
+    resultItemId: 'major_mana_potion', resultQuantity: 1,
+    materials: [{ itemId: 'blindweed', quantity: 2 }, { itemId: 'gromsblood', quantity: 1 }],
+    alchemyZoneId: 'molten_scar', craftSeconds: 15, xpAward: 79,
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  elixir_of_giants: {
+    id: 'elixir_of_giants', name: 'Elixir of Giants', profession: 'alchemy', requiredSkill: 77,
+    resultItemId: 'elixir_of_giants', resultQuantity: 1,
+    materials: [{ itemId: 'gromsblood', quantity: 2 }, { itemId: 'ghost_mushroom', quantity: 1 }],
+    alchemyZoneId: 'molten_scar', craftSeconds: 16, xpAward: 83,
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  elixir_of_shadow_power: {
+    id: 'elixir_of_shadow_power', name: 'Elixir of Shadow Power', profession: 'alchemy', requiredSkill: 81,
+    resultItemId: 'elixir_of_shadow_power', resultQuantity: 1,
+    materials: [{ itemId: 'ghost_mushroom', quantity: 2 }, { itemId: 'arthas_tears', quantity: 1 }],
+    alchemyZoneId: 'molten_scar', craftSeconds: 17, xpAward: 87,
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  greater_shadow_protection_potion: {
+    id: 'greater_shadow_protection_potion', name: 'Greater Shadow Protection Potion', profession: 'alchemy', requiredSkill: 84,
+    resultItemId: 'greater_shadow_protection_potion', resultQuantity: 1,
+    materials: [{ itemId: 'gromsblood', quantity: 2 }, { itemId: 'arthas_tears', quantity: 1 }],
+    alchemyZoneId: 'molten_scar', craftSeconds: 17, xpAward: 90,
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+
+  supreme_healing_potion: {
+    id: 'supreme_healing_potion', name: 'Supreme Healing Potion', profession: 'alchemy', requiredSkill: 86,
+    resultItemId: 'supreme_healing_potion', resultQuantity: 1,
+    materials: [{ itemId: 'dreamfoil', quantity: 2 }, { itemId: 'mountain_silversage', quantity: 1 }],
+    alchemyZoneId: 'cinderheart_crater', craftSeconds: 17, xpAward: 92,
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  supreme_mana_potion: {
+    id: 'supreme_mana_potion', name: 'Supreme Mana Potion', profession: 'alchemy', requiredSkill: 90,
+    resultItemId: 'supreme_mana_potion', resultQuantity: 1,
+    materials: [{ itemId: 'dreamfoil', quantity: 2 }, { itemId: 'black_lotus', quantity: 1 }],
+    alchemyZoneId: 'cinderheart_crater', craftSeconds: 18, xpAward: 97,
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  elixir_of_the_mongoose: {
+    id: 'elixir_of_the_mongoose', name: 'Elixir of the Mongoose', profession: 'alchemy', requiredSkill: 94,
+    resultItemId: 'elixir_of_the_mongoose', resultQuantity: 1,
+    materials: [{ itemId: 'mountain_silversage', quantity: 2 }, { itemId: 'plaguebloom', quantity: 1 }],
+    alchemyZoneId: 'cinderheart_crater', craftSeconds: 18, xpAward: 101,
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  greater_arcane_elixir: {
+    id: 'greater_arcane_elixir', name: 'Greater Arcane Elixir', profession: 'alchemy', requiredSkill: 97,
+    resultItemId: 'greater_arcane_elixir', resultQuantity: 1,
+    materials: [{ itemId: 'dreamfoil', quantity: 2 }, { itemId: 'mountain_silversage', quantity: 1 }],
+    alchemyZoneId: 'cinderheart_crater', craftSeconds: 19, xpAward: 104,
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  flask_of_supreme_power: {
+    id: 'flask_of_supreme_power', name: 'Flask of Supreme Power', profession: 'alchemy', requiredSkill: 100,
+    resultItemId: 'flask_of_supreme_power', resultQuantity: 1,
+    materials: [{ itemId: 'black_lotus', quantity: 2 }, { itemId: 'dreamfoil', quantity: 2 }, { itemId: 'plaguebloom', quantity: 1 }],
+    alchemyZoneId: 'cinderheart_crater', craftSeconds: 19, xpAward: 107,
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
 
   // ── Emberfall Ridge smithing ──────────────────────────────────────────
@@ -625,18 +784,6 @@ export const RECIPES: Record<string, Recipe> = {
     rarity: 'common',
     learnedAutomatically: true,
   },
-  emberpetal_tonic: {
-    id: 'emberpetal_tonic', name: 'Emberpetal Tonic', profession: 'alchemy', requiredSkill: 12,
-    resultItemId: 'emberpetal_tonic', resultQuantity: 1,
-    materials: [
-      { itemId: 'emberpetal', quantity: 4 },
-      { itemId: 'ashroot', quantity: 2 },
-    ],
-    craftSeconds: 7.4, xpAward: 19,
-    source: 'trainer',
-    rarity: 'common',
-    learnedAutomatically: true,
-  },
 
   // ── The Molten Scar ────────────────────────────────────────────────────
   thorium_bar: {
@@ -737,18 +884,6 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'charred_cap', resultQuantity: 1,
     materials: [{ itemId: 'charred_cloth', quantity: 4 }],
     craftSeconds: 11.8, xpAward: 37,
-    source: 'trainer',
-    rarity: 'common',
-    learnedAutomatically: true,
-  },
-  cinderbloom_elixir: {
-    id: 'cinderbloom_elixir', name: 'Cinderbloom Elixir', profession: 'alchemy', requiredSkill: 16,
-    resultItemId: 'cinderbloom_elixir', resultQuantity: 1,
-    materials: [
-      { itemId: 'cinderbloom', quantity: 4 },
-      { itemId: 'scorchweed', quantity: 2 },
-    ],
-    craftSeconds: 8, xpAward: 24,
     source: 'trainer',
     rarity: 'common',
     learnedAutomatically: true,
@@ -866,93 +1001,6 @@ export const RECIPES: Record<string, Recipe> = {
     rarity: 'common',
     learnedAutomatically: true,
   },
-  emberheart_potion: {
-    id: 'emberheart_potion', name: 'Emberheart Potion', profession: 'alchemy', requiredSkill: 19,
-    resultItemId: 'emberheart_potion', resultQuantity: 1,
-    materials: [
-      { itemId: 'emberheart_bloom', quantity: 4 },
-      { itemId: 'heartbloom', quantity: 2 },
-    ],
-    craftSeconds: 8.4, xpAward: 28,
-    source: 'trainer',
-    rarity: 'common',
-    learnedAutomatically: true,
-  },
-
-  // ── Alchemy buff potions — spread across the full 1-300 skill range to
-  // actually exercise Journeyman/Expert/Artisan, unlike the pre-overhaul
-  // recipe set which topped out around skill 56.
-  mana_potion: {
-    id: 'mana_potion', name: 'Mana Potion', profession: 'alchemy', requiredSkill: 4,
-    resultItemId: 'mana_potion', resultQuantity: 1,
-    materials: [{ itemId: 'peacebloom', quantity: 4 }],
-    craftSeconds: 6.4, xpAward: 8,
-    source: 'trainer', rarity: 'common', learnedAutomatically: true,
-  },
-  minor_battle_draught: {
-    id: 'minor_battle_draught', name: 'Minor Battle Draught', profession: 'alchemy', requiredSkill: 20,
-    resultItemId: 'minor_battle_draught', resultQuantity: 1,
-    materials: [{ itemId: 'mountain_sage', quantity: 5 }],
-    craftSeconds: 8.5, xpAward: 29,
-    source: 'trainer', rarity: 'common', learnedAutomatically: true,
-  },
-  minor_stoneskin_draught: {
-    id: 'minor_stoneskin_draught', name: 'Minor Stoneskin Draught', profession: 'alchemy', requiredSkill: 25,
-    resultItemId: 'minor_stoneskin_draught', resultQuantity: 1,
-    materials: [{ itemId: 'mountain_sage', quantity: 6 }],
-    craftSeconds: 9.2, xpAward: 34,
-    source: 'trainer', rarity: 'common', learnedAutomatically: true,
-  },
-  tonic_of_might: {
-    id: 'tonic_of_might', name: 'Tonic of Might', profession: 'alchemy', requiredSkill: 35,
-    resultItemId: 'tonic_of_might', resultQuantity: 1,
-    materials: [{ itemId: 'sunpetal', quantity: 5 }],
-    craftSeconds: 10.5, xpAward: 45,
-    source: 'trainer', rarity: 'common', learnedAutomatically: true,
-  },
-  elixir_of_the_mind: {
-    id: 'elixir_of_the_mind', name: 'Elixir of the Mind', profession: 'alchemy', requiredSkill: 39,
-    resultItemId: 'elixir_of_the_mind', resultQuantity: 1,
-    materials: [{ itemId: 'sunpetal', quantity: 6 }],
-    craftSeconds: 11, xpAward: 50,
-    source: 'trainer', rarity: 'common', learnedAutomatically: true,
-  },
-  draught_of_resistance: {
-    id: 'draught_of_resistance', name: 'Draught of Resistance', profession: 'alchemy', requiredSkill: 50,
-    resultItemId: 'draught_of_resistance', resultQuantity: 1,
-    materials: [{ itemId: 'emberpetal', quantity: 6 }],
-    craftSeconds: 12.4, xpAward: 61,
-    source: 'trainer', rarity: 'uncommon', learnedAutomatically: true,
-  },
-  potion_of_precision: {
-    id: 'potion_of_precision', name: 'Potion of Precision', profession: 'alchemy', requiredSkill: 62,
-    resultItemId: 'potion_of_precision', resultQuantity: 1,
-    materials: [{ itemId: 'cinderbloom', quantity: 6 }],
-    craftSeconds: 14, xpAward: 73,
-    source: 'trainer', rarity: 'uncommon', learnedAutomatically: true,
-  },
-  potion_of_evasion: {
-    id: 'potion_of_evasion', name: 'Potion of Evasion', profession: 'alchemy', requiredSkill: 66,
-    resultItemId: 'potion_of_evasion', resultQuantity: 1,
-    materials: [{ itemId: 'cinderbloom', quantity: 7 }],
-    craftSeconds: 14.5, xpAward: 76,
-    source: 'trainer', rarity: 'uncommon', learnedAutomatically: true,
-  },
-  greater_battle_draught: {
-    id: 'greater_battle_draught', name: 'Greater Battle Draught', profession: 'alchemy', requiredSkill: 85,
-    resultItemId: 'greater_battle_draught', resultQuantity: 1,
-    materials: [{ itemId: 'emberheart_bloom', quantity: 6 }],
-    craftSeconds: 17, xpAward: 94,
-    source: 'trainer', rarity: 'rare', learnedAutomatically: true,
-  },
-  greater_stoneskin_draught: {
-    id: 'greater_stoneskin_draught', name: 'Greater Stoneskin Draught', profession: 'alchemy', requiredSkill: 100,
-    resultItemId: 'greater_stoneskin_draught', resultQuantity: 1,
-    materials: [{ itemId: 'emberheart_bloom', quantity: 8 }],
-    craftSeconds: 19, xpAward: 107,
-    source: 'trainer', rarity: 'rare', learnedAutomatically: true,
-  },
-
   // ── Cooking — rebuilt onto craftingEngine.ts's shared 1-100 curve
   // (calibrated to ~32h active crafting time to level 100, same
   // methodology as every other crafting profession — see the session's

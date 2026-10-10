@@ -137,6 +137,36 @@ export const ITEMS: Record<string, ItemDef> = {
     sellValue: 1,
   },
 
+  // ── The 25-herb Herbalism/Alchemy overhaul roster (18 primary + 7 bonus
+  // — see herbs.ts for the authoritative zone/level registry). sellValue
+  // scales with the herb's zone tier (1-6); bonus herbs sell for a modest
+  // premium over their zone's primary herbs since they're rarer.
+  silverleaf: { id: 'silverleaf', name: 'Silverleaf', type: 'material', description: 'A pale herb with silvery leaves, found in Greenhollow Fields.', stackable: true, sellValue: 1 },
+  earthroot: { id: 'earthroot', name: 'Earthroot', type: 'material', description: 'A gnarled root pulled from Greenhollow Fields’ soil.', stackable: true, sellValue: 1 },
+  mageroyal: { id: 'mageroyal', name: 'Mageroyal', type: 'material', description: 'An herb that hums faintly with latent magic.', stackable: true, sellValue: 2 },
+  briarthorn: { id: 'briarthorn', name: 'Briarthorn', type: 'material', description: 'A thorny shrub common across Stonecrag Foothills.', stackable: true, sellValue: 2 },
+  bruiseweed: { id: 'bruiseweed', name: 'Bruiseweed', type: 'material', description: 'A bitter leaf long used to dull pain.', stackable: true, sellValue: 2 },
+  kingsblood: { id: 'kingsblood', name: 'Kingsblood', type: 'material', description: 'A deep-red root said to thicken the blood.', stackable: true, sellValue: 3 },
+  liferoot: { id: 'liferoot', name: 'Liferoot', type: 'material', description: 'A vital-looking root favored by healers.', stackable: true, sellValue: 3 },
+  goldthorn: { id: 'goldthorn', name: 'Goldthorn', type: 'material', description: 'A spiny plant with golden-edged leaves.', stackable: true, sellValue: 3 },
+  khadgars_whisker: { id: 'khadgars_whisker', name: "Khadgar's Whisker", type: 'material', description: 'A wispy herb named for a famous archmage.', stackable: true, sellValue: 4 },
+  firebloom: { id: 'firebloom', name: 'Firebloom', type: 'material', description: 'A bloom that stays warm long after picking.', stackable: true, sellValue: 4 },
+  sungrass: { id: 'sungrass', name: 'Sungrass', type: 'material', description: 'Golden grass that seems to hold onto daylight.', stackable: true, sellValue: 4 },
+  blindweed: { id: 'blindweed', name: 'Blindweed', type: 'material', description: 'A pale, eyeless-looking weed from the Molten Scar.', stackable: true, sellValue: 6 },
+  ghost_mushroom: { id: 'ghost_mushroom', name: 'Ghost Mushroom', type: 'material', description: 'A faintly luminous fungus found in deep crevices.', stackable: true, sellValue: 6 },
+  gromsblood: { id: 'gromsblood', name: 'Gromsblood', type: 'material', description: 'A fierce-looking plant tied to old legends of rage.', stackable: true, sellValue: 6 },
+  dreamfoil: { id: 'dreamfoil', name: 'Dreamfoil', type: 'material', description: 'A drowsy-scented herb from the Cinderheart Crater.', stackable: true, sellValue: 8 },
+  mountain_silversage: { id: 'mountain_silversage', name: 'Mountain Silversage', type: 'material', description: 'A rare silver-leafed sage from the crater’s high ledges.', stackable: true, sellValue: 8 },
+  black_lotus: { id: 'black_lotus', name: 'Black Lotus', type: 'material', description: 'An exceedingly rare bloom, dark as the crater’s depths.', stackable: true, sellValue: 8 },
+
+  swiftthistle: { id: 'swiftthistle', name: 'Swiftthistle', type: 'material', description: 'A quick-growing thistle that sometimes turns up alongside Mageroyal or Briarthorn.', stackable: true, sellValue: 3 },
+  grave_moss: { id: 'grave_moss', name: 'Grave Moss', type: 'material', description: 'A dark moss occasionally found clinging to Bruiseweed or Kingsblood.', stackable: true, sellValue: 4 },
+  stranglekelp: { id: 'stranglekelp', name: 'Stranglekelp', type: 'material', description: 'A tough, rubbery kelp sometimes tangled in Liferoot.', stackable: true, sellValue: 4 },
+  fadeleaf: { id: 'fadeleaf', name: 'Fadeleaf', type: 'material', description: 'A translucent leaf occasionally found near Goldthorn or Khadgar’s Whisker.', stackable: true, sellValue: 5 },
+  purple_lotus: { id: 'purple_lotus', name: 'Purple Lotus', type: 'material', description: 'A striking violet bloom occasionally found near Sungrass or Blindweed.', stackable: true, sellValue: 6 },
+  arthas_tears: { id: 'arthas_tears', name: "Arthas' Tears", type: 'material', description: 'A rare, cold-to-the-touch herb occasionally found near Ghost Mushroom or Gromsblood.', stackable: true, sellValue: 7 },
+  plaguebloom: { id: 'plaguebloom', name: 'Plaguebloom', type: 'material', description: 'A sickly-looking bloom occasionally found near Dreamfoil or Mountain Silversage.', stackable: true, sellValue: 9 },
+
   // ── Leatherworking equipment (V1 recipes) ───────────────────────────
   leather_boots: {
     id: 'leather_boots',
@@ -472,7 +502,169 @@ export const ITEMS: Record<string, ItemDef> = {
     consumableEffect: { manaAmount: 50, cooldownSeconds: 10 },
   },
 
-  // ── Alchemy — crafted from Herbalism's herbs, stronger than the vendor line above ──
+  // ── Alchemy overhaul — the 30 live recipes' potions, replacing the old
+  // Alchemy line below (kept, frozen, never deleted — see recipes.ts).
+  // Resource potions (healPctMax/manaPctMax, no charges, single-use, same
+  // cooldown-per-item-id model as every consumable before them). Offensive/
+  // defensive potions omit `buff.charges` deliberately — their actual
+  // charge count is rolled at CRAFT time from the crafter's current Alchemy
+  // zone Mastery (1/2/3/4 at 0/25/60/90%) and lives on the inventory
+  // instance bucket (Inventory.chargedConsumables), not on this static
+  // definition; `trigger` alone is enough for the combat engine to know
+  // which event consumes a charge.
+  minor_healing_potion: {
+    id: 'minor_healing_potion', name: 'Minor Healing Potion', type: 'consumable',
+    description: 'Restores 15% of max health.', stackable: true, sellValue: 2,
+    consumableEffect: { healPctMax: 15, cooldownSeconds: 20 },
+  },
+  minor_mana_potion: {
+    id: 'minor_mana_potion', name: 'Minor Mana Potion', type: 'consumable',
+    description: 'Restores 15% of max mana. Only usable in combat.', stackable: true, sellValue: 2,
+    consumableEffect: { manaPctMax: 15, cooldownSeconds: 20 },
+  },
+  elixir_of_lions_strength: {
+    id: 'elixir_of_lions_strength', name: "Elixir of Lion's Strength", type: 'consumable',
+    description: '+5% physical attack damage for your next attack per charge.', stackable: true, sellValue: 4,
+    consumableEffect: { cooldownSeconds: 30, buff: { category: 'offensive_potion', damageMultiplierPct: 5, trigger: 'offensive_action' } },
+  },
+  elixir_of_minor_defense: {
+    id: 'elixir_of_minor_defense', name: 'Elixir of Minor Defense', type: 'consumable',
+    description: '+5% armor against your next hit taken per charge.', stackable: true, sellValue: 4,
+    consumableEffect: { cooldownSeconds: 30, buff: { category: 'defensive_potion', armorBonusPct: 5, trigger: 'damage_taken' } },
+  },
+  weak_trolls_blood_elixir: {
+    id: 'weak_trolls_blood_elixir', name: "Weak Troll's Blood Elixir", type: 'consumable',
+    description: 'Heals 3% of max health alongside your next hit taken per charge.', stackable: true, sellValue: 4,
+    consumableEffect: { cooldownSeconds: 30, buff: { category: 'defensive_potion', healOnTriggerPct: 3, trigger: 'damage_taken' } },
+  },
+  lesser_healing_potion: {
+    id: 'lesser_healing_potion', name: 'Lesser Healing Potion', type: 'consumable',
+    description: 'Restores 25% of max health.', stackable: true, sellValue: 6,
+    consumableEffect: { healPctMax: 25, cooldownSeconds: 24 },
+  },
+  lesser_mana_potion: {
+    id: 'lesser_mana_potion', name: 'Lesser Mana Potion', type: 'consumable',
+    description: 'Restores 25% of max mana. Only usable in combat.', stackable: true, sellValue: 6,
+    consumableEffect: { manaPctMax: 25, cooldownSeconds: 24 },
+  },
+  swiftness_potion: {
+    id: 'swiftness_potion', name: 'Swiftness Potion', type: 'consumable',
+    description: '+15% action speed (modeled as bonus damage) for your next attack per charge.', stackable: true, sellValue: 7,
+    consumableEffect: { cooldownSeconds: 35, buff: { category: 'offensive_potion', damageMultiplierPct: 15, trigger: 'offensive_action' } },
+  },
+  healing_potion: {
+    id: 'healing_potion', name: 'Healing Potion', type: 'consumable',
+    description: 'Restores 35% of max health.', stackable: true, sellValue: 9,
+    consumableEffect: { healPctMax: 35, cooldownSeconds: 28 },
+  },
+  elixir_of_lesser_agility: {
+    id: 'elixir_of_lesser_agility', name: 'Elixir of Lesser Agility', type: 'consumable',
+    description: '+8% physical attack damage for your next attack per charge.', stackable: true, sellValue: 9,
+    consumableEffect: { cooldownSeconds: 35, buff: { category: 'offensive_potion', damageMultiplierPct: 8, trigger: 'offensive_action' } },
+  },
+  greater_healing_potion: {
+    id: 'greater_healing_potion', name: 'Greater Healing Potion', type: 'consumable',
+    description: 'Restores 45% of max health.', stackable: true, sellValue: 13,
+    consumableEffect: { healPctMax: 45, cooldownSeconds: 32 },
+  },
+  greater_mana_potion: {
+    id: 'greater_mana_potion', name: 'Greater Mana Potion', type: 'consumable',
+    description: 'Restores 45% of max mana. Only usable in combat.', stackable: true, sellValue: 13,
+    consumableEffect: { manaPctMax: 45, cooldownSeconds: 32 },
+  },
+  shadow_protection_potion: {
+    id: 'shadow_protection_potion', name: 'Shadow Protection Potion', type: 'consumable',
+    description: '+15 percentage points shadow resistance against your next hit taken per charge.', stackable: true, sellValue: 15,
+    consumableEffect: { cooldownSeconds: 40, buff: { category: 'defensive_potion', shadowResistancePct: 15, trigger: 'damage_taken' } },
+  },
+  elixir_of_fortitude: {
+    id: 'elixir_of_fortitude', name: 'Elixir of Fortitude', type: 'consumable',
+    description: '+10% maximum health for your next hit taken per charge.', stackable: true, sellValue: 15,
+    consumableEffect: { cooldownSeconds: 40, buff: { category: 'defensive_potion', maxHpBonusPct: 10, trigger: 'damage_taken' } },
+  },
+  elixir_of_agility: {
+    id: 'elixir_of_agility', name: 'Elixir of Agility', type: 'consumable',
+    description: '+10% physical attack damage for your next attack per charge.', stackable: true, sellValue: 16,
+    consumableEffect: { cooldownSeconds: 40, buff: { category: 'offensive_potion', damageMultiplierPct: 10, trigger: 'offensive_action' } },
+  },
+  superior_healing_potion: {
+    id: 'superior_healing_potion', name: 'Superior Healing Potion', type: 'consumable',
+    description: 'Restores 55% of max health.', stackable: true, sellValue: 20,
+    consumableEffect: { healPctMax: 55, cooldownSeconds: 36 },
+  },
+  superior_mana_potion: {
+    id: 'superior_mana_potion', name: 'Superior Mana Potion', type: 'consumable',
+    description: 'Restores 55% of max mana. Only usable in combat.', stackable: true, sellValue: 20,
+    consumableEffect: { manaPctMax: 55, cooldownSeconds: 36 },
+  },
+  elixir_of_firepower: {
+    id: 'elixir_of_firepower', name: 'Elixir of Firepower', type: 'consumable',
+    description: '+12% magical attack damage for your next attack per charge.', stackable: true, sellValue: 22,
+    consumableEffect: { cooldownSeconds: 45, buff: { category: 'offensive_potion', damageMultiplierPct: 12, trigger: 'offensive_action' } },
+  },
+  fire_protection_potion: {
+    id: 'fire_protection_potion', name: 'Fire Protection Potion', type: 'consumable',
+    description: '+20 percentage points fire resistance against your next hit taken per charge.', stackable: true, sellValue: 22,
+    consumableEffect: { cooldownSeconds: 45, buff: { category: 'defensive_potion', fireResistancePct: 20, trigger: 'damage_taken' } },
+  },
+  elixir_of_greater_defense: {
+    id: 'elixir_of_greater_defense', name: 'Elixir of Greater Defense', type: 'consumable',
+    description: '+12% armor against your next hit taken per charge.', stackable: true, sellValue: 24,
+    consumableEffect: { cooldownSeconds: 45, buff: { category: 'defensive_potion', armorBonusPct: 12, trigger: 'damage_taken' } },
+  },
+  major_healing_potion: {
+    id: 'major_healing_potion', name: 'Major Healing Potion', type: 'consumable',
+    description: 'Restores 65% of max health.', stackable: true, sellValue: 28,
+    consumableEffect: { healPctMax: 65, cooldownSeconds: 40 },
+  },
+  major_mana_potion: {
+    id: 'major_mana_potion', name: 'Major Mana Potion', type: 'consumable',
+    description: 'Restores 65% of max mana. Only usable in combat.', stackable: true, sellValue: 28,
+    consumableEffect: { manaPctMax: 65, cooldownSeconds: 40 },
+  },
+  elixir_of_giants: {
+    id: 'elixir_of_giants', name: 'Elixir of Giants', type: 'consumable',
+    description: '+15% physical attack damage for your next attack per charge.', stackable: true, sellValue: 32,
+    consumableEffect: { cooldownSeconds: 50, buff: { category: 'offensive_potion', damageMultiplierPct: 15, trigger: 'offensive_action' } },
+  },
+  elixir_of_shadow_power: {
+    id: 'elixir_of_shadow_power', name: 'Elixir of Shadow Power', type: 'consumable',
+    description: '+15% magical attack damage for your next attack per charge.', stackable: true, sellValue: 32,
+    consumableEffect: { cooldownSeconds: 50, buff: { category: 'offensive_potion', damageMultiplierPct: 15, trigger: 'offensive_action' } },
+  },
+  greater_shadow_protection_potion: {
+    id: 'greater_shadow_protection_potion', name: 'Greater Shadow Protection Potion', type: 'consumable',
+    description: '+30 percentage points shadow resistance against your next hit taken per charge.', stackable: true, sellValue: 34,
+    consumableEffect: { cooldownSeconds: 50, buff: { category: 'defensive_potion', shadowResistancePct: 30, trigger: 'damage_taken' } },
+  },
+  supreme_healing_potion: {
+    id: 'supreme_healing_potion', name: 'Supreme Healing Potion', type: 'consumable',
+    description: 'Restores 75% of max health.', stackable: true, sellValue: 38,
+    consumableEffect: { healPctMax: 75, cooldownSeconds: 44 },
+  },
+  supreme_mana_potion: {
+    id: 'supreme_mana_potion', name: 'Supreme Mana Potion', type: 'consumable',
+    description: 'Restores 75% of max mana. Only usable in combat.', stackable: true, sellValue: 38,
+    consumableEffect: { manaPctMax: 75, cooldownSeconds: 44 },
+  },
+  elixir_of_the_mongoose: {
+    id: 'elixir_of_the_mongoose', name: 'Elixir of the Mongoose', type: 'consumable',
+    description: '+18% physical attack damage for your next attack per charge.', stackable: true, sellValue: 42,
+    consumableEffect: { cooldownSeconds: 55, buff: { category: 'offensive_potion', damageMultiplierPct: 18, trigger: 'offensive_action' } },
+  },
+  greater_arcane_elixir: {
+    id: 'greater_arcane_elixir', name: 'Greater Arcane Elixir', type: 'consumable',
+    description: '+18% magical attack damage for your next attack per charge.', stackable: true, sellValue: 42,
+    consumableEffect: { cooldownSeconds: 55, buff: { category: 'offensive_potion', damageMultiplierPct: 18, trigger: 'offensive_action' } },
+  },
+  flask_of_supreme_power: {
+    id: 'flask_of_supreme_power', name: 'Flask of Supreme Power', type: 'consumable',
+    description: '+20% all attack damage for your next attack per charge.', stackable: true, sellValue: 50,
+    consumableEffect: { cooldownSeconds: 60, buff: { category: 'offensive_potion', damageMultiplierPct: 20, trigger: 'offensive_action' } },
+  },
+
+  // ── Retired Alchemy line (frozen — never deleted so existing stacks keep
+  // working; no longer craftable, see recipes.ts) ──
   minor_healing_draught: {
     id: 'minor_healing_draught', name: 'Minor Healing Draught', type: 'consumable',
     description: 'A simple alchemical brew. Restores 35 health. Usable anywhere, once every 25 seconds.',
