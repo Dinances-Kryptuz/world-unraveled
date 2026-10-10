@@ -417,25 +417,69 @@ button.item-slot:active:not(:disabled) {
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3);
 }
 
-/* ── Equipment screen: icon-grid "paper doll" instead of a text list.
-   Named grid-areas place each slot the way gear sits on a body — helmet
-   down through necklace/chest/legs/boots in the center column, with the
-   left (cape/weapon/gloves) and right (tool/offhand/ring/ring2) columns
-   sitting one row lower than center so they read as flanking the torso
-   rather than the head. Each tile's inline `style={{ gridArea: slot }}`
-   (see EquipmentScreen.tsx) matches an EquipmentSlot id straight to its
-   area name below, so adding a slot here is just adding it to this map. ── */
+/* ── Equipment screen: icon-grid "paper doll" matching the classic
+   left-column / character-sheet / right-column layout, flanked by a
+   bottom row for weapon/offhand/ammo — see EquipmentScreen.tsx's
+   LEFT_COLUMN/RIGHT_COLUMN/BOTTOM_ROW for which EquipmentSlot goes where.
+   A flex row of three pieces (not CSS grid-template-areas) since the
+   center stat panel is a real content block, not another slot tile, and
+   needs to flex-fill the space between the two fixed-width slot columns
+   rather than occupying a same-size grid cell. ── */
 .equipment-grid {
-  display: grid;
-  grid-template-columns: 56px 56px 56px;
-  grid-template-areas:
-    '.       helmet   .'
-    'cape    necklace tool'
-    'weapon  chest    offhand'
-    'gloves  legs     ring'
-    '.       boots    ring2';
-  gap: 10px;
+  display: flex;
   justify-content: center;
+  align-items: flex-start;
+  gap: 24px;
+  margin-bottom: 12px;
+}
+
+.equipment-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.equipment-stats-panel {
+  flex: 1;
+  min-width: 200px;
+  max-width: 320px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.4);
+  padding: 12px 16px;
+  align-self: stretch;
+}
+
+.equipment-stats-panel h3 {
+  margin-top: 0;
+}
+
+.equipment-stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.equipment-stat-row:last-child {
+  border-bottom: none;
+}
+
+.equipment-stat-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #3a322a;
+}
+
+.equipment-bottom-row {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.equipment-tool-row {
   margin-bottom: 16px;
 }
 

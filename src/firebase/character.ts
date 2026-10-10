@@ -256,6 +256,13 @@ function starterEquipment(cls: ClassId): Record<EquipmentSlot, EquippedItemRef |
     necklace: null,
     offhand: null,
     tool: null,
+    shoulders: null,
+    cape: null,
+    shirt: null,
+    tabard: null,
+    bracers: null,
+    belt: null,
+    ammo: null,
   };
 }
 

@@ -52,6 +52,13 @@ const SLOT_LABELS: Record<EquipmentSlot, string> = {
   ring2: 'Ring',
   necklace: 'Necklace',
   tool: 'Tool',
+  shoulders: 'Shoulders',
+  cape: 'Cape',
+  shirt: 'Shirt',
+  tabard: 'Tabard',
+  bracers: 'Bracers',
+  belt: 'Belt',
+  ammo: 'Ammo',
 };
 
 // A one-line summary of what a piece of equipment actually does — slot,

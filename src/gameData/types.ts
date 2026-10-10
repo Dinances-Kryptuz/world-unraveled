@@ -30,6 +30,19 @@ export type ActivityType = 'combat' | 'gathering' | 'crafting' | 'fishing' | 'di
 // one-handed/two-handed enforcement (equipping a 2h axe alongside a shield
 // is allowed, same permissive posture as every other slot combination this
 // engine already allows) — purely a stat-bonus slot, like every other one.
+//
+// 'shoulders'/'bracers' are ordinary armorType-gated stat slots, same as
+// chest/gloves/legs/boots — see items.ts's Blacksmithing bracer sets.
+// 'belt' and 'shirt' are deliberately never given an armorType, so
+// canClassEquip (classStats.ts) treats them as wearable by every class
+// regardless of plate/leather/cloth — a plain, universal stat slot, per
+// the paper-doll rework's explicit "belt/shirt have no armor type" call.
+// 'cape', 'tabard', and 'ammo' exist as real equip slots now but have no
+// itemization yet (cape/tabard/shirt are deferred to a future content
+// pass; ammo is reserved for a future Hunter-style class) — every
+// character's equipment record carries them as null until something
+// actually fills them, same "absence is the zero state" posture as every
+// other not-yet-itemized slot before it.
 export type EquipmentSlot =
   | 'weapon'
   | 'offhand'
@@ -41,7 +54,14 @@ export type EquipmentSlot =
   | 'ring'
   | 'ring2'
   | 'necklace'
-  | 'tool';
+  | 'tool'
+  | 'shoulders'
+  | 'cape'
+  | 'shirt'
+  | 'tabard'
+  | 'bracers'
+  | 'belt'
+  | 'ammo';
 
 // 'recipe' items are reagent-like: using one permanently teaches the recipe
 // it names (Character.learnedRecipeIds) rather than being equipped or

@@ -27,7 +27,10 @@ function isRetiredLegacyItem(itemId: string): boolean {
 // 'ring2' is deliberately omitted — it's a second equip DESTINATION, not a
 // distinct item category (every ring item's own equipSlot is always
 // 'ring'), so grouping by it below would only ever find zero items.
-const SLOT_ORDER: EquipmentSlot[] = ['weapon', 'offhand', 'chest', 'helmet', 'gloves', 'legs', 'boots', 'necklace', 'ring', 'tool'];
+const SLOT_ORDER: EquipmentSlot[] = [
+  'weapon', 'offhand', 'chest', 'helmet', 'shoulders', 'cape', 'shirt', 'tabard', 'bracers',
+  'gloves', 'belt', 'legs', 'boots', 'necklace', 'ring', 'tool', 'ammo',
+];
 const SLOT_LABELS: Record<EquipmentSlot, string> = {
   weapon: 'Weapons',
   offhand: 'Off Hand',
@@ -40,6 +43,13 @@ const SLOT_LABELS: Record<EquipmentSlot, string> = {
   ring: 'Rings',
   ring2: 'Rings',
   tool: 'Tools',
+  shoulders: 'Shoulders',
+  cape: 'Capes',
+  shirt: 'Shirts',
+  tabard: 'Tabards',
+  bracers: 'Bracers',
+  belt: 'Belts',
+  ammo: 'Ammo',
 };
 
 // Combines the collection log (every equipment item id ever seen in
