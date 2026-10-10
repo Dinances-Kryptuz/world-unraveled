@@ -125,6 +125,9 @@ export function DisenchantingScreen({ itemId, instanceId }: { itemId: string; in
     if (currentCharacter.notificationsEnabled) {
       notify('Disenchanted', [`${result.itemsDisenchanted}x ${item.name} -> ${result.yieldQuantity}x ${ITEMS[yieldRange.itemId]?.name ?? yieldRange.itemId}`]);
     }
+    if (currentCharacter.skillXpNotificationsEnabled && result.professionXpGained > 0) {
+      notify('Enchanting XP gained', [`+${result.professionXpGained} XP`]);
+    }
 
     applyOptimisticUpdate((c) => ({
       ...c,
@@ -188,6 +191,29 @@ export function DisenchantingScreen({ itemId, instanceId }: { itemId: string; in
   const requestedQuantity = character.currentActivity.disenchantQuantity ?? 1;
   const yieldItem = ITEMS[yieldRange.itemId];
 
+  // Live preview, recomputed on every ~1s render tick (same reasoning as
+  // CraftingScreen's matching comment) — purely for DISPLAY, so "This
+  // session" advances in step with the TickBar's own loop instead of only
+  // jumping once every AUTOSAVE_INTERVAL_SECONDS when autosave() commits.
+  const cap = maxSkillForUnlockedTier('enchanting', prof.unlockedTier);
+  const previewMaxQuantity = Math.min(remainingRequestedRef.current, stockRef.current);
+  const livePreview =
+    !done && anchorRef.current && previewMaxQuantity > 0
+      ? resolveDisenchantOffline(
+          anchorRef.current,
+          new Date(),
+          requiredSkill,
+          baseXp,
+          yieldRange.min,
+          yieldRange.max,
+          previewMaxQuantity,
+          prof.level,
+          prof.xp,
+          cap
+        )
+      : null;
+  const displayDisenchanted = sessionDisenchanted + (livePreview?.itemsDisenchanted ?? 0);
+
   return (
     <div className="crafting-screen">
       <h2>Disenchanting: {item.name}</h2>
@@ -197,7 +223,7 @@ export function DisenchantingScreen({ itemId, instanceId }: { itemId: string; in
       </div>
       {!done && <TickBar seconds={DISENCHANT_SECONDS} color="#6b4f2a" label="Disenchanting" />}
       <p>
-        This session: {sessionDisenchanted} / {requestedQuantity} disenchanted
+        This session: {displayDisenchanted} / {requestedQuantity} disenchanted
       </p>
       <p>
         Enchanting skill: {prof.level} ({Math.floor(prof.xp)} / {xpForNextLevel} XP)

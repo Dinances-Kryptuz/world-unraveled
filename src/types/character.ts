@@ -264,6 +264,17 @@ export interface Character {
   // read before this field existed backfills to true (see getCharacter),
   // same "opt-out, not opt-in" posture as every other preference toggle.
   notificationsEnabled: boolean;
+  // Two granular opt-IN sub-preferences (unlike notificationsEnabled above,
+  // these default to false — see getCharacter/createCharacter) for players
+  // who want a pop-up every time a profession skill levels up its XP bar,
+  // or every time a Mastery track (the old per-recipe one or the new
+  // per-material one, gameData/materials.ts) gains XP, during an active
+  // timed activity. Fired from the same 4 activity screens
+  // (Crafting/Gathering/Fishing/DisenchantingScreen) that already gate the
+  // loot/item notify() calls on notificationsEnabled above — these two are
+  // independent of that toggle and of each other.
+  skillXpNotificationsEnabled: boolean;
+  masteryXpNotificationsEnabled: boolean;
   // Owned mount ids (gameData/mounts.ts) — a permanent gold-sink purchase
   // from the Mount Trainer that discounts zone-travel flight time
   // (gameData/travel.ts's travelMinutes). Mounts don't stack; see

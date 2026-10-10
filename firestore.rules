@@ -157,6 +157,8 @@ service cloud.firestore {
       && data.collectedItemIds == []
       && data.unlockedAchievementIds == []
       && data.notificationsEnabled == true
+      && data.skillXpNotificationsEnabled == false
+      && data.masteryXpNotificationsEnabled == false
       && data.mounts == []
       && data.trainedAbilityIds == []
       && data.currentZoneId == 'greenhollow_fields'
@@ -217,6 +219,8 @@ service cloud.firestore {
       && isValidUnlockedTitleIds(after)
       && isValidEquippedTitleId(after)
       && isValidNotificationsEnabled(after)
+      && isValidSkillXpNotificationsEnabled(after)
+      && isValidMasteryXpNotificationsEnabled(after)
       && isValidMounts(after)
       && isValidTrainedAbilityIds(after);
   }
@@ -268,6 +272,17 @@ service cloud.firestore {
 
   function isValidNotificationsEnabled(after) {
     return !('notificationsEnabled' in after) || after.notificationsEnabled is bool;
+  }
+
+  // Same treatment as isValidNotificationsEnabled above — two independent
+  // opt-in sub-preferences (firebase/character.ts's
+  // setSkillXpNotificationsEnabled/setMasteryXpNotificationsEnabled).
+  function isValidSkillXpNotificationsEnabled(after) {
+    return !('skillXpNotificationsEnabled' in after) || after.skillXpNotificationsEnabled is bool;
+  }
+
+  function isValidMasteryXpNotificationsEnabled(after) {
+    return !('masteryXpNotificationsEnabled' in after) || after.masteryXpNotificationsEnabled is bool;
   }
 
   // Same "may not exist yet on an old character" treatment as
