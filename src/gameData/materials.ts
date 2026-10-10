@@ -66,8 +66,27 @@ export const CLOTH_MATERIALS: MaterialDef[] = [
   { id: 'ember_cloth', name: 'Ember Cloth', barItemId: 'ember_cloth' },
 ];
 
+// Enchanting overhaul's own material registry — ONE combined Mastery track
+// per zone, shared by that zone's Wand/Staff/Book recipes (not three
+// separate tracks), same "feeds one bar, no per-piece bar" posture as
+// CLOTH_MATERIALS' capes. barItemId points at the zone's own magic Wood
+// (items.ts, vendor-only — see vendors.ts — never monster-dropped and with
+// no Woodcutting profession, per the design brief). Displayed in the UI as
+// "Enchanted Armaments I"-"V" / "Ember Armaments" rather than "{name}
+// Mastery" (see ProfessionScreen.tsx's ENCHANTING_ARMAMENTS_LABELS) — name
+// here stays a bare wood name so "Master of {name}" titles/achievements
+// read naturally like every other material's.
+export const WOOD_MATERIALS: MaterialDef[] = [
+  { id: 'rough_wood', name: 'Rough Wood', barItemId: 'rough_wood' },
+  { id: 'aged_wood', name: 'Aged Wood', barItemId: 'aged_wood' },
+  { id: 'heartwood', name: 'Heartwood', barItemId: 'heartwood' },
+  { id: 'ironwood', name: 'Ironwood', barItemId: 'ironwood' },
+  { id: 'charwood', name: 'Charwood', barItemId: 'charwood' },
+  { id: 'emberwood', name: 'Emberwood', barItemId: 'emberwood' },
+];
+
 const MATERIALS_BY_ID: Record<string, MaterialDef> = Object.fromEntries(
-  [...MATERIALS, ...LEATHER_MATERIALS, ...CLOTH_MATERIALS].map((m) => [m.id, m])
+  [...MATERIALS, ...LEATHER_MATERIALS, ...CLOTH_MATERIALS, ...WOOD_MATERIALS].map((m) => [m.id, m])
 );
 
 // Resolves across ALL registries — CraftingScreen.tsx calls this generically

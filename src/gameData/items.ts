@@ -2516,6 +2516,145 @@ export const ITEMS: Record<string, ItemDef> = {
     stackable: true, sellValue: 75,
   },
 
+  // ── Enchanting overhaul's magic Wood — vendor-only (see vendors.ts),
+  // NEVER monster-dropped and with no Woodcutting profession gathering it
+  // (per the design brief), one tier per zone. Feeds the combined Wand/
+  // Staff/Book equipment-Mastery track for that zone (gameData/materials.ts's
+  // WOOD_MATERIALS) the same way a cloth tier feeds Tailoring's armor+cape
+  // Mastery — see recipes.ts's matching section.
+  rough_wood: {
+    id: 'rough_wood', name: 'Rough Wood', type: 'material',
+    description: 'A plain, enchanter-grade timber, faintly receptive to magic. Sold by vendors, never found in the wild.',
+    stackable: true, sellValue: 1,
+  },
+  aged_wood: {
+    id: 'aged_wood', name: 'Aged Wood', type: 'material',
+    description: 'Timber seasoned until it holds a charge far better than anything freshly cut. Sold by vendors, never found in the wild.',
+    stackable: true, sellValue: 4,
+  },
+  heartwood: {
+    id: 'heartwood', name: 'Heartwood', type: 'material',
+    description: 'Cut from the dense core of an old trunk, humming faintly even before it’s enchanted. Sold by vendors, never found in the wild.',
+    stackable: true, sellValue: 8,
+  },
+  ironwood: {
+    id: 'ironwood', name: 'Ironwood', type: 'material',
+    description: 'A timber as dense as its namesake metal, able to hold a far stronger enchantment. Sold by vendors, never found in the wild.',
+    stackable: true, sellValue: 14,
+  },
+  charwood: {
+    id: 'charwood', name: 'Charwood', type: 'material',
+    description: 'Timber cured near open flame until it’s nearly as hot to the touch as it is magically receptive. Sold by vendors, never found in the wild.',
+    stackable: true, sellValue: 22,
+  },
+  emberwood: {
+    id: 'emberwood', name: 'Emberwood', type: 'material',
+    description: 'Timber that smolders faintly of its own accord, the finest focus an Enchanter can work with. Sold by vendors, never found in the wild.',
+    stackable: true, sellValue: 32,
+  },
+
+  // ── Enchanting overhaul's Wand/Staff/Book equipment — 6 zones x 3 types,
+  // all using the EXISTING randomized-2-stat system (equipmentRolls.ts),
+  // same as Blacksmithing/Leatherworking/Tailoring's armor. Wand and Staff
+  // both occupy the 'weapon' slot (this engine enforces no 1h/2h exclusivity
+  // — see types.ts's EquipmentSlot comment); Staff's stat budget is roughly
+  // double Wand's "to compensate for 2 slots" per the design brief, even
+  // though nothing here mechanically reserves a second slot for it. Book
+  // occupies 'offhand' as Enchanting's answer to a shield, and additionally
+  // consumes that zone's cloth tier as a crafting ingredient (recipes.ts) —
+  // the cloth itself contributes no Mastery here (only the recipe's own
+  // materialId, the zone's Wood, does).
+  rough_wand: {
+    id: 'rough_wand', name: 'Rough Wand', type: 'equipment',
+    description: 'A plain Rough Wood wand, freshly carved and enchanted.',
+    stackable: true, equipSlot: 'weapon', sellValue: 5,
+  },
+  rough_staff: {
+    id: 'rough_staff', name: 'Rough Staff', type: 'equipment',
+    description: 'A plain Rough Wood staff, freshly carved and enchanted.',
+    stackable: true, equipSlot: 'weapon', sellValue: 8,
+  },
+  rough_tome: {
+    id: 'rough_tome', name: 'Rough Tome', type: 'equipment',
+    description: 'A plain Rough Wood-bound tome, its linen cover freshly enchanted.',
+    stackable: true, equipSlot: 'offhand', sellValue: 5,
+  },
+  aged_wand: {
+    id: 'aged_wand', name: 'Aged Wand', type: 'equipment',
+    description: 'A wand of seasoned Aged Wood, holding its enchantment far better than green timber.',
+    stackable: true, equipSlot: 'weapon', sellValue: 9,
+  },
+  aged_staff: {
+    id: 'aged_staff', name: 'Aged Staff', type: 'equipment',
+    description: 'A staff of seasoned Aged Wood, holding its enchantment far better than green timber.',
+    stackable: true, equipSlot: 'weapon', sellValue: 14,
+  },
+  aged_tome: {
+    id: 'aged_tome', name: 'Aged Tome', type: 'equipment',
+    description: 'An Aged Wood-bound tome, its wool cover enchanted to hold a stronger charge.',
+    stackable: true, equipSlot: 'offhand', sellValue: 9,
+  },
+  heartwood_wand: {
+    id: 'heartwood_wand', name: 'Heartwood Wand', type: 'equipment',
+    description: 'A wand cut from dense Heartwood, humming even before the enchantment takes.',
+    stackable: true, equipSlot: 'weapon', sellValue: 16,
+  },
+  heartwood_staff: {
+    id: 'heartwood_staff', name: 'Heartwood Staff', type: 'equipment',
+    description: 'A staff cut from dense Heartwood, humming even before the enchantment takes.',
+    stackable: true, equipSlot: 'weapon', sellValue: 24,
+  },
+  heartwood_tome: {
+    id: 'heartwood_tome', name: 'Heartwood Tome', type: 'equipment',
+    description: 'A Heartwood-bound tome, its silk cover enchanted to hold a stronger charge.',
+    stackable: true, equipSlot: 'offhand', sellValue: 16,
+  },
+  ironwood_wand: {
+    id: 'ironwood_wand', name: 'Ironwood Wand', type: 'equipment',
+    description: 'A wand of dense Ironwood, able to hold a far stronger enchantment than ordinary timber.',
+    stackable: true, equipSlot: 'weapon', sellValue: 26,
+  },
+  ironwood_staff: {
+    id: 'ironwood_staff', name: 'Ironwood Staff', type: 'equipment',
+    description: 'A staff of dense Ironwood, able to hold a far stronger enchantment than ordinary timber.',
+    stackable: true, equipSlot: 'weapon', sellValue: 38,
+  },
+  ironwood_tome: {
+    id: 'ironwood_tome', name: 'Ironwood Tome', type: 'equipment',
+    description: 'An Ironwood-bound tome, its mageweave cover enchanted to hold a stronger charge.',
+    stackable: true, equipSlot: 'offhand', sellValue: 26,
+  },
+  charwood_wand: {
+    id: 'charwood_wand', name: 'Charwood Wand', type: 'equipment',
+    description: 'A wand of fire-cured Charwood, nearly as hot to the touch as it is magically receptive.',
+    stackable: true, equipSlot: 'weapon', sellValue: 40,
+  },
+  charwood_staff: {
+    id: 'charwood_staff', name: 'Charwood Staff', type: 'equipment',
+    description: 'A staff of fire-cured Charwood, nearly as hot to the touch as it is magically receptive.',
+    stackable: true, equipSlot: 'weapon', sellValue: 58,
+  },
+  charwood_tome: {
+    id: 'charwood_tome', name: 'Charwood Tome', type: 'equipment',
+    description: 'A Charwood-bound tome, its runecloth cover enchanted to hold a stronger charge.',
+    stackable: true, equipSlot: 'offhand', sellValue: 40,
+  },
+  emberwood_wand: {
+    id: 'emberwood_wand', name: 'Emberwood Wand', type: 'equipment',
+    description: 'A wand of smoldering Emberwood, the finest focus an Enchanter can work with.',
+    stackable: true, equipSlot: 'weapon', sellValue: 58,
+  },
+  emberwood_staff: {
+    id: 'emberwood_staff', name: 'Emberwood Staff', type: 'equipment',
+    description: 'A staff of smoldering Emberwood, the finest focus an Enchanter can work with.',
+    stackable: true, equipSlot: 'weapon', sellValue: 84,
+  },
+  emberwood_tome: {
+    id: 'emberwood_tome', name: 'Emberwood Tome', type: 'equipment',
+    description: 'An Emberwood-bound tome, its ember cloth cover enchanted to hold the strongest charge an Enchanter can craft.',
+    stackable: true, equipSlot: 'offhand', sellValue: 58,
+  },
+
   // ── Enchanting scrolls — Enchanting's actual crafted output (see
   // gameData/enchanting.ts's module doc comment and recipes.ts's matching
   // section). Craft one through the normal timed/offline recipe pipeline,

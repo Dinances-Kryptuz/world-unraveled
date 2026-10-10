@@ -1,4 +1,4 @@
-import { MATERIALS, LEATHER_MATERIALS, CLOTH_MATERIALS } from './materials';
+import { MATERIALS, LEATHER_MATERIALS, CLOTH_MATERIALS, WOOD_MATERIALS } from './materials';
 import { ZONES } from './zones';
 
 // A player-selectable cosmetic title — purely display, no stat/combat/
@@ -40,6 +40,15 @@ function generateClothMaterialTitles(): TitleDef[] {
   }));
 }
 
+// Same pattern, mirroring achievements.ts's generateWoodMasteryAchievements
+// exactly, over WOOD_MATERIALS instead of CLOTH_MATERIALS.
+function generateWoodMaterialTitles(): TitleDef[] {
+  return WOOD_MATERIALS.map((material) => ({
+    id: `mastery_${material.id}`,
+    name: `Master of ${material.name}`,
+  }));
+}
+
 // Same pattern, mirroring achievements.ts's generateForagerAchievements/
 // generateAlchemistAchievements (same ids, same names) over the real ZONES
 // registry — a future zone only needs registering in gameData/zones.ts to
@@ -59,6 +68,8 @@ export const TITLES: TitleDef[] = [
   { id: 'master_leatherworker', name: 'Master Leatherworker' },
   ...generateClothMaterialTitles(),
   { id: 'master_tailor', name: 'Master Tailor' },
+  ...generateWoodMaterialTitles(),
+  { id: 'master_enchanter_armaments', name: 'Master of Armaments' },
   ...generateForagerTitles(),
   { id: 'grandmaster_forager', name: 'Grandmaster Forager' },
   ...generateAlchemistTitles(),

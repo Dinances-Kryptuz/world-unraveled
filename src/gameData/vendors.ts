@@ -22,6 +22,11 @@ export const VENDOR_STOCK: Record<string, VendorStockEntry[]> = {
     // thread" call. simple_thread (the old, single pre-overhaul thread) is
     // frozen, not sold here anymore.
     { itemId: 'coarse_thread', price: 2 },
+    // Enchanting overhaul — magic Wood, same CUMULATIVE-per-zone posture as
+    // thread above: never monster-dropped, no Woodcutting profession, sold
+    // only by vendors (see items.ts's "Enchanting overhaul's magic Wood"
+    // section and materials.ts's WOOD_MATERIALS).
+    { itemId: 'rough_wood', price: 3 },
     { itemId: 'health_potion', price: 10 },
     { itemId: 'bread', price: 5 },
     { itemId: 'orange_juice', price: 6 },
@@ -32,6 +37,8 @@ export const VENDOR_STOCK: Record<string, VendorStockEntry[]> = {
   stonecrag_foothills: [
     { itemId: 'coarse_thread', price: 2 },
     { itemId: 'fine_thread', price: 5 },
+    { itemId: 'rough_wood', price: 3 },
+    { itemId: 'aged_wood', price: 8 },
     { itemId: 'sturdy_mining_pick', price: 15 },
     { itemId: 'honed_skinning_knife', price: 15 },
     { itemId: 'reinforced_fishing_rod', price: 15 },
@@ -40,6 +47,9 @@ export const VENDOR_STOCK: Record<string, VendorStockEntry[]> = {
     { itemId: 'coarse_thread', price: 2 },
     { itemId: 'fine_thread', price: 5 },
     { itemId: 'silken_thread', price: 10 },
+    { itemId: 'rough_wood', price: 3 },
+    { itemId: 'aged_wood', price: 8 },
+    { itemId: 'heartwood', price: 16 },
     { itemId: 'embertempered_pick', price: 35 },
     { itemId: 'embertempered_skinning_knife', price: 35 },
     { itemId: 'embercured_fishing_rod', price: 35 },
@@ -49,6 +59,10 @@ export const VENDOR_STOCK: Record<string, VendorStockEntry[]> = {
     { itemId: 'fine_thread', price: 5 },
     { itemId: 'silken_thread', price: 10 },
     { itemId: 'heavy_silken_thread', price: 18 },
+    { itemId: 'rough_wood', price: 3 },
+    { itemId: 'aged_wood', price: 8 },
+    { itemId: 'heartwood', price: 16 },
+    { itemId: 'ironwood', price: 28 },
     { itemId: 'dwarven_mining_pick', price: 70 },
     { itemId: 'dwarven_skinning_knife', price: 70 },
     { itemId: 'dwarven_fishing_rod', price: 70 },
@@ -59,6 +73,11 @@ export const VENDOR_STOCK: Record<string, VendorStockEntry[]> = {
     { itemId: 'silken_thread', price: 10 },
     { itemId: 'heavy_silken_thread', price: 18 },
     { itemId: 'rune_thread', price: 30 },
+    { itemId: 'rough_wood', price: 3 },
+    { itemId: 'aged_wood', price: 8 },
+    { itemId: 'heartwood', price: 16 },
+    { itemId: 'ironwood', price: 28 },
+    { itemId: 'charwood', price: 45 },
     { itemId: 'brimstone_pick', price: 120 },
     { itemId: 'brimstone_skinning_knife', price: 120 },
     { itemId: 'brimstone_fishing_rod', price: 120 },
@@ -77,6 +96,12 @@ export const VENDOR_STOCK: Record<string, VendorStockEntry[]> = {
     { itemId: 'heavy_silken_thread', price: 18 },
     { itemId: 'rune_thread', price: 30 },
     { itemId: 'ember_thread', price: 45 },
+    { itemId: 'rough_wood', price: 3 },
+    { itemId: 'aged_wood', price: 8 },
+    { itemId: 'heartwood', price: 16 },
+    { itemId: 'ironwood', price: 28 },
+    { itemId: 'charwood', price: 45 },
+    { itemId: 'emberwood', price: 65 },
     { itemId: 'emberforged_pick', price: 180 },
     { itemId: 'emberforged_skinning_knife', price: 180 },
     { itemId: 'emberforged_fishing_rod', price: 180 },

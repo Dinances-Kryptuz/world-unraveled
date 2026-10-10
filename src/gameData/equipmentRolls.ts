@@ -168,6 +168,32 @@ export const ARMOR_STAT_RANGES: Record<string, { min: number; max: number }> = {
   cape_of_mageweave: { min: 4, max: 7 },
   cape_of_runecloth: { min: 5, max: 8 },
   cape_of_ember: { min: 6, max: 9 },
+
+  // ── Enchanting (6 zones x Wand/Staff/Book) — Wand/Book reuse the same
+  // "helm"-tier budget as Blacksmithing/Tailoring's own lightest accessory
+  // slot at each zone; Staff is roughly double both numbers, "a bigger
+  // stat budget to compensate for 2 slots" per the design brief (this
+  // engine has no actual 1h/2h slot exclusivity to compensate for — see
+  // types.ts's EquipmentSlot comment — so this is purely an itemization
+  // choice, not an engine rule).
+  rough_wand: { min: 2, max: 4 },
+  rough_staff: { min: 4, max: 8 },
+  rough_tome: { min: 2, max: 4 },
+  aged_wand: { min: 3, max: 5 },
+  aged_staff: { min: 6, max: 10 },
+  aged_tome: { min: 3, max: 5 },
+  heartwood_wand: { min: 4, max: 7 },
+  heartwood_staff: { min: 8, max: 14 },
+  heartwood_tome: { min: 4, max: 7 },
+  ironwood_wand: { min: 5, max: 9 },
+  ironwood_staff: { min: 10, max: 18 },
+  ironwood_tome: { min: 5, max: 9 },
+  charwood_wand: { min: 7, max: 10 },
+  charwood_staff: { min: 14, max: 20 },
+  charwood_tome: { min: 7, max: 10 },
+  emberwood_wand: { min: 8, max: 12 },
+  emberwood_staff: { min: 16, max: 24 },
+  emberwood_tome: { min: 8, max: 12 },
 };
 
 // Mastery XP = (bars the recipe originally requires) × this constant —
@@ -218,6 +244,15 @@ export const MATERIAL_MASTERY_XP_THRESHOLDS: Record<string, number> = {
   mageweave_cloth: 141922,
   runecloth: 139083,
   ember_cloth: 129984,
+  // Enchanting's 6 zones reuse the exact same craftSeconds/best-recipe-bar-
+  // count trick as Leatherworking/Tailoring above — same 6 Blacksmithing
+  // values, now covering the ONE combined Wand/Staff/Book track per zone.
+  rough_wood: 173854,
+  aged_wood: 163627,
+  heartwood: 144878,
+  ironwood: 141922,
+  charwood: 139083,
+  emberwood: 129984,
 };
 
 // A material with no recipe tagged to it (shouldn't happen for any

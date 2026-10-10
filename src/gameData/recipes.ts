@@ -370,10 +370,13 @@ export const RECIPES: Record<string, Recipe> = {
   // quantities/craftSeconds/xpAward/mastery-threshold reuse Blacksmithing's
   // own numbers exactly, same reasoning as the Leatherworking overhaul
   // above. Capes share their tier's armor materialId — no separate cape
-  // mastery bar, per the design brief. zone3-6's advanced recipes (helm+
-  // chest+cape, roughly) get an added enchanting-material ingredient once
-  // Phase E1 registers those materials — tracked as a follow-up edit, not
-  // blocking this data from existing and being fully craftable now.
+  // mastery bar, per the design brief. zone3-4's chest+cape ("selected"
+  // advanced recipes) and zone5-6's helm+chest+cape ("most" advanced
+  // recipes) now also consume 1 unit of that zone's own Enchanting dust/
+  // essence (Phase E1's ZONE_DISENCHANT_MATERIALS) as an added ingredient,
+  // per the design brief's explicit ask — zone1-2 recipes are left alone
+  // (no Enchanting material exists for them to require beyond the already-
+  // registered arcane_dust/essence, and the brief only asks for zone3+).
   tailored_linen_helm: {
     id: 'tailored_linen_helm', name: 'Linen Hood', profession: 'tailoring', requiredSkill: 1,
     resultItemId: 'tailored_linen_helm', resultQuantity: 1,
@@ -481,7 +484,7 @@ export const RECIPES: Record<string, Recipe> = {
   silk_robe: {
     id: 'silk_robe', name: 'Silk Robe', profession: 'tailoring', requiredSkill: 35,
     resultItemId: 'silk_robe', resultQuantity: 1,
-    materials: [{ itemId: 'silk_cloth', quantity: 5 }, { itemId: 'silken_thread', quantity: 3 }],
+    materials: [{ itemId: 'silk_cloth', quantity: 5 }, { itemId: 'silken_thread', quantity: 3 }, { itemId: 'smoldering_dust', quantity: 1 }],
     craftSeconds: 9.6, xpAward: 23,
     materialId: 'silk_cloth',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
@@ -529,7 +532,7 @@ export const RECIPES: Record<string, Recipe> = {
   mageweave_robe: {
     id: 'mageweave_robe', name: 'Mageweave Robe', profession: 'tailoring', requiredSkill: 52,
     resultItemId: 'mageweave_robe', resultQuantity: 1,
-    materials: [{ itemId: 'mageweave_cloth', quantity: 5 }, { itemId: 'heavy_silken_thread', quantity: 3 }],
+    materials: [{ itemId: 'mageweave_cloth', quantity: 5 }, { itemId: 'heavy_silken_thread', quantity: 3 }, { itemId: 'charred_dust', quantity: 1 }],
     craftSeconds: 9.8, xpAward: 40,
     materialId: 'mageweave_cloth',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
@@ -569,7 +572,7 @@ export const RECIPES: Record<string, Recipe> = {
   runecloth_robe_helm: {
     id: 'runecloth_robe_helm', name: 'Runecloth Hood', profession: 'tailoring', requiredSkill: 69,
     resultItemId: 'runecloth_robe_helm', resultQuantity: 1,
-    materials: [{ itemId: 'runecloth', quantity: 3 }, { itemId: 'rune_thread', quantity: 2 }],
+    materials: [{ itemId: 'runecloth', quantity: 3 }, { itemId: 'rune_thread', quantity: 2 }, { itemId: 'lesser_molten_essence', quantity: 1 }],
     craftSeconds: 10, xpAward: 53,
     materialId: 'runecloth',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
@@ -577,7 +580,7 @@ export const RECIPES: Record<string, Recipe> = {
   runecloth_robe: {
     id: 'runecloth_robe', name: 'Runecloth Robe', profession: 'tailoring', requiredSkill: 69,
     resultItemId: 'runecloth_robe', resultQuantity: 1,
-    materials: [{ itemId: 'runecloth', quantity: 5 }, { itemId: 'rune_thread', quantity: 3 }],
+    materials: [{ itemId: 'runecloth', quantity: 5 }, { itemId: 'rune_thread', quantity: 3 }, { itemId: 'lesser_molten_essence', quantity: 1 }],
     craftSeconds: 10, xpAward: 53,
     materialId: 'runecloth',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
@@ -617,7 +620,7 @@ export const RECIPES: Record<string, Recipe> = {
   ember_robe_helm: {
     id: 'ember_robe_helm', name: 'Ember Hood', profession: 'tailoring', requiredSkill: 86,
     resultItemId: 'ember_robe_helm', resultQuantity: 1,
-    materials: [{ itemId: 'ember_cloth', quantity: 3 }, { itemId: 'ember_thread', quantity: 2 }],
+    materials: [{ itemId: 'ember_cloth', quantity: 3 }, { itemId: 'ember_thread', quantity: 2 }, { itemId: 'ember_essence', quantity: 1 }],
     craftSeconds: 10.7, xpAward: 92,
     materialId: 'ember_cloth',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
@@ -625,7 +628,7 @@ export const RECIPES: Record<string, Recipe> = {
   ember_robe: {
     id: 'ember_robe', name: 'Ember Robe', profession: 'tailoring', requiredSkill: 86,
     resultItemId: 'ember_robe', resultQuantity: 1,
-    materials: [{ itemId: 'ember_cloth', quantity: 5 }, { itemId: 'ember_thread', quantity: 3 }],
+    materials: [{ itemId: 'ember_cloth', quantity: 5 }, { itemId: 'ember_thread', quantity: 3 }, { itemId: 'ember_essence', quantity: 1 }],
     craftSeconds: 10.7, xpAward: 92,
     materialId: 'ember_cloth',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
@@ -681,7 +684,7 @@ export const RECIPES: Record<string, Recipe> = {
   cape_of_silk: {
     id: 'cape_of_silk', name: 'Cape of Silk', profession: 'tailoring', requiredSkill: 35,
     resultItemId: 'cape_of_silk', resultQuantity: 1,
-    materials: [{ itemId: 'silk_cloth', quantity: 3 }, { itemId: 'silken_thread', quantity: 2 }],
+    materials: [{ itemId: 'silk_cloth', quantity: 3 }, { itemId: 'silken_thread', quantity: 2 }, { itemId: 'smoldering_dust', quantity: 1 }],
     craftSeconds: 9.6, xpAward: 23,
     materialId: 'silk_cloth',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
@@ -689,7 +692,7 @@ export const RECIPES: Record<string, Recipe> = {
   cape_of_mageweave: {
     id: 'cape_of_mageweave', name: 'Cape of Mageweave', profession: 'tailoring', requiredSkill: 52,
     resultItemId: 'cape_of_mageweave', resultQuantity: 1,
-    materials: [{ itemId: 'mageweave_cloth', quantity: 3 }, { itemId: 'heavy_silken_thread', quantity: 2 }],
+    materials: [{ itemId: 'mageweave_cloth', quantity: 3 }, { itemId: 'heavy_silken_thread', quantity: 2 }, { itemId: 'charred_dust', quantity: 1 }],
     craftSeconds: 9.8, xpAward: 40,
     materialId: 'mageweave_cloth',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
@@ -697,7 +700,7 @@ export const RECIPES: Record<string, Recipe> = {
   cape_of_runecloth: {
     id: 'cape_of_runecloth', name: 'Cape of Runecloth', profession: 'tailoring', requiredSkill: 69,
     resultItemId: 'cape_of_runecloth', resultQuantity: 1,
-    materials: [{ itemId: 'runecloth', quantity: 3 }, { itemId: 'rune_thread', quantity: 2 }],
+    materials: [{ itemId: 'runecloth', quantity: 3 }, { itemId: 'rune_thread', quantity: 2 }, { itemId: 'lesser_molten_essence', quantity: 1 }],
     craftSeconds: 10, xpAward: 53,
     materialId: 'runecloth',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
@@ -705,7 +708,7 @@ export const RECIPES: Record<string, Recipe> = {
   cape_of_ember: {
     id: 'cape_of_ember', name: 'Cape of Ember', profession: 'tailoring', requiredSkill: 86,
     resultItemId: 'cape_of_ember', resultQuantity: 1,
-    materials: [{ itemId: 'ember_cloth', quantity: 3 }, { itemId: 'ember_thread', quantity: 2 }],
+    materials: [{ itemId: 'ember_cloth', quantity: 3 }, { itemId: 'ember_thread', quantity: 2 }, { itemId: 'ember_essence', quantity: 1 }],
     craftSeconds: 10.7, xpAward: 92,
     materialId: 'ember_cloth',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
@@ -2285,6 +2288,164 @@ export const RECIPES: Record<string, Recipe> = {
     materials: [{ itemId: 'platinum_bar', quantity: 2 }],
     craftSeconds: 11.3, xpAward: 33,
     materialId: 'platinum',
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+
+  // ── Enchanting overhaul — Wand/Staff/Book equipment (6 zones x 3 types),
+  // using the exact same randomized-2-stat system and Recipe.materialId
+  // Mastery wiring as Blacksmithing/Leatherworking/Tailoring's armor (see
+  // equipmentRolls.ts's matching ARMOR_STAT_RANGES section and
+  // gameData/materials.ts's WOOD_MATERIALS). craftSeconds/xpAward reuse the
+  // same 6-zone progression every other profession's helm-tier piece
+  // already established (8/10, 8.5/13, 9.6/23, 9.8/40, 10/53, 10.7/92) —
+  // this game's convention is that time/XP scale with ZONE tier only, never
+  // with which piece within a tier (confirmed identical between every
+  // existing helm and chest recipe at the same tier). Book additionally
+  // consumes 2 units of that zone's own cloth tier as a secondary
+  // ingredient (no Mastery contribution of its own — only the Wood,
+  // tagged via materialId, feeds this zone's combined track).
+  rough_wand: {
+    id: 'rough_wand', name: 'Rough Wand', profession: 'enchanting', requiredSkill: 1,
+    resultItemId: 'rough_wand', resultQuantity: 1,
+    materials: [{ itemId: 'rough_wood', quantity: 3 }],
+    craftSeconds: 8, xpAward: 10,
+    materialId: 'rough_wood',
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  rough_staff: {
+    id: 'rough_staff', name: 'Rough Staff', profession: 'enchanting', requiredSkill: 1,
+    resultItemId: 'rough_staff', resultQuantity: 1,
+    materials: [{ itemId: 'rough_wood', quantity: 5 }],
+    craftSeconds: 8, xpAward: 10,
+    materialId: 'rough_wood',
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  rough_tome: {
+    id: 'rough_tome', name: 'Rough Tome', profession: 'enchanting', requiredSkill: 1,
+    resultItemId: 'rough_tome', resultQuantity: 1,
+    materials: [{ itemId: 'rough_wood', quantity: 3 }, { itemId: 'linen_cloth', quantity: 2 }],
+    craftSeconds: 8, xpAward: 10,
+    materialId: 'rough_wood',
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  aged_wand: {
+    id: 'aged_wand', name: 'Aged Wand', profession: 'enchanting', requiredSkill: 18,
+    resultItemId: 'aged_wand', resultQuantity: 1,
+    materials: [{ itemId: 'aged_wood', quantity: 3 }],
+    craftSeconds: 8.5, xpAward: 13,
+    materialId: 'aged_wood',
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  aged_staff: {
+    id: 'aged_staff', name: 'Aged Staff', profession: 'enchanting', requiredSkill: 18,
+    resultItemId: 'aged_staff', resultQuantity: 1,
+    materials: [{ itemId: 'aged_wood', quantity: 5 }],
+    craftSeconds: 8.5, xpAward: 13,
+    materialId: 'aged_wood',
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  aged_tome: {
+    id: 'aged_tome', name: 'Aged Tome', profession: 'enchanting', requiredSkill: 18,
+    resultItemId: 'aged_tome', resultQuantity: 1,
+    materials: [{ itemId: 'aged_wood', quantity: 3 }, { itemId: 'wool_cloth', quantity: 2 }],
+    craftSeconds: 8.5, xpAward: 13,
+    materialId: 'aged_wood',
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  heartwood_wand: {
+    id: 'heartwood_wand', name: 'Heartwood Wand', profession: 'enchanting', requiredSkill: 35,
+    resultItemId: 'heartwood_wand', resultQuantity: 1,
+    materials: [{ itemId: 'heartwood', quantity: 3 }],
+    craftSeconds: 9.6, xpAward: 23,
+    materialId: 'heartwood',
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  heartwood_staff: {
+    id: 'heartwood_staff', name: 'Heartwood Staff', profession: 'enchanting', requiredSkill: 35,
+    resultItemId: 'heartwood_staff', resultQuantity: 1,
+    materials: [{ itemId: 'heartwood', quantity: 5 }],
+    craftSeconds: 9.6, xpAward: 23,
+    materialId: 'heartwood',
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  heartwood_tome: {
+    id: 'heartwood_tome', name: 'Heartwood Tome', profession: 'enchanting', requiredSkill: 35,
+    resultItemId: 'heartwood_tome', resultQuantity: 1,
+    materials: [{ itemId: 'heartwood', quantity: 3 }, { itemId: 'silk_cloth', quantity: 2 }],
+    craftSeconds: 9.6, xpAward: 23,
+    materialId: 'heartwood',
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  ironwood_wand: {
+    id: 'ironwood_wand', name: 'Ironwood Wand', profession: 'enchanting', requiredSkill: 52,
+    resultItemId: 'ironwood_wand', resultQuantity: 1,
+    materials: [{ itemId: 'ironwood', quantity: 3 }],
+    craftSeconds: 9.8, xpAward: 40,
+    materialId: 'ironwood',
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  ironwood_staff: {
+    id: 'ironwood_staff', name: 'Ironwood Staff', profession: 'enchanting', requiredSkill: 52,
+    resultItemId: 'ironwood_staff', resultQuantity: 1,
+    materials: [{ itemId: 'ironwood', quantity: 5 }],
+    craftSeconds: 9.8, xpAward: 40,
+    materialId: 'ironwood',
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  ironwood_tome: {
+    id: 'ironwood_tome', name: 'Ironwood Tome', profession: 'enchanting', requiredSkill: 52,
+    resultItemId: 'ironwood_tome', resultQuantity: 1,
+    materials: [{ itemId: 'ironwood', quantity: 3 }, { itemId: 'mageweave_cloth', quantity: 2 }],
+    craftSeconds: 9.8, xpAward: 40,
+    materialId: 'ironwood',
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  charwood_wand: {
+    id: 'charwood_wand', name: 'Charwood Wand', profession: 'enchanting', requiredSkill: 69,
+    resultItemId: 'charwood_wand', resultQuantity: 1,
+    materials: [{ itemId: 'charwood', quantity: 3 }],
+    craftSeconds: 10, xpAward: 53,
+    materialId: 'charwood',
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  charwood_staff: {
+    id: 'charwood_staff', name: 'Charwood Staff', profession: 'enchanting', requiredSkill: 69,
+    resultItemId: 'charwood_staff', resultQuantity: 1,
+    materials: [{ itemId: 'charwood', quantity: 5 }],
+    craftSeconds: 10, xpAward: 53,
+    materialId: 'charwood',
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  charwood_tome: {
+    id: 'charwood_tome', name: 'Charwood Tome', profession: 'enchanting', requiredSkill: 69,
+    resultItemId: 'charwood_tome', resultQuantity: 1,
+    materials: [{ itemId: 'charwood', quantity: 3 }, { itemId: 'runecloth', quantity: 2 }],
+    craftSeconds: 10, xpAward: 53,
+    materialId: 'charwood',
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  emberwood_wand: {
+    id: 'emberwood_wand', name: 'Emberwood Wand', profession: 'enchanting', requiredSkill: 86,
+    resultItemId: 'emberwood_wand', resultQuantity: 1,
+    materials: [{ itemId: 'emberwood', quantity: 3 }],
+    craftSeconds: 10.7, xpAward: 92,
+    materialId: 'emberwood',
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  emberwood_staff: {
+    id: 'emberwood_staff', name: 'Emberwood Staff', profession: 'enchanting', requiredSkill: 86,
+    resultItemId: 'emberwood_staff', resultQuantity: 1,
+    materials: [{ itemId: 'emberwood', quantity: 5 }],
+    craftSeconds: 10.7, xpAward: 92,
+    materialId: 'emberwood',
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  emberwood_tome: {
+    id: 'emberwood_tome', name: 'Emberwood Tome', profession: 'enchanting', requiredSkill: 86,
+    resultItemId: 'emberwood_tome', resultQuantity: 1,
+    materials: [{ itemId: 'emberwood', quantity: 3 }, { itemId: 'ember_cloth', quantity: 2 }],
+    craftSeconds: 10.7, xpAward: 92,
+    materialId: 'emberwood',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
 

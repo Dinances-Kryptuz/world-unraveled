@@ -14,7 +14,7 @@ import { ENCHANTS, isDisenchantable, disenchantRequiredSkill, disenchantYieldRan
 import { ITEMS } from '../../gameData/items';
 import { equippedItemId } from '../../gameData/equipmentStats';
 import { describeItemStats } from '../../gameData/equipmentStats';
-import { MATERIALS, LEATHER_MATERIALS, CLOTH_MATERIALS, type MaterialDef } from '../../gameData/materials';
+import { MATERIALS, LEATHER_MATERIALS, CLOTH_MATERIALS, WOOD_MATERIALS, type MaterialDef } from '../../gameData/materials';
 import {
   materialMasteryPercent,
   materialMasterySpeedMultiplier,
@@ -90,6 +90,33 @@ const TAILORING_TIER_LABELS: Record<string, string> = {
   mageweave: 'Mageweave',
   runecloth: 'Runecloth',
   ember: 'Ember',
+};
+
+// Enchanting overhaul's Wand/Staff/Book buildout (6 zones x 3 types) — same
+// grouping pattern again, this time scoped to JUST those 18 recipes (see
+// renderEnchantingPanel's own recipesForProfession.filter) so scroll_*
+// recipes stay in their own separate "Craft Scrolls" list instead of
+// landing in an "Other" bucket here.
+const ENCHANTING_EQUIPMENT_TIER_ORDER = ['rough', 'aged', 'heartwood', 'ironwood', 'charwood', 'emberwood'];
+const ENCHANTING_EQUIPMENT_TIER_LABELS: Record<string, string> = {
+  rough: 'Rough',
+  aged: 'Aged',
+  heartwood: 'Heartwood',
+  ironwood: 'Ironwood',
+  charwood: 'Charwood',
+  emberwood: 'Emberwood',
+};
+// The combined Wand/Staff/Book Mastery track's bar label per the design
+// brief's explicit naming ask — distinct from the material's own "Master
+// of {name}" title/achievement wording (renderMaterialMasteryPanel's
+// labelOverride only touches the bar header, nothing else).
+const ENCHANTING_ARMAMENTS_LABELS: Record<string, string> = {
+  rough_wood: 'Enchanted Armaments I',
+  aged_wood: 'Enchanted Armaments II',
+  heartwood: 'Enchanted Armaments III',
+  ironwood: 'Enchanted Armaments IV',
+  charwood: 'Enchanted Armaments V',
+  emberwood: 'Ember Armaments',
 };
 
 // A single profession's own page — one per sidebar nav item (see
@@ -252,10 +279,14 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
   // Generalized (tierOrder/tierLabels params) so Leatherworking's own
   // 42-recipe, 6-tier buildout reuses the exact same grouping — see the
   // professionId === 'leatherworking' dispatch below.
-  function renderGroupedRecipesByTier(tierOrder: string[], tierLabels: Record<string, string>) {
+  function renderGroupedRecipesByTier(
+    tierOrder: string[],
+    tierLabels: Record<string, string>,
+    recipesToGroup: typeof recipesForProfession = recipesForProfession
+  ) {
     const grouped = new Map<string, typeof recipesForProfession>();
     const ungrouped: typeof recipesForProfession = [];
-    for (const recipe of recipesForProfession) {
+    for (const recipe of recipesToGroup) {
       const slug = tierOrder.find((s) => {
         const stripped = recipe.id.startsWith('sacred_') ? recipe.id.slice('sacred_'.length) : recipe.id;
         return stripped.startsWith(`${s}_`);
@@ -293,7 +324,7 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
   // Generalized (registry param) so Leatherworking's LEATHER_MATERIALS
   // reuses the exact same panel as Blacksmithing's MATERIALS — see the
   // professionId === 'leatherworking' dispatch below.
-  function renderMaterialMasteryPanel(registry: MaterialDef[]) {
+  function renderMaterialMasteryPanel(registry: MaterialDef[], labelOverride?: Record<string, string>) {
     return (
       <details open>
         <summary>Material Mastery</summary>
@@ -306,9 +337,10 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
             const bonusOutput = materialMasteryBonusChance(pct) * 100;
             const achievementId = `mastery_${material.id}`;
             const achieved = char.unlockedAchievementIds.includes(achievementId);
+            const barLabel = labelOverride?.[material.id] ?? `${material.name} Mastery`;
             return (
               <li key={material.id}>
-                <strong>{material.name} Mastery — {pct.toFixed(1)}%</strong>
+                <strong>{barLabel} — {pct.toFixed(1)}%</strong>
                 <div className="profession-xp-bar-track">
                   <div className="profession-xp-bar-fill" style={{ width: `${pct}%` }} />
                 </div>
@@ -356,10 +388,19 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
         .map(([instanceId, inst]) => ({ itemId: inst.itemId, quantity: inst.quantity, instanceId, rolls: inst.rolls })),
     ].sort((a, b) => (ITEMS[a.itemId]?.name ?? a.itemId).localeCompare(ITEMS[b.itemId]?.name ?? b.itemId));
 
+    const equipmentRecipes = recipesForProfession.filter((r) =>
+      ENCHANTING_EQUIPMENT_TIER_ORDER.some((s) => r.id.startsWith(`${s}_`))
+    );
+    const scrollRecipes = recipesForProfession.filter((r) => !equipmentRecipes.includes(r));
+
     return (
       <>
+        <h3>Craft Equipment</h3>
+        {renderGroupedRecipesByTier(ENCHANTING_EQUIPMENT_TIER_ORDER, ENCHANTING_EQUIPMENT_TIER_LABELS, equipmentRecipes)}
+        {renderMaterialMasteryPanel(WOOD_MATERIALS, ENCHANTING_ARMAMENTS_LABELS)}
+
         <h3>Craft Scrolls</h3>
-        {renderRecipeList()}
+        {renderRecipeList(scrollRecipes)}
 
         <h3>Use Scroll</h3>
         {scrollEntries.length === 0 ? (

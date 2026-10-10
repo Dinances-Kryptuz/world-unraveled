@@ -5,7 +5,7 @@ import { ALL_PROFESSION_IDS } from './professionTiers';
 import { COMPANIONS } from './companions';
 import { DUNGEONS } from './dungeons';
 import { MAX_CHARACTER_SLOTS } from './characterSlots';
-import { MATERIALS, LEATHER_MATERIALS, CLOTH_MATERIALS } from './materials';
+import { MATERIALS, LEATHER_MATERIALS, CLOTH_MATERIALS, WOOD_MATERIALS } from './materials';
 import { MATERIAL_MASTERY_XP_THRESHOLDS } from './equipmentRolls';
 import { ZONES } from './zones';
 import { HERBALISM_ZONE_MASTERY_THRESHOLD } from './gatheringEngine';
@@ -111,6 +111,25 @@ const MASTER_TAILOR_ACHIEVEMENT: AchievementDef = {
   check: (c) => CLOTH_MATERIALS.every((m) => isMaterialMastered(c, m.id)),
 };
 
+// Mirrors generateClothMasteryAchievements/MASTER_TAILOR_ACHIEVEMENT
+// exactly, over WOOD_MATERIALS — Enchanting's combined Wand/Staff/Book
+// equipment-Mastery track (one per zone, not per piece).
+function generateWoodMasteryAchievements(): AchievementDef[] {
+  return WOOD_MATERIALS.map((material) => ({
+    id: `mastery_${material.id}`,
+    name: `Master of ${material.name}`,
+    description: `Reach 100% ${material.name} Mastery.`,
+    check: (c: Character) => isMaterialMastered(c, material.id),
+  }));
+}
+
+const MASTER_ENCHANTER_EQUIPMENT_ACHIEVEMENT: AchievementDef = {
+  id: 'master_enchanter_armaments',
+  name: 'Master of Armaments',
+  description: 'Reach 100% Mastery in every Enchanting equipment material.',
+  check: (c) => WOOD_MATERIALS.every((m) => isMaterialMastered(c, m.id)),
+};
+
 export function isHerbalismZoneMastered(character: Character, zoneId: string): boolean {
   const xp = character.herbalismZoneMastery?.[zoneId]?.xp ?? 0;
   return xp >= HERBALISM_ZONE_MASTERY_THRESHOLD;
@@ -164,6 +183,8 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   MASTER_LEATHERWORKER_ACHIEVEMENT,
   ...generateClothMasteryAchievements(),
   MASTER_TAILOR_ACHIEVEMENT,
+  ...generateWoodMasteryAchievements(),
+  MASTER_ENCHANTER_EQUIPMENT_ACHIEVEMENT,
   ...generateForagerAchievements(),
   GRANDMASTER_FORAGER_ACHIEVEMENT,
   ...generateAlchemistAchievements(),
