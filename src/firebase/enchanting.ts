@@ -45,6 +45,16 @@ export async function removeEnchant(uid: string, slot: EquipmentSlot): Promise<v
 // components/DisenchantingScreen.tsx, which computes `result` and calls
 // this the same way CraftingScreen calls applyCraftingProfessionResult) —
 // writes consumed stock, yielded materials, and profession XP/level.
+//
+// `instanceId` disenchants a specific randomized-stat roll (gameData/
+// equipmentRolls.ts) from Inventory.equipmentInstances rather than a plain
+// `items` stack — required so disenchanting targets the exact variant the
+// player picked (two different rolls of the same base item are otherwise
+// indistinguishable stacks). Since equipping an instance already removes it
+// from its available (unequipped) quantity — see firebase/
+// equipmentInstances.ts's doc comment — a currently-equipped instance is
+// never part of this count, closing the "disenchant what you're wearing"
+// exploit with no extra guard needed here.
 export async function applyDisenchantResult(
   uid: string,
   itemId: string,
@@ -54,7 +64,8 @@ export async function applyDisenchantResult(
     yieldQuantity: number;
     newSkillLevel: number;
     newSkillXp: number;
-  }
+  },
+  instanceId?: string
 ): Promise<void> {
   await updateDoc(doc(db, 'characters', uid), {
     'professions.enchanting.level': result.newSkillLevel,
@@ -63,9 +74,10 @@ export async function applyDisenchantResult(
   // The disenchanted item is consumed regardless of whether the yield fits
   // — write that FIRST so a stack dropping to 0 (freeing a bag slot) is
   // already reflected before the capped grant below reads occupancy.
-  await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), {
-    [`items.${itemId}`]: increment(-result.itemsDisenchanted),
-  });
+  const consumeUpdate = instanceId
+    ? { [`equipmentInstances.${instanceId}.quantity`]: increment(-result.itemsDisenchanted) }
+    : { [`items.${itemId}`]: increment(-result.itemsDisenchanted) };
+  await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), consumeUpdate);
   if (result.yieldQuantity > 0) {
     await grantInventoryItems(uid, [{ itemId: result.yieldItemId, quantity: result.yieldQuantity }]);
   }

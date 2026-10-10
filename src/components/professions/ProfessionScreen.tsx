@@ -12,7 +12,15 @@ import { useEnchantScroll, removeEnchant } from '../../firebase/enchanting';
 import { subscribeToInventory } from '../../firebase/inventory';
 import { ENCHANTS, isDisenchantable, disenchantRequiredSkill, disenchantTier } from '../../gameData/enchanting';
 import { ITEMS } from '../../gameData/items';
+import { equippedItemId } from '../../gameData/equipmentStats';
 import { describeItemStats } from '../../gameData/equipmentStats';
+import { MATERIALS } from '../../gameData/materials';
+import {
+  materialMasteryPercent,
+  materialMasterySpeedMultiplier,
+  materialMasteryBonusChance,
+  MATERIAL_MASTERY_XP_THRESHOLDS,
+} from '../../gameData/equipmentRolls';
 import { TIER_COLORS } from '../MonsterLevelBadge';
 import { ItemSlot } from '../ItemSlot';
 import { ProfessionSummaryList } from './ProfessionSummaryList';
@@ -24,15 +32,19 @@ import type { Inventory } from '../../types/character';
 // the Active Enchants list.
 const ENCHANT_SLOTS: EquipmentSlot[] = ['weapon', 'chest', 'gloves', 'legs', 'boots', 'ring'];
 
-// Smithing's full-armor recipe ids are prefixed by their metal tier (plain
-// for the STR+STA plate line, 'sacred_<tier>_' for the INT+SPI cloth line —
-// see recipes.ts/items.ts's generated Blacksmithing section) — order here
-// is display order for the dropdown list, matching the zone progression.
-const SMITHING_TIER_ORDER = ['copper', 'bronze', 'iron', 'steel', 'mithril', 'thorium', 'obsidian', 'silver', 'gold', 'platinum'];
-const SMITHING_TIER_LABELS: Record<string, string> = {
-  copper: 'Copper', bronze: 'Bronze', iron: 'Iron', steel: 'Steel', mithril: 'Mithril',
-  thorium: 'Thorium', obsidian: 'Obsidian', silver: 'Silver Jewelry', gold: 'Gold Jewelry', platinum: 'Platinum Jewelry',
-};
+// Smithing's full-armor recipe ids are prefixed by their metal/jewelry tier
+// (see recipes.ts's Recipe.materialId and items.ts's generated Blacksmithing
+// section) — derived from the same gameData/materials.ts registry the
+// Mastery panel below reads, rather than a second hand-maintained list, so
+// a future material only needs registering once. The jewelry tiers get a
+// "Jewelry" suffix here (a display nuance specific to this dropdown
+// grouping, not the material's own name — see materials.ts's doc comment
+// on why MaterialDef.name stays a bare name for the Mastery/title system).
+const SMITHING_TIER_ORDER = MATERIALS.map((m) => m.id);
+const JEWELRY_MATERIAL_IDS = new Set(['silver', 'gold', 'platinum']);
+const SMITHING_TIER_LABELS: Record<string, string> = Object.fromEntries(
+  MATERIALS.map((m) => [m.id, JEWELRY_MATERIAL_IDS.has(m.id) ? `${m.name} Jewelry` : m.name])
+);
 
 // A single profession's own page — one per sidebar nav item (see
 // Sidebar.tsx), replacing the old three-category pages (Gathering/Fishing/
@@ -93,9 +105,9 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
     await refetch();
   }
 
-  async function handleStartDisenchanting(itemId: string, quantity: number) {
+  async function handleStartDisenchanting(itemId: string, quantity: number, instanceId?: string) {
     if (!user) return;
-    await startActivity(user.uid, { type: 'disenchanting', targetId: itemId, zoneId, quantity });
+    await startActivity(user.uid, { type: 'disenchanting', targetId: itemId, zoneId, quantity, instanceId });
     await refetch();
   }
 
@@ -202,6 +214,45 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
     );
   }
 
+  // One row per gameData/materials.ts MaterialDef, generated dynamically —
+  // no per-metal component, so a future material shows up here automatically
+  // the moment it's registered. Mastery is strictly optional/completionist
+  // (see types/character.ts's materialMastery doc comment) and fully
+  // independent of Blacksmithing's own 1-100 level/XP shown above.
+  function renderMaterialMasteryPanel() {
+    return (
+      <details open>
+        <summary>Material Mastery</summary>
+        <ul>
+          {MATERIALS.map((material) => {
+            const xp = char.materialMastery?.[material.id]?.xp ?? 0;
+            const threshold = MATERIAL_MASTERY_XP_THRESHOLDS[material.id] ?? 0;
+            const pct = materialMasteryPercent(xp, material.id);
+            const speedBonus = (materialMasterySpeedMultiplier(pct) - 1) * 100;
+            const bonusOutput = materialMasteryBonusChance(pct) * 100;
+            const achievementId = `mastery_${material.id}`;
+            const achieved = char.unlockedAchievementIds.includes(achievementId);
+            return (
+              <li key={material.id}>
+                <strong>{material.name} Mastery — {pct.toFixed(1)}%</strong>
+                <div className="profession-xp-bar-track">
+                  <div className="profession-xp-bar-fill" style={{ width: `${pct}%` }} />
+                </div>
+                <div>
+                  {Math.floor(xp)} / {threshold} XP · Crafting Speed: +{speedBonus.toFixed(1)}% · Bonus Output:{' '}
+                  {bonusOutput.toFixed(1)}% · Stat Quality: {pct >= 100 ? 'Maximum' : pct >= 50 ? 'Improved' : 'Baseline'}
+                </div>
+                <div>
+                  Achievement: {achieved ? '✓ Unlocked' : 'In Progress'} · Title Reward: Master of {material.name}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      </details>
+    );
+  }
+
   // Enchanting's crafting recipes (scroll_* — see recipes.ts's "Enchanting
   // scrolls" section) are just like any other profession's: renderRecipeList
   // below already handles them via the normal timed/offline CraftingScreen
@@ -218,9 +269,18 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
       .filter(([itemId, quantity]) => quantity > 0 && ITEMS[itemId]?.type === 'enchant_scroll')
       .sort(([a], [b]) => (ITEMS[a]?.name ?? a).localeCompare(ITEMS[b]?.name ?? b));
 
-    const disenchantableEntries = Object.entries(inventory?.items ?? {})
-      .filter(([itemId, quantity]) => quantity > 0 && ITEMS[itemId] && isDisenchantable(ITEMS[itemId]!))
-      .sort(([a], [b]) => (ITEMS[a]?.name ?? a).localeCompare(ITEMS[b]?.name ?? b));
+    const disenchantableEntries: { itemId: string; quantity: number; instanceId?: string; rolls?: Record<string, number> }[] = [
+      ...Object.entries(inventory?.items ?? {})
+        .filter(([itemId, quantity]) => quantity > 0 && ITEMS[itemId] && isDisenchantable(ITEMS[itemId]!))
+        .map(([itemId, quantity]) => ({ itemId, quantity })),
+      // Randomized-roll equipment lives in its own instanceId-keyed bucket
+      // (see types/character.ts's Inventory.equipmentInstances) — each
+      // distinct roll is disenchanted independently so the player picks
+      // which specific variant to break down.
+      ...Object.entries(inventory?.equipmentInstances ?? {})
+        .filter(([, inst]) => inst.quantity > 0 && ITEMS[inst.itemId] && isDisenchantable(ITEMS[inst.itemId]!))
+        .map(([instanceId, inst]) => ({ itemId: inst.itemId, quantity: inst.quantity, instanceId, rolls: inst.rolls })),
+    ].sort((a, b) => (ITEMS[a.itemId]?.name ?? a.itemId).localeCompare(ITEMS[b.itemId]?.name ?? b.itemId));
 
     return (
       <>
@@ -236,7 +296,8 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
               const scroll = ITEMS[itemId]!;
               const enchant = scroll.scrollEnchantId ? ENCHANTS[scroll.scrollEnchantId] : undefined;
               if (!enchant) return null;
-              const equippedItem = char.equipment[enchant.slot] ? ITEMS[char.equipment[enchant.slot]!] : null;
+              const equippedEnchantItemId = equippedItemId(char.equipment[enchant.slot]);
+              const equippedItem = equippedEnchantItemId ? ITEMS[equippedEnchantItemId] : null;
               return (
                 <li key={itemId}>
                   <div className="item-row-main">
@@ -256,7 +317,8 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
         <ul>
           {ENCHANT_SLOTS.filter((slot) => char.enchantments[slot]).map((slot) => {
             const enchant = ENCHANTS[char.enchantments[slot]!];
-            const equippedItem = char.equipment[slot] ? ITEMS[char.equipment[slot]!] : null;
+            const equippedSlotItemId = equippedItemId(char.equipment[slot]);
+            const equippedItem = equippedSlotItemId ? ITEMS[equippedSlotItemId] : null;
             return (
               <li key={slot}>
                 {slot} ({equippedItem ? equippedItem.name : 'empty'}): <em>{enchant.name}</em> ({enchant.description})
@@ -272,15 +334,16 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
           <p>No disenchantable equipment in your inventory.</p>
         ) : (
           <ul>
-            {disenchantableEntries.map(([itemId, quantity]) => {
+            {disenchantableEntries.map(({ itemId, quantity, instanceId, rolls }) => {
               const item = ITEMS[itemId]!;
               const requiredSkill = disenchantRequiredSkill(item);
               const meetsSkill = skill >= requiredSkill;
-              const qty = Math.min(disenchantQty[itemId] ?? quantity, quantity);
+              const qtyKey = instanceId ?? itemId;
+              const qty = Math.min(disenchantQty[qtyKey] ?? quantity, quantity);
               return (
-                <li key={itemId}>
+                <li key={qtyKey}>
                   <div className="item-row-main">
-                    <ItemSlot item={item} quantity={quantity} />
+                    <ItemSlot item={item} quantity={quantity} statOverride={rolls} />
                     <span>{item.name}</span>
                   </div>
                   <input
@@ -289,11 +352,11 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
                     max={quantity}
                     value={qty}
                     disabled={!meetsSkill || quantity <= 1}
-                    onChange={(e) => setDisenchantQty((prev) => ({ ...prev, [itemId]: Number(e.target.value) }))}
+                    onChange={(e) => setDisenchantQty((prev) => ({ ...prev, [qtyKey]: Number(e.target.value) }))}
                   />
                   <span>{qty}</span>
                   <button
-                    onClick={() => handleStartDisenchanting(itemId, qty)}
+                    onClick={() => handleStartDisenchanting(itemId, qty, instanceId)}
                     disabled={!meetsSkill}
                     title={`Disenchants into ${disenchantTier(item)} (requires Enchanting ${requiredSkill})`}
                   >
@@ -327,7 +390,8 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
               }
               const meetsLevel = professionLevel >= node.requiredLevel;
               const tier = !meetsLevel ? 'red' : gatheringColorTier(professionLevel, node.requiredLevel);
-              const equippedTool = character.equipment.tool ? ITEMS[character.equipment.tool] : null;
+              const equippedToolId = equippedItemId(character.equipment.tool);
+              const equippedTool = equippedToolId ? ITEMS[equippedToolId] : null;
               const hasRequiredTool = !node.requiredToolType || equippedTool?.toolType === node.requiredToolType;
               const canGather = meetsLevel && hasRequiredTool;
               const yieldItem = ITEMS[node.itemId];
@@ -385,7 +449,8 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
             }
             const meetsLevel = professionLevel >= hole.requiredLevel;
             const tier = !meetsLevel ? 'red' : gatheringColorTier(professionLevel, hole.requiredLevel);
-            const equippedTool = character.equipment.tool ? ITEMS[character.equipment.tool] : null;
+            const equippedToolId = equippedItemId(character.equipment.tool);
+            const equippedTool = equippedToolId ? ITEMS[equippedToolId] : null;
             const hasRod = equippedTool?.toolType === 'fishing_rod';
             const canFish = meetsLevel && hasRod;
             const yieldItem = ITEMS[hole.itemId];
@@ -417,7 +482,15 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
       {category === 'production' && professionId !== 'enchanting' && (
         <>
           {!known && <p>You don't know {label} yet — learn it at the Professions Trainer.</p>}
-          {known && (professionId === 'smithing' ? renderGroupedSmithingRecipes() : renderRecipeList())}
+          {known &&
+            (professionId === 'smithing' ? (
+              <>
+                {renderGroupedSmithingRecipes()}
+                {renderMaterialMasteryPanel()}
+              </>
+            ) : (
+              renderRecipeList()
+            ))}
         </>
       )}
 

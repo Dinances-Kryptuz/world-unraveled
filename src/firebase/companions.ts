@@ -1,12 +1,14 @@
 import { doc, updateDoc, increment } from 'firebase/firestore';
 import { db } from './config';
 import { getCharacter } from './character';
+import { getInventory } from './inventory';
+import { equipmentRefInventoryDelta, resolveEquippedRef } from './equipmentInstances';
 import { COMPANIONS, checkRecruitCompanion, emptyCompanionEquipment, MAX_ACTIVE_COMPANIONS, dungeonCompanionFee } from '../gameData/companions';
 import { canClassEquip } from '../gameData/classStats';
 import { ITEMS } from '../gameData/items';
 import { DUNGEONS } from '../gameData/dungeons';
 import { ZONE_TIER } from '../gameData/zones';
-import type { EquipmentSlot } from '../gameData/types';
+import type { EquipmentSlot, EquippedItemRef } from '../gameData/types';
 
 export interface CompanionActionResult {
   success: boolean;
@@ -63,11 +65,18 @@ export async function removeCompanionFromParty(uid: string, companionId: string)
 // companion's own equipment map instead of the player's — gear moves out
 // of the SAME shared inventory either way, so there's one pool of loot the
 // player chooses to wear themselves or hand to their companion.
+// `instanceId` equips a specific randomized-stat roll (gameData/
+// equipmentRolls.ts) from the shared inventory rather than a static/legacy
+// item — see firebase/character.ts's equipItem, which this mirrors (no 2H/
+// offhand rules here, since companions never had them). Omitting it keeps
+// every ordinary equip exactly as fast as before this field existed: no
+// extra inventory read.
 export async function equipCompanionItem(
   uid: string,
   companionId: string,
   slot: EquipmentSlot,
-  itemId: string
+  itemId: string,
+  instanceId?: string
 ): Promise<void> {
   const character = await getCharacter(uid);
   if (!character) return;
@@ -80,17 +89,21 @@ export async function equipCompanionItem(
     throw new Error(`${def.name} cannot equip ${item?.name ?? itemId} (${item?.armorType} armor)`);
   }
 
+  let newRef: EquippedItemRef = { itemId };
+  if (instanceId) {
+    const inventory = await getInventory(uid);
+    newRef = resolveEquippedRef(itemId, instanceId, inventory);
+  }
+
   const previouslyEquipped = companionState.equipment[slot];
-  const inventoryUpdates: Record<string, unknown> = {
-    [`items.${itemId}`]: increment(-1),
-  };
+  const inventoryUpdates: Record<string, unknown> = { ...equipmentRefInventoryDelta(newRef, -1) };
   if (previouslyEquipped) {
-    inventoryUpdates[`items.${previouslyEquipped}`] = increment(1);
+    Object.assign(inventoryUpdates, equipmentRefInventoryDelta(previouslyEquipped, 1));
   }
   await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), inventoryUpdates);
 
   await updateDoc(doc(db, 'characters', uid), {
-    [`companions.${companionId}.equipment.${slot}`]: itemId,
+    [`companions.${companionId}.equipment.${slot}`]: newRef,
   });
 }
 
@@ -142,9 +155,7 @@ export async function unequipCompanionItem(uid: string, companionId: string, slo
   const currentlyEquipped = companionState.equipment[slot];
   if (!currentlyEquipped) return;
 
-  await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), {
-    [`items.${currentlyEquipped}`]: increment(1),
-  });
+  await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), equipmentRefInventoryDelta(currentlyEquipped, 1));
   await updateDoc(doc(db, 'characters', uid), {
     [`companions.${companionId}.equipment.${slot}`]: null,
   });

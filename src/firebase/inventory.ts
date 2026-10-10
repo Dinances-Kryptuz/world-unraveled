@@ -1,6 +1,8 @@
 import { doc, getDoc, updateDoc, increment, onSnapshot, type Unsubscribe } from 'firebase/firestore';
 import { db } from './config';
 import type { Inventory } from '../types/character';
+import type { BaseStat } from '../gameData/classStats';
+import { MAX_VARIANTS_PER_BASE_ITEM } from '../gameData/equipmentRolls';
 
 export async function getInventory(uid: string): Promise<Inventory> {
   const snap = await getDoc(doc(db, 'characters', uid, 'inventory', 'main'));
@@ -59,6 +61,92 @@ export async function grantInventoryItems(
   }
   await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), updates);
   return accepted;
+}
+
+// The randomized-equipment counterpart to grantInventoryItems above — grants
+// rolled instances of ONE base item (itemId), bucketed by their own
+// deterministic instanceId (gameData/equipmentRolls.ts's canonicalInstanceId)
+// so identical rolls stack together instead of each needing a new bucket.
+// Two caps apply, checked independently:
+//   1. bagSlots (same as grantInventoryItems) — only spent once, the first
+//      time this base item id is ever held (by either a plain `items` stack
+//      or an `equipmentInstances` bucket); further rolls of an
+//      already-held item never spend another slot.
+//   2. MAX_VARIANTS_PER_BASE_ITEM — how many DISTINCT instanceIds this one
+//      base item may have bucketed at once; a new distinct roll beyond this
+//      is silently dropped (same "loot dropped, nothing stops" convention
+//      grantInventoryItems already uses for a full bag), while more of an
+//      ALREADY-bucketed instanceId always stacks freely.
+// Returns what was actually granted, mirroring grantInventoryItems.
+export async function grantEquipmentInstances(
+  uid: string,
+  itemId: string,
+  grants: { instanceId: string; rolls: Partial<Record<BaseStat, number>>; quantity: number }[]
+): Promise<{ instanceId: string; quantity: number }[]> {
+  // Aggregate by instanceId first — a caller may pass the same instanceId
+  // more than once (e.g. several offline-crafting batches rolling the same
+  // stats), and each must add to one running total, not overwrite it.
+  const rollsByInstance = new Map<string, Partial<Record<BaseStat, number>>>();
+  const requestedQuantities = new Map<string, number>();
+  for (const g of grants) {
+    if (g.quantity <= 0) continue;
+    requestedQuantities.set(g.instanceId, (requestedQuantities.get(g.instanceId) ?? 0) + g.quantity);
+    if (!rollsByInstance.has(g.instanceId)) rollsByInstance.set(g.instanceId, g.rolls);
+  }
+  if (requestedQuantities.size === 0) return [];
+
+  const [invSnap, charSnap] = await Promise.all([
+    getDoc(doc(db, 'characters', uid, 'inventory', 'main')),
+    getDoc(doc(db, 'characters', uid)),
+  ]);
+  const inventory = (invSnap.exists() ? (invSnap.data() as Inventory) : { items: {} }) as Inventory;
+  const bagSlots: number = charSnap.exists() ? ((charSnap.data().bagSlots as number) ?? 0) : 0;
+
+  const existingInstances = inventory.equipmentInstances ?? {};
+  const existingVariantIds = new Set(Object.keys(existingInstances).filter((id) => existingInstances[id].itemId === itemId));
+  let baseItemSlotSpent = (inventory.items[itemId] ?? 0) > 0 || existingVariantIds.size > 0;
+  let distinctCount = Object.values(inventory.items).filter((q) => q > 0).length + countDistinctBaseItems(inventory);
+
+  const accepted: { instanceId: string; quantity: number }[] = [];
+  for (const [instanceId, quantity] of requestedQuantities) {
+    const isNewVariant = !existingVariantIds.has(instanceId);
+    if (isNewVariant) {
+      if (existingVariantIds.size >= MAX_VARIANTS_PER_BASE_ITEM) continue; // variant cap — this roll is dropped
+      if (!baseItemSlotSpent) {
+        if (distinctCount >= bagSlots) continue; // bag full — this item id is dropped entirely
+        distinctCount++;
+        baseItemSlotSpent = true;
+      }
+      existingVariantIds.add(instanceId);
+    }
+    accepted.push({ instanceId, quantity });
+  }
+  if (accepted.length === 0) return [];
+
+  const updates: Record<string, unknown> = {};
+  for (const { instanceId, quantity } of accepted) {
+    if (existingInstances[instanceId]) {
+      updates[`equipmentInstances.${instanceId}.quantity`] = increment(quantity);
+    } else {
+      // A brand-new bucket — no existing quantity to add to, so no
+      // increment() sentinel needed here, just the literal starting value.
+      updates[`equipmentInstances.${instanceId}`] = { itemId, rolls: rollsByInstance.get(instanceId) ?? {}, quantity };
+    }
+  }
+  await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), updates);
+  return accepted;
+}
+
+// Distinct base item ids represented in equipmentInstances, for bagSlots
+// accounting — a base item already present only as instance buckets (never
+// as a plain `items` stack) still counts as one occupied slot, same as any
+// other item id.
+function countDistinctBaseItems(inventory: Inventory): number {
+  const baseIds = new Set(Object.values(inventory.equipmentInstances ?? {}).map((inst) => inst.itemId));
+  for (const itemId of baseIds) {
+    if ((inventory.items[itemId] ?? 0) > 0) baseIds.delete(itemId); // already counted by the items.* pass
+  }
+  return baseIds.size;
 }
 
 // Live-updates the moment Firestore actually changes, instead of polling on

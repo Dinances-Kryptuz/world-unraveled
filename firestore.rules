@@ -34,8 +34,8 @@ service cloud.firestore {
 
       match /inventory/{docId} {
         allow read: if request.auth != null && request.auth.uid == uid;
-        allow create: if request.auth != null && request.auth.uid == uid && request.resource.data.keys().hasOnly(['items']);
-        allow update: if request.auth != null && request.auth.uid == uid && request.resource.data.keys().hasOnly(['items']);
+        allow create: if request.auth != null && request.auth.uid == uid && request.resource.data.keys().hasOnly(['items', 'equipmentInstances']);
+        allow update: if request.auth != null && request.auth.uid == uid && request.resource.data.keys().hasOnly(['items', 'equipmentInstances']);
         allow delete: if false;
       }
 
@@ -44,8 +44,8 @@ service cloud.firestore {
       // a different document shape.
       match /bank/{docId} {
         allow read: if request.auth != null && request.auth.uid == uid;
-        allow create: if request.auth != null && request.auth.uid == uid && request.resource.data.keys().hasOnly(['items']);
-        allow update: if request.auth != null && request.auth.uid == uid && request.resource.data.keys().hasOnly(['items']);
+        allow create: if request.auth != null && request.auth.uid == uid && request.resource.data.keys().hasOnly(['items', 'equipmentInstances']);
+        allow update: if request.auth != null && request.auth.uid == uid && request.resource.data.keys().hasOnly(['items', 'equipmentInstances']);
         allow delete: if false;
       }
 
@@ -69,12 +69,12 @@ service cloud.firestore {
 
         match /inventory/{docId} {
           allow read: if request.auth != null && request.auth.uid == uid;
-          allow create, update: if request.auth != null && request.auth.uid == uid && request.resource.data.keys().hasOnly(['items']);
+          allow create, update: if request.auth != null && request.auth.uid == uid && request.resource.data.keys().hasOnly(['items', 'equipmentInstances']);
           allow delete: if request.auth != null && request.auth.uid == uid;
         }
         match /bank/{docId} {
           allow read: if request.auth != null && request.auth.uid == uid;
-          allow create, update: if request.auth != null && request.auth.uid == uid && request.resource.data.keys().hasOnly(['items']);
+          allow create, update: if request.auth != null && request.auth.uid == uid && request.resource.data.keys().hasOnly(['items', 'equipmentInstances']);
           allow delete: if request.auth != null && request.auth.uid == uid;
         }
       }
@@ -213,6 +213,9 @@ service cloud.firestore {
       && isValidDungeonClears(after)
       && isValidCollectedItemIds(after)
       && isValidUnlockedAchievementIds(after)
+      && isValidMaterialMastery(after)
+      && isValidUnlockedTitleIds(after)
+      && isValidEquippedTitleId(after)
       && isValidNotificationsEnabled(after)
       && isValidMounts(after)
       && isValidTrainedAbilityIds(after);
@@ -240,6 +243,27 @@ service cloud.firestore {
   // above, the only path that writes this field.
   function isValidUnlockedAchievementIds(after) {
     return !('unlockedAchievementIds' in after) || after.unlockedAchievementIds is list;
+  }
+
+  // Shape-only, same posture as every sibling check above — full validation
+  // (that a materialId is real, that xp only ever increases) happens in
+  // firebase/character.ts's applyCraftingProfessionResult, the only path
+  // that writes this field.
+  function isValidMaterialMastery(after) {
+    return !('materialMastery' in after) || after.materialMastery is map;
+  }
+
+  // Same treatment as isValidUnlockedAchievementIds above — unlockedTitleIds
+  // is populated in lockstep with it by the same function.
+  function isValidUnlockedTitleIds(after) {
+    return !('unlockedTitleIds' in after) || after.unlockedTitleIds is list;
+  }
+
+  // Same treatment as isValidEquippedConsumables — a pure pointer field, not
+  // deeply validated here (firebase/titles.ts's setEquippedTitle is the only
+  // path that writes it).
+  function isValidEquippedTitleId(after) {
+    return !('equippedTitleId' in after) || after.equippedTitleId == null || after.equippedTitleId is string;
   }
 
   function isValidNotificationsEnabled(after) {

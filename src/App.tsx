@@ -230,7 +230,7 @@ function AppContent() {
     const recipe = RECIPES[activity.targetId];
     activityNode = <CraftingScreen recipe={recipe} />;
   } else if (activity.type === 'disenchanting' && activity.targetId) {
-    activityNode = <DisenchantingScreen itemId={activity.targetId} />;
+    activityNode = <DisenchantingScreen itemId={activity.targetId} instanceId={activity.disenchantInstanceId} />;
   }
 
   // Starting a gather/craft/fish from the Professions page used to leave the

@@ -1,5 +1,6 @@
 import { signOut } from '../firebase/auth';
 import { CLASS_LABELS, SPEC_LABELS } from '../gameData/classStats';
+import { getTitle } from '../gameData/titles';
 import { ZONES, isZoneUnlocked } from '../gameData/zones';
 import { travelMinutes } from '../gameData/travel';
 import { bestMountSpeedBonusPct } from '../gameData/mounts';
@@ -37,7 +38,12 @@ export function TopBar({
     <div className="top-bar">
       <div className="top-bar-main">
         <div className="top-bar-identity">
-          <strong>{character.name}</strong> — {CLASS_LABELS[character.class]}
+          <strong>{character.name}</strong>
+          {character.equippedTitleId && getTitle(character.equippedTitleId) && (
+            <span className="top-bar-title"> «{getTitle(character.equippedTitleId)!.name}»</span>
+          )}
+          {' — '}
+          {CLASS_LABELS[character.class]}
           {character.spec ? ` (${SPEC_LABELS[character.spec]})` : ''} — Level {character.level}
         </div>
         <div className="top-bar-stats">

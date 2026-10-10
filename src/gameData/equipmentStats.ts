@@ -1,7 +1,16 @@
 import type { BaseStat } from './classStats';
-import type { EquipmentSlot, ItemDef } from './types';
+import type { EquipmentSlot, EquippedItemRef, ItemDef } from './types';
 import { ITEMS } from './items';
 import { ENCHANTS } from './enchanting';
+
+// The bare item id out of an equipped slot's value — nearly every caller
+// that just needs "what item is in this slot" (class/offhand rules, tool-
+// slot checks, enchant-target lookups) wants this, not the roll data. See
+// gameData/types.ts's EquippedItemRef doc comment for why slots carry an
+// object instead of a bare string.
+export function equippedItemId(ref: EquippedItemRef | null | undefined): string | null {
+  return ref?.itemId ?? null;
+}
 
 // Two-handed weapons — a small, deliberately short list rather than a
 // keyword guess across the whole weapon catalog: most of this game's
@@ -65,8 +74,14 @@ export function describeItemStats(item: ItemDef): string {
 // applied regardless of which specific item currently sits in that slot
 // (enchantments bind to the SLOT — see gameData/enchanting.ts's doc
 // comment for why).
+//
+// A randomized-roll item's stats come from `ref.rolls` (denormalized onto
+// the equipped ref itself — see EquippedItemRef's doc comment in
+// gameData/types.ts for why this function doesn't need inventory access to
+// resolve them); everything else falls back to its static
+// ITEMS[itemId].statBonuses exactly as before this field existed.
 export function getEquipmentStatBonuses(
-  equipment: Record<EquipmentSlot, string | null>,
+  equipment: Record<EquipmentSlot, EquippedItemRef | null>,
   enchantments: Partial<Record<EquipmentSlot, string>> = {}
 ): Partial<Record<BaseStat, number>> {
   const totals: Partial<Record<BaseStat, number>> = {};
@@ -77,9 +92,9 @@ export function getEquipmentStatBonuses(
       totals[key] = (totals[key] ?? 0) + (value ?? 0);
     }
   };
-  for (const itemId of Object.values(equipment)) {
-    if (!itemId) continue;
-    addBonuses(ITEMS[itemId]?.statBonuses);
+  for (const ref of Object.values(equipment)) {
+    if (!ref) continue;
+    addBonuses(ref.rolls ?? ITEMS[ref.itemId]?.statBonuses);
   }
   for (const enchantId of Object.values(enchantments)) {
     if (!enchantId) continue;

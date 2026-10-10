@@ -14,9 +14,12 @@ import {
   RECIPE_MASTERY_MAX_LEVEL,
   CRAFTING_COLOR_XP_PCT,
   type CraftingRecipeLike,
+  type MaterialMasteryInput,
 } from '../gameData/craftingEngine';
 import { getProfessionState, maxSkillForUnlockedTier, PROFESSION_CATEGORY, PROFESSION_LABELS } from '../gameData/professionTiers';
 import { ITEMS } from '../gameData/items';
+import { getMaterial } from '../gameData/materials';
+import { materialMasteryPercent, materialMasterySpeedMultiplier, materialMasteryBonusChance } from '../gameData/equipmentRolls';
 import { ItemSlot } from './ItemSlot';
 import { TickBar } from './TickBar';
 import { notify } from '../utils/notifications';
@@ -115,17 +118,27 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
     const masteryState = prof.mastery?.[recipe.id] ?? { level: 0, xp: 0 };
     const cap = maxSkillForUnlockedTier(recipe.profession, prof.unlockedTier);
 
+    const material = recipe.materialId ? getMaterial(recipe.materialId) : undefined;
+    const materialMasteryInput: MaterialMasteryInput | undefined = material
+      ? {
+          materialId: material.id,
+          startingXp: currentCharacter.materialMastery?.[material.id]?.xp ?? 0,
+          barsPerCraft: recipe.materials.find((m) => m.itemId === material.barItemId)?.quantity ?? 0,
+        }
+      : undefined;
+
     const result = resolveCraftingOffline(
       anchor,
       now,
       recipeLike(),
       prof.level,
       prof.xp,
-      masteryState.level,
-      masteryState.xp,
+      materialMasteryInput ? 0 : masteryState.level,
+      materialMasteryInput ? 0 : masteryState.xp,
       cap,
       materialsRef.current,
-      goldRef.current
+      goldRef.current,
+      materialMasteryInput
     );
 
     if (result.itemsCrafted === 0) {
@@ -163,13 +176,20 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
               ...getProfessionState(c.professions, recipe.profession),
               level: result.finalSkill,
               xp: result.finalSkillXp,
-              mastery: {
-                ...getProfessionState(c.professions, recipe.profession).mastery,
-                [recipe.id]: { level: result.finalMasteryLevel, xp: result.finalMasteryXp },
-              },
+              ...(materialMasteryInput
+                ? {}
+                : {
+                    mastery: {
+                      ...getProfessionState(c.professions, recipe.profession).mastery,
+                      [recipe.id]: { level: result.finalMasteryLevel, xp: result.finalMasteryXp },
+                    },
+                  }),
             },
           }
         : c.professions,
+      ...(material && earnsProfessionXp
+        ? { materialMastery: { ...c.materialMastery, [material.id]: { xp: result.finalMaterialMasteryXp ?? 0 } } }
+        : {}),
       gold: c.gold - result.goldSpent,
     }));
 
@@ -180,7 +200,7 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
       const fresh = await getCharacter(currentUser.uid);
       if (!fresh) throw new Error('Character not found during autosave');
 
-      await applyCraftingProfessionResult(currentUser.uid, recipe.profession, recipe.id, {
+      await applyCraftingProfessionResult(currentUser.uid, recipe.profession, recipe.id, fresh, {
         resultItemId: recipe.resultItemId,
         resultQuantity: recipe.resultQuantity * wholeCrafted,
         materialsConsumed: result.materialsConsumed,
@@ -190,6 +210,15 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
         newMasteryLevel: result.finalMasteryLevel,
         newMasteryXp: result.finalMasteryXp,
         earnsProfessionXp,
+        ...(material
+          ? {
+              materialMastery: {
+                materialId: material.id,
+                newMaterialMasteryXp: result.finalMaterialMasteryXp ?? 0,
+                batches: result.materialMasteryBatches ?? [],
+              },
+            }
+          : {}),
       });
 
       await advanceQuests(currentUser.uid, fresh, [{ type: 'craft', itemId: recipe.resultItemId, count: wholeCrafted }]);
@@ -203,13 +232,20 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
                 ...getProfessionState(fresh.professions, recipe.profession),
                 level: result.finalSkill,
                 xp: result.finalSkillXp,
-                mastery: {
-                  ...getProfessionState(fresh.professions, recipe.profession).mastery,
-                  [recipe.id]: { level: result.finalMasteryLevel, xp: result.finalMasteryXp },
-                },
+                ...(materialMasteryInput
+                  ? {}
+                  : {
+                      mastery: {
+                        ...getProfessionState(fresh.professions, recipe.profession).mastery,
+                        [recipe.id]: { level: result.finalMasteryLevel, xp: result.finalMasteryXp },
+                      },
+                    }),
               },
             }
           : fresh.professions,
+        ...(material && earnsProfessionXp
+          ? { materialMastery: { ...fresh.materialMastery, [material.id]: { xp: result.finalMaterialMasteryXp ?? 0 } } }
+          : {}),
         gold: fresh.gold - result.goldSpent,
         // Crafting never touches currentActivity.startedAt server-side, so
         // without refreshing it locally too it sits stale from whenever the
@@ -228,6 +264,7 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
           ...c.professions,
           [recipe.profession]: getProfessionState(currentCharacter.professions, recipe.profession),
         },
+        ...(material ? { materialMastery: currentCharacter.materialMastery } : {}),
       }));
     }
   }
@@ -244,8 +281,18 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
   const masteryState = prof.mastery?.[recipe.id] ?? { level: 0, xp: 0 };
   const tier = craftingColorTier(prof.level, recipe.requiredSkill);
   const xpPct = CRAFTING_COLOR_XP_PCT[tier];
-  const speedMult = craftingMasterySpeedMultiplier(masteryState.level);
-  const bonusChance = craftingMasteryBonusChance(masteryState.level);
+  // A materialId-tagged recipe's speed/bonus-output bonuses (and the Mastery
+  // progress line below) come from the shared per-material track instead of
+  // this recipe's own — see ProfessionState.mastery's doc comment.
+  const displayMaterial = recipe.materialId ? getMaterial(recipe.materialId) : undefined;
+  const materialMasteryXp = displayMaterial ? character.materialMastery?.[displayMaterial.id]?.xp ?? 0 : 0;
+  const materialPercent = displayMaterial ? materialMasteryPercent(materialMasteryXp, displayMaterial.id) : 0;
+  const speedMult = displayMaterial
+    ? materialMasterySpeedMultiplier(materialPercent)
+    : craftingMasterySpeedMultiplier(masteryState.level);
+  const bonusChance = displayMaterial
+    ? materialMasteryBonusChance(materialPercent)
+    : craftingMasteryBonusChance(masteryState.level);
   const xpForNextSkillLevel = craftingXpForNextLevel(prof.level);
   const xpForNextMasteryLevel =
     masteryState.level < RECIPE_MASTERY_MAX_LEVEL ? recipeMasteryXpForNextLevel(masteryState.level) : null;
@@ -288,18 +335,32 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
           <div className="profession-xp-bar-track">
             <div className="profession-xp-bar-fill" style={{ width: `${Math.min(100, (prof.xp / xpForNextSkillLevel) * 100)}%` }} />
           </div>
-          <p>
-            {resultItem?.name ?? recipe.resultItemId} Mastery: {masteryState.level}/{RECIPE_MASTERY_MAX_LEVEL}
-            {xpForNextMasteryLevel !== null ? ` (${Math.floor(masteryState.xp)} / ${xpForNextMasteryLevel} XP)` : ' (max)'}
-            {' — '}+{((speedMult - 1) * 100).toFixed(0)}% speed, {(bonusChance * 100).toFixed(0)}% bonus output
-          </p>
-          {xpForNextMasteryLevel !== null && (
-            <div className="profession-xp-bar-track">
-              <div
-                className="profession-xp-bar-fill"
-                style={{ width: `${Math.min(100, (masteryState.xp / xpForNextMasteryLevel) * 100)}%` }}
-              />
-            </div>
+          {displayMaterial ? (
+            <>
+              <p>
+                {displayMaterial.name} Mastery: {materialPercent.toFixed(1)}%
+                {' — '}+{((speedMult - 1) * 100).toFixed(0)}% speed, {(bonusChance * 100).toFixed(0)}% bonus output
+              </p>
+              <div className="profession-xp-bar-track">
+                <div className="profession-xp-bar-fill" style={{ width: `${materialPercent}%` }} />
+              </div>
+            </>
+          ) : (
+            <>
+              <p>
+                {resultItem?.name ?? recipe.resultItemId} Mastery: {masteryState.level}/{RECIPE_MASTERY_MAX_LEVEL}
+                {xpForNextMasteryLevel !== null ? ` (${Math.floor(masteryState.xp)} / ${xpForNextMasteryLevel} XP)` : ' (max)'}
+                {' — '}+{((speedMult - 1) * 100).toFixed(0)}% speed, {(bonusChance * 100).toFixed(0)}% bonus output
+              </p>
+              {xpForNextMasteryLevel !== null && (
+                <div className="profession-xp-bar-track">
+                  <div
+                    className="profession-xp-bar-fill"
+                    style={{ width: `${Math.min(100, (masteryState.xp / xpForNextMasteryLevel) * 100)}%` }}
+                  />
+                </div>
+              )}
+            </>
           )}
         </>
       )}

@@ -9,6 +9,7 @@ import type { RosterSlotSummary } from '../gameData/characterSlots';
 import { CLASS_LABELS, SPEC_LABELS, canClassEquip, type ClassId, type SpecId } from '../gameData/classStats';
 import { ITEMS } from '../gameData/items';
 import { ZONES } from '../gameData/zones';
+import { equippedItemId } from '../gameData/equipmentStats';
 import { ItemSlot } from './ItemSlot';
 import type { Inventory } from '../types/character';
 import type { EquipmentSlot } from '../gameData/types';
@@ -200,7 +201,7 @@ export function CompanionScreen() {
                 )}
                 <ul>
                   {SLOT_ORDER.map((slot) => {
-                    const equippedId = state.equipment[slot];
+                    const equippedId = equippedItemId(state.equipment[slot]);
                     const equippedItem = equippedId ? ITEMS[equippedId] : null;
                     return (
                       <li key={slot}>

@@ -49,15 +49,26 @@ export function InventoryScreen() {
     await refetch();
   }
 
-  const distinctItemCount = Object.values(inventory.items).filter((q) => q > 0).length;
+  // A base item already counts as one occupied slot whether it's a plain
+  // stack, one or more randomized-roll instances, or both — see
+  // firebase/inventory.ts's grantEquipmentInstances, which enforces the
+  // same accounting server-side.
+  const instanceBaseItemIds = new Set(Object.values(inventory.equipmentInstances ?? {}).map((inst) => inst.itemId));
+  for (const itemId of Object.keys(inventory.items)) instanceBaseItemIds.delete(itemId);
+  const distinctItemCount = Object.values(inventory.items).filter((q) => q > 0).length + instanceBaseItemIds.size;
 
-  const entries = Object.entries(inventory.items)
-    .filter(([, quantity]) => quantity > 0)
-    .sort(([a], [b]) => {
-      const nameA = ITEMS[a]?.name ?? a;
-      const nameB = ITEMS[b]?.name ?? b;
-      return nameA.localeCompare(nameB);
-    });
+  const entries: { key: string; itemId: string; quantity: number; rolls?: Record<string, number> }[] = [
+    ...Object.entries(inventory.items)
+      .filter(([, quantity]) => quantity > 0)
+      .map(([itemId, quantity]) => ({ key: itemId, itemId, quantity })),
+    // Randomized-roll equipment (gameData/equipmentRolls.ts) lives in its
+    // own instanceId-keyed bucket — each distinct roll shown as its own row
+    // so different stat combinations of the same base item stay
+    // distinguishable, same as the Equipment/Disenchant pickers.
+    ...Object.entries(inventory.equipmentInstances ?? {})
+      .filter(([, inst]) => inst.quantity > 0)
+      .map(([instanceId, inst]) => ({ key: instanceId, itemId: inst.itemId, quantity: inst.quantity, rolls: inst.rolls })),
+  ].sort((a, b) => (ITEMS[a.itemId]?.name ?? a.itemId).localeCompare(ITEMS[b.itemId]?.name ?? b.itemId));
 
   return (
     <div className="inventory-screen">
@@ -79,19 +90,19 @@ export function InventoryScreen() {
         <p>Empty so far — go fight or gather something.</p>
       ) : (
         <ul>
-          {entries.map(([itemId, quantity]) => {
+          {entries.map(({ key, itemId, quantity, rolls }) => {
             const item = ITEMS[itemId];
             if (!item) {
               return (
-                <li key={itemId}>
+                <li key={key}>
                   {itemId}: {quantity}
                 </li>
               );
             }
             return (
-              <li key={itemId}>
+              <li key={key}>
                 <div className="item-row-main">
-                  <ItemSlot item={item} quantity={quantity} />
+                  <ItemSlot item={item} quantity={quantity} statOverride={rolls} />
                   <span>{item.name}</span>
                 </div>
               </li>

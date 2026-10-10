@@ -33,6 +33,13 @@ import {
   bankedXpCapAt,
 } from './gatheringEngine';
 import { resolveElapsedProgress } from './activityEngine';
+import {
+  MASTERY_XP_PER_BAR,
+  materialMasteryPercent,
+  materialMasteryXpToNextPercentPoint,
+  materialMasterySpeedMultiplier,
+  materialMasteryBonusChance,
+} from './equipmentRolls';
 
 export const CRAFTING_LEVEL_CAP = GATHERING_LEVEL_CAP; // 100, same cap, same curve
 export const craftingXpForNextLevel = gatheringXpForNextLevel;
@@ -92,6 +99,39 @@ export interface CraftingOfflineResult {
   finalColorTier: CraftingColorTier;
   stoppedForMaterials: boolean;
   didNotConverge: boolean;
+  // Only populated when resolveCraftingOffline is called with a
+  // `materialMastery` param (a Recipe.materialId-tagged recipe) — the old
+  // per-recipe masteryXpGained/finalMasteryLevel/finalMasteryXp above are
+  // frozen at their starting values in that case (the recipe no longer
+  // populates the old per-recipe Mastery bucket at all, see
+  // types/character.ts's ProfessionState.mastery comment), and these fields
+  // carry the real result instead.
+  materialMasteryXpGained?: number;
+  finalMaterialMasteryXp?: number;
+  // One entry per batch-loop iteration that produced items, recording how
+  // many (including the fractional Mastery bonus-output share) were crafted
+  // at that iteration's STARTING material-Mastery percent — needed so stat
+  // rolls for items crafted early in a long offline window use that
+  // lower mastery quality instead of the window's final percent (see
+  // firebase/character.ts's applyCraftingProfessionResult, which rolls one
+  // batch entry at a time rather than rolling `itemsCrafted` all at the
+  // final percent).
+  materialMasteryBatches?: { quantity: number; masteryPercentAtCraft: number }[];
+}
+
+// Passed to resolveCraftingOffline only for a Recipe.materialId-tagged
+// recipe — everything the function needs to run the material-Mastery axis
+// instead of (not in addition to) the old per-recipe Mastery axis.
+// `barsPerCraft` is read from the recipe's OWN materials list by the
+// caller (never reduced by a future material-cost perk — see
+// gameData/materials.ts's module comment), matching "Mastery XP = base bar
+// requirement × Mastery XP per bar" exactly regardless of what the batch
+// loop's ingredient-save-chance (always 0 in this mode — see below) might
+// otherwise have discounted.
+export interface MaterialMasteryInput {
+  materialId: string;
+  startingXp: number;
+  barsPerCraft: number;
 }
 
 // Always the OFFLINE/batched resolver, even for a single ~20s autosave
@@ -110,15 +150,21 @@ export function resolveCraftingOffline(
   startingMasteryXp: number,
   skillCap: number,
   availableMaterialQuantities: Record<string, number>,
-  availableGold = Infinity
+  availableGold = Infinity,
+  materialMastery?: MaterialMasteryInput
 ): CraftingOfflineResult {
   const progress = resolveElapsedProgress(startedAt, now);
   let remainingSeconds = progress.effectiveHours * 3600;
 
   let skill = startingSkill;
   let skillXp = startingSkillXp;
+  // The old per-recipe Mastery axis is frozen (never advanced) when
+  // materialMastery is supplied — a materialId-tagged recipe contributes
+  // only to Character.materialMastery instead, see ProfessionState.mastery's
+  // comment. materialXp is the new axis's own running total.
   let masteryLevel = startingMasteryLevel;
   let masteryXp = startingMasteryXp;
+  let materialXp = materialMastery?.startingXp ?? 0;
   const startColorTier = craftingColorTier(skill, recipe.requiredSkill);
   const bankedCap = craftingBankedXpCapAt(skillCap);
 
@@ -128,12 +174,17 @@ export function resolveCraftingOffline(
   let itemsCrafted = 0;
   let professionXpGained = 0;
   let masteryXpGained = 0;
+  let materialMasteryXpGained = 0;
+  const materialMasteryBatches: { quantity: number; masteryPercentAtCraft: number }[] = [];
   let iterations = 0;
   let stoppedForMaterials = false;
 
   while (remainingSeconds > 0 && iterations < MAX_BATCH_ITERATIONS) {
     iterations++;
-    const speedMult = craftingMasterySpeedMultiplier(masteryLevel);
+    const materialPercent = materialMastery ? materialMasteryPercent(materialXp, materialMastery.materialId) : 0;
+    const speedMult = materialMastery
+      ? materialMasterySpeedMultiplier(materialPercent)
+      : craftingMasterySpeedMultiplier(masteryLevel);
     const craftSeconds = recipe.craftSeconds / speedMult;
     const timeLimitedCrafts = Math.floor(remainingSeconds / craftSeconds);
     // Availability is checked against the FULL material cost (ignoring the
@@ -158,21 +209,42 @@ export function resolveCraftingOffline(
     const xpPct = CRAFTING_COLOR_XP_PCT[tier];
     // Never zero — same "even Gray still teaches something" floor as gathering.
     const xpPerCraft = Math.max(1, Math.round(recipe.baseXp * xpPct));
-    const masteryXpPerCraft = recipe.baseXp;
+    // Mastery XP per craft: bars-based for a materialId-tagged recipe (per
+    // the recipe's ORIGINAL material requirement, unaffected by saveChance
+    // below), else the old recipe.baseXp-based figure, unchanged.
+    const masteryXpPerCraft = materialMastery ? materialMastery.barsPerCraft * MASTERY_XP_PER_BAR : recipe.baseXp;
 
     const skillXpRoom = belowCap ? craftingXpForNextLevel(skill) - skillXp : bankedCap - skillXp;
     const craftsToSkillCapOrLevel =
       belowCap || bankNotFull ? Math.max(1, Math.ceil(skillXpRoom / xpPerCraft)) : Infinity;
     const craftsToMasteryUp =
-      masteryLevel < RECIPE_MASTERY_MAX_LEVEL
+      !materialMastery && masteryLevel < RECIPE_MASTERY_MAX_LEVEL
         ? Math.max(1, Math.ceil((recipeMasteryXpForNextLevel(masteryLevel) - masteryXp) / masteryXpPerCraft))
         : Infinity;
+    // Caps each iteration so material-Mastery percent moves at most ~1 point
+    // before stat-quality bonuses are recomputed — see
+    // CraftingOfflineResult.materialMasteryBatches's comment.
+    const craftsToNextMasteryPercentPoint =
+      materialMastery && materialPercent < 100
+        ? Math.max(1, Math.ceil(materialMasteryXpToNextPercentPoint(materialXp, materialMastery.materialId) / masteryXpPerCraft))
+        : Infinity;
 
-    const craftAttempts = Math.min(craftsAvailableNow, craftsToSkillCapOrLevel, craftsToMasteryUp);
-    const bonusChance = craftingMasteryBonusChance(masteryLevel);
-    const saveChance = craftingMasteryIngredientSaveChance(masteryLevel);
+    const craftAttempts = Math.min(
+      craftsAvailableNow,
+      craftsToSkillCapOrLevel,
+      craftsToMasteryUp,
+      craftsToNextMasteryPercentPoint
+    );
+    const bonusChance = materialMastery
+      ? materialMasteryBonusChance(materialPercent)
+      : craftingMasteryBonusChance(masteryLevel);
+    // Ingredient-save is strictly a per-recipe-Mastery bonus (no material-
+    // Mastery equivalent in the 3-bonus design — speed/bonus-output/stat-
+    // quality only), so it's 0 whenever materialMastery is active.
+    const saveChance = materialMastery ? 0 : craftingMasteryIngredientSaveChance(masteryLevel);
 
-    itemsCrafted += craftAttempts * (1 + bonusChance);
+    const quantityThisBatch = craftAttempts * (1 + bonusChance);
+    itemsCrafted += quantityThisBatch;
     remainingSeconds -= craftAttempts * craftSeconds;
     if (recipe.goldCost) remainingGold -= craftAttempts * recipe.goldCost;
     for (const m of recipe.materials) {
@@ -183,17 +255,27 @@ export function resolveCraftingOffline(
 
     const skillXpThisBatch = belowCap || bankNotFull ? craftAttempts * xpPerCraft : 0;
     professionXpGained += skillXpThisBatch;
-    masteryXpGained += craftAttempts * masteryXpPerCraft;
     skillXp = belowCap ? skillXp + skillXpThisBatch : Math.min(bankedCap, skillXp + skillXpThisBatch);
-    masteryXp += craftAttempts * masteryXpPerCraft;
+
+    if (materialMastery) {
+      materialMasteryBatches.push({ quantity: quantityThisBatch, masteryPercentAtCraft: materialPercent });
+      const materialXpThisBatch = craftAttempts * masteryXpPerCraft;
+      materialMasteryXpGained += materialXpThisBatch;
+      materialXp += materialXpThisBatch;
+    } else {
+      masteryXpGained += craftAttempts * masteryXpPerCraft;
+      masteryXp += craftAttempts * masteryXpPerCraft;
+    }
 
     while (skill < skillCap && skillXp >= craftingXpForNextLevel(skill)) {
       skillXp -= craftingXpForNextLevel(skill);
       skill++;
     }
-    while (masteryLevel < RECIPE_MASTERY_MAX_LEVEL && masteryXp >= recipeMasteryXpForNextLevel(masteryLevel)) {
-      masteryXp -= recipeMasteryXpForNextLevel(masteryLevel);
-      masteryLevel++;
+    if (!materialMastery) {
+      while (masteryLevel < RECIPE_MASTERY_MAX_LEVEL && masteryXp >= recipeMasteryXpForNextLevel(masteryLevel)) {
+        masteryXp -= recipeMasteryXpForNextLevel(masteryLevel);
+        masteryLevel++;
+      }
     }
   }
 
@@ -211,6 +293,9 @@ export function resolveCraftingOffline(
     finalColorTier: craftingColorTier(skill, recipe.requiredSkill),
     stoppedForMaterials,
     didNotConverge: iterations >= MAX_BATCH_ITERATIONS,
+    ...(materialMastery
+      ? { materialMasteryXpGained, finalMaterialMasteryXp: materialXp, materialMasteryBatches }
+      : {}),
   };
 }
 

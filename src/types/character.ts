@@ -1,32 +1,48 @@
-import type { EquipmentSlot, ProfessionId, ActivityType, ProfessionTierName } from '../gameData/types';
+import type { EquipmentSlot, EquippedItemRef, ProfessionId, ActivityType, ProfessionTierName } from '../gameData/types';
+import type { BaseStat } from '../gameData/classStats';
 import type { ClassId, SpecId } from '../gameData/classStats';
 import type { TalentPicks } from '../gameData/talents';
 import type { ConditionGroup } from '../combatEngine/types';
 import type { TravelState } from '../gameData/travel';
 
-// ONE shared shape across all 10 professions, on two different scales
-// depending on category (gameData/professionTiers.ts's PROFESSION_CATEGORY):
-// the 6 crafting professions (including Smithing) use a 1-300 `level` with
-// `xp` meaningful only for Smithing (gameData/masteryEngine.ts) — the other
-// 5 level via a discrete skill-up chance with `xp` always 0; the 4 gathering
-// professions (Mining/Herbalism/Skinning/Fishing) use a 1-100 `level` with
-// `xp` toward the next level on gameData/gatheringEngine.ts's shared curve.
-// A profession the character hasn't learned yet has no entry in
-// Character.professions at all (see firebase/professions.ts's
+// ONE shared shape across all 10 professions, all on the same 1-100 `level`
+// with `xp` toward the next level on gameData/gatheringEngine.ts's shared
+// curve (also reused by gameData/craftingEngine.ts for the 6 crafting
+// professions). A profession the character hasn't learned yet has no entry
+// in Character.professions at all (see firebase/professions.ts's
 // learnProfession) rather than a default row.
 export interface ProfessionState {
   level: number;
   xp: number;
   unlockedTier: ProfessionTierName;
-  // Per-resource/recipe Mastery — populated for Smithing (0-10, keyed by
-  // Recipe.id, gameData/masteryEngine.ts) and for all 4 gathering
-  // professions (0-50, keyed by GatherNode.id/FishingHole.id,
-  // gameData/gatheringEngine.ts). The other 5 crafting professions never
-  // populate this. A node/recipe with no entry here is simply un-practiced
+  // Per-recipe/resource Mastery (0-50, keyed by Recipe.id for crafting or
+  // GatherNode.id/FishingHole.id for gathering, gameData/gatheringEngine.ts
+  // /craftingEngine.ts) — a shallower, recipe-scoped progression track,
+  // distinct from the per-MATERIAL Mastery below. A Smithing recipe tagged
+  // with Recipe.materialId (the consolidated armor/jewelry recipes) stops
+  // populating this and contributes only to Character.materialMastery
+  // instead; every other recipe/node still uses this bucket exactly as
+  // before. A node/recipe with no entry here is simply un-practiced
   // (Mastery level 0), not an error — same "absence is the zero state"
   // convention as the rest of this interface.
   mastery?: Record<string, { level: number; xp: number }>;
 }
+
+// Per-MATERIAL Mastery (gameData/materials.ts's MaterialDef registry) — a
+// single shared 0-100% progress bar per metal/jewelry tier, fed by every
+// consolidated armor/jewelry recipe that crafts from that material
+// (Recipe.materialId), independent of which specific piece was crafted.
+// Separate from ProfessionState.mastery above (which is per-recipe, not
+// per-material) and from profession level/xp (which is the 1-100
+// Blacksmithing skill itself) — see gameData/materials.ts's module comment
+// for why these are three independent axes. `xp` accumulates without a cap;
+// the 0-100% figure is always derived as
+// `min(100, xp / MATERIAL_MASTERY_XP_THRESHOLDS[materialId] * 100)`
+// (gameData/equipmentRolls.ts), never stored directly, so a future
+// rebalance of the threshold doesn't require migrating stored percentages.
+// A material with no entry here is simply un-practiced (0%), same
+// "absence is the zero state" convention as everywhere else in this file.
+export type MaterialMasteryState = Record<string, { xp: number }>;
 
 export interface CurrentActivity {
   type: ActivityType | null;
@@ -41,6 +57,12 @@ export interface CurrentActivity {
   // whichever comes first) rather than running until manually stopped like
   // every other activity.
   disenchantQuantity?: number;
+  // Only set when disenchanting targets a specific randomized-stat roll
+  // (gameData/equipmentRolls.ts) rather than a plain stackable/legacy item —
+  // names which Inventory.equipmentInstances bucket to draw from and
+  // decrement, so two different rolls of the same base item are never
+  // conflated (see firebase/enchanting.ts's applyDisenchantResult).
+  disenchantInstanceId?: string;
 }
 
 // A named snapshot of an equipped-ability loadout + its conditions (Phase 7)
@@ -82,7 +104,7 @@ export interface QuestState {
 // gameData/companions.ts's resolveActiveCompanionSetup) and no talents, so
 // there's nothing else to persist per companion.
 export interface CompanionState {
-  equipment: Record<EquipmentSlot, string | null>;
+  equipment: Record<EquipmentSlot, EquippedItemRef | null>;
 }
 
 export interface Character {
@@ -98,11 +120,15 @@ export interface Character {
   currentHp: number;
   hpCheckpointAt: Date;
   respecCount: number;
-  equipment: Record<EquipmentSlot, string | null>;
+  equipment: Record<EquipmentSlot, EquippedItemRef | null>;
   // Only professions actually learned (see firebase/professions.ts's
   // learnProfession) have a key here — Partial, not a full Record, since an
   // unlearned profession has no state at all, not a level-0 default.
   professions: Partial<Record<ProfessionId, ProfessionState>>;
+  // Per-material Mastery (see MaterialMasteryState above) — absent entirely
+  // for a character who's never crafted a material-linked recipe, same
+  // "absence is the zero state" convention as `professions`.
+  materialMastery?: MaterialMasteryState;
   // Enchantment id per equipment slot — bound to the SLOT, not a unique item
   // instance (this engine doesn't instance equipment; see gameData/
   // enchanting.ts's doc comment for why). Re-enchanting a slot overwrites
@@ -217,6 +243,21 @@ export interface Character {
   // way as collectedItemIds above) it never comes out, even if the
   // underlying condition (e.g. a gold total) later stops being true.
   unlockedAchievementIds: string[];
+  // Permanent, monotonic — same convention as unlockedAchievementIds, and
+  // populated in lockstep with it: a material-Mastery or Master Blacksmith
+  // achievement unlocking (gameData/achievements.ts) always awards its
+  // paired title (gameData/titles.ts) in the same write. An id here is
+  // never removed, even if a later achievement-definition change makes it
+  // harder to re-earn — see achievements.ts's module comment on why that's
+  // already safe by construction.
+  unlockedTitleIds: string[];
+  // The player's one active cosmetic title (gameData/titles.ts), or null
+  // for none — a pure UI pointer into unlockedTitleIds, same
+  // "doesn't reserve or move anything" posture as equippedConsumables above
+  // (see firebase/titles.ts's setEquippedTitle). Titles carry no stat
+  // effect; this only changes what TopBar.tsx displays next to the
+  // character's name.
+  equippedTitleId: string | null;
   // Player preference, toggled from SettingsScreen — gates the toast
   // notifications in components/Notifications.tsx (loot/XP on a kill, an
   // item finishing in a profession). Defaults to true; an old character
@@ -242,4 +283,20 @@ export interface Character {
 
 export interface Inventory {
   items: Record<string, number>;
+  // Randomized-stat equipment (gameData/equipmentRolls.ts) stacked by a
+  // deterministic instanceId derived from itemId + its canonicalized rolls,
+  // so two identically-rolled items collapse into one bucket's `quantity`
+  // instead of each needing their own Firestore document — this stays a
+  // field on the same characters/{uid}/inventory/main doc, not a
+  // subcollection. Plain stackable items (materials, consumables,
+  // non-randomized equipment) are untouched and keep using `items` exactly
+  // as before this field existed. A base item id can hold at most
+  // MAX_VARIANTS_PER_BASE_ITEM (gameData/equipmentRolls.ts) distinct
+  // instanceIds at once — see firebase/inventory.ts's
+  // grantEquipmentInstances for what happens to a roll beyond that cap.
+  equipmentInstances?: Record<string, {
+    itemId: string;
+    rolls: Partial<Record<BaseStat, number>>;
+    quantity: number;
+  }>;
 }

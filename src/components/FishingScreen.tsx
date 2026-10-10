@@ -17,6 +17,7 @@ import {
 } from '../gameData/gatheringEngine';
 import { getProfessionState, maxSkillForUnlockedTier } from '../gameData/professionTiers';
 import { ITEMS } from '../gameData/items';
+import { equippedItemId } from '../gameData/equipmentStats';
 import { notify } from '../utils/notifications';
 import { TickBar } from './TickBar';
 import type { Character } from '../types/character';
@@ -87,7 +88,8 @@ export function FishingScreen({ hole }: { hole: FishingHole }) {
     const prof = getProfessionState(currentCharacter.professions, 'fishing');
     const masteryState = prof.mastery?.[hole.id] ?? { level: 0, xp: 0 };
     const cap = maxSkillForUnlockedTier('fishing', prof.unlockedTier);
-    const equippedTool = currentCharacter.equipment.tool ? ITEMS[currentCharacter.equipment.tool] : null;
+    const equippedToolId = equippedItemId(currentCharacter.equipment.tool);
+    const equippedTool = equippedToolId ? ITEMS[equippedToolId] : null;
     const toolBonusPct = equippedTool?.toolType === 'fishing_rod' ? equippedTool.gatherBonusPct ?? 0 : 0;
 
     const result = resolveGatheringOffline(

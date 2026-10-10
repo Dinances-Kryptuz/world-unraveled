@@ -2,10 +2,27 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useCharacter } from '../hooks/useCharacter';
 import { reconcileCollectionAndAchievements } from '../firebase/achievements';
+import { setEquippedTitle } from '../firebase/titles';
 import { ACHIEVEMENTS } from '../gameData/achievements';
+import { TITLES } from '../gameData/titles';
 import { ITEMS } from '../gameData/items';
+import { RECIPES } from '../gameData/recipes';
 import { ItemSlot } from './ItemSlot';
 import type { EquipmentSlot } from '../gameData/types';
+
+// The 48 retired "sacred_*" items (see items.ts's module comment on the
+// material-Mastery overhaul) are kept as frozen legacy ItemDefs forever so a
+// pre-existing stack/equip never breaks, but they can no longer be crafted
+// or otherwise obtained — a character who already found one keeps it in
+// their log permanently (collectedItemIds is monotonic), but one who never
+// did shouldn't see a permanently-impossible entry. Identified generically
+// (not a hand-typed id list): a "sacred_X" item whose de-prefixed id X is
+// itself a still-craftable consolidated base item is exactly the retired
+// set this overhaul produced.
+const CONSOLIDATED_BASE_ITEM_IDS = new Set(Object.values(RECIPES).filter((r) => r.materialId).map((r) => r.resultItemId));
+function isRetiredLegacyItem(itemId: string): boolean {
+  return itemId.startsWith('sacred_') && CONSOLIDATED_BASE_ITEM_IDS.has(itemId.slice('sacred_'.length));
+}
 
 // 'ring2' is deliberately omitted — it's a second equip DESTINATION, not a
 // distinct item category (every ring item's own equipSlot is always
@@ -59,11 +76,19 @@ export function CollectionScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
+  async function handleSelectTitle(titleId: string) {
+    if (!user) return;
+    await setEquippedTitle(user.uid, titleId || null);
+    await refetch();
+  }
+
   if (!character) return null;
 
   const collectedSet = new Set(collectedItemIds);
   const unlockedSet = new Set(unlockedAchievementIds);
-  const allEquipment = Object.values(ITEMS).filter((item) => item.type === 'equipment');
+  const allEquipment = Object.values(ITEMS).filter(
+    (item) => item.type === 'equipment' && (!isRetiredLegacyItem(item.id) || collectedSet.has(item.id))
+  );
 
   return (
     <div className="collection-screen">
@@ -125,6 +150,27 @@ export function CollectionScreen() {
               );
             })}
           </ul>
+
+          {/* Titles unlock in lockstep with their matching mastery/Master
+              Blacksmith achievement above (same id, reused — see
+              gameData/titles.ts) — purely cosmetic, same "equip one of
+              several unlocked options" pattern ConsumablesBar's
+              EquippedSlot already uses for food/potion pins. */}
+          <h3>Title</h3>
+          {character.unlockedTitleIds.length === 0 ? (
+            <p>
+              <small>No titles unlocked yet.</small>
+            </p>
+          ) : (
+            <select value={character.equippedTitleId ?? ''} onChange={(e) => handleSelectTitle(e.target.value)}>
+              <option value="">— None —</option>
+              {TITLES.filter((t) => character.unlockedTitleIds.includes(t.id)).map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
+          )}
         </>
       )}
     </div>

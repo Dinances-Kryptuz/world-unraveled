@@ -1651,17 +1651,42 @@ export const ITEMS: Record<string, ItemDef> = {
     description: 'A curved claw, still sharp enough to work.', stackable: true, sellValue: 6,
   },
 
-  // ── Blacksmithing full armor sets (Mining/Smithing Mastery-pilot overhaul) ──
-  // Plate (STR+STA) and Sacred-prefixed cloth (INT+SPI) variants per tier —
-  // see masteryEngine.ts's module doc comment and gameData/recipes.ts's
-  // matching section for the design. Generated programmatically given the
-  // volume (7 tiers x 8 slots x 2 variants + 3 jewelry tiers x 2 slots x 2
-  // variants = 124 items); each entry is still plain static data like every
-  // other item here, not computed at runtime.
+  // ── Blacksmithing full armor sets (material-Mastery/randomized-stat overhaul) ──
+  // Each (tier, slot) pair used to be two separate items — a "plain" STR/STA
+  // one and a "Sacred"-prefixed INT/SPI one — purely so casters had a usable
+  // alternative. The duplicate RECIPE for the Sacred half of each pair was
+  // removed (see gameData/recipes.ts's matching section); a newly-crafted
+  // item now rolls 2 random stats from STR/STA/INT/SPI instead
+  // (gameData/equipmentRolls.ts's rollArmorStats), with the roll denormalized
+  // onto the equipped/inventory instance itself, not this static entry — see
+  // gameData/types.ts's EquippedItemRef doc comment.
+  //
+  // The 42 "Sacred"-prefixed entries below are kept completely untouched
+  // (frozen legacy items, no longer reachable from any recipe) purely so a
+  // pre-existing stack or equipped copy never disappears or 404s — every
+  // consumer (equip, stat lookup, disenchant, vendor, collection log) keeps
+  // working on them exactly as before this overhaul, forever, with zero
+  // migration needed.
+  //
+  // The "plain" entries below (the ones a recipe still produces) keep their
+  // OLD statBonuses too, for the identical reason: a pre-existing stack or
+  // equipped copy of e.g. `copper_helm` predates per-instance rolls and has
+  // no roll data to fall back on, so getEquipmentStatBonuses
+  // (gameData/equipmentStats.ts) uses a ref's `rolls` when present and only
+  // falls back to this static field for such legacy, never-rolled copies —
+  // a NEWLY crafted copy always carries its own `rolls`, which wins. Only
+  // `armorType` was removed from the 42 armor pieces (not the 6 jewelry
+  // pieces, which never had one): keeping it would have meant only the
+  // class(es) that could previously wear the "plain" variant could wear the
+  // new single consolidated item, silently locking out whichever class used
+  // to need the "Sacred" cloth variant — and every stat combo must in fact
+  // be equippable by every class for "equal probability per combo" to mean
+  // anything. No `armorType` is the same "unrestricted" convention weapons
+  // and rings already use (see classStats.ts's canClassEquip).
   copper_helm: {
     id: 'copper_helm', name: 'Copper Helm', type: 'equipment',
     description: 'An orange helm forged from Copper by a skilled blacksmith.',
-    stackable: true, equipSlot: 'helmet', armorType: 'plate', statBonuses: { STA: 3, STR: 3 }, sellValue: 18,
+    stackable: true, equipSlot: 'helmet', statBonuses: { STA: 3, STR: 3 }, sellValue: 18,
   },
   sacred_copper_helm: {
     id: 'sacred_copper_helm', name: 'Sacred Copper Helm', type: 'equipment',
@@ -1671,7 +1696,7 @@ export const ITEMS: Record<string, ItemDef> = {
   copper_chestplate: {
     id: 'copper_chestplate', name: 'Copper Chestplate', type: 'equipment',
     description: 'An orange chestplate forged from Copper by a skilled blacksmith.',
-    stackable: true, equipSlot: 'chest', armorType: 'plate', statBonuses: { STA: 4, STR: 4 }, sellValue: 24,
+    stackable: true, equipSlot: 'chest', statBonuses: { STA: 4, STR: 4 }, sellValue: 24,
   },
   sacred_copper_chestplate: {
     id: 'sacred_copper_chestplate', name: 'Sacred Copper Chestplate', type: 'equipment',
@@ -1681,7 +1706,7 @@ export const ITEMS: Record<string, ItemDef> = {
   copper_gauntlets: {
     id: 'copper_gauntlets', name: 'Copper Gauntlets', type: 'equipment',
     description: 'An orange gauntlets forged from Copper by a skilled blacksmith.',
-    stackable: true, equipSlot: 'gloves', armorType: 'plate', statBonuses: { STA: 2, STR: 2 }, sellValue: 12,
+    stackable: true, equipSlot: 'gloves', statBonuses: { STA: 2, STR: 2 }, sellValue: 12,
   },
   sacred_copper_gauntlets: {
     id: 'sacred_copper_gauntlets', name: 'Sacred Copper Gauntlets', type: 'equipment',
@@ -1691,7 +1716,7 @@ export const ITEMS: Record<string, ItemDef> = {
   copper_legplates: {
     id: 'copper_legplates', name: 'Copper Legplates', type: 'equipment',
     description: 'An orange legplates forged from Copper by a skilled blacksmith.',
-    stackable: true, equipSlot: 'legs', armorType: 'plate', statBonuses: { STA: 4, STR: 3 }, sellValue: 21,
+    stackable: true, equipSlot: 'legs', statBonuses: { STA: 4, STR: 3 }, sellValue: 21,
   },
   sacred_copper_legplates: {
     id: 'sacred_copper_legplates', name: 'Sacred Copper Legplates', type: 'equipment',
@@ -1701,7 +1726,7 @@ export const ITEMS: Record<string, ItemDef> = {
   copper_greaves: {
     id: 'copper_greaves', name: 'Copper Greaves', type: 'equipment',
     description: 'An orange greaves forged from Copper by a skilled blacksmith.',
-    stackable: true, equipSlot: 'boots', armorType: 'plate', statBonuses: { STA: 3, STR: 2 }, sellValue: 15,
+    stackable: true, equipSlot: 'boots', statBonuses: { STA: 3, STR: 2 }, sellValue: 15,
   },
   sacred_copper_greaves: {
     id: 'sacred_copper_greaves', name: 'Sacred Copper Greaves', type: 'equipment',
@@ -1711,7 +1736,7 @@ export const ITEMS: Record<string, ItemDef> = {
   copper_shield: {
     id: 'copper_shield', name: 'Copper Shield', type: 'equipment',
     description: 'An orange shield forged from Copper by a skilled blacksmith.',
-    stackable: true, equipSlot: 'offhand', armorType: 'plate', statBonuses: { STA: 3, STR: 3 }, sellValue: 18,
+    stackable: true, equipSlot: 'offhand', statBonuses: { STA: 3, STR: 3 }, sellValue: 18,
   },
   sacred_copper_shield: {
     id: 'sacred_copper_shield', name: 'Copper-Bound Tome', type: 'equipment',
@@ -1741,7 +1766,7 @@ export const ITEMS: Record<string, ItemDef> = {
   bronze_helm: {
     id: 'bronze_helm', name: 'Bronze Helm', type: 'equipment',
     description: 'A brown helm forged from Bronze by a skilled blacksmith.',
-    stackable: true, equipSlot: 'helmet', armorType: 'plate', statBonuses: { STA: 4, STR: 4 }, sellValue: 26,
+    stackable: true, equipSlot: 'helmet', statBonuses: { STA: 4, STR: 4 }, sellValue: 26,
   },
   sacred_bronze_helm: {
     id: 'sacred_bronze_helm', name: 'Sacred Bronze Helm', type: 'equipment',
@@ -1751,7 +1776,7 @@ export const ITEMS: Record<string, ItemDef> = {
   bronze_chestplate: {
     id: 'bronze_chestplate', name: 'Bronze Chestplate', type: 'equipment',
     description: 'A brown chestplate forged from Bronze by a skilled blacksmith.',
-    stackable: true, equipSlot: 'chest', armorType: 'plate', statBonuses: { STA: 7, STR: 5 }, sellValue: 38,
+    stackable: true, equipSlot: 'chest', statBonuses: { STA: 7, STR: 5 }, sellValue: 38,
   },
   sacred_bronze_chestplate: {
     id: 'sacred_bronze_chestplate', name: 'Sacred Bronze Chestplate', type: 'equipment',
@@ -1761,7 +1786,7 @@ export const ITEMS: Record<string, ItemDef> = {
   bronze_gauntlets: {
     id: 'bronze_gauntlets', name: 'Bronze Gauntlets', type: 'equipment',
     description: 'A brown gauntlets forged from Bronze by a skilled blacksmith.',
-    stackable: true, equipSlot: 'gloves', armorType: 'plate', statBonuses: { STA: 4, STR: 3 }, sellValue: 22,
+    stackable: true, equipSlot: 'gloves', statBonuses: { STA: 4, STR: 3 }, sellValue: 22,
   },
   sacred_bronze_gauntlets: {
     id: 'sacred_bronze_gauntlets', name: 'Sacred Bronze Gauntlets', type: 'equipment',
@@ -1771,7 +1796,7 @@ export const ITEMS: Record<string, ItemDef> = {
   bronze_legplates: {
     id: 'bronze_legplates', name: 'Bronze Legplates', type: 'equipment',
     description: 'A brown legplates forged from Bronze by a skilled blacksmith.',
-    stackable: true, equipSlot: 'legs', armorType: 'plate', statBonuses: { STA: 6, STR: 5 }, sellValue: 35,
+    stackable: true, equipSlot: 'legs', statBonuses: { STA: 6, STR: 5 }, sellValue: 35,
   },
   sacred_bronze_legplates: {
     id: 'sacred_bronze_legplates', name: 'Sacred Bronze Legplates', type: 'equipment',
@@ -1781,7 +1806,7 @@ export const ITEMS: Record<string, ItemDef> = {
   bronze_greaves: {
     id: 'bronze_greaves', name: 'Bronze Greaves', type: 'equipment',
     description: 'A brown greaves forged from Bronze by a skilled blacksmith.',
-    stackable: true, equipSlot: 'boots', armorType: 'plate', statBonuses: { STA: 4, STR: 3 }, sellValue: 22,
+    stackable: true, equipSlot: 'boots', statBonuses: { STA: 4, STR: 3 }, sellValue: 22,
   },
   sacred_bronze_greaves: {
     id: 'sacred_bronze_greaves', name: 'Sacred Bronze Greaves', type: 'equipment',
@@ -1791,7 +1816,7 @@ export const ITEMS: Record<string, ItemDef> = {
   bronze_shield: {
     id: 'bronze_shield', name: 'Bronze Shield', type: 'equipment',
     description: 'A brown shield forged from Bronze by a skilled blacksmith.',
-    stackable: true, equipSlot: 'offhand', armorType: 'plate', statBonuses: { STA: 6, STR: 5 }, sellValue: 32,
+    stackable: true, equipSlot: 'offhand', statBonuses: { STA: 6, STR: 5 }, sellValue: 32,
   },
   sacred_bronze_shield: {
     id: 'sacred_bronze_shield', name: 'Bronze-Rimmed Orb', type: 'equipment',
@@ -1821,7 +1846,7 @@ export const ITEMS: Record<string, ItemDef> = {
   iron_helm: {
     id: 'iron_helm', name: 'Iron Helm', type: 'equipment',
     description: 'A dark gray helm forged from Iron by a skilled blacksmith.',
-    stackable: true, equipSlot: 'helmet', armorType: 'plate', statBonuses: { STA: 6, STR: 5 }, sellValue: 37,
+    stackable: true, equipSlot: 'helmet', statBonuses: { STA: 6, STR: 5 }, sellValue: 37,
   },
   sacred_iron_helm: {
     id: 'sacred_iron_helm', name: 'Sacred Iron Helm', type: 'equipment',
@@ -1831,7 +1856,7 @@ export const ITEMS: Record<string, ItemDef> = {
   iron_chestplate: {
     id: 'iron_chestplate', name: 'Iron Chestplate', type: 'equipment',
     description: 'A dark gray chestplate forged from Iron by a skilled blacksmith.',
-    stackable: true, equipSlot: 'chest', armorType: 'plate', statBonuses: { STA: 9, STR: 7 }, sellValue: 54,
+    stackable: true, equipSlot: 'chest', statBonuses: { STA: 9, STR: 7 }, sellValue: 54,
   },
   sacred_iron_chestplate: {
     id: 'sacred_iron_chestplate', name: 'Sacred Iron Chestplate', type: 'equipment',
@@ -1841,7 +1866,7 @@ export const ITEMS: Record<string, ItemDef> = {
   iron_gauntlets: {
     id: 'iron_gauntlets', name: 'Iron Gauntlets', type: 'equipment',
     description: 'A dark gray gauntlets forged from Iron by a skilled blacksmith.',
-    stackable: true, equipSlot: 'gloves', armorType: 'plate', statBonuses: { STA: 5, STR: 4 }, sellValue: 31,
+    stackable: true, equipSlot: 'gloves', statBonuses: { STA: 5, STR: 4 }, sellValue: 31,
   },
   sacred_iron_gauntlets: {
     id: 'sacred_iron_gauntlets', name: 'Sacred Iron Gauntlets', type: 'equipment',
@@ -1851,7 +1876,7 @@ export const ITEMS: Record<string, ItemDef> = {
   iron_legplates: {
     id: 'iron_legplates', name: 'Iron Legplates', type: 'equipment',
     description: 'A dark gray legplates forged from Iron by a skilled blacksmith.',
-    stackable: true, equipSlot: 'legs', armorType: 'plate', statBonuses: { STA: 8, STR: 6 }, sellValue: 48,
+    stackable: true, equipSlot: 'legs', statBonuses: { STA: 8, STR: 6 }, sellValue: 48,
   },
   sacred_iron_legplates: {
     id: 'sacred_iron_legplates', name: 'Sacred Iron Legplates', type: 'equipment',
@@ -1861,7 +1886,7 @@ export const ITEMS: Record<string, ItemDef> = {
   iron_greaves: {
     id: 'iron_greaves', name: 'Iron Greaves', type: 'equipment',
     description: 'A dark gray greaves forged from Iron by a skilled blacksmith.',
-    stackable: true, equipSlot: 'boots', armorType: 'plate', statBonuses: { STA: 6, STR: 5 }, sellValue: 34,
+    stackable: true, equipSlot: 'boots', statBonuses: { STA: 6, STR: 5 }, sellValue: 34,
   },
   sacred_iron_greaves: {
     id: 'sacred_iron_greaves', name: 'Sacred Iron Greaves', type: 'equipment',
@@ -1871,7 +1896,7 @@ export const ITEMS: Record<string, ItemDef> = {
   iron_shield: {
     id: 'iron_shield', name: 'Iron Shield', type: 'equipment',
     description: 'A dark gray shield forged from Iron by a skilled blacksmith.',
-    stackable: true, equipSlot: 'offhand', armorType: 'plate', statBonuses: { STA: 7, STR: 6 }, sellValue: 44,
+    stackable: true, equipSlot: 'offhand', statBonuses: { STA: 7, STR: 6 }, sellValue: 44,
   },
   sacred_iron_shield: {
     id: 'sacred_iron_shield', name: 'Iron-Clasped Tome', type: 'equipment',
@@ -1901,7 +1926,7 @@ export const ITEMS: Record<string, ItemDef> = {
   steel_helm: {
     id: 'steel_helm', name: 'Steel Helm', type: 'equipment',
     description: 'A light gray helm forged from Steel by a skilled blacksmith.',
-    stackable: true, equipSlot: 'helmet', armorType: 'plate', statBonuses: { STA: 8, STR: 6 }, sellValue: 49,
+    stackable: true, equipSlot: 'helmet', statBonuses: { STA: 8, STR: 6 }, sellValue: 49,
   },
   sacred_steel_helm: {
     id: 'sacred_steel_helm', name: 'Sacred Steel Helm', type: 'equipment',
@@ -1911,7 +1936,7 @@ export const ITEMS: Record<string, ItemDef> = {
   steel_chestplate: {
     id: 'steel_chestplate', name: 'Steel Chestplate', type: 'equipment',
     description: 'A light gray chestplate forged from Steel by a skilled blacksmith.',
-    stackable: true, equipSlot: 'chest', armorType: 'plate', statBonuses: { STA: 11, STR: 9 }, sellValue: 70,
+    stackable: true, equipSlot: 'chest', statBonuses: { STA: 11, STR: 9 }, sellValue: 70,
   },
   sacred_steel_chestplate: {
     id: 'sacred_steel_chestplate', name: 'Sacred Steel Chestplate', type: 'equipment',
@@ -1921,7 +1946,7 @@ export const ITEMS: Record<string, ItemDef> = {
   steel_gauntlets: {
     id: 'steel_gauntlets', name: 'Steel Gauntlets', type: 'equipment',
     description: 'A light gray gauntlets forged from Steel by a skilled blacksmith.',
-    stackable: true, equipSlot: 'gloves', armorType: 'plate', statBonuses: { STA: 6, STR: 5 }, sellValue: 39,
+    stackable: true, equipSlot: 'gloves', statBonuses: { STA: 6, STR: 5 }, sellValue: 39,
   },
   sacred_steel_gauntlets: {
     id: 'sacred_steel_gauntlets', name: 'Sacred Steel Gauntlets', type: 'equipment',
@@ -1931,7 +1956,7 @@ export const ITEMS: Record<string, ItemDef> = {
   steel_legplates: {
     id: 'steel_legplates', name: 'Steel Legplates', type: 'equipment',
     description: 'A light gray legplates forged from Steel by a skilled blacksmith.',
-    stackable: true, equipSlot: 'legs', armorType: 'plate', statBonuses: { STA: 10, STR: 8 }, sellValue: 63,
+    stackable: true, equipSlot: 'legs', statBonuses: { STA: 10, STR: 8 }, sellValue: 63,
   },
   sacred_steel_legplates: {
     id: 'sacred_steel_legplates', name: 'Sacred Steel Legplates', type: 'equipment',
@@ -1941,7 +1966,7 @@ export const ITEMS: Record<string, ItemDef> = {
   steel_greaves: {
     id: 'steel_greaves', name: 'Steel Greaves', type: 'equipment',
     description: 'A light gray greaves forged from Steel by a skilled blacksmith.',
-    stackable: true, equipSlot: 'boots', armorType: 'plate', statBonuses: { STA: 7, STR: 5 }, sellValue: 42,
+    stackable: true, equipSlot: 'boots', statBonuses: { STA: 7, STR: 5 }, sellValue: 42,
   },
   sacred_steel_greaves: {
     id: 'sacred_steel_greaves', name: 'Sacred Steel Greaves', type: 'equipment',
@@ -1951,7 +1976,7 @@ export const ITEMS: Record<string, ItemDef> = {
   steel_shield: {
     id: 'steel_shield', name: 'Steel Shield', type: 'equipment',
     description: 'A light gray shield forged from Steel by a skilled blacksmith.',
-    stackable: true, equipSlot: 'offhand', armorType: 'plate', statBonuses: { STA: 9, STR: 7 }, sellValue: 56,
+    stackable: true, equipSlot: 'offhand', statBonuses: { STA: 9, STR: 7 }, sellValue: 56,
   },
   sacred_steel_shield: {
     id: 'sacred_steel_shield', name: 'Steel-Banded Orb', type: 'equipment',
@@ -1981,7 +2006,7 @@ export const ITEMS: Record<string, ItemDef> = {
   mithril_helm: {
     id: 'mithril_helm', name: 'Mithril Helm', type: 'equipment',
     description: 'A dark blue helm forged from Mithril by a skilled blacksmith.',
-    stackable: true, equipSlot: 'helmet', armorType: 'plate', statBonuses: { STA: 9, STR: 8 }, sellValue: 61,
+    stackable: true, equipSlot: 'helmet', statBonuses: { STA: 9, STR: 8 }, sellValue: 61,
   },
   sacred_mithril_helm: {
     id: 'sacred_mithril_helm', name: 'Sacred Mithril Helm', type: 'equipment',
@@ -1991,7 +2016,7 @@ export const ITEMS: Record<string, ItemDef> = {
   mithril_chestplate: {
     id: 'mithril_chestplate', name: 'Mithril Chestplate', type: 'equipment',
     description: 'A dark blue chestplate forged from Mithril by a skilled blacksmith.',
-    stackable: true, equipSlot: 'chest', armorType: 'plate', statBonuses: { STA: 13, STR: 11 }, sellValue: 86,
+    stackable: true, equipSlot: 'chest', statBonuses: { STA: 13, STR: 11 }, sellValue: 86,
   },
   sacred_mithril_chestplate: {
     id: 'sacred_mithril_chestplate', name: 'Sacred Mithril Chestplate', type: 'equipment',
@@ -2001,7 +2026,7 @@ export const ITEMS: Record<string, ItemDef> = {
   mithril_gauntlets: {
     id: 'mithril_gauntlets', name: 'Mithril Gauntlets', type: 'equipment',
     description: 'A dark blue gauntlets forged from Mithril by a skilled blacksmith.',
-    stackable: true, equipSlot: 'gloves', armorType: 'plate', statBonuses: { STA: 7, STR: 6 }, sellValue: 47,
+    stackable: true, equipSlot: 'gloves', statBonuses: { STA: 7, STR: 6 }, sellValue: 47,
   },
   sacred_mithril_gauntlets: {
     id: 'sacred_mithril_gauntlets', name: 'Sacred Mithril Gauntlets', type: 'equipment',
@@ -2011,7 +2036,7 @@ export const ITEMS: Record<string, ItemDef> = {
   mithril_legplates: {
     id: 'mithril_legplates', name: 'Mithril Legplates', type: 'equipment',
     description: 'A dark blue legplates forged from Mithril by a skilled blacksmith.',
-    stackable: true, equipSlot: 'legs', armorType: 'plate', statBonuses: { STA: 12, STR: 10 }, sellValue: 79,
+    stackable: true, equipSlot: 'legs', statBonuses: { STA: 12, STR: 10 }, sellValue: 79,
   },
   sacred_mithril_legplates: {
     id: 'sacred_mithril_legplates', name: 'Sacred Mithril Legplates', type: 'equipment',
@@ -2021,7 +2046,7 @@ export const ITEMS: Record<string, ItemDef> = {
   mithril_greaves: {
     id: 'mithril_greaves', name: 'Mithril Greaves', type: 'equipment',
     description: 'A dark blue greaves forged from Mithril by a skilled blacksmith.',
-    stackable: true, equipSlot: 'boots', armorType: 'plate', statBonuses: { STA: 8, STR: 6 }, sellValue: 50,
+    stackable: true, equipSlot: 'boots', statBonuses: { STA: 8, STR: 6 }, sellValue: 50,
   },
   sacred_mithril_greaves: {
     id: 'sacred_mithril_greaves', name: 'Sacred Mithril Greaves', type: 'equipment',
@@ -2031,7 +2056,7 @@ export const ITEMS: Record<string, ItemDef> = {
   mithril_shield: {
     id: 'mithril_shield', name: 'Mithril Shield', type: 'equipment',
     description: 'A dark blue shield forged from Mithril by a skilled blacksmith.',
-    stackable: true, equipSlot: 'offhand', armorType: 'plate', statBonuses: { STA: 10, STR: 9 }, sellValue: 68,
+    stackable: true, equipSlot: 'offhand', statBonuses: { STA: 10, STR: 9 }, sellValue: 68,
   },
   sacred_mithril_shield: {
     id: 'sacred_mithril_shield', name: 'Mithril-Bound Tome', type: 'equipment',
@@ -2061,7 +2086,7 @@ export const ITEMS: Record<string, ItemDef> = {
   thorium_helm: {
     id: 'thorium_helm', name: 'Thorium Helm', type: 'equipment',
     description: 'A light teal helm forged from Thorium by a skilled blacksmith.',
-    stackable: true, equipSlot: 'helmet', armorType: 'plate', statBonuses: { STA: 11, STR: 9 }, sellValue: 76,
+    stackable: true, equipSlot: 'helmet', statBonuses: { STA: 11, STR: 9 }, sellValue: 76,
   },
   sacred_thorium_helm: {
     id: 'sacred_thorium_helm', name: 'Sacred Thorium Helm', type: 'equipment',
@@ -2071,7 +2096,7 @@ export const ITEMS: Record<string, ItemDef> = {
   thorium_chestplate: {
     id: 'thorium_chestplate', name: 'Thorium Chestplate', type: 'equipment',
     description: 'A light teal chestplate forged from Thorium by a skilled blacksmith.',
-    stackable: true, equipSlot: 'chest', armorType: 'plate', statBonuses: { STA: 15, STR: 13 }, sellValue: 106,
+    stackable: true, equipSlot: 'chest', statBonuses: { STA: 15, STR: 13 }, sellValue: 106,
   },
   sacred_thorium_chestplate: {
     id: 'sacred_thorium_chestplate', name: 'Sacred Thorium Chestplate', type: 'equipment',
@@ -2081,7 +2106,7 @@ export const ITEMS: Record<string, ItemDef> = {
   thorium_gauntlets: {
     id: 'thorium_gauntlets', name: 'Thorium Gauntlets', type: 'equipment',
     description: 'A light teal gauntlets forged from Thorium by a skilled blacksmith.',
-    stackable: true, equipSlot: 'gloves', armorType: 'plate', statBonuses: { STA: 8, STR: 7 }, sellValue: 57,
+    stackable: true, equipSlot: 'gloves', statBonuses: { STA: 8, STR: 7 }, sellValue: 57,
   },
   sacred_thorium_gauntlets: {
     id: 'sacred_thorium_gauntlets', name: 'Sacred Thorium Gauntlets', type: 'equipment',
@@ -2091,7 +2116,7 @@ export const ITEMS: Record<string, ItemDef> = {
   thorium_legplates: {
     id: 'thorium_legplates', name: 'Thorium Legplates', type: 'equipment',
     description: 'A light teal legplates forged from Thorium by a skilled blacksmith.',
-    stackable: true, equipSlot: 'legs', armorType: 'plate', statBonuses: { STA: 14, STR: 11 }, sellValue: 95,
+    stackable: true, equipSlot: 'legs', statBonuses: { STA: 14, STR: 11 }, sellValue: 95,
   },
   sacred_thorium_legplates: {
     id: 'sacred_thorium_legplates', name: 'Sacred Thorium Legplates', type: 'equipment',
@@ -2101,7 +2126,7 @@ export const ITEMS: Record<string, ItemDef> = {
   thorium_greaves: {
     id: 'thorium_greaves', name: 'Thorium Greaves', type: 'equipment',
     description: 'A light teal greaves forged from Thorium by a skilled blacksmith.',
-    stackable: true, equipSlot: 'boots', armorType: 'plate', statBonuses: { STA: 9, STR: 8 }, sellValue: 65,
+    stackable: true, equipSlot: 'boots', statBonuses: { STA: 9, STR: 8 }, sellValue: 65,
   },
   sacred_thorium_greaves: {
     id: 'sacred_thorium_greaves', name: 'Sacred Thorium Greaves', type: 'equipment',
@@ -2111,7 +2136,7 @@ export const ITEMS: Record<string, ItemDef> = {
   thorium_shield: {
     id: 'thorium_shield', name: 'Thorium Shield', type: 'equipment',
     description: 'A light teal shield forged from Thorium by a skilled blacksmith.',
-    stackable: true, equipSlot: 'offhand', armorType: 'plate', statBonuses: { STA: 12, STR: 10 }, sellValue: 84,
+    stackable: true, equipSlot: 'offhand', statBonuses: { STA: 12, STR: 10 }, sellValue: 84,
   },
   sacred_thorium_shield: {
     id: 'sacred_thorium_shield', name: 'Thorium-Rimmed Orb', type: 'equipment',
@@ -2141,7 +2166,7 @@ export const ITEMS: Record<string, ItemDef> = {
   obsidian_helm: {
     id: 'obsidian_helm', name: 'Obsidian Helm', type: 'equipment',
     description: 'A black helm forged from Obsidian by a skilled blacksmith.',
-    stackable: true, equipSlot: 'helmet', armorType: 'plate', statBonuses: { STA: 12, STR: 10 }, sellValue: 88,
+    stackable: true, equipSlot: 'helmet', statBonuses: { STA: 12, STR: 10 }, sellValue: 88,
   },
   sacred_obsidian_helm: {
     id: 'sacred_obsidian_helm', name: 'Sacred Obsidian Helm', type: 'equipment',
@@ -2151,7 +2176,7 @@ export const ITEMS: Record<string, ItemDef> = {
   obsidian_chestplate: {
     id: 'obsidian_chestplate', name: 'Obsidian Chestplate', type: 'equipment',
     description: 'A black chestplate forged from Obsidian by a skilled blacksmith.',
-    stackable: true, equipSlot: 'chest', armorType: 'plate', statBonuses: { STA: 18, STR: 14 }, sellValue: 128,
+    stackable: true, equipSlot: 'chest', statBonuses: { STA: 18, STR: 14 }, sellValue: 128,
   },
   sacred_obsidian_chestplate: {
     id: 'sacred_obsidian_chestplate', name: 'Sacred Obsidian Chestplate', type: 'equipment',
@@ -2161,7 +2186,7 @@ export const ITEMS: Record<string, ItemDef> = {
   obsidian_gauntlets: {
     id: 'obsidian_gauntlets', name: 'Obsidian Gauntlets', type: 'equipment',
     description: 'A black gauntlets forged from Obsidian by a skilled blacksmith.',
-    stackable: true, equipSlot: 'gloves', armorType: 'plate', statBonuses: { STA: 10, STR: 8 }, sellValue: 72,
+    stackable: true, equipSlot: 'gloves', statBonuses: { STA: 10, STR: 8 }, sellValue: 72,
   },
   sacred_obsidian_gauntlets: {
     id: 'sacred_obsidian_gauntlets', name: 'Sacred Obsidian Gauntlets', type: 'equipment',
@@ -2171,7 +2196,7 @@ export const ITEMS: Record<string, ItemDef> = {
   obsidian_legplates: {
     id: 'obsidian_legplates', name: 'Obsidian Legplates', type: 'equipment',
     description: 'A black legplates forged from Obsidian by a skilled blacksmith.',
-    stackable: true, equipSlot: 'legs', armorType: 'plate', statBonuses: { STA: 16, STR: 13 }, sellValue: 116,
+    stackable: true, equipSlot: 'legs', statBonuses: { STA: 16, STR: 13 }, sellValue: 116,
   },
   sacred_obsidian_legplates: {
     id: 'sacred_obsidian_legplates', name: 'Sacred Obsidian Legplates', type: 'equipment',
@@ -2181,7 +2206,7 @@ export const ITEMS: Record<string, ItemDef> = {
   obsidian_greaves: {
     id: 'obsidian_greaves', name: 'Obsidian Greaves', type: 'equipment',
     description: 'A black greaves forged from Obsidian by a skilled blacksmith.',
-    stackable: true, equipSlot: 'boots', armorType: 'plate', statBonuses: { STA: 10, STR: 9 }, sellValue: 76,
+    stackable: true, equipSlot: 'boots', statBonuses: { STA: 10, STR: 9 }, sellValue: 76,
   },
   sacred_obsidian_greaves: {
     id: 'sacred_obsidian_greaves', name: 'Sacred Obsidian Greaves', type: 'equipment',
@@ -2191,7 +2216,7 @@ export const ITEMS: Record<string, ItemDef> = {
   obsidian_shield: {
     id: 'obsidian_shield', name: 'Obsidian Shield', type: 'equipment',
     description: 'A black shield forged from Obsidian by a skilled blacksmith.',
-    stackable: true, equipSlot: 'offhand', armorType: 'plate', statBonuses: { STA: 14, STR: 12 }, sellValue: 104,
+    stackable: true, equipSlot: 'offhand', statBonuses: { STA: 14, STR: 12 }, sellValue: 104,
   },
   sacred_obsidian_shield: {
     id: 'sacred_obsidian_shield', name: 'Obsidian-Clasped Tome', type: 'equipment',

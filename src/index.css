@@ -1129,6 +1129,11 @@ button.class-card-selected:hover:not(:disabled) {
   flex: 1 1 auto;
 }
 
+.top-bar-title {
+  font-style: italic;
+  color: var(--zone-primary, #8a6d3b);
+}
+
 .top-bar-stats {
   display: flex;
   gap: 14px;

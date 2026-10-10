@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { getItemIcon } from '../gameData/itemIcons';
+import type { BaseStat } from '../gameData/classStats';
 import type { ItemDef } from '../gameData/types';
 
 const TYPE_LABEL: Record<ItemDef['type'], string> = {
@@ -10,9 +11,16 @@ const TYPE_LABEL: Record<ItemDef['type'], string> = {
   enchant_scroll: 'Enchanting Scroll',
 };
 
-function buildTooltip(item: ItemDef): ReactNode {
-  const statLine = item.statBonuses
-    ? Object.entries(item.statBonuses)
+// `statOverride` shows a randomized-roll item's ACTUAL rolled stats
+// (gameData/equipmentRolls.ts) instead of the base item's static
+// statBonuses — passed by any caller rendering a specific
+// Inventory.equipmentInstances entry or an equipped EquippedItemRef with
+// `rolls`. Omitted, this falls back to the item's own static definition
+// exactly as before this prop existed.
+function buildTooltip(item: ItemDef, statOverride?: Partial<Record<BaseStat, number>>): ReactNode {
+  const stats = statOverride ?? item.statBonuses;
+  const statLine = stats
+    ? Object.entries(stats)
         .map(([stat, val]) => `+${val} ${stat}`)
         .join('  ')
     : '';
@@ -76,6 +84,7 @@ export function ItemSlot({
   highlight,
   disabled,
   onClick,
+  statOverride,
   children,
 }: {
   item: ItemDef;
@@ -83,6 +92,9 @@ export function ItemSlot({
   highlight?: boolean;
   disabled?: boolean;
   onClick?: () => void;
+  // The actual rolled stats of a specific randomized-equipment instance
+  // (gameData/equipmentRolls.ts) — see buildTooltip's doc comment above.
+  statOverride?: Partial<Record<BaseStat, number>>;
   children?: ReactNode;
 }) {
   const Tag = onClick ? 'button' : 'div';
@@ -95,7 +107,7 @@ export function ItemSlot({
     >
       <ItemIcon key={item.id} item={item} />
       {quantity !== undefined && quantity > 1 && <span className="item-slot-qty">{quantity}</span>}
-      {buildTooltip(item)}
+      {buildTooltip(item, statOverride)}
       {children}
     </Tag>
   );

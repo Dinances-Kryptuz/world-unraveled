@@ -1,7 +1,7 @@
 import type { ClassId, SpecDef, SpecId } from './classStats';
 import { SPECS } from './classStats';
 import type { BaseStat } from './classStats';
-import type { EquipmentSlot } from './types';
+import type { EquipmentSlot, EquippedItemRef } from './types';
 import { getEquipmentStatBonuses } from './equipmentStats';
 import { evaluateTalents, EMPTY_TALENT_TOTALS, type TalentBonusTotals } from '../utils/talentEvaluator';
 import type { TalentPicks } from './talents';
@@ -234,7 +234,7 @@ export interface AltCharacterSnapshot {
   class: ClassId;
   spec: SpecId | null;
   level: number;
-  equipment: Record<EquipmentSlot, string | null>;
+  equipment: Record<EquipmentSlot, EquippedItemRef | null>;
   enchantments?: Partial<Record<EquipmentSlot, string>>;
   talentPicks?: TalentPicks;
   equippedAbilityIds?: string[];

@@ -127,7 +127,42 @@ export function isDisenchantable(item: ItemDef): boolean {
   return item.type === 'equipment' && item.equipSlot !== undefined && item.equipSlot !== 'tool';
 }
 
+// Every result item id of a Recipe.materialId-tagged recipe — the
+// consolidated, randomized-stat armor/jewelry set (see types.ts's Recipe
+// comment). Computed once from recipe data rather than hand-maintained, so
+// this never drifts out of sync with which items are actually randomized.
+let randomizedArmorItemIds: Set<string> | null = null;
+function isRandomizedArmorItem(itemId: string): boolean {
+  if (!randomizedArmorItemIds) {
+    randomizedArmorItemIds = new Set(
+      Object.values(RECIPES)
+        .filter((r) => r.materialId)
+        .map((r) => r.resultItemId)
+    );
+  }
+  return randomizedArmorItemIds.has(itemId);
+}
+
+// Zone tier (1-6) -> disenchant reward tier, mirroring
+// ZONE_TIER_DISENCHANT_SKILL's "2 zones per bracket" shape below.
+const ZONE_TIER_DISENCHANT_TIER: Record<number, DisenchantTier> = {
+  1: 'dust', 2: 'dust', 3: 'essence', 4: 'essence', 5: 'crystal', 6: 'crystal',
+};
+
+// Randomized-stat armor (gameData/equipmentRolls.ts) has no fixed
+// statBonuses to sum — its stats vary per roll — so its disenchant reward
+// must depend on tier/material cost instead (the requirement: two
+// different rolls of the same base item disenchant into the same
+// materials). It reuses originZoneId's existing recipe-tier signal (the
+// same one disenchantRequiredSkill already derives from) rather than
+// statTotal. Every other item (weapons, pre-overhaul "Sacred" legacy
+// items, monster-drop jewelry) keeps the original statTotal-based rule
+// completely unchanged.
 export function disenchantTier(item: ItemDef): DisenchantTier {
+  if (isRandomizedArmorItem(item.id)) {
+    const zoneTier = ZONE_TIER[originZoneId(item)] ?? 1;
+    return ZONE_TIER_DISENCHANT_TIER[zoneTier] ?? 'dust';
+  }
   const total = statTotal(item);
   if (total < 10) return 'dust';
   if (total < 20) return 'essence';

@@ -5,6 +5,7 @@ import { getBank } from './bank';
 import { getAccount } from './characterSlots';
 import { checkNewlyUnlocked } from '../gameData/achievements';
 import { ITEMS } from '../gameData/items';
+import { equippedItemId } from '../gameData/equipmentStats';
 import type { Character } from '../types/character';
 
 // Reconciles both Phase 5 lists against current state — called when the
@@ -22,8 +23,12 @@ export async function reconcileCollectionAndAchievements(
 
   const alreadyCollected = new Set(character.collectedItemIds);
   const heldItemIds = new Set([...Object.keys(inventory.items), ...Object.keys(bank.items)]);
+  for (const instance of Object.values(inventory.equipmentInstances ?? {})) {
+    heldItemIds.add(instance.itemId);
+  }
   for (const slot of Object.values(character.equipment)) {
-    if (slot) heldItemIds.add(slot);
+    const itemId = equippedItemId(slot);
+    if (itemId) heldItemIds.add(itemId);
   }
   const newlyCollected: string[] = [];
   for (const itemId of heldItemIds) {
