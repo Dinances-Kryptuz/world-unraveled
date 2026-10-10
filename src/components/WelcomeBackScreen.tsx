@@ -18,8 +18,10 @@ import { getProfessionState, maxSkillForUnlockedTier, PROFESSION_CATEGORY } from
 import { evaluateActiveBuffs } from '../gameData/buffs';
 import { getInventory } from '../firebase/inventory';
 import { applyCombatResult, setCharacterLevel } from '../firebase/character';
+import { applyConsumableAutomationUsage } from '../firebase/consumables';
 import { checkAndUnlockNextSlot } from '../firebase/characterSlots';
 import { MAX_CHARACTER_LEVEL } from '../gameData/xpTables';
+import { buildConsumableAutomationState } from '../gameData/consumableAutomation';
 import type { Character, CurrentActivity } from '../types/character';
 
 export function isLongAbsence(activity: CurrentActivity): boolean {
@@ -59,6 +61,14 @@ export function WelcomeBackScreen({
         const equipBonuses = getEquipmentStatBonuses(character.equipment, character.enchantments);
         const charMaxHp = maxHp(character.class, character.level, equipBonuses, talentTotals.hpMultPct);
         const startingHp = resolveCurrentHp(character.currentHp, charMaxHp, character.hpCheckpointAt, activity.startedAt);
+        // Herbalism/Alchemy overhaul's Part 8 automation — built from
+        // inventory as of the moment the player went offline (activity.
+        // startedAt is also what cooldownRemaining is measured from, see
+        // buildConsumableAutomationState's remainingCooldown), then mutated
+        // in place through the WHOLE offline window by the exact same
+        // tick-by-tick engine live combat uses (see offlineCombat.ts).
+        const offlineInventory = user ? await getInventory(user.uid) : { items: {} };
+        const consumableState = buildConsumableAutomationState(character, offlineInventory, activity.startedAt);
 
         const result = simulateOfflineCombat({
           startedAt: activity.startedAt,
@@ -78,6 +88,7 @@ export function WelcomeBackScreen({
           savedAbilityConditions: character.abilityConditions,
           disabledAbilityIds: character.disabledAbilityIds,
           monster,
+          consumableState,
           // Companions only fight in dungeons — idle/offline catch-up is
           // always open-world solo, same as live open-world combat.
         });
@@ -93,6 +104,18 @@ export function WelcomeBackScreen({
           if (result.finalLevel !== character.level) {
             await setCharacterLevel(user.uid, result.finalLevel, result.hpAfter);
             if (result.finalLevel >= MAX_CHARACTER_LEVEL) void checkAndUnlockNextSlot(user.uid);
+          }
+          if (character.consumableAutomation && result.finalConsumableState) {
+            const fcs = result.finalConsumableState;
+            const usage = {
+              offensiveChargesConsumed: fcs.offensiveChargesConsumed,
+              defensiveChargesConsumed: fcs.defensiveChargesConsumed,
+              healingUsed: fcs.healingUsed,
+              manaUsed: fcs.manaUsed,
+            };
+            if (usage.offensiveChargesConsumed > 0 || usage.defensiveChargesConsumed > 0 || usage.healingUsed > 0 || usage.manaUsed > 0) {
+              await applyConsumableAutomationUsage(user.uid, character.consumableAutomation, usage);
+            }
           }
           // Deliberately NOT refetching here — the persisted write resets
           // currentActivity.startedAt to now, which would make

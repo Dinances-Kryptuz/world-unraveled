@@ -40,6 +40,12 @@ import {
   materialMasterySpeedMultiplier,
   materialMasteryBonusChance,
 } from './equipmentRolls';
+import {
+  ALCHEMY_ZONE_MASTERY_XP_PER_HERB_UNIT,
+  alchemyZoneMasteryPercent,
+  alchemyZoneMasteryXpToNextMilestone,
+  alchemyMasteryMilestone,
+} from './alchemyMastery';
 
 export const CRAFTING_LEVEL_CAP = GATHERING_LEVEL_CAP; // 100, same cap, same curve
 export const craftingXpForNextLevel = gatheringXpForNextLevel;
@@ -117,6 +123,21 @@ export interface CraftingOfflineResult {
   // batch entry at a time rather than rolling `itemsCrafted` all at the
   // final percent).
   materialMasteryBatches?: { quantity: number; masteryPercentAtCraft: number }[];
+  // Only populated when resolveCraftingOffline is called with
+  // `alchemyZoneMastery` (a Recipe.alchemyZoneId-tagged recipe) — same role
+  // as materialMasteryXpGained/finalMaterialMasteryXp above and
+  // materialMasteryBatches below, but for the recipe's OWN zone only (see
+  // AlchemyZoneMasteryInput's doc comment for why crediting every OTHER
+  // zone a cross-zone recipe touches is the caller's job, not this
+  // resolver's).
+  alchemyZoneMasteryXpGained?: number;
+  finalAlchemyZoneMasteryXp?: number;
+  // One entry per batch-loop iteration that produced items, recording how
+  // many potions got rolled at which charge count — same "don't apply the
+  // batch's ENDING mastery to the whole batch" correctness fix as
+  // materialMasteryBatches, just steppped by milestone tier instead of by
+  // percent point.
+  alchemyZoneMasteryBatches?: { quantity: number; chargesAtCraft: number }[];
 }
 
 // Passed to resolveCraftingOffline only for a Recipe.materialId-tagged
@@ -132,6 +153,23 @@ export interface MaterialMasteryInput {
   materialId: string;
   startingXp: number;
   barsPerCraft: number;
+}
+
+// Passed to resolveCraftingOffline only for a Recipe.alchemyZoneId-tagged
+// recipe (the 30 Herbalism-overhaul Alchemy recipes) — governs this
+// recipe's OWN craft-time reduction and charge-count-per-potion from its
+// `alchemyZoneId` zone's current Mastery %. `unitsInOwnZonePerCraft` is the
+// sum of this recipe's own materials[] quantities whose herb belongs to
+// THAT SAME zone (herbs.ts's herbZoneOf) — for the one cross-zone recipe
+// (Fire Protection Potion), this is only the Firebloom units, not the
+// Purple Lotus unit, since Purple Lotus's own zone (The Molten Scar) has
+// no bearing on THIS recipe's own charge/speed milestones. Crediting every
+// zone actually touched by a craft (including ones beyond
+// unitsInOwnZonePerCraft) is done by the CALLER from the returned
+// materialsConsumed array, not inside this resolver.
+export interface AlchemyZoneMasteryInput {
+  startingXp: number;
+  unitsInOwnZonePerCraft: number;
 }
 
 // Always the OFFLINE/batched resolver, even for a single ~20s autosave
@@ -151,20 +189,24 @@ export function resolveCraftingOffline(
   skillCap: number,
   availableMaterialQuantities: Record<string, number>,
   availableGold = Infinity,
-  materialMastery?: MaterialMasteryInput
+  materialMastery?: MaterialMasteryInput,
+  alchemyZoneMastery?: AlchemyZoneMasteryInput
 ): CraftingOfflineResult {
   const progress = resolveElapsedProgress(startedAt, now);
   let remainingSeconds = progress.effectiveHours * 3600;
 
   let skill = startingSkill;
   let skillXp = startingSkillXp;
-  // The old per-recipe Mastery axis is frozen (never advanced) when
-  // materialMastery is supplied — a materialId-tagged recipe contributes
-  // only to Character.materialMastery instead, see ProfessionState.mastery's
-  // comment. materialXp is the new axis's own running total.
+  // The old per-recipe Mastery axis is frozen (never advanced) when EITHER
+  // materialMastery or alchemyZoneMastery is supplied — a tagged recipe
+  // contributes only to its own new axis instead, see
+  // ProfessionState.mastery's comment. materialXp/zoneXp are those new
+  // axes' own running totals (mutually exclusive in practice — a recipe is
+  // never tagged with both).
   let masteryLevel = startingMasteryLevel;
   let masteryXp = startingMasteryXp;
   let materialXp = materialMastery?.startingXp ?? 0;
+  let zoneXp = alchemyZoneMastery?.startingXp ?? 0;
   const startColorTier = craftingColorTier(skill, recipe.requiredSkill);
   const bankedCap = craftingBankedXpCapAt(skillCap);
 
@@ -176,16 +218,22 @@ export function resolveCraftingOffline(
   let masteryXpGained = 0;
   let materialMasteryXpGained = 0;
   const materialMasteryBatches: { quantity: number; masteryPercentAtCraft: number }[] = [];
+  let alchemyZoneMasteryXpGained = 0;
+  const alchemyZoneMasteryBatches: { quantity: number; chargesAtCraft: number }[] = [];
   let iterations = 0;
   let stoppedForMaterials = false;
 
   while (remainingSeconds > 0 && iterations < MAX_BATCH_ITERATIONS) {
     iterations++;
     const materialPercent = materialMastery ? materialMasteryPercent(materialXp, materialMastery.materialId) : 0;
+    const zonePercent = alchemyZoneMastery ? alchemyZoneMasteryPercent(zoneXp) : 0;
+    const zoneMilestone = alchemyZoneMastery ? alchemyMasteryMilestone(zonePercent) : undefined;
     const speedMult = materialMastery
       ? materialMasterySpeedMultiplier(materialPercent)
       : craftingMasterySpeedMultiplier(masteryLevel);
-    const craftSeconds = recipe.craftSeconds / speedMult;
+    const craftSeconds = zoneMilestone
+      ? recipe.craftSeconds * (1 - zoneMilestone.craftTimeReductionPct / 100)
+      : recipe.craftSeconds / speedMult;
     const timeLimitedCrafts = Math.floor(remainingSeconds / craftSeconds);
     // Availability is checked against the FULL material cost (ignoring the
     // save chance) — understating how many crafts are affordable is safe;
@@ -218,7 +266,7 @@ export function resolveCraftingOffline(
     const craftsToSkillCapOrLevel =
       belowCap || bankNotFull ? Math.max(1, Math.ceil(skillXpRoom / xpPerCraft)) : Infinity;
     const craftsToMasteryUp =
-      !materialMastery && masteryLevel < RECIPE_MASTERY_MAX_LEVEL
+      !materialMastery && !alchemyZoneMastery && masteryLevel < RECIPE_MASTERY_MAX_LEVEL
         ? Math.max(1, Math.ceil((recipeMasteryXpForNextLevel(masteryLevel) - masteryXp) / masteryXpPerCraft))
         : Infinity;
     // Caps each iteration so material-Mastery percent moves at most ~1 point
@@ -228,20 +276,33 @@ export function resolveCraftingOffline(
       materialMastery && materialPercent < 100
         ? Math.max(1, Math.ceil(materialMasteryXpToNextPercentPoint(materialXp, materialMastery.materialId) / masteryXpPerCraft))
         : Infinity;
+    // Same idea for Alchemy zone Mastery, stepped by milestone tier instead
+    // of percent point — caps each iteration so a charge-count/craft-speed
+    // tier change is never applied retroactively to items already crafted
+    // earlier in a long offline window.
+    const zoneXpPerCraft = alchemyZoneMastery
+      ? alchemyZoneMastery.unitsInOwnZonePerCraft * ALCHEMY_ZONE_MASTERY_XP_PER_HERB_UNIT
+      : 0;
+    const craftsToNextMilestone =
+      alchemyZoneMastery && zoneXpPerCraft > 0
+        ? Math.max(1, Math.ceil(alchemyZoneMasteryXpToNextMilestone(zoneXp) / zoneXpPerCraft))
+        : Infinity;
 
     const craftAttempts = Math.min(
       craftsAvailableNow,
       craftsToSkillCapOrLevel,
       craftsToMasteryUp,
-      craftsToNextMasteryPercentPoint
+      craftsToNextMasteryPercentPoint,
+      craftsToNextMilestone
     );
     const bonusChance = materialMastery
       ? materialMasteryBonusChance(materialPercent)
-      : craftingMasteryBonusChance(masteryLevel);
-    // Ingredient-save is strictly a per-recipe-Mastery bonus (no material-
-    // Mastery equivalent in the 3-bonus design — speed/bonus-output/stat-
-    // quality only), so it's 0 whenever materialMastery is active.
-    const saveChance = materialMastery ? 0 : craftingMasteryIngredientSaveChance(masteryLevel);
+      : alchemyZoneMastery
+        ? 0 // Alchemy zone Mastery's 3 bonuses are charges/speed only — no bonus-output chance in this design.
+        : craftingMasteryBonusChance(masteryLevel);
+    // Ingredient-save is strictly a per-recipe-Mastery bonus — 0 whenever
+    // EITHER new Mastery axis is active (neither design includes it).
+    const saveChance = materialMastery || alchemyZoneMastery ? 0 : craftingMasteryIngredientSaveChance(masteryLevel);
 
     const quantityThisBatch = craftAttempts * (1 + bonusChance);
     itemsCrafted += quantityThisBatch;
@@ -262,6 +323,11 @@ export function resolveCraftingOffline(
       const materialXpThisBatch = craftAttempts * masteryXpPerCraft;
       materialMasteryXpGained += materialXpThisBatch;
       materialXp += materialXpThisBatch;
+    } else if (alchemyZoneMastery) {
+      alchemyZoneMasteryBatches.push({ quantity: quantityThisBatch, chargesAtCraft: zoneMilestone!.charges });
+      const zoneXpThisBatch = craftAttempts * zoneXpPerCraft;
+      alchemyZoneMasteryXpGained += zoneXpThisBatch;
+      zoneXp += zoneXpThisBatch;
     } else {
       masteryXpGained += craftAttempts * masteryXpPerCraft;
       masteryXp += craftAttempts * masteryXpPerCraft;
@@ -271,7 +337,7 @@ export function resolveCraftingOffline(
       skillXp -= craftingXpForNextLevel(skill);
       skill++;
     }
-    if (!materialMastery) {
+    if (!materialMastery && !alchemyZoneMastery) {
       while (masteryLevel < RECIPE_MASTERY_MAX_LEVEL && masteryXp >= recipeMasteryXpForNextLevel(masteryLevel)) {
         masteryXp -= recipeMasteryXpForNextLevel(masteryLevel);
         masteryLevel++;
@@ -308,6 +374,9 @@ export function resolveCraftingOffline(
     didNotConverge: iterations >= MAX_BATCH_ITERATIONS,
     ...(materialMastery
       ? { materialMasteryXpGained, finalMaterialMasteryXp: materialXp, materialMasteryBatches }
+      : {}),
+    ...(alchemyZoneMastery
+      ? { alchemyZoneMasteryXpGained, finalAlchemyZoneMasteryXp: zoneXp, alchemyZoneMasteryBatches }
       : {}),
   };
 }

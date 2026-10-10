@@ -386,6 +386,22 @@ button.item-slot:active:not(:disabled) {
   line-height: 1.4;
 }
 
+/* Charge-count-distinguished potion stacks (gameData/consumableCharges.ts)
+   — opposite corner from .item-slot-qty so a stack of several same-charge
+   potions can show both its quantity AND remaining charges at once. */
+.item-slot-charges {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #fdf8ee;
+  background: rgba(107, 46, 46, 0.85);
+  border-radius: 4px;
+  padding: 0 4px;
+  line-height: 1.4;
+}
+
 .item-slot-placeholder {
   opacity: 0.35;
 }

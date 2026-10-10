@@ -3,6 +3,7 @@
 // code, but never imports either. See src/combatEngine/README.md for the
 // shape of the whole system.
 import type { ClassId, SpecId } from '../gameData/classStats';
+import type { DamageSchool } from '../gameData/types';
 
 export type ResourceType = 'rage' | 'mana' | 'holyPower';
 
@@ -52,6 +53,12 @@ export interface AbilityEffect {
   tickSeconds?: number; // for dot, hot
   damageDealtPct?: number; // for buff — added on top of the target's damageCoef
   damageTakenPct?: number; // for buff — added on top of the target's damageTakenMult
+  // Overrides the caster Monster's own damageSchool (gameData/types.ts) for
+  // just this one effect — absent (every current ability) means "use
+  // whatever the caster Monster itself is tagged as." No boss currently
+  // needs this (each boss's kit already matches its own monster's theme);
+  // kept for a future boss with a mixed-school rotation.
+  damageSchool?: import('../gameData/types').DamageSchool;
 }
 
 export interface Ability {
@@ -164,6 +171,13 @@ export interface CasterProfile {
   avoidance: number; // chance attacks against this combatant are avoided
   armor: number; // raw armor value; target-side mitigation via armorReduction()
   damageTakenMult: number; // extra multiplier on damage this combatant takes (talents, etc.)
+  // Which school this combatant's own attacks deal, for the new consumable-
+  // only fire/shadow resistance pipeline (Herbalism/Alchemy overhaul) to
+  // check against the DEFENDER's active resistance. Always 'physical' for
+  // the player/companions (nothing in this engine lets a player deal
+  // elemental damage); set from Monster.damageSchool for a monster — see
+  // engine.ts's buildMonsterProfile.
+  damageSchool: DamageSchool;
   healFrac: number;
   passiveHealPct: number;
   // Multiplies every kind of healing this combatant produces — see

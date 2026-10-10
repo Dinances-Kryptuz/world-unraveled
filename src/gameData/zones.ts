@@ -85,6 +85,11 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     requiredToolType: 'mining_pick',
     rareBonus: { itemId: 'granite_chunk', chance: 0.1 },
   },
+  // Herbalism's node economy below is NOT the shared "baseXp ~40h" schedule
+  // every other gathering profession uses — see herbs.ts/gatheringEngine.ts
+  // for the Herbalism-specific XP curve calibrated against these flat,
+  // design-mandated per-zone XP/time values (HERB_ZONE_XP/HERB_ZONE_SECONDS
+  // in herbs.ts), not the other way around.
   greenhollow_peacebloom_patch: {
     id: 'greenhollow_peacebloom_patch',
     name: 'Peacebloom Patch',
@@ -92,8 +97,16 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     zoneId: 'greenhollow_fields',
     requiredLevel: 1,
     itemId: 'peacebloom',
-    baseXp: 8,
-    secondsPerAction: 7,
+    baseXp: 10,
+    secondsPerAction: 8,
+  },
+  greenhollow_silverleaf_patch: {
+    id: 'greenhollow_silverleaf_patch', name: 'Silverleaf Patch', profession: 'herbalism', zoneId: 'greenhollow_fields',
+    requiredLevel: 8, itemId: 'silverleaf', baseXp: 10, secondsPerAction: 8,
+  },
+  greenhollow_earthroot_patch: {
+    id: 'greenhollow_earthroot_patch', name: 'Earthroot Patch', profession: 'herbalism', zoneId: 'greenhollow_fields',
+    requiredLevel: 15, itemId: 'earthroot', baseXp: 10, secondsPerAction: 8,
   },
   greenhollow_hunting_grounds: {
     id: 'greenhollow_hunting_grounds',
@@ -316,11 +329,90 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     requiredToolType: 'skinning_knife',
   },
 
-  // ── A 2nd node per gathering profession per zone — Herbalism/Skinning run
-  // 2 tiers per zone (one at the zone's entry level, one a bit above it);
-  // same material-value schedule as the zone's original node's "sibling"
-  // bracket, just a different material, so each profession has more than one
-  // thing to find per zone and gear changes feel incremental, not stepped.
+  // ── The new 18-herb Herbalism roster (herbs.ts) — 3 nodes per zone,
+  // retiring the old 1-2-per-zone herb set below (those entries are left
+  // untouched, just dropped from every Zone.gatherNodeIds list, so existing
+  // stacks of e.g. Wildroot/Frostcap keep working but can no longer be
+  // gathered). Skinning's 2nd-tier nodes are unaffected by this overhaul.
+  stonecrag_mageroyal_patch: {
+    id: 'stonecrag_mageroyal_patch', name: 'Mageroyal Patch', profession: 'herbalism', zoneId: 'stonecrag_foothills',
+    requiredLevel: 18, itemId: 'mageroyal', baseXp: 18, secondsPerAction: 10,
+    rareBonus: { itemId: 'swiftthistle', chance: 0.12 },
+  },
+  stonecrag_briarthorn_patch: {
+    id: 'stonecrag_briarthorn_patch', name: 'Briarthorn Patch', profession: 'herbalism', zoneId: 'stonecrag_foothills',
+    requiredLevel: 24, itemId: 'briarthorn', baseXp: 18, secondsPerAction: 10,
+    rareBonus: { itemId: 'swiftthistle', chance: 0.12 },
+  },
+  stonecrag_bruiseweed_patch: {
+    id: 'stonecrag_bruiseweed_patch', name: 'Bruiseweed Patch', profession: 'herbalism', zoneId: 'stonecrag_foothills',
+    requiredLevel: 30, itemId: 'bruiseweed', baseXp: 18, secondsPerAction: 10,
+    rareBonus: { itemId: 'grave_moss', chance: 0.08 },
+  },
+  emberfall_kingsblood_patch: {
+    id: 'emberfall_kingsblood_patch', name: 'Kingsblood Patch', profession: 'herbalism', zoneId: 'emberfall_ridge',
+    requiredLevel: 35, itemId: 'kingsblood', baseXp: 30, secondsPerAction: 12,
+    rareBonus: { itemId: 'grave_moss', chance: 0.08 },
+  },
+  emberfall_liferoot_patch: {
+    id: 'emberfall_liferoot_patch', name: 'Liferoot Patch', profession: 'herbalism', zoneId: 'emberfall_ridge',
+    requiredLevel: 41, itemId: 'liferoot', baseXp: 30, secondsPerAction: 12,
+    rareBonus: { itemId: 'stranglekelp', chance: 0.10 },
+  },
+  emberfall_goldthorn_patch: {
+    id: 'emberfall_goldthorn_patch', name: 'Goldthorn Patch', profession: 'herbalism', zoneId: 'emberfall_ridge',
+    requiredLevel: 47, itemId: 'goldthorn', baseXp: 30, secondsPerAction: 12,
+    rareBonus: { itemId: 'fadeleaf', chance: 0.08 },
+  },
+  cinderfall_khadgars_whisker_patch: {
+    id: 'cinderfall_khadgars_whisker_patch', name: "Khadgar's Whisker Patch", profession: 'herbalism', zoneId: 'cinderfall_depths',
+    requiredLevel: 52, itemId: 'khadgars_whisker', baseXp: 48, secondsPerAction: 14,
+    rareBonus: { itemId: 'fadeleaf', chance: 0.08 },
+  },
+  cinderfall_firebloom_patch: {
+    id: 'cinderfall_firebloom_patch', name: 'Firebloom Patch', profession: 'herbalism', zoneId: 'cinderfall_depths',
+    requiredLevel: 58, itemId: 'firebloom', baseXp: 48, secondsPerAction: 14,
+  },
+  cinderfall_sungrass_patch: {
+    id: 'cinderfall_sungrass_patch', name: 'Sungrass Patch', profession: 'herbalism', zoneId: 'cinderfall_depths',
+    requiredLevel: 64, itemId: 'sungrass', baseXp: 48, secondsPerAction: 14,
+    rareBonus: { itemId: 'purple_lotus', chance: 0.07 },
+  },
+  molten_scar_blindweed_patch: {
+    id: 'molten_scar_blindweed_patch', name: 'Blindweed Patch', profession: 'herbalism', zoneId: 'molten_scar',
+    requiredLevel: 69, itemId: 'blindweed', baseXp: 75, secondsPerAction: 16,
+    rareBonus: { itemId: 'purple_lotus', chance: 0.07 },
+  },
+  molten_scar_ghost_mushroom_patch: {
+    id: 'molten_scar_ghost_mushroom_patch', name: 'Ghost Mushroom Patch', profession: 'herbalism', zoneId: 'molten_scar',
+    requiredLevel: 75, itemId: 'ghost_mushroom', baseXp: 75, secondsPerAction: 16,
+    rareBonus: { itemId: 'arthas_tears', chance: 0.06 },
+  },
+  molten_scar_gromsblood_patch: {
+    id: 'molten_scar_gromsblood_patch', name: 'Gromsblood Patch', profession: 'herbalism', zoneId: 'molten_scar',
+    requiredLevel: 81, itemId: 'gromsblood', baseXp: 75, secondsPerAction: 16,
+    rareBonus: { itemId: 'arthas_tears', chance: 0.06 },
+  },
+  cinderheart_dreamfoil_patch: {
+    id: 'cinderheart_dreamfoil_patch', name: 'Dreamfoil Patch', profession: 'herbalism', zoneId: 'cinderheart_crater',
+    requiredLevel: 86, itemId: 'dreamfoil', baseXp: 110, secondsPerAction: 18,
+    rareBonus: { itemId: 'plaguebloom', chance: 0.05 },
+  },
+  cinderheart_mountain_silversage_patch: {
+    id: 'cinderheart_mountain_silversage_patch', name: 'Mountain Silversage Patch', profession: 'herbalism', zoneId: 'cinderheart_crater',
+    requiredLevel: 92, itemId: 'mountain_silversage', baseXp: 110, secondsPerAction: 18,
+    rareBonus: { itemId: 'plaguebloom', chance: 0.05 },
+  },
+  cinderheart_black_lotus_patch: {
+    id: 'cinderheart_black_lotus_patch', name: 'Black Lotus Patch', profession: 'herbalism', zoneId: 'cinderheart_crater',
+    requiredLevel: 98, itemId: 'black_lotus', baseXp: 110, secondsPerAction: 18,
+  },
+
+  // ── Retired herb nodes (frozen, no longer listed in any
+  // Zone.gatherNodeIds — kept so any still-held stack of their item keeps
+  // working everywhere else, same convention as Blacksmithing's retired
+  // "Sacred" items). The 2nd-tier SKINNING nodes below are unrelated and
+  // still fully active.
   greenhollow_wildroot_cluster: {
     id: 'greenhollow_wildroot_cluster', name: 'Wildroot Cluster', profession: 'herbalism', zoneId: 'greenhollow_fields',
     requiredLevel: 4, itemId: 'wildroot', baseXp: 10, secondsPerAction: 7,
@@ -381,8 +473,8 @@ export const ZONES: Record<string, Zone> = {
     unlockRequirement: { type: 'none' },
     monsterIds: ['greenhorn_boar', 'forest_wolf', 'wild_kobold', 'thornback_hare'],
     gatherNodeIds: [
-      'greenhollow_copper_vein', 'greenhollow_peacebloom_patch', 'greenhollow_hunting_grounds',
-      'greenhollow_wildroot_cluster', 'greenhollow_rabbit_warren',
+      'greenhollow_copper_vein', 'greenhollow_peacebloom_patch', 'greenhollow_silverleaf_patch',
+      'greenhollow_earthroot_patch', 'greenhollow_hunting_grounds', 'greenhollow_rabbit_warren',
     ],
     fishingHoleIds: ['greenhollow_fishing_hole'],
   },
@@ -396,8 +488,8 @@ export const ZONES: Record<string, Zone> = {
     unlockRequirement: { type: 'characterLevel', level: 8 },
     monsterIds: ['ridge_jackal', 'craggy_goat', 'rubble_crawler', 'highland_bandit', 'crag_wolf_alpha'],
     gatherNodeIds: [
-      'stonecrag_tin_vein', 'stonecrag_silver_vein', 'stonecrag_sage_patch', 'stonecrag_foothill_game',
-      'stonecrag_frostcap_patch', 'stonecrag_jackal_den',
+      'stonecrag_tin_vein', 'stonecrag_silver_vein', 'stonecrag_mageroyal_patch', 'stonecrag_briarthorn_patch',
+      'stonecrag_bruiseweed_patch', 'stonecrag_foothill_game', 'stonecrag_jackal_den',
     ],
     fishingHoleIds: ['stonecrag_fishing_hole'],
   },
@@ -411,8 +503,8 @@ export const ZONES: Record<string, Zone> = {
     unlockRequirement: { type: 'characterLevel', level: 25 },
     monsterIds: ['cinder_wolf', 'ashwing_bat', 'molten_crawler', 'ridgeback_marauder', 'scorched_drake'],
     gatherNodeIds: [
-      'emberfall_iron_vein', 'emberfall_sunpetal_patch', 'emberfall_ashfang_den',
-      'emberfall_emberleaf_patch', 'emberfall_wolfrun_thicket',
+      'emberfall_iron_vein', 'emberfall_kingsblood_patch', 'emberfall_liferoot_patch', 'emberfall_goldthorn_patch',
+      'emberfall_ashfang_den', 'emberfall_wolfrun_thicket',
     ],
     fishingHoleIds: ['emberfall_fishing_hole'],
   },
@@ -426,8 +518,8 @@ export const ZONES: Record<string, Zone> = {
     unlockRequirement: { type: 'characterLevel', level: 30 },
     monsterIds: ['ash_wraith', 'cinder_scavenger', 'ashforge_golem', 'ember_stalker', 'ruin_marauder'],
     gatherNodeIds: [
-      'cinderfall_ore_seam', 'cinderfall_gold_vein', 'cinderfall_emberpetal_patch', 'cinderfall_ash_burrow',
-      'cinderfall_ashroot_patch', 'cinderfall_scavenger_den',
+      'cinderfall_ore_seam', 'cinderfall_gold_vein', 'cinderfall_khadgars_whisker_patch', 'cinderfall_firebloom_patch',
+      'cinderfall_sungrass_patch', 'cinderfall_ash_burrow', 'cinderfall_scavenger_den',
     ],
     fishingHoleIds: ['cinderfall_fishing_hole'],
   },
@@ -441,8 +533,8 @@ export const ZONES: Record<string, Zone> = {
     unlockRequirement: { type: 'characterLevel', level: 40 },
     monsterIds: ['cultist_adept', 'living_ember', 'scaleback_drake', 'cultist_zealot', 'magma_hound'],
     gatherNodeIds: [
-      'molten_scar_brimstone_vein', 'molten_scar_cinderbloom_patch', 'molten_scar_scaleback_den',
-      'molten_scar_scorchweed_patch', 'molten_scar_scaleback_nest',
+      'molten_scar_brimstone_vein', 'molten_scar_blindweed_patch', 'molten_scar_ghost_mushroom_patch',
+      'molten_scar_gromsblood_patch', 'molten_scar_scaleback_den', 'molten_scar_scaleback_nest',
     ],
     fishingHoleIds: ['molten_scar_fishing_hole'],
   },
@@ -456,8 +548,9 @@ export const ZONES: Record<string, Zone> = {
     unlockRequirement: { type: 'characterLevel', level: 48 },
     monsterIds: ['emberlord_cultist', 'flamewalker', 'charhide_behemoth', 'ashfall_harbinger', 'emberguard_sentinel'],
     gatherNodeIds: [
-      'cinderheart_ore_vein', 'cinderheart_platinum_vein', 'cinderheart_bloom_patch', 'cinderheart_hide_grounds',
-      'cinderheart_heartbloom_patch', 'cinderheart_emberscale_nest',
+      'cinderheart_ore_vein', 'cinderheart_platinum_vein', 'cinderheart_dreamfoil_patch',
+      'cinderheart_mountain_silversage_patch', 'cinderheart_black_lotus_patch', 'cinderheart_hide_grounds',
+      'cinderheart_emberscale_nest',
     ],
     fishingHoleIds: ['cinderheart_fishing_hole'],
   },

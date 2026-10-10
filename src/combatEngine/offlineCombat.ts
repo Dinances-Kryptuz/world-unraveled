@@ -14,6 +14,7 @@ import type { Monster } from '../gameData/types';
 import { characterXpForLevelV2, MAX_CHARACTER_LEVEL } from '../gameData/xpTables';
 import { resolveElapsedProgress } from '../gameData/activityEngine';
 import type { CompanionCombatSetup } from '../gameData/companions';
+import type { ConsumableAutomationRuntimeState } from '../gameData/consumableAutomation';
 import {
   createEncounterState,
   createPlayerCombatant,
@@ -47,6 +48,14 @@ export interface OfflineCombatInput {
   // mid-simulation level-up) to track the player's current simulated
   // level, since a companion always fights at the player's level.
   companions?: CompanionCombatSetup[];
+  // Herbalism/Alchemy overhaul's Part 8 automation — built once by the
+  // caller (gameData/consumableAutomation.ts's buildConsumableAutomationState)
+  // from the character's CURRENT inventory/settings, then mutated in place
+  // by this same tick-by-tick loop exactly like live combat's ctx.consumableState
+  // (see TickContext's doc comment) — the one thing that makes offline charge
+  // consumption exact rather than an aggregate approximation: this loop calls
+  // advanceCombat once per simulated second, same as a live 1s tick.
+  consumableState?: ConsumableAutomationRuntimeState;
 }
 
 export interface OfflineCombatResult {
@@ -59,6 +68,13 @@ export interface OfflineCombatResult {
   finalLevel: number;
   forcedRetreat: boolean;
   simulatedCombatSeconds: number;
+  // Echoes input.consumableState back out after every tick's mutations —
+  // undefined iff input.consumableState was never passed in. The caller
+  // reads its offensiveChargesConsumed/defensiveChargesConsumed/healingUsed/
+  // manaUsed to persist exactly one batch of inventory/cooldown deltas (see
+  // firebase/consumables.ts's applyConsumableAutomationUsage), the same
+  // "accumulate in memory, write once" rule the online autosave path follows.
+  finalConsumableState?: ConsumableAutomationRuntimeState;
 }
 
 const TICK_SECONDS = 1;
@@ -104,7 +120,12 @@ export function simulateOfflineCombat(input: OfflineCombatInput): OfflineCombatR
   const lootTotals: Record<string, number> = {};
 
   const state: CombatState = createEncounterState(buildInput(level, input.startingHp));
-  const ctx: TickContext = { monster: input.monster, playerLevel: level, playerCombatType: input.specDef.combatType };
+  const ctx: TickContext = {
+    monster: input.monster,
+    playerLevel: level,
+    playerCombatType: input.specDef.combatType,
+    consumableState: input.consumableState,
+  };
 
   let elapsed = 0;
   let ticks = 0;
@@ -160,5 +181,6 @@ export function simulateOfflineCombat(input: OfflineCombatInput): OfflineCombatR
     finalLevel: level,
     forcedRetreat,
     simulatedCombatSeconds: elapsed,
+    finalConsumableState: ctx.consumableState,
   };
 }

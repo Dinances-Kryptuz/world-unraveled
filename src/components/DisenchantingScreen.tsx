@@ -5,7 +5,14 @@ import { applyDisenchantResult } from '../firebase/enchanting';
 import { getCharacter, stopActivity } from '../firebase/character';
 import { getInventory } from '../firebase/inventory';
 import { AUTOSAVE_INTERVAL_SECONDS } from '../gameData/activityEngine';
-import { resolveDisenchantOffline, craftingColorTier, craftingXpForNextLevel, CRAFTING_COLOR_XP_PCT, DISENCHANT_SECONDS } from '../gameData/craftingEngine';
+import {
+  resolveDisenchantOffline,
+  craftingColorTier,
+  craftingXpForNextLevel,
+  CRAFTING_COLOR_XP_PCT,
+  DISENCHANT_SECONDS,
+  type DisenchantOfflineResult,
+} from '../gameData/craftingEngine';
 import { getProfessionState, maxSkillForUnlockedTier } from '../gameData/professionTiers';
 import { disenchantRequiredSkill, disenchantXpAward, disenchantYieldRange } from '../gameData/enchanting';
 import { ITEMS } from '../gameData/items';
@@ -32,6 +39,10 @@ export function DisenchantingScreen({ itemId, instanceId }: { itemId: string; in
   const [sessionDisenchanted, setSessionDisenchanted] = useState(0);
   const [outOfStock, setOutOfStock] = useState(false);
   const [done, setDone] = useState(false);
+  // Updated only from TickBar's onIteration below (the bar's own compositor
+  // clock) — see TickBar.tsx's doc comment for why an independent JS timer
+  // would drift against the bar's visual completion.
+  const [livePreview, setLivePreview] = useState<DisenchantOfflineResult | null>(null);
   const anchorRef = useRef<Date | null>(character.currentActivity.startedAt);
   const stockRef = useRef(0);
   const remainingRequestedRef = useRef(character.currentActivity.disenchantQuantity ?? 1);
@@ -54,6 +65,7 @@ export function DisenchantingScreen({ itemId, instanceId }: { itemId: string; in
     setSessionDisenchanted(0);
     setOutOfStock(false);
     setDone(false);
+    setLivePreview(null);
     anchorRef.current = character.currentActivity.startedAt;
     remainingRequestedRef.current = character.currentActivity.disenchantQuantity ?? 1;
     if (user) {
@@ -121,6 +133,7 @@ export function DisenchantingScreen({ itemId, instanceId }: { itemId: string; in
     stockRef.current -= result.itemsDisenchanted;
     remainingRequestedRef.current -= result.itemsDisenchanted;
     setSessionDisenchanted((prev) => prev + result.itemsDisenchanted);
+    setLivePreview(null);
 
     if (currentCharacter.notificationsEnabled) {
       notify('Disenchanted', [`${result.itemsDisenchanted}x ${item.name} -> ${result.yieldQuantity}x ${ITEMS[yieldRange.itemId]?.name ?? yieldRange.itemId}`]);
@@ -173,6 +186,7 @@ export function DisenchantingScreen({ itemId, instanceId }: { itemId: string; in
       stockRef.current = previousStock;
       remainingRequestedRef.current = previousRemaining;
       setSessionDisenchanted((prev) => prev - result.itemsDisenchanted);
+      setLivePreview(null);
     }
   }
 
@@ -191,27 +205,30 @@ export function DisenchantingScreen({ itemId, instanceId }: { itemId: string; in
   const requestedQuantity = character.currentActivity.disenchantQuantity ?? 1;
   const yieldItem = ITEMS[yieldRange.itemId];
 
-  // Live preview, recomputed on every ~1s render tick (same reasoning as
-  // CraftingScreen's matching comment) — purely for DISPLAY, so "This
-  // session" advances in step with the TickBar's own loop instead of only
-  // jumping once every AUTOSAVE_INTERVAL_SECONDS when autosave() commits.
+  // Recomputed from TickBar's onIteration below — fired by the bar's own
+  // CSS animation completing a loop (the compositor clock), not by the
+  // separate 1s setInterval that drives the real 20s autosave cadence —
+  // see TickBar.tsx's doc comment for why an independent JS timer would
+  // drift against the bar's visual completion.
   const cap = maxSkillForUnlockedTier('enchanting', prof.unlockedTier);
-  const previewMaxQuantity = Math.min(remainingRequestedRef.current, stockRef.current);
-  const livePreview =
-    !done && anchorRef.current && previewMaxQuantity > 0
-      ? resolveDisenchantOffline(
-          anchorRef.current,
-          new Date(),
-          requiredSkill,
-          baseXp,
-          yieldRange.min,
-          yieldRange.max,
-          previewMaxQuantity,
-          prof.level,
-          prof.xp,
-          cap
-        )
-      : null;
+  function handleTickIteration() {
+    const previewMaxQuantity = Math.min(remainingRequestedRef.current, stockRef.current);
+    if (done || !anchorRef.current || !yieldRange || previewMaxQuantity <= 0) return;
+    setLivePreview(
+      resolveDisenchantOffline(
+        anchorRef.current,
+        new Date(),
+        requiredSkill,
+        baseXp,
+        yieldRange.min,
+        yieldRange.max,
+        previewMaxQuantity,
+        prof.level,
+        prof.xp,
+        cap
+      )
+    );
+  }
   const displayDisenchanted = sessionDisenchanted + (livePreview?.itemsDisenchanted ?? 0);
 
   return (
@@ -221,7 +238,7 @@ export function DisenchantingScreen({ itemId, instanceId }: { itemId: string; in
         <ItemSlot item={item} />
         {yieldItem && <ItemSlot item={yieldItem} />}
       </div>
-      {!done && <TickBar seconds={DISENCHANT_SECONDS} color="#6b4f2a" label="Disenchanting" />}
+      {!done && <TickBar seconds={DISENCHANT_SECONDS} color="#6b4f2a" label="Disenchanting" onIteration={handleTickIteration} />}
       <p>
         This session: {displayDisenchanted} / {requestedQuantity} disenchanted
       </p>

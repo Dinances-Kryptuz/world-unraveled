@@ -3,6 +3,7 @@ import { db } from './config';
 import type { Inventory } from '../types/character';
 import type { BaseStat } from '../gameData/classStats';
 import { MAX_VARIANTS_PER_BASE_ITEM } from '../gameData/equipmentRolls';
+import { chargedInstanceId } from '../gameData/consumableCharges';
 
 export async function getInventory(uid: string): Promise<Inventory> {
   const snap = await getDoc(doc(db, 'characters', uid, 'inventory', 'main'));
@@ -169,16 +170,79 @@ export async function grantEquipmentInstances(
   return accepted;
 }
 
-// Distinct base item ids represented in equipmentInstances, for bagSlots
-// accounting — a base item already present only as instance buckets (never
-// as a plain `items` stack) still counts as one occupied slot, same as any
-// other item id.
+// Distinct base item ids represented in equipmentInstances OR
+// chargedConsumables, for bagSlots accounting — a base item already present
+// only as instance/charge buckets (never as a plain `items` stack) still
+// counts as one occupied slot, same as any other item id.
 function countDistinctBaseItems(inventory: Inventory): number {
-  const baseIds = new Set(Object.values(inventory.equipmentInstances ?? {}).map((inst) => inst.itemId));
+  const baseIds = new Set([
+    ...Object.values(inventory.equipmentInstances ?? {}).map((inst) => inst.itemId),
+    ...Object.values(inventory.chargedConsumables ?? {}).map((inst) => inst.itemId),
+  ]);
   for (const itemId of baseIds) {
     if ((inventory.items[itemId] ?? 0) > 0) baseIds.delete(itemId); // already counted by the items.* pass
   }
   return baseIds.size;
+}
+
+// The charge-count-distinguished counterpart to grantEquipmentInstances
+// above — grants freshly-crafted offensive/defensive potions (always at
+// FULL charge, since crafting never produces a partially-used potion) of
+// ONE base item, bucketed by gameData/consumableCharges.ts's
+// chargedInstanceId. Only the bag-slot-once-per-base-item cap applies (no
+// per-base-item variant cap — at most 4 distinct charge levels can ever
+// exist for one item, well under MAX_VARIANTS_PER_BASE_ITEM, so a separate
+// cap would never actually bind). Returns what was actually granted,
+// mirroring grantEquipmentInstances/grantInventoryItems.
+export async function grantChargedConsumables(
+  uid: string,
+  itemId: string,
+  grants: { remainingCharges: number; quantity: number }[]
+): Promise<{ remainingCharges: number; quantity: number }[]> {
+  const requestedQuantities = new Map<number, number>();
+  for (const g of grants) {
+    if (g.quantity <= 0 || g.remainingCharges <= 0) continue;
+    requestedQuantities.set(g.remainingCharges, (requestedQuantities.get(g.remainingCharges) ?? 0) + g.quantity);
+  }
+  if (requestedQuantities.size === 0) return [];
+
+  const [invSnap, charSnap] = await Promise.all([
+    getDoc(doc(db, 'characters', uid, 'inventory', 'main')),
+    getDoc(doc(db, 'characters', uid)),
+  ]);
+  const inventory = (invSnap.exists() ? (invSnap.data() as Inventory) : { items: {} }) as Inventory;
+  const bagSlots: number = charSnap.exists() ? ((charSnap.data().bagSlots as number) ?? 0) : 0;
+
+  const existingBuckets = inventory.chargedConsumables ?? {};
+  const existingLevelsForItem = new Set(
+    Object.values(existingBuckets).filter((b) => b.itemId === itemId).map((b) => b.remainingCharges)
+  );
+  let baseItemSlotSpent = (inventory.items[itemId] ?? 0) > 0 || existingLevelsForItem.size > 0;
+  let distinctCount =
+    Object.values(inventory.items).filter((q) => q > 0).length + countDistinctBaseItems(inventory);
+
+  const accepted: { remainingCharges: number; quantity: number }[] = [];
+  for (const [remainingCharges, quantity] of requestedQuantities) {
+    if (!baseItemSlotSpent) {
+      if (distinctCount >= bagSlots) continue; // bag full — this item id is dropped entirely
+      distinctCount++;
+      baseItemSlotSpent = true;
+    }
+    accepted.push({ remainingCharges, quantity });
+  }
+  if (accepted.length === 0) return [];
+
+  const updates: Record<string, unknown> = {};
+  for (const { remainingCharges, quantity } of accepted) {
+    const id = chargedInstanceId(itemId, remainingCharges);
+    if (existingBuckets[id]) {
+      updates[`chargedConsumables.${id}.quantity`] = increment(quantity);
+    } else {
+      updates[`chargedConsumables.${id}`] = { itemId, remainingCharges, quantity };
+    }
+  }
+  await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), updates);
+  return accepted;
 }
 
 // Live-updates the moment Firestore actually changes, instead of polling on

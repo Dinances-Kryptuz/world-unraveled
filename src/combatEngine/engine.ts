@@ -20,8 +20,9 @@ import {
 import { EMPTY_TALENT_TOTALS, type TalentBonusTotals } from '../utils/talentEvaluator';
 import type { BuffTotals } from '../gameData/buffs';
 import type { CompanionCombatSetup } from '../gameData/companions';
-import type { Monster } from '../gameData/types';
+import type { DamageSchool, Monster } from '../gameData/types';
 import { combatTypeModifier, type CombatType } from '../gameData/combatTriangle';
+import type { ConsumableAutomationRuntimeState } from '../gameData/consumableAutomation';
 import { ABILITIES, BASIC_ATTACK_BY_CLASS } from './abilities';
 import { MONSTER_ABILITIES } from './monsterAbilities';
 import { effectiveLoadout, effectiveAbilityConditions } from './progression';
@@ -140,6 +141,7 @@ function buildPlayerProfile(input: EncounterSetupInput): CasterProfile {
     avoidance,
     armor,
     damageTakenMult,
+    damageSchool: 'physical',
     healFrac: specDef.healFrac + talentTotals.healFracAddPct / 100,
     passiveHealPct:
       (specDef.passiveHealPct + talentTotals.passiveHealAddPct / 100) * (1 + talentTotals.healMultPct / 100),
@@ -177,6 +179,7 @@ function buildCompanionProfile(companion: CompanionCombatSetup, monster: Monster
     avoidance,
     armor,
     damageTakenMult: Math.max(0.05, 1 - totals.flatDmgTakenPct / 100),
+    damageSchool: 'physical',
     healFrac: specDef.healFrac + totals.healFracAddPct / 100,
     passiveHealPct: (specDef.passiveHealPct + totals.passiveHealAddPct / 100) * (1 + totals.healMultPct / 100),
     healingPowerMult: healingPowerMultiplier(statAtLevel(cls, 'SPI', level) + (equipmentBonuses.SPI ?? 0)),
@@ -192,6 +195,7 @@ function buildMonsterProfile(monster: Monster, playerLevel: number, playerCombat
     avoidance: 0, // monsters have no avoidance stat in the existing balance model
     armor: monsterArmor(monster.level),
     damageTakenMult: 1,
+    damageSchool: monster.damageSchool ?? 'physical',
     healFrac: 0,
     passiveHealPct: 0,
     healingPowerMult: 1,
@@ -367,16 +371,88 @@ function buffDamageTakenMult(c: Combatant): number {
 // coefficient, active buffs, the defender's armor, and a level-gap accuracy
 // check when the attacker is the player (mirrors the old aggregate model's
 // playerDamageModifier input exactly — see resolveHit for the level-gap piece).
-function computeEffectDamage(attacker: Combatant, defender: Combatant, power: number, levelGapAccuracy: number): { hit: boolean; amount: number } {
+//
+// Also where the Herbalism/Alchemy overhaul's automation-driven offensive/
+// defensive consumables (gameData/consumableAutomation.ts) apply and consume
+// their charges — one flat charge per LANDED hit (a miss consumes nothing,
+// same convention the old activeBuffs offensive_action/damage_taken triggers
+// already used), decremented in place on `consumableState` so online (called
+// once per real-time tick) and offline (called once per simulated tick in
+// the exact same loop, see offlineCombat.ts) resolve identically instead of
+// two approximations that could drift.
+function computeEffectDamage(
+  attacker: Combatant,
+  defender: Combatant,
+  power: number,
+  levelGapAccuracy: number,
+  effectDamageSchool: DamageSchool,
+  consumableState: ConsumableAutomationRuntimeState | undefined
+): { hit: boolean; amount: number; healOnTrigger: number } {
   const accuracyRoll = attacker.isPlayer ? levelGapAccuracy : attacker.profile.accuracy;
   const avoided = Math.random() > accuracyRoll || Math.random() < defender.profile.avoidance;
-  if (avoided) return { hit: false, amount: 0 };
+  if (avoided) return { hit: false, amount: 0, healOnTrigger: 0 };
 
-  const armorMod = 1 - armorReduction(defender.profile.armor);
+  let offensiveMultPct = 0;
+  if (attacker.isPlayer && consumableState?.offensive && consumableState.offensive.chargesRemaining > 0) {
+    offensiveMultPct = consumableState.offensive.damageMultiplierPct;
+    consumableState.offensive.chargesRemaining--;
+    consumableState.offensiveChargesConsumed++;
+  }
+
+  const defensive =
+    defender.isPlayer && consumableState?.defensive && consumableState.defensive.chargesRemaining > 0
+      ? consumableState.defensive
+      : undefined;
+  if (defensive && consumableState) {
+    defensive.chargesRemaining--;
+    consumableState.defensiveChargesConsumed++;
+  }
+
+  // armorBonusPct (Elixir of Minor/Greater Defense) scales the defender's
+  // effective armor for just this one hit — never persisted onto the
+  // profile itself, matching BuffEffect.armorBonusPct's doc comment.
+  const effectiveArmor = defender.profile.armor * (1 + (defensive?.armorBonusPct ?? 0) / 100);
+  const armorMod = 1 - armorReduction(effectiveArmor);
+  // Consumable-only elemental resistance — only ever reduces damage from an
+  // attack whose school matches the active defensive buff's resistance,
+  // clamped to the same 75% cap the game's avoidance stat already uses.
+  const resistancePct =
+    effectDamageSchool === 'fire'
+      ? defensive?.fireResistancePct ?? 0
+      : effectDamageSchool === 'shadow'
+        ? defensive?.shadowResistancePct ?? 0
+        : 0;
+  const resistanceMod = 1 - Math.min(0.75, resistancePct / 100);
+
   const raw =
-    attacker.profile.normalizedHit * power * attacker.profile.damageCoef * buffDamageDealtMult(attacker) * armorMod;
-  const amount = Math.max(0, Math.round(raw * defender.profile.damageTakenMult * buffDamageTakenMult(defender)));
-  return { hit: true, amount };
+    attacker.profile.normalizedHit *
+    power *
+    attacker.profile.damageCoef *
+    (1 + offensiveMultPct / 100) *
+    buffDamageDealtMult(attacker) *
+    armorMod;
+  let amount = Math.max(
+    0,
+    Math.round(raw * defender.profile.damageTakenMult * buffDamageTakenMult(defender) * resistanceMod)
+  );
+
+  // Elixir of Fortitude's maxHpBonusPct — "temporarily raises the ceiling
+  // used for THIS hit's survival math only, never persisted" (see
+  // BuffEffect's doc comment): softens exactly a would-be-lethal hit by the
+  // buff's HP%, rather than actually inflating defender.hp/maxHp, the
+  // closest honest fit for a non-duration, charge-based "more HP" effect.
+  if (defensive?.maxHpBonusPct && defender.hp - amount <= 0) {
+    const cushion = defender.maxHp * (defensive.maxHpBonusPct / 100);
+    amount = Math.max(0, amount - cushion);
+  }
+
+  // Weak Troll's Blood Elixir's healOnTriggerPct — a small heal bundled into
+  // this same hit-taken event, returned rather than applied here so the
+  // caller (useAbility) can skip it for an already-dead defender exactly
+  // like every other heal in this file does.
+  const healOnTrigger = defensive?.healOnTriggerPct ? defender.maxHp * (defensive.healOnTriggerPct / 100) : 0;
+
+  return { hit: true, amount, healOnTrigger };
 }
 
 export interface KillReward {
@@ -447,6 +523,18 @@ export interface TickContext {
   // multi-enemy wave isn't just the single-enemy HP multiplied by headcount
   // again on top of already being split across more bodies.
   monsterHpMultiplier?: number;
+  // Herbalism/Alchemy overhaul's Part 8 automation — built once per
+  // encounter setup (gameData/consumableAutomation.ts's
+  // buildConsumableAutomationState) and mutated in place by advanceCombat as
+  // the fight actually happens (per-hit charge consumption, per-tick auto-
+  // heal/mana), exactly like ctx.monster itself is mutated by the dungeon
+  // stage-advance step — this is what lets online (a fresh ctx rebuilt every
+  // tick, but pointed at the SAME persistent state object) and offline (one
+  // ctx reused for the whole simulateOfflineCombat loop) resolve charges at
+  // identical per-hit/per-tick granularity instead of two drifting
+  // approximations. Absent for every encounter before this field existed,
+  // and for any character with no consumableAutomation configured yet.
+  consumableState?: ConsumableAutomationRuntimeState;
 }
 
 export function advanceCombat(state: CombatState, ctx: TickContext, deltaSeconds: number): TickResult {
@@ -483,6 +571,57 @@ export function advanceCombat(state: CombatState, ctx: TickContext, deltaSeconds
       const before = c.hp;
       c.hp = Math.min(c.maxHp, c.hp + c.maxHp * c.profile.passiveHealPct * c.profile.healingPowerMult * deltaSeconds);
       if (c.isPlayer) questSignals.healingDone += c.hp - before;
+    }
+  }
+
+  // 1b. Herbalism/Alchemy overhaul's Part 8 auto-heal/auto-mana — player
+  // only (automation settings are per-character, not per-companion), run
+  // once per tick so its cooldown/threshold checks happen at the same
+  // granularity online and offline. Checked before step 2 acts, matching a
+  // real player's own "drink a potion, then act" reflex.
+  const automationPlayer = state.party.find((p) => p.isPlayer);
+  if (ctx.consumableState && automationPlayer?.isAlive) {
+    const cs = ctx.consumableState;
+    if (cs.healing) {
+      cs.healing.cooldownRemaining = Math.max(0, cs.healing.cooldownRemaining - deltaSeconds);
+      const hpPct = (automationPlayer.hp / automationPlayer.maxHp) * 100;
+      if (
+        cs.healing.cooldownRemaining <= 0 &&
+        cs.healing.stockRemaining > 0 &&
+        hpPct <= cs.healing.thresholdPct &&
+        automationPlayer.hp < automationPlayer.maxHp
+      ) {
+        const healAmt = cs.healing.healPctMax
+          ? automationPlayer.maxHp * (cs.healing.healPctMax / 100)
+          : cs.healing.healAmount ?? 0;
+        const before = automationPlayer.hp;
+        automationPlayer.hp = Math.min(automationPlayer.maxHp, automationPlayer.hp + healAmt);
+        questSignals.healingDone += automationPlayer.hp - before;
+        cs.healing.cooldownRemaining = cs.healing.cooldownSeconds;
+        cs.healing.stockRemaining--;
+        cs.healingUsed++;
+        events.push({ message: `${automationPlayer.name} automatically drinks a healing potion.`, kind: 'heal' });
+      }
+    }
+    if (cs.mana) {
+      cs.mana.cooldownRemaining = Math.max(0, cs.mana.cooldownRemaining - deltaSeconds);
+      const manaPool = automationPlayer.resources.mana;
+      if (manaPool) {
+        const manaPct = (manaPool.current / manaPool.max) * 100;
+        if (
+          cs.mana.cooldownRemaining <= 0 &&
+          cs.mana.stockRemaining > 0 &&
+          manaPct <= cs.mana.thresholdPct &&
+          manaPool.current < manaPool.max
+        ) {
+          const manaAmt = cs.mana.manaPctMax ? manaPool.max * (cs.mana.manaPctMax / 100) : cs.mana.manaAmount ?? 0;
+          manaPool.current = Math.min(manaPool.max, manaPool.current + manaAmt);
+          cs.mana.cooldownRemaining = cs.mana.cooldownSeconds;
+          cs.mana.stockRemaining--;
+          cs.manaUsed++;
+          events.push({ message: `${automationPlayer.name} automatically drinks a mana potion.`, kind: 'status' });
+        }
+      }
     }
   }
 
@@ -608,12 +747,28 @@ export function useAbility(
     for (const target of targets) {
       switch (effect.type) {
         case 'damage': {
-          const { hit, amount } = computeEffectDamage(source, target, effect.power ?? 1, levelGapAccuracy);
+          const effectDamageSchool = effect.damageSchool ?? source.profile.damageSchool;
+          const { hit, amount, healOnTrigger } = computeEffectDamage(
+            source,
+            target,
+            effect.power ?? 1,
+            levelGapAccuracy,
+            effectDamageSchool,
+            ctx.consumableState
+          );
           if (!hit) {
             events.push({ message: `${source.name} uses ${ability.name} on ${target.name}, but it misses.`, kind: 'miss' });
             break;
           }
           target.hp = Math.max(0, target.hp - amount);
+          // Weak Troll's Blood Elixir's healOnTriggerPct — applied right
+          // after the hit it's bundled with, same "skip a dead target"
+          // guard every other heal in this file already uses.
+          if (healOnTrigger > 0 && target.isAlive) {
+            const before = target.hp;
+            target.hp = Math.min(target.maxHp, target.hp + healOnTrigger);
+            if (target.isPlayer) questSignals.healingDone += target.hp - before;
+          }
           // healFrac (Shadow Priest's "sustain from the damage you deal," per
           // its own spec blurb) was computed onto the profile since Phase 1
           // but never actually paid out here — same gap as passiveHealPct
