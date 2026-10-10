@@ -358,15 +358,20 @@ export const QUESTS: Record<string, QuestDef> = {
   // ── Profession quests — "gather X, craft Y" per the design doc's own
   // example, one per production profession. Rewards are deliberately
   // modest (this is a tutorial nudge, not an endgame reward). ────────────
+  // Updated for the Skinning/Leatherworking overhaul — the old
+  // leather_scraps/light_leather pair is retired (leather_scraps is no
+  // longer gathered by any active node, and the light_leather recipe no
+  // longer exists), replaced by the new Skinning-sourced primary leather
+  // and a real zone-1 Leatherworking piece.
   profession_leatherworking: {
     id: 'profession_leatherworking',
     name: 'Hide and Seam',
     category: 'profession',
     profession: 'leatherworking',
-    description: 'Gather leather scraps and work them into Light Leather.',
+    description: 'Skin creatures for Light Leather and work it into a pair of gloves.',
     objectives: [
-      { type: 'gather', itemId: 'leather_scraps', count: 10 },
-      { type: 'craft', itemId: 'light_leather', count: 5 },
+      { type: 'gather', itemId: 'skinned_light_leather', count: 10 },
+      { type: 'craft', itemId: 'handstitched_leather_gloves', count: 5 },
     ],
     rewards: { xp: 100, gold: 10 },
   },
@@ -391,15 +396,18 @@ export const QUESTS: Record<string, QuestDef> = {
     objectives: [{ type: 'craft', itemId: 'linen_robe', count: 1 }],
     rewards: { xp: 100, gold: 10 },
   },
+  // Updated for the Herbalism/Alchemy overhaul — minor_healing_draught's
+  // recipe no longer exists; the new equivalent recipe is
+  // minor_healing_potion (peacebloom is still a real zone-1 herb, unchanged).
   profession_alchemy: {
     id: 'profession_alchemy',
     name: 'A Simple Brew',
     category: 'profession',
     profession: 'alchemy',
-    description: 'Gather peacebloom and brew your first healing draughts.',
+    description: 'Gather peacebloom and brew your first healing potions.',
     objectives: [
       { type: 'gather', itemId: 'peacebloom', count: 10 },
-      { type: 'craft', itemId: 'minor_healing_draught', count: 3 },
+      { type: 'craft', itemId: 'minor_healing_potion', count: 3 },
     ],
     rewards: { xp: 100, gold: 10 },
   },
