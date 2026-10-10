@@ -115,6 +115,12 @@ export function FishingScreen({ hole }: { hole: FishingHole }) {
     if (currentCharacter.notificationsEnabled && wholeQuantity > 0) {
       notify(`${ITEMS[hole.itemId]?.name ?? hole.itemId} caught`, [`${wholeQuantity}x ${ITEMS[hole.itemId]?.name ?? hole.itemId}`]);
     }
+    if (currentCharacter.skillXpNotificationsEnabled && result.professionXpGained > 0) {
+      notify('Fishing XP gained', [`+${result.professionXpGained} XP`]);
+    }
+    if (currentCharacter.masteryXpNotificationsEnabled && result.masteryXpGained > 0) {
+      notify('Mastery XP gained', [`+${result.masteryXpGained} ${ITEMS[hole.itemId]?.name ?? hole.itemId} Mastery XP`]);
+    }
 
     // A rough speculative estimate, superseded moments later by the
     // authoritative reconciliation below once the write succeeds.
@@ -204,6 +210,29 @@ export function FishingScreen({ hole }: { hole: FishingHole }) {
   const xpForNextSkillLevel = gatheringXpForNextLevel(prof.level);
   const xpForNextMasteryLevel = masteryState.level < MASTERY_MAX_LEVEL ? masteryXpForNextLevel(masteryState.level) : null;
 
+  // Live preview, recomputed on every ~1s render tick (same reasoning as
+  // CraftingScreen's matching comment) — purely for DISPLAY, so "This
+  // session" advances in step with the TickBar's own loop instead of only
+  // jumping once every AUTOSAVE_INTERVAL_SECONDS when autosave() commits.
+  const previewEquippedToolId = equippedItemId(character.equipment.tool);
+  const previewEquippedTool = previewEquippedToolId ? ITEMS[previewEquippedToolId] : null;
+  const previewToolBonusPct = previewEquippedTool?.toolType === 'fishing_rod' ? previewEquippedTool.gatherBonusPct ?? 0 : 0;
+  const cap = maxSkillForUnlockedTier('fishing', prof.unlockedTier);
+  const livePreview = anchorRef.current
+    ? resolveGatheringOffline(
+        anchorRef.current,
+        new Date(),
+        resourceLike(),
+        prof.level,
+        prof.xp,
+        masteryState.level,
+        masteryState.xp,
+        cap,
+        previewToolBonusPct
+      )
+    : null;
+  const displayQuantity = bankedQuantity + Math.floor(livePreview?.quantityGained ?? 0);
+
   return (
     <div className="fishing-screen">
       <h2>Fishing: {hole.name}</h2>
@@ -213,7 +242,7 @@ export function FishingScreen({ hole }: { hole: FishingHole }) {
         chance
       </p>
       <p>
-        This session: {bankedQuantity}x {ITEMS[hole.itemId]?.name ?? hole.itemId}
+        This session: {displayQuantity}x {ITEMS[hole.itemId]?.name ?? hole.itemId}
       </p>
       <p>
         Fishing level: {prof.level} ({Math.floor(prof.xp)} / {xpForNextSkillLevel} XP)

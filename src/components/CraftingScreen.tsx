@@ -68,6 +68,7 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
   }, [user]);
 
   const earnsProfessionXp = PROFESSION_CATEGORY[recipe.profession] === 'production';
+  const label = recipe.profession === 'mining' ? 'Smelting' : PROFESSION_LABELS[recipe.profession];
 
   useEffect(() => {
     setBankedCrafted(0);
@@ -163,6 +164,16 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
       notify(`${ITEMS[recipe.resultItemId]?.name ?? recipe.resultItemId} crafted`, [
         `${resultQty}x ${ITEMS[recipe.resultItemId]?.name ?? recipe.resultItemId}`,
       ]);
+    }
+    if (currentCharacter.skillXpNotificationsEnabled && earnsProfessionXp && result.professionXpGained > 0) {
+      notify(`${label} XP gained`, [`+${result.professionXpGained} XP`]);
+    }
+    if (currentCharacter.masteryXpNotificationsEnabled && earnsProfessionXp) {
+      const masteryXpGained = materialMasteryInput ? result.materialMasteryXpGained ?? 0 : result.masteryXpGained;
+      if (masteryXpGained > 0) {
+        const masteryLabel = material?.name ?? ITEMS[recipe.resultItemId]?.name ?? recipe.resultItemId;
+        notify('Mastery XP gained', [`+${masteryXpGained} ${masteryLabel} Mastery XP`]);
+      }
     }
 
     // A rough speculative estimate, superseded moments later by the
@@ -297,7 +308,40 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
   const xpForNextMasteryLevel =
     masteryState.level < RECIPE_MASTERY_MAX_LEVEL ? recipeMasteryXpForNextLevel(masteryState.level) : null;
   const resultItem = ITEMS[recipe.resultItemId];
-  const label = recipe.profession === 'mining' ? 'Smelting' : PROFESSION_LABELS[recipe.profession];
+
+  // Live preview, recomputed on every ~1s render tick (the setInterval above
+  // forces one via setTick) — purely for DISPLAY, so "This session: N
+  // crafted" and the remaining-material counts above advance in step with
+  // the TickBar's own CSS loop instead of only jumping once every
+  // AUTOSAVE_INTERVAL_SECONDS when autosave() actually commits. Same
+  // deterministic pure resolver, same frozen anchor, nothing written —
+  // cheap to call this often since the window is always well under 20s.
+  const cap = maxSkillForUnlockedTier(recipe.profession, prof.unlockedTier);
+  const previewMaterialMasteryInput: MaterialMasteryInput | undefined = displayMaterial
+    ? {
+        materialId: displayMaterial.id,
+        startingXp: materialMasteryXp,
+        barsPerCraft: recipe.materials.find((m) => m.itemId === displayMaterial.barItemId)?.quantity ?? 0,
+      }
+    : undefined;
+  const livePreview = anchorRef.current
+    ? resolveCraftingOffline(
+        anchorRef.current,
+        new Date(),
+        recipeLike(),
+        prof.level,
+        prof.xp,
+        previewMaterialMasteryInput ? 0 : masteryState.level,
+        previewMaterialMasteryInput ? 0 : masteryState.xp,
+        cap,
+        materialsRef.current,
+        goldRef.current,
+        previewMaterialMasteryInput
+      )
+    : null;
+  const displayCrafted = bankedCrafted + Math.floor(livePreview?.itemsCrafted ?? 0);
+  const previewConsumedByItem: Record<string, number> = {};
+  for (const c of livePreview?.materialsConsumed ?? []) previewConsumedByItem[c.itemId] = c.quantity;
 
   return (
     <div className="crafting-screen">
@@ -310,9 +354,10 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
           {recipe.materials.map((m) => {
             const material = ITEMS[m.itemId];
             if (!material) return null;
+            const liveQuantity = (materialsRef.current[m.itemId] ?? 0) - (previewConsumedByItem[m.itemId] ?? 0);
             return (
               <div key={m.itemId} className="loot-entry">
-                <ItemSlot item={material} quantity={materialsRef.current[m.itemId] ?? 0} />
+                <ItemSlot item={material} quantity={Math.max(0, liveQuantity)} />
                 <small>need {m.quantity}</small>
               </div>
             );
@@ -322,7 +367,7 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
       {!outOfMaterials && (
         <TickBar seconds={recipe.craftSeconds / (earnsProfessionXp ? speedMult : 1)} color="#6b4f2a" label="Crafting" />
       )}
-      <p>This session: {bankedCrafted} crafted</p>
+      <p>This session: {displayCrafted} crafted</p>
       <p>
         {label} skill: {prof.level}
         {earnsProfessionXp ? ` (${Math.floor(prof.xp)} / ${xpForNextSkillLevel} XP)` : ''}

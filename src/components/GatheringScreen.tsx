@@ -123,6 +123,12 @@ export function GatheringScreen({ node }: { node: GatherNode }) {
     if (currentCharacter.notificationsEnabled && wholeQuantity > 0) {
       notify(`${ITEMS[node.itemId]?.name ?? node.itemId} gathered`, [`${wholeQuantity}x ${ITEMS[node.itemId]?.name ?? node.itemId}`]);
     }
+    if (currentCharacter.skillXpNotificationsEnabled && result.professionXpGained > 0) {
+      notify(`${PROFESSION_LABELS[node.profession]} XP gained`, [`+${result.professionXpGained} XP`]);
+    }
+    if (currentCharacter.masteryXpNotificationsEnabled && result.masteryXpGained > 0) {
+      notify('Mastery XP gained', [`+${result.masteryXpGained} ${ITEMS[node.itemId]?.name ?? node.itemId} Mastery XP`]);
+    }
 
     // A rough speculative estimate, superseded moments later by the
     // authoritative reconciliation below once the write succeeds.
@@ -216,6 +222,33 @@ export function GatheringScreen({ node }: { node: GatherNode }) {
   const xpForNextMasteryLevel = masteryState.level < MASTERY_MAX_LEVEL ? masteryXpForNextLevel(masteryState.level) : null;
   const label = PROFESSION_LABELS[node.profession];
 
+  // Live preview, recomputed on every ~1s render tick (same reasoning as
+  // CraftingScreen's matching comment) — purely for DISPLAY, so "This
+  // session" advances in step with the TickBar's own loop instead of only
+  // jumping once every AUTOSAVE_INTERVAL_SECONDS when autosave() commits.
+  const previewEquippedToolId = equippedItemId(character.equipment.tool);
+  const previewEquippedTool = previewEquippedToolId ? ITEMS[previewEquippedToolId] : null;
+  const previewToolBonusPct =
+    previewEquippedTool && node.requiredToolType && previewEquippedTool.toolType === node.requiredToolType
+      ? previewEquippedTool.gatherBonusPct ?? 0
+      : 0;
+  const cap = maxSkillForUnlockedTier(node.profession, prof.unlockedTier);
+  const livePreview = anchorRef.current
+    ? resolveGatheringOffline(
+        anchorRef.current,
+        new Date(),
+        resourceLike(),
+        prof.level,
+        prof.xp,
+        masteryState.level,
+        masteryState.xp,
+        cap,
+        previewToolBonusPct
+      )
+    : null;
+  const displayQuantity = bankedQuantity + Math.floor(livePreview?.quantityGained ?? 0);
+  const displayBonusQuantity = bankedBonusQuantity + Math.floor(livePreview?.rareBonusQuantity ?? 0);
+
   return (
     <div className="gathering-screen">
       <h2>
@@ -226,8 +259,8 @@ export function GatheringScreen({ node }: { node: GatherNode }) {
         {tier[0].toUpperCase() + tier.slice(1)} — {(xpPct * 100).toFixed(0)}% profession XP
       </p>
       <p>
-        This session: {bankedQuantity}x {ITEMS[node.itemId]?.name ?? node.itemId}
-        {node.rareBonus && bankedBonusQuantity > 0 ? `, ${bankedBonusQuantity}x ${ITEMS[node.rareBonus.itemId]?.name ?? node.rareBonus.itemId}` : ''}
+        This session: {displayQuantity}x {ITEMS[node.itemId]?.name ?? node.itemId}
+        {node.rareBonus && displayBonusQuantity > 0 ? `, ${displayBonusQuantity}x ${ITEMS[node.rareBonus.itemId]?.name ?? node.rareBonus.itemId}` : ''}
       </p>
       <p>
         {label} level: {prof.level} ({Math.floor(prof.xp)} / {xpForNextSkillLevel} XP)

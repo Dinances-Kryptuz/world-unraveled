@@ -192,6 +192,11 @@ export async function getCharacter(uid: string): Promise<Character | null> {
     // Same backfill idea again, for the notification toggle — an old
     // character read before this field existed defaults to on.
     notificationsEnabled: data.notificationsEnabled ?? true,
+    // Same backfill idea, but opt-IN (defaults to off, not on) — see
+    // Character.skillXpNotificationsEnabled's doc comment for why these two
+    // are deliberately a different default than notificationsEnabled above.
+    skillXpNotificationsEnabled: data.skillXpNotificationsEnabled ?? false,
+    masteryXpNotificationsEnabled: data.masteryXpNotificationsEnabled ?? false,
     // Same backfill idea again, for mounts — an old character read before
     // this field existed owns none yet and flies at the un-discounted rate.
     mounts: data.mounts ?? [],
@@ -316,6 +321,8 @@ export async function createCharacter(uid: string, name: string, characterClass:
     unlockedTitleIds: [],
     equippedTitleId: null,
     notificationsEnabled: true,
+    skillXpNotificationsEnabled: false,
+    masteryXpNotificationsEnabled: false,
     mounts: [],
     trainedAbilityIds: [],
     currentZoneId: DEFAULT_ZONE_ID,
@@ -897,6 +904,14 @@ export async function respecTalents(uid: string): Promise<{ success: boolean; re
 
 export async function setNotificationsEnabled(uid: string, enabled: boolean): Promise<void> {
   await updateDoc(doc(db, 'characters', uid), { notificationsEnabled: enabled });
+}
+
+export async function setSkillXpNotificationsEnabled(uid: string, enabled: boolean): Promise<void> {
+  await updateDoc(doc(db, 'characters', uid), { skillXpNotificationsEnabled: enabled });
+}
+
+export async function setMasteryXpNotificationsEnabled(uid: string, enabled: boolean): Promise<void> {
+  await updateDoc(doc(db, 'characters', uid), { masteryXpNotificationsEnabled: enabled });
 }
 
 // Pays gold to add one ability to Character.trainedAbilityIds — the Class
