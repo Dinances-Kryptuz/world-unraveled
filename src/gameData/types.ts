@@ -213,6 +213,18 @@ export interface Monster {
   // thematically fire- or shadow-coded (see combatEngine/engine.ts's
   // resistance pipeline) — not retrofitted onto the whole roster.
   damageSchool?: DamageSchool;
+  // Enchanting overhaul's Beastslayer/Demonslaying-family weapon enchants —
+  // absent (every monster not explicitly tagged) means "no creature family"
+  // and never triggers either bonus, same zero-behavior-change-by-default
+  // posture as damageSchool above. Tagged now only on monsters already
+  // thematically beast-coded (wolves, boars, etc. — see monsters.ts);
+  // 'demon' exists in the type for the matching Demonslaying enchant but is
+  // deliberately left untagged for now — this roster has no demon-themed
+  // monster yet, so authoring Demonslaying's data now without any real
+  // target would be guesswork, not a tagging decision (see the
+  // AskUserQuestion resolution in this session's history: "add
+  // Monster.creatureType, tag beasts now [only]").
+  creatureType?: 'beast' | 'demon';
 }
 
 export type DamageSchool = 'physical' | 'fire' | 'shadow';

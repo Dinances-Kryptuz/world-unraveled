@@ -4,6 +4,7 @@ export const MONSTERS: Record<string, Monster> = {
   greenhorn_boar: {
     id: 'greenhorn_boar',
     name: 'Greenhorn Boar',
+    creatureType: 'beast',
     zoneIds: ['greenhollow_fields'],
     levelRange: [1, 5],
     level: 3, // placeholder — real tuning against the new formulas happens at Step 10
@@ -25,6 +26,7 @@ export const MONSTERS: Record<string, Monster> = {
   forest_wolf: {
     id: 'forest_wolf',
     name: 'Forest Wolf',
+    creatureType: 'beast',
     zoneIds: ['greenhollow_fields'],
     levelRange: [3, 8],
     level: 6, // placeholder — real tuning against the new formulas happens at Step 10
@@ -69,6 +71,7 @@ export const MONSTERS: Record<string, Monster> = {
   thornback_hare: {
     id: 'thornback_hare',
     name: 'Thornback Hare',
+    creatureType: 'beast',
     zoneIds: ['greenhollow_fields'],
     levelRange: [2, 6],
     level: 1, // placeholder — real tuning against the new formulas happens at Step 10
@@ -91,6 +94,7 @@ export const MONSTERS: Record<string, Monster> = {
   ridge_jackal: {
     id: 'ridge_jackal',
     name: 'Ridge Jackal',
+    creatureType: 'beast',
     zoneIds: ['stonecrag_foothills'],
     levelRange: [8, 12],
     level: 10,
@@ -112,6 +116,7 @@ export const MONSTERS: Record<string, Monster> = {
   craggy_goat: {
     id: 'craggy_goat',
     name: 'Craggy Goat',
+    creatureType: 'beast',
     zoneIds: ['stonecrag_foothills'],
     levelRange: [11, 16],
     level: 13,
@@ -177,6 +182,7 @@ export const MONSTERS: Record<string, Monster> = {
   crag_wolf_alpha: {
     id: 'crag_wolf_alpha',
     name: 'Crag Wolf Alpha',
+    creatureType: 'beast',
     zoneIds: ['stonecrag_foothills'],
     levelRange: [19, 25],
     level: 22,
@@ -200,6 +206,7 @@ export const MONSTERS: Record<string, Monster> = {
   cinder_wolf: {
     id: 'cinder_wolf',
     name: 'Cinder Wolf',
+    creatureType: 'beast',
     damageSchool: 'fire',
     zoneIds: ['emberfall_ridge'],
     levelRange: [25, 29],
@@ -222,6 +229,7 @@ export const MONSTERS: Record<string, Monster> = {
   ashwing_bat: {
     id: 'ashwing_bat',
     name: 'Ashwing Bat',
+    creatureType: 'beast',
     zoneIds: ['emberfall_ridge'],
     levelRange: [27, 32],
     level: 30,
@@ -588,6 +596,7 @@ export const MONSTERS: Record<string, Monster> = {
   magma_hound: {
     id: 'magma_hound',
     name: 'Magma Hound',
+    creatureType: 'beast',
     damageSchool: 'fire',
     zoneIds: ['molten_scar'],
     levelRange: [48, 54],

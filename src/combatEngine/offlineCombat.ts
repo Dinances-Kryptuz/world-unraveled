@@ -61,6 +61,13 @@ export interface OfflineCombatInput {
   // mechanism applies (CurrentActivity.equippedShirtItemId for ordinary
   // offline combat, or the dungeon's own entry-time snapshot).
   goldFindPct?: number;
+  // Enchanting overhaul's passive stat-enchant levers — see
+  // EncounterSetupInput's matching doc comment in engine.ts. Resolved once
+  // by the caller (same snapshot-at-window-start posture as every other
+  // offline input here) rather than re-read mid-simulation.
+  hastePct?: number;
+  flatDamageBonus?: number;
+  healingPowerFlatBonus?: number;
 }
 
 export interface OfflineCombatResult {
@@ -113,6 +120,9 @@ export function simulateOfflineCombat(input: OfflineCombatInput): OfflineCombatR
       savedAbilityConditions: input.savedAbilityConditions,
       disabledAbilityIds: input.disabledAbilityIds,
       companions: input.companions?.map((c) => ({ ...c, level })),
+      hastePct: input.hastePct,
+      flatDamageBonus: input.flatDamageBonus,
+      healingPowerFlatBonus: input.healingPowerFlatBonus,
     };
   }
 

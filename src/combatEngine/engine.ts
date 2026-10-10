@@ -86,6 +86,24 @@ export interface EncounterSetupInput {
   // 'multi_target' dungeon stage (see TickContext.encounterSize, which this
   // feeds into alongside it for the respawn/wave-advance step).
   encounterSize?: number;
+  // Enchanting overhaul's passive stat-enchant levers — summed from
+  // whatever passive enchants are currently active on the player's
+  // equipped gear (see firebase/enchanting.ts's buildPassiveEnchantTotals,
+  // Phase E4/E5), baked into the profile once at encounter setup exactly
+  // like talents/buffs/equipment above, not re-read live mid-fight.
+  // hastePct speeds up the player's own action cadence (ATTACK_INTERVAL_
+  // SECONDS below, divided by 1+hastePct/100) — the one new combat lever
+  // this overhaul adds (see the AskUserQuestion resolution in this
+  // session's history: "add a small hastePct field"). flatDamageBonus is
+  // the Spell Power/Attack Power/Striking/Impact family — mechanically
+  // identical bonuses added PRE-damageCoef (folded directly into
+  // normalizedHit) since this engine has no magic/physical damage-school
+  // split on the player side to tell them apart by. healingPowerFlatBonus
+  // is Healing Power — a flat SPI-equivalent addend fed into the existing
+  // healingPowerMultiplier formula rather than a new multiplier of its own.
+  hastePct?: number;
+  flatDamageBonus?: number;
+  healingPowerFlatBonus?: number;
 }
 
 // Folds active-buff stat bonuses (Alchemy stat potions, Cooking's Well Fed)
@@ -125,7 +143,11 @@ function buildPlayerProfile(input: EncounterSetupInput): CasterProfile {
   const totalAgi = statAtLevel(cls, 'AGI', level) + (equipmentBonuses.AGI ?? 0);
 
   return {
-    normalizedHit: baseDamage(cls, level, equipmentBonuses),
+    // flatDamageBonus (Spell/Attack Power, Striking/Impact enchants) folds
+    // in PRE-coefficient, same posture as every other term in normalizedHit
+    // — see EncounterSetupInput.flatDamageBonus's doc comment for why this
+    // is the correct insertion point rather than a new multiplier.
+    normalizedHit: baseDamage(cls, level, equipmentBonuses) + (input.flatDamageBonus ?? 0),
     // playerDamageModifier(diff) folds the level-gap difficulty curve (the
     // same one that drives the grey/green/yellow/orange/red monster tiers)
     // into every ability's damage — a level-30 hitting a level-1 mob still
@@ -151,7 +173,13 @@ function buildPlayerProfile(input: EncounterSetupInput): CasterProfile {
     healFrac: specDef.healFrac + talentTotals.healFracAddPct / 100,
     passiveHealPct:
       (specDef.passiveHealPct + talentTotals.passiveHealAddPct / 100) * (1 + talentTotals.healMultPct / 100),
-    healingPowerMult: healingPowerMultiplier(statAtLevel(cls, 'SPI', level) + (equipmentBonuses.SPI ?? 0)),
+    // healingPowerFlatBonus (the Healing Power enchant) is a flat
+    // SPI-equivalent addend fed into the SAME formula an SPI stat point
+    // already uses, rather than a second multiplier stacked on top.
+    healingPowerMult: healingPowerMultiplier(
+      statAtLevel(cls, 'SPI', level) + (equipmentBonuses.SPI ?? 0) + (input.healingPowerFlatBonus ?? 0)
+    ),
+    hastePct: input.hastePct ?? 0,
   };
 }
 
@@ -192,6 +220,7 @@ function buildCompanionProfile(companion: CompanionCombatSetup, monster: Monster
     healFrac: specDef.healFrac + totals.healFracAddPct / 100,
     passiveHealPct: (specDef.passiveHealPct + totals.passiveHealAddPct / 100) * (1 + totals.healMultPct / 100),
     healingPowerMult: healingPowerMultiplier(statAtLevel(cls, 'SPI', level) + (equipmentBonuses.SPI ?? 0)),
+    hastePct: 0, // no companion Combat Setup screen to equip a Haste enchant through in this V1
   };
 }
 
@@ -210,6 +239,8 @@ function buildMonsterProfile(monster: Monster, playerLevel: number, playerCombat
     healFrac: 0,
     passiveHealPct: 0,
     healingPowerMult: 1,
+    hastePct: 0, // monsters never get a Haste enchant
+    creatureType: monster.creatureType,
   };
 }
 
@@ -281,6 +312,7 @@ export function createPlayerCombatant(input: EncounterSetupInput): Combatant {
   const mergedBonuses = mergeStatBonuses(input.equipmentBonuses, input.buffTotals.statBonuses);
   const intStat = statAtLevel(input.cls, 'INT', input.level) + (mergedBonuses.INT ?? 0);
   const playerMaxHp = computeMaxHp(input.cls, input.level, mergedBonuses, input.talentTotals.hpMultPct);
+  const profile = buildPlayerProfile(input);
 
   return {
     id: 'player',
@@ -295,12 +327,15 @@ export function createPlayerCombatant(input: EncounterSetupInput): Combatant {
     hots: [],
     buffs: [],
     stunnedSeconds: 0,
-    actionReadyIn: ATTACK_INTERVAL_SECONDS,
+    // Haste enchant — see CasterProfile.hastePct's doc comment. Division by
+    // 1 (no Haste active) leaves this exactly ATTACK_INTERVAL_SECONDS, same
+    // as before this field existed.
+    actionReadyIn: ATTACK_INTERVAL_SECONDS / (1 + profile.hastePct / 100),
     equippedAbilityIds: loadout,
     abilityConditions: effectiveAbilityConditions(input.level, input.savedAbilityConditions),
     disabledAbilityIds: input.disabledAbilityIds,
     basicAttackId: BASIC_ATTACK_BY_CLASS[input.cls],
-    profile: buildPlayerProfile(input),
+    profile,
     threatWeight: input.specDef.threatWeight,
   };
 }
@@ -656,15 +691,19 @@ export function advanceCombat(state: CombatState, ctx: TickContext, deltaSeconds
   // during a stun," not "swings bank up and all fire the instant it ends").
   for (const c of allCombatants) {
     if (!c.isAlive || c.stunnedSeconds > 0) continue;
+    // Haste enchant — see CasterProfile.hastePct's doc comment. 0 for
+    // everyone except possibly the player, so this is a no-op divide-by-1
+    // for every other combatant, same cadence as before this field existed.
+    const attackInterval = ATTACK_INTERVAL_SECONDS / (1 + c.profile.hastePct / 100);
     c.actionReadyIn -= deltaSeconds;
     while (c.actionReadyIn <= 0 && c.isAlive) {
       const picked = pickAbility(state, c, abilities);
       if (!picked) {
-        c.actionReadyIn += ATTACK_INTERVAL_SECONDS;
+        c.actionReadyIn += attackInterval;
         break;
       }
       useAbility(state, c, picked.ability, picked.targetId, ctx, events, kills, questSignals);
-      c.actionReadyIn += ATTACK_INTERVAL_SECONDS;
+      c.actionReadyIn += attackInterval;
     }
   }
 

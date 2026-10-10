@@ -193,6 +193,20 @@ export interface CasterProfile {
   // combatFormulas.ts's healingPowerMultiplier (SPI-driven). 1 for anyone
   // with no SPI (monsters always; most non-healing specs in practice).
   healingPowerMult: number;
+  // Enchanting overhaul's Haste enchant — speeds up ONLY this combatant's
+  // own action cadence (engine.ts divides ATTACK_INTERVAL_SECONDS by
+  // 1 + hastePct/100 wherever it increments actionReadyIn), never anyone
+  // else's. 0 for every monster/companion (buildMonsterProfile/
+  // buildCompanionProfile) and, for the player, whatever EncounterSetupInput.
+  // hastePct resolves to (0 with no Haste enchant active, matching the
+  // engine's behavior before this field existed).
+  hastePct: number;
+  // Enchanting overhaul's Beastslayer/Demonslaying weapon enchants check
+  // the DEFENDER's creatureType (not the attacker's) — mirrors Monster.
+  // creatureType (gameData/types.ts) exactly, set only in buildMonsterProfile;
+  // always absent for the player/companions (nothing in this game lets a
+  // player BE a beast or demon).
+  creatureType?: 'beast' | 'demon';
 }
 
 export interface CombatState {
