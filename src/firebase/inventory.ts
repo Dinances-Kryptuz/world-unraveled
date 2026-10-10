@@ -7,7 +7,39 @@ import { MAX_VARIANTS_PER_BASE_ITEM } from '../gameData/equipmentRolls';
 export async function getInventory(uid: string): Promise<Inventory> {
   const snap = await getDoc(doc(db, 'characters', uid, 'inventory', 'main'));
   if (!snap.exists()) return { items: {} };
-  return snap.data() as Inventory;
+  return selfHealFractionalQuantities(uid, snap.data() as Inventory);
+}
+
+// A pre-fix build of resolveCraftingOffline (craftingEngine.ts) applied the
+// Mastery ingredient-save-chance bonus as a fractional expected-value share
+// directly to the Firestore increment() for consumed materials, with no
+// flooring step — unlike itemsCrafted's own bonus-output share, which was
+// always floored before being persisted. That left some players' `items`
+// stacks sitting on a non-integer value (e.g. `497.98`, or tiny float-sum
+// residue like `0.0000000000001`) that would never self-correct on its own,
+// since every subsequent autosave only ever adds/subtracts relative to
+// whatever is already stored. This self-heals it the same lazy, idempotent
+// way equipment refs get normalized elsewhere in this codebase: round once
+// on read (so the caller never sees a fractional quantity) and fire a
+// one-time corrective `increment()` — not an overwrite, so it can't race a
+// concurrent autosave write — so the stored value itself settles to the
+// same integer and this never has to run again for that item.
+function selfHealFractionalQuantities(uid: string, inventory: Inventory): Inventory {
+  const items = inventory.items ?? {};
+  const corrections: Record<string, unknown> = {};
+  const roundedItems: Record<string, number> = { ...items };
+  for (const [itemId, quantity] of Object.entries(items)) {
+    if (Number.isInteger(quantity)) continue;
+    const rounded = Math.round(quantity);
+    roundedItems[itemId] = rounded;
+    corrections[`items.${itemId}`] = increment(rounded - quantity);
+  }
+  if (Object.keys(corrections).length > 0) {
+    void updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), corrections).catch((err) =>
+      console.error('Failed to self-heal fractional inventory quantity:', err)
+    );
+  }
+  return { ...inventory, items: roundedItems };
 }
 
 // The single choke point every loot-granting write (combat kills, gathering/

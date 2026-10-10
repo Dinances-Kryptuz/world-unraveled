@@ -281,7 +281,20 @@ export function resolveCraftingOffline(
 
   return {
     itemsCrafted,
-    materialsConsumed: Object.entries(materialsConsumedTotal).map(([itemId, quantity]) => ({ itemId, quantity })),
+    // Flooring here (never rounding up) matches this file's "safe to
+    // understate" convention — the per-iteration ingredient-save-chance
+    // bonus (craftingMasteryIngredientSaveChance) is an expected-value
+    // fraction, same approach as itemsCrafted's bonus-output share, but
+    // unlike itemsCrafted this total is used directly as a Firestore
+    // `increment()` amount (firebase/character.ts's applyCraftingProfessionResult)
+    // with no later flooring step of its own — leaving it fractional would
+    // permanently decrement the player's real material stack into a
+    // non-integer value (compounding into float noise over many autosave
+    // ticks) instead of just an in-memory display estimate.
+    materialsConsumed: Object.entries(materialsConsumedTotal).map(([itemId, quantity]) => ({
+      itemId,
+      quantity: Math.floor(quantity),
+    })),
     goldSpent: availableGold - remainingGold,
     professionXpGained,
     masteryXpGained,
