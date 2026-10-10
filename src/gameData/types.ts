@@ -357,6 +357,13 @@ export interface ItemDef {
   // enchanting.ts ENCHANTS entry this scroll applies when used (see
   // firebase/enchanting.ts's useEnchantScroll).
   scrollEnchantId?: string;
+  // Only present on equipSlot === 'shirt' items — a fixed, predictable
+  // profession-utility bonus (NOT a randomized combat stat roll, unlike
+  // every other equipment slot). Exactly one shirt can be equipped at a
+  // time, so this never stacks with anything — see equipmentStats.ts for
+  // where it's read. Tailoring overhaul; see gameData/shirts.ts's
+  // ShirtBonusType doc comment for what each type actually does.
+  shirtBonus?: { type: import('./shirts').ShirtBonusType; pct: number };
   // Set on a boss/dungeon drop's "_damaged" variant — purely descriptive
   // (an item is actually unequippable because it has no equipSlot at all;
   // see items.ts's damaged-item convention). Points at the real item a

@@ -565,7 +565,437 @@ export const ITEMS: Record<string, ItemDef> = {
     description: "An ember cloth cape, scorched but never burnt through.",
     stackable: true, equipSlot: 'cape', armorType: 'cloth', statBonuses: { INT: 8, STA: 7 }, sellValue: 57,
   },
+  // ── Linen tier shirts (zone, requiredSkill 1) ──────────
+  linen_shirt_of_mastery: {
+    id: 'linen_shirt_of_mastery', name: 'Linen Shirt of Mastery', type: 'equipment',
+    description: 'A tailored shirt. +1% profession material mastery XP.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'mastery_xp', pct: 1 }, sellValue: 12,
+  },
+  linen_shirt_of_the_gatherer: {
+    id: 'linen_shirt_of_the_gatherer', name: 'Linen Shirt of the Gatherer', type: 'equipment',
+    description: 'A tailored shirt. +1% gathering speed.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'gathering_speed', pct: 1 }, sellValue: 12,
+  },
+  linen_shirt_of_the_artisan: {
+    id: 'linen_shirt_of_the_artisan', name: 'Linen Shirt of the Artisan', type: 'equipment',
+    description: 'A tailored shirt. +1% crafting speed.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'crafting_speed', pct: 1 }, sellValue: 12,
+  },
+  linen_shirt_of_learning: {
+    id: 'linen_shirt_of_learning', name: 'Linen Shirt of Learning', type: 'equipment',
+    description: 'A tailored shirt. +1% profession XP.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'profession_xp', pct: 1 }, sellValue: 12,
+  },
+  linen_shirt_of_fortune: {
+    id: 'linen_shirt_of_fortune', name: 'Linen Shirt of Fortune', type: 'equipment',
+    description: 'A tailored shirt. +1% gold earned from monster kills.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'gold_find', pct: 1 }, sellValue: 12,
+  },
+  linen_shirt_of_salvaging: {
+    id: 'linen_shirt_of_salvaging', name: 'Linen Shirt of Salvaging', type: 'equipment',
+    description: 'A tailored shirt. +1% chance of bonus disenchanting materials.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'salvage_bonus', pct: 1 }, sellValue: 12,
+  },
+  linen_shirt_of_preservation: {
+    id: 'linen_shirt_of_preservation', name: 'Linen Shirt of Preservation', type: 'equipment',
+    description: 'A tailored shirt. +1% chance to preserve one eligible crafting material.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'material_preserve', pct: 1 }, sellValue: 12,
+  },
 
+  // ── Wool tier shirts (zone, requiredSkill 18) ──────────
+  wool_shirt_of_mastery: {
+    id: 'wool_shirt_of_mastery', name: 'Wool Shirt of Mastery', type: 'equipment',
+    description: 'A tailored shirt. +2% profession material mastery XP.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'mastery_xp', pct: 2 }, sellValue: 22,
+  },
+  wool_shirt_of_the_gatherer: {
+    id: 'wool_shirt_of_the_gatherer', name: 'Wool Shirt of the Gatherer', type: 'equipment',
+    description: 'A tailored shirt. +2% gathering speed.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'gathering_speed', pct: 2 }, sellValue: 22,
+  },
+  wool_shirt_of_the_artisan: {
+    id: 'wool_shirt_of_the_artisan', name: 'Wool Shirt of the Artisan', type: 'equipment',
+    description: 'A tailored shirt. +2% crafting speed.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'crafting_speed', pct: 2 }, sellValue: 22,
+  },
+  wool_shirt_of_learning: {
+    id: 'wool_shirt_of_learning', name: 'Wool Shirt of Learning', type: 'equipment',
+    description: 'A tailored shirt. +2% profession XP.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'profession_xp', pct: 2 }, sellValue: 22,
+  },
+  wool_shirt_of_fortune: {
+    id: 'wool_shirt_of_fortune', name: 'Wool Shirt of Fortune', type: 'equipment',
+    description: 'A tailored shirt. +2% gold earned from monster kills.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'gold_find', pct: 2 }, sellValue: 22,
+  },
+  wool_shirt_of_salvaging: {
+    id: 'wool_shirt_of_salvaging', name: 'Wool Shirt of Salvaging', type: 'equipment',
+    description: 'A tailored shirt. +2% chance of bonus disenchanting materials.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'salvage_bonus', pct: 2 }, sellValue: 22,
+  },
+  wool_shirt_of_preservation: {
+    id: 'wool_shirt_of_preservation', name: 'Wool Shirt of Preservation', type: 'equipment',
+    description: 'A tailored shirt. +2% chance to preserve one eligible crafting material.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'material_preserve', pct: 2 }, sellValue: 22,
+  },
+
+  // ── Silk tier shirts (zone, requiredSkill 35) ──────────
+  silk_shirt_of_mastery: {
+    id: 'silk_shirt_of_mastery', name: 'Silk Shirt of Mastery', type: 'equipment',
+    description: 'A tailored shirt. +4% profession material mastery XP.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'mastery_xp', pct: 4 }, sellValue: 31,
+  },
+  silk_shirt_of_the_gatherer: {
+    id: 'silk_shirt_of_the_gatherer', name: 'Silk Shirt of the Gatherer', type: 'equipment',
+    description: 'A tailored shirt. +4% gathering speed.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'gathering_speed', pct: 4 }, sellValue: 31,
+  },
+  silk_shirt_of_the_artisan: {
+    id: 'silk_shirt_of_the_artisan', name: 'Silk Shirt of the Artisan', type: 'equipment',
+    description: 'A tailored shirt. +4% crafting speed.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'crafting_speed', pct: 4 }, sellValue: 31,
+  },
+  silk_shirt_of_learning: {
+    id: 'silk_shirt_of_learning', name: 'Silk Shirt of Learning', type: 'equipment',
+    description: 'A tailored shirt. +4% profession XP.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'profession_xp', pct: 4 }, sellValue: 31,
+  },
+  silk_shirt_of_fortune: {
+    id: 'silk_shirt_of_fortune', name: 'Silk Shirt of Fortune', type: 'equipment',
+    description: 'A tailored shirt. +4% gold earned from monster kills.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'gold_find', pct: 4 }, sellValue: 31,
+  },
+  silk_shirt_of_salvaging: {
+    id: 'silk_shirt_of_salvaging', name: 'Silk Shirt of Salvaging', type: 'equipment',
+    description: 'A tailored shirt. +4% chance of bonus disenchanting materials.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'salvage_bonus', pct: 4 }, sellValue: 31,
+  },
+  silk_shirt_of_preservation: {
+    id: 'silk_shirt_of_preservation', name: 'Silk Shirt of Preservation', type: 'equipment',
+    description: 'A tailored shirt. +4% chance to preserve one eligible crafting material.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'material_preserve', pct: 4 }, sellValue: 31,
+  },
+
+  // ── Mageweave tier shirts (zone, requiredSkill 52) ──────────
+  mageweave_shirt_of_mastery: {
+    id: 'mageweave_shirt_of_mastery', name: 'Mageweave Shirt of Mastery', type: 'equipment',
+    description: 'A tailored shirt. +6% profession material mastery XP.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'mastery_xp', pct: 6 }, sellValue: 39,
+  },
+  mageweave_shirt_of_the_gatherer: {
+    id: 'mageweave_shirt_of_the_gatherer', name: 'Mageweave Shirt of the Gatherer', type: 'equipment',
+    description: 'A tailored shirt. +6% gathering speed.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'gathering_speed', pct: 6 }, sellValue: 39,
+  },
+  mageweave_shirt_of_the_artisan: {
+    id: 'mageweave_shirt_of_the_artisan', name: 'Mageweave Shirt of the Artisan', type: 'equipment',
+    description: 'A tailored shirt. +6% crafting speed.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'crafting_speed', pct: 6 }, sellValue: 39,
+  },
+  mageweave_shirt_of_learning: {
+    id: 'mageweave_shirt_of_learning', name: 'Mageweave Shirt of Learning', type: 'equipment',
+    description: 'A tailored shirt. +6% profession XP.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'profession_xp', pct: 6 }, sellValue: 39,
+  },
+  mageweave_shirt_of_fortune: {
+    id: 'mageweave_shirt_of_fortune', name: 'Mageweave Shirt of Fortune', type: 'equipment',
+    description: 'A tailored shirt. +6% gold earned from monster kills.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'gold_find', pct: 6 }, sellValue: 39,
+  },
+  mageweave_shirt_of_salvaging: {
+    id: 'mageweave_shirt_of_salvaging', name: 'Mageweave Shirt of Salvaging', type: 'equipment',
+    description: 'A tailored shirt. +6% chance of bonus disenchanting materials.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'salvage_bonus', pct: 6 }, sellValue: 39,
+  },
+  mageweave_shirt_of_preservation: {
+    id: 'mageweave_shirt_of_preservation', name: 'Mageweave Shirt of Preservation', type: 'equipment',
+    description: 'A tailored shirt. +6% chance to preserve one eligible crafting material.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'material_preserve', pct: 6 }, sellValue: 39,
+  },
+
+  // ── Runecloth tier shirts (zone, requiredSkill 69) ──────────
+  runecloth_shirt_of_mastery: {
+    id: 'runecloth_shirt_of_mastery', name: 'Runecloth Shirt of Mastery', type: 'equipment',
+    description: 'A tailored shirt. +8% profession material mastery XP.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'mastery_xp', pct: 8 }, sellValue: 47,
+  },
+  runecloth_shirt_of_the_gatherer: {
+    id: 'runecloth_shirt_of_the_gatherer', name: 'Runecloth Shirt of the Gatherer', type: 'equipment',
+    description: 'A tailored shirt. +8% gathering speed.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'gathering_speed', pct: 8 }, sellValue: 47,
+  },
+  runecloth_shirt_of_the_artisan: {
+    id: 'runecloth_shirt_of_the_artisan', name: 'Runecloth Shirt of the Artisan', type: 'equipment',
+    description: 'A tailored shirt. +8% crafting speed.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'crafting_speed', pct: 8 }, sellValue: 47,
+  },
+  runecloth_shirt_of_learning: {
+    id: 'runecloth_shirt_of_learning', name: 'Runecloth Shirt of Learning', type: 'equipment',
+    description: 'A tailored shirt. +8% profession XP.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'profession_xp', pct: 8 }, sellValue: 47,
+  },
+  runecloth_shirt_of_fortune: {
+    id: 'runecloth_shirt_of_fortune', name: 'Runecloth Shirt of Fortune', type: 'equipment',
+    description: 'A tailored shirt. +8% gold earned from monster kills.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'gold_find', pct: 8 }, sellValue: 47,
+  },
+  runecloth_shirt_of_salvaging: {
+    id: 'runecloth_shirt_of_salvaging', name: 'Runecloth Shirt of Salvaging', type: 'equipment',
+    description: 'A tailored shirt. +8% chance of bonus disenchanting materials.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'salvage_bonus', pct: 8 }, sellValue: 47,
+  },
+  runecloth_shirt_of_preservation: {
+    id: 'runecloth_shirt_of_preservation', name: 'Runecloth Shirt of Preservation', type: 'equipment',
+    description: 'A tailored shirt. +8% chance to preserve one eligible crafting material.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'material_preserve', pct: 8 }, sellValue: 47,
+  },
+
+  // ── Ember tier shirts (zone, requiredSkill 86) ──────────
+  ember_shirt_of_mastery: {
+    id: 'ember_shirt_of_mastery', name: 'Ember Shirt of Mastery', type: 'equipment',
+    description: 'A tailored shirt. +10% profession material mastery XP.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'mastery_xp', pct: 10 }, sellValue: 57,
+  },
+  ember_shirt_of_the_gatherer: {
+    id: 'ember_shirt_of_the_gatherer', name: 'Ember Shirt of the Gatherer', type: 'equipment',
+    description: 'A tailored shirt. +10% gathering speed.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'gathering_speed', pct: 10 }, sellValue: 57,
+  },
+  ember_shirt_of_the_artisan: {
+    id: 'ember_shirt_of_the_artisan', name: 'Ember Shirt of the Artisan', type: 'equipment',
+    description: 'A tailored shirt. +10% crafting speed.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'crafting_speed', pct: 10 }, sellValue: 57,
+  },
+  ember_shirt_of_learning: {
+    id: 'ember_shirt_of_learning', name: 'Ember Shirt of Learning', type: 'equipment',
+    description: 'A tailored shirt. +10% profession XP.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'profession_xp', pct: 10 }, sellValue: 57,
+  },
+  ember_shirt_of_fortune: {
+    id: 'ember_shirt_of_fortune', name: 'Ember Shirt of Fortune', type: 'equipment',
+    description: 'A tailored shirt. +10% gold earned from monster kills.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'gold_find', pct: 10 }, sellValue: 57,
+  },
+  ember_shirt_of_salvaging: {
+    id: 'ember_shirt_of_salvaging', name: 'Ember Shirt of Salvaging', type: 'equipment',
+    description: 'A tailored shirt. +10% chance of bonus disenchanting materials.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'salvage_bonus', pct: 10 }, sellValue: 57,
+  },
+  ember_shirt_of_preservation: {
+    id: 'ember_shirt_of_preservation', name: 'Ember Shirt of Preservation', type: 'equipment',
+    description: 'A tailored shirt. +10% chance to preserve one eligible crafting material.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'material_preserve', pct: 10 }, sellValue: 57,
+  },
+  formula_linen_shirt_of_mastery: {
+    id: 'formula_linen_shirt_of_mastery', name: 'Formula: Linen Shirt of Mastery', type: 'recipe',
+    description: 'Teaches the recipe for a Linen Shirt of Mastery.',
+    stackable: true, teachesRecipeId: 'linen_shirt_of_mastery', sellValue: 0,
+  },
+  formula_linen_shirt_of_the_gatherer: {
+    id: 'formula_linen_shirt_of_the_gatherer', name: 'Formula: Linen Shirt of the Gatherer', type: 'recipe',
+    description: 'Teaches the recipe for a Linen Shirt of the Gatherer.',
+    stackable: true, teachesRecipeId: 'linen_shirt_of_the_gatherer', sellValue: 0,
+  },
+  formula_linen_shirt_of_the_artisan: {
+    id: 'formula_linen_shirt_of_the_artisan', name: 'Formula: Linen Shirt of the Artisan', type: 'recipe',
+    description: 'Teaches the recipe for a Linen Shirt of the Artisan.',
+    stackable: true, teachesRecipeId: 'linen_shirt_of_the_artisan', sellValue: 0,
+  },
+  formula_linen_shirt_of_learning: {
+    id: 'formula_linen_shirt_of_learning', name: 'Formula: Linen Shirt of Learning', type: 'recipe',
+    description: 'Teaches the recipe for a Linen Shirt of Learning.',
+    stackable: true, teachesRecipeId: 'linen_shirt_of_learning', sellValue: 0,
+  },
+  formula_linen_shirt_of_fortune: {
+    id: 'formula_linen_shirt_of_fortune', name: 'Formula: Linen Shirt of Fortune', type: 'recipe',
+    description: 'Teaches the recipe for a Linen Shirt of Fortune.',
+    stackable: true, teachesRecipeId: 'linen_shirt_of_fortune', sellValue: 0,
+  },
+  formula_linen_shirt_of_salvaging: {
+    id: 'formula_linen_shirt_of_salvaging', name: 'Formula: Linen Shirt of Salvaging', type: 'recipe',
+    description: 'Teaches the recipe for a Linen Shirt of Salvaging.',
+    stackable: true, teachesRecipeId: 'linen_shirt_of_salvaging', sellValue: 0,
+  },
+  formula_linen_shirt_of_preservation: {
+    id: 'formula_linen_shirt_of_preservation', name: 'Formula: Linen Shirt of Preservation', type: 'recipe',
+    description: 'Teaches the recipe for a Linen Shirt of Preservation.',
+    stackable: true, teachesRecipeId: 'linen_shirt_of_preservation', sellValue: 0,
+  },
+  formula_wool_shirt_of_mastery: {
+    id: 'formula_wool_shirt_of_mastery', name: 'Formula: Wool Shirt of Mastery', type: 'recipe',
+    description: 'Teaches the recipe for a Wool Shirt of Mastery.',
+    stackable: true, teachesRecipeId: 'wool_shirt_of_mastery', sellValue: 0,
+  },
+  formula_wool_shirt_of_the_gatherer: {
+    id: 'formula_wool_shirt_of_the_gatherer', name: 'Formula: Wool Shirt of the Gatherer', type: 'recipe',
+    description: 'Teaches the recipe for a Wool Shirt of the Gatherer.',
+    stackable: true, teachesRecipeId: 'wool_shirt_of_the_gatherer', sellValue: 0,
+  },
+  formula_wool_shirt_of_the_artisan: {
+    id: 'formula_wool_shirt_of_the_artisan', name: 'Formula: Wool Shirt of the Artisan', type: 'recipe',
+    description: 'Teaches the recipe for a Wool Shirt of the Artisan.',
+    stackable: true, teachesRecipeId: 'wool_shirt_of_the_artisan', sellValue: 0,
+  },
+  formula_wool_shirt_of_learning: {
+    id: 'formula_wool_shirt_of_learning', name: 'Formula: Wool Shirt of Learning', type: 'recipe',
+    description: 'Teaches the recipe for a Wool Shirt of Learning.',
+    stackable: true, teachesRecipeId: 'wool_shirt_of_learning', sellValue: 0,
+  },
+  formula_wool_shirt_of_fortune: {
+    id: 'formula_wool_shirt_of_fortune', name: 'Formula: Wool Shirt of Fortune', type: 'recipe',
+    description: 'Teaches the recipe for a Wool Shirt of Fortune.',
+    stackable: true, teachesRecipeId: 'wool_shirt_of_fortune', sellValue: 0,
+  },
+  formula_wool_shirt_of_salvaging: {
+    id: 'formula_wool_shirt_of_salvaging', name: 'Formula: Wool Shirt of Salvaging', type: 'recipe',
+    description: 'Teaches the recipe for a Wool Shirt of Salvaging.',
+    stackable: true, teachesRecipeId: 'wool_shirt_of_salvaging', sellValue: 0,
+  },
+  formula_wool_shirt_of_preservation: {
+    id: 'formula_wool_shirt_of_preservation', name: 'Formula: Wool Shirt of Preservation', type: 'recipe',
+    description: 'Teaches the recipe for a Wool Shirt of Preservation.',
+    stackable: true, teachesRecipeId: 'wool_shirt_of_preservation', sellValue: 0,
+  },
+  formula_silk_shirt_of_mastery: {
+    id: 'formula_silk_shirt_of_mastery', name: 'Formula: Silk Shirt of Mastery', type: 'recipe',
+    description: 'Teaches the recipe for a Silk Shirt of Mastery.',
+    stackable: true, teachesRecipeId: 'silk_shirt_of_mastery', sellValue: 0,
+  },
+  formula_silk_shirt_of_the_gatherer: {
+    id: 'formula_silk_shirt_of_the_gatherer', name: 'Formula: Silk Shirt of the Gatherer', type: 'recipe',
+    description: 'Teaches the recipe for a Silk Shirt of the Gatherer.',
+    stackable: true, teachesRecipeId: 'silk_shirt_of_the_gatherer', sellValue: 0,
+  },
+  formula_silk_shirt_of_the_artisan: {
+    id: 'formula_silk_shirt_of_the_artisan', name: 'Formula: Silk Shirt of the Artisan', type: 'recipe',
+    description: 'Teaches the recipe for a Silk Shirt of the Artisan.',
+    stackable: true, teachesRecipeId: 'silk_shirt_of_the_artisan', sellValue: 0,
+  },
+  formula_silk_shirt_of_learning: {
+    id: 'formula_silk_shirt_of_learning', name: 'Formula: Silk Shirt of Learning', type: 'recipe',
+    description: 'Teaches the recipe for a Silk Shirt of Learning.',
+    stackable: true, teachesRecipeId: 'silk_shirt_of_learning', sellValue: 0,
+  },
+  formula_silk_shirt_of_fortune: {
+    id: 'formula_silk_shirt_of_fortune', name: 'Formula: Silk Shirt of Fortune', type: 'recipe',
+    description: 'Teaches the recipe for a Silk Shirt of Fortune.',
+    stackable: true, teachesRecipeId: 'silk_shirt_of_fortune', sellValue: 0,
+  },
+  formula_silk_shirt_of_salvaging: {
+    id: 'formula_silk_shirt_of_salvaging', name: 'Formula: Silk Shirt of Salvaging', type: 'recipe',
+    description: 'Teaches the recipe for a Silk Shirt of Salvaging.',
+    stackable: true, teachesRecipeId: 'silk_shirt_of_salvaging', sellValue: 0,
+  },
+  formula_silk_shirt_of_preservation: {
+    id: 'formula_silk_shirt_of_preservation', name: 'Formula: Silk Shirt of Preservation', type: 'recipe',
+    description: 'Teaches the recipe for a Silk Shirt of Preservation.',
+    stackable: true, teachesRecipeId: 'silk_shirt_of_preservation', sellValue: 0,
+  },
+  formula_mageweave_shirt_of_mastery: {
+    id: 'formula_mageweave_shirt_of_mastery', name: 'Formula: Mageweave Shirt of Mastery', type: 'recipe',
+    description: 'Teaches the recipe for a Mageweave Shirt of Mastery.',
+    stackable: true, teachesRecipeId: 'mageweave_shirt_of_mastery', sellValue: 0,
+  },
+  formula_mageweave_shirt_of_the_gatherer: {
+    id: 'formula_mageweave_shirt_of_the_gatherer', name: 'Formula: Mageweave Shirt of the Gatherer', type: 'recipe',
+    description: 'Teaches the recipe for a Mageweave Shirt of the Gatherer.',
+    stackable: true, teachesRecipeId: 'mageweave_shirt_of_the_gatherer', sellValue: 0,
+  },
+  formula_mageweave_shirt_of_the_artisan: {
+    id: 'formula_mageweave_shirt_of_the_artisan', name: 'Formula: Mageweave Shirt of the Artisan', type: 'recipe',
+    description: 'Teaches the recipe for a Mageweave Shirt of the Artisan.',
+    stackable: true, teachesRecipeId: 'mageweave_shirt_of_the_artisan', sellValue: 0,
+  },
+  formula_mageweave_shirt_of_learning: {
+    id: 'formula_mageweave_shirt_of_learning', name: 'Formula: Mageweave Shirt of Learning', type: 'recipe',
+    description: 'Teaches the recipe for a Mageweave Shirt of Learning.',
+    stackable: true, teachesRecipeId: 'mageweave_shirt_of_learning', sellValue: 0,
+  },
+  formula_mageweave_shirt_of_fortune: {
+    id: 'formula_mageweave_shirt_of_fortune', name: 'Formula: Mageweave Shirt of Fortune', type: 'recipe',
+    description: 'Teaches the recipe for a Mageweave Shirt of Fortune.',
+    stackable: true, teachesRecipeId: 'mageweave_shirt_of_fortune', sellValue: 0,
+  },
+  formula_mageweave_shirt_of_salvaging: {
+    id: 'formula_mageweave_shirt_of_salvaging', name: 'Formula: Mageweave Shirt of Salvaging', type: 'recipe',
+    description: 'Teaches the recipe for a Mageweave Shirt of Salvaging.',
+    stackable: true, teachesRecipeId: 'mageweave_shirt_of_salvaging', sellValue: 0,
+  },
+  formula_mageweave_shirt_of_preservation: {
+    id: 'formula_mageweave_shirt_of_preservation', name: 'Formula: Mageweave Shirt of Preservation', type: 'recipe',
+    description: 'Teaches the recipe for a Mageweave Shirt of Preservation.',
+    stackable: true, teachesRecipeId: 'mageweave_shirt_of_preservation', sellValue: 0,
+  },
+  formula_runecloth_shirt_of_mastery: {
+    id: 'formula_runecloth_shirt_of_mastery', name: 'Formula: Runecloth Shirt of Mastery', type: 'recipe',
+    description: 'Teaches the recipe for a Runecloth Shirt of Mastery.',
+    stackable: true, teachesRecipeId: 'runecloth_shirt_of_mastery', sellValue: 0,
+  },
+  formula_runecloth_shirt_of_the_gatherer: {
+    id: 'formula_runecloth_shirt_of_the_gatherer', name: 'Formula: Runecloth Shirt of the Gatherer', type: 'recipe',
+    description: 'Teaches the recipe for a Runecloth Shirt of the Gatherer.',
+    stackable: true, teachesRecipeId: 'runecloth_shirt_of_the_gatherer', sellValue: 0,
+  },
+  formula_runecloth_shirt_of_the_artisan: {
+    id: 'formula_runecloth_shirt_of_the_artisan', name: 'Formula: Runecloth Shirt of the Artisan', type: 'recipe',
+    description: 'Teaches the recipe for a Runecloth Shirt of the Artisan.',
+    stackable: true, teachesRecipeId: 'runecloth_shirt_of_the_artisan', sellValue: 0,
+  },
+  formula_runecloth_shirt_of_learning: {
+    id: 'formula_runecloth_shirt_of_learning', name: 'Formula: Runecloth Shirt of Learning', type: 'recipe',
+    description: 'Teaches the recipe for a Runecloth Shirt of Learning.',
+    stackable: true, teachesRecipeId: 'runecloth_shirt_of_learning', sellValue: 0,
+  },
+  formula_runecloth_shirt_of_fortune: {
+    id: 'formula_runecloth_shirt_of_fortune', name: 'Formula: Runecloth Shirt of Fortune', type: 'recipe',
+    description: 'Teaches the recipe for a Runecloth Shirt of Fortune.',
+    stackable: true, teachesRecipeId: 'runecloth_shirt_of_fortune', sellValue: 0,
+  },
+  formula_runecloth_shirt_of_salvaging: {
+    id: 'formula_runecloth_shirt_of_salvaging', name: 'Formula: Runecloth Shirt of Salvaging', type: 'recipe',
+    description: 'Teaches the recipe for a Runecloth Shirt of Salvaging.',
+    stackable: true, teachesRecipeId: 'runecloth_shirt_of_salvaging', sellValue: 0,
+  },
+  formula_runecloth_shirt_of_preservation: {
+    id: 'formula_runecloth_shirt_of_preservation', name: 'Formula: Runecloth Shirt of Preservation', type: 'recipe',
+    description: 'Teaches the recipe for a Runecloth Shirt of Preservation.',
+    stackable: true, teachesRecipeId: 'runecloth_shirt_of_preservation', sellValue: 0,
+  },
+  formula_ember_shirt_of_mastery: {
+    id: 'formula_ember_shirt_of_mastery', name: 'Formula: Ember Shirt of Mastery', type: 'recipe',
+    description: 'Teaches the recipe for a Ember Shirt of Mastery.',
+    stackable: true, teachesRecipeId: 'ember_shirt_of_mastery', sellValue: 0,
+  },
+  formula_ember_shirt_of_the_gatherer: {
+    id: 'formula_ember_shirt_of_the_gatherer', name: 'Formula: Ember Shirt of the Gatherer', type: 'recipe',
+    description: 'Teaches the recipe for a Ember Shirt of the Gatherer.',
+    stackable: true, teachesRecipeId: 'ember_shirt_of_the_gatherer', sellValue: 0,
+  },
+  formula_ember_shirt_of_the_artisan: {
+    id: 'formula_ember_shirt_of_the_artisan', name: 'Formula: Ember Shirt of the Artisan', type: 'recipe',
+    description: 'Teaches the recipe for a Ember Shirt of the Artisan.',
+    stackable: true, teachesRecipeId: 'ember_shirt_of_the_artisan', sellValue: 0,
+  },
+  formula_ember_shirt_of_learning: {
+    id: 'formula_ember_shirt_of_learning', name: 'Formula: Ember Shirt of Learning', type: 'recipe',
+    description: 'Teaches the recipe for a Ember Shirt of Learning.',
+    stackable: true, teachesRecipeId: 'ember_shirt_of_learning', sellValue: 0,
+  },
+  formula_ember_shirt_of_fortune: {
+    id: 'formula_ember_shirt_of_fortune', name: 'Formula: Ember Shirt of Fortune', type: 'recipe',
+    description: 'Teaches the recipe for a Ember Shirt of Fortune.',
+    stackable: true, teachesRecipeId: 'ember_shirt_of_fortune', sellValue: 0,
+  },
+  formula_ember_shirt_of_salvaging: {
+    id: 'formula_ember_shirt_of_salvaging', name: 'Formula: Ember Shirt of Salvaging', type: 'recipe',
+    description: 'Teaches the recipe for a Ember Shirt of Salvaging.',
+    stackable: true, teachesRecipeId: 'ember_shirt_of_salvaging', sellValue: 0,
+  },
+  formula_ember_shirt_of_preservation: {
+    id: 'formula_ember_shirt_of_preservation', name: 'Formula: Ember Shirt of Preservation', type: 'recipe',
+    description: 'Teaches the recipe for a Ember Shirt of Preservation.',
+    stackable: true, teachesRecipeId: 'ember_shirt_of_preservation', sellValue: 0,
+  },
   // ── Combat drops (non-leather) ──────────────────────────────────────
   boar_meat: {
     id: 'boar_meat',
