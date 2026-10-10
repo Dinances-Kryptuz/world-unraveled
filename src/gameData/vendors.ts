@@ -15,7 +15,13 @@ export interface VendorStockEntry {
 
 export const VENDOR_STOCK: Record<string, VendorStockEntry[]> = {
   greenhollow_fields: [
-    { itemId: 'simple_thread', price: 2 },
+    // Tailoring overhaul — thread is deliberately CUMULATIVE (unlike the
+    // tool lines below, which are zone-exclusive): a higher-zone vendor
+    // keeps selling every earlier thread tier too, per the design brief's
+    // explicit "higher-zone vendors should also sell previously unlocked
+    // thread" call. simple_thread (the old, single pre-overhaul thread) is
+    // frozen, not sold here anymore.
+    { itemId: 'coarse_thread', price: 2 },
     { itemId: 'health_potion', price: 10 },
     { itemId: 'bread', price: 5 },
     { itemId: 'orange_juice', price: 6 },
@@ -24,21 +30,35 @@ export const VENDOR_STOCK: Record<string, VendorStockEntry[]> = {
     { itemId: 'simple_fishing_rod', price: 5 },
   ],
   stonecrag_foothills: [
+    { itemId: 'coarse_thread', price: 2 },
+    { itemId: 'fine_thread', price: 5 },
     { itemId: 'sturdy_mining_pick', price: 15 },
     { itemId: 'honed_skinning_knife', price: 15 },
     { itemId: 'reinforced_fishing_rod', price: 15 },
   ],
   emberfall_ridge: [
+    { itemId: 'coarse_thread', price: 2 },
+    { itemId: 'fine_thread', price: 5 },
+    { itemId: 'silken_thread', price: 10 },
     { itemId: 'embertempered_pick', price: 35 },
     { itemId: 'embertempered_skinning_knife', price: 35 },
     { itemId: 'embercured_fishing_rod', price: 35 },
   ],
   cinderfall_depths: [
+    { itemId: 'coarse_thread', price: 2 },
+    { itemId: 'fine_thread', price: 5 },
+    { itemId: 'silken_thread', price: 10 },
+    { itemId: 'heavy_silken_thread', price: 18 },
     { itemId: 'dwarven_mining_pick', price: 70 },
     { itemId: 'dwarven_skinning_knife', price: 70 },
     { itemId: 'dwarven_fishing_rod', price: 70 },
   ],
   molten_scar: [
+    { itemId: 'coarse_thread', price: 2 },
+    { itemId: 'fine_thread', price: 5 },
+    { itemId: 'silken_thread', price: 10 },
+    { itemId: 'heavy_silken_thread', price: 18 },
+    { itemId: 'rune_thread', price: 30 },
     { itemId: 'brimstone_pick', price: 120 },
     { itemId: 'brimstone_skinning_knife', price: 120 },
     { itemId: 'brimstone_fishing_rod', price: 120 },
@@ -51,6 +71,12 @@ export const VENDOR_STOCK: Record<string, VendorStockEntry[]> = {
     { itemId: 'magma_darter_skewers', price: 35 },
   ],
   cinderheart_crater: [
+    { itemId: 'coarse_thread', price: 2 },
+    { itemId: 'fine_thread', price: 5 },
+    { itemId: 'silken_thread', price: 10 },
+    { itemId: 'heavy_silken_thread', price: 18 },
+    { itemId: 'rune_thread', price: 30 },
+    { itemId: 'ember_thread', price: 45 },
     { itemId: 'emberforged_pick', price: 180 },
     { itemId: 'emberforged_skinning_knife', price: 180 },
     { itemId: 'emberforged_fishing_rod', price: 180 },

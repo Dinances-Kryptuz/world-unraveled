@@ -122,6 +122,52 @@ export const ARMOR_STAT_RANGES: Record<string, { min: number; max: number }> = {
   emberscar_leather_boots: { min: 7, max: 10 },
   emberscar_leather_shoulders: { min: 6, max: 9 },
   emberscar_leather_belt: { min: 6, max: 9 },
+
+  // ── Tailoring (6 tiers × 6 armor pieces + 6 capes) — ranges copied 1:1
+  // from the Blacksmithing analog piece of the same tier (helm/chestplate/
+  // gauntlets/legplates/greaves; Shoulders AND Cape mirror Gauntlets').
+  tailored_linen_helm: { min: 2, max: 4 },
+  tailored_linen_robe: { min: 3, max: 5 },
+  tailored_linen_gloves: { min: 1, max: 3 },
+  tailored_linen_leggings: { min: 2, max: 5 },
+  tailored_linen_boots: { min: 1, max: 4 },
+  tailored_linen_shoulders: { min: 1, max: 3 },
+  wool_robe_helm: { min: 3, max: 5 },
+  wool_robe: { min: 4, max: 8 },
+  wool_gloves: { min: 2, max: 5 },
+  wool_leggings: { min: 4, max: 7 },
+  wool_boots: { min: 2, max: 5 },
+  wool_shoulders: { min: 2, max: 5 },
+  silk_robe_helm: { min: 4, max: 7 },
+  silk_robe: { min: 6, max: 10 },
+  silk_gloves: { min: 3, max: 6 },
+  silk_leggings: { min: 5, max: 9 },
+  silk_boots: { min: 4, max: 7 },
+  silk_shoulders: { min: 3, max: 6 },
+  mageweave_robe_helm: { min: 5, max: 9 },
+  mageweave_robe: { min: 8, max: 12 },
+  mageweave_gloves: { min: 4, max: 7 },
+  mageweave_leggings: { min: 7, max: 11 },
+  mageweave_boots: { min: 4, max: 8 },
+  mageweave_shoulders: { min: 4, max: 7 },
+  runecloth_robe_helm: { min: 7, max: 10 },
+  runecloth_robe: { min: 10, max: 14 },
+  runecloth_gloves: { min: 5, max: 8 },
+  runecloth_leggings: { min: 9, max: 13 },
+  runecloth_boots: { min: 5, max: 9 },
+  runecloth_shoulders: { min: 5, max: 8 },
+  ember_robe_helm: { min: 8, max: 12 },
+  ember_robe: { min: 12, max: 16 },
+  ember_gloves: { min: 6, max: 9 },
+  ember_leggings: { min: 10, max: 15 },
+  ember_boots: { min: 7, max: 10 },
+  ember_shoulders: { min: 6, max: 9 },
+  cape_of_linen: { min: 1, max: 3 },
+  cape_of_wool: { min: 2, max: 5 },
+  cape_of_silk: { min: 3, max: 6 },
+  cape_of_mageweave: { min: 4, max: 7 },
+  cape_of_runecloth: { min: 5, max: 8 },
+  cape_of_ember: { min: 6, max: 9 },
 };
 
 // Mastery XP = (bars the recipe originally requires) × this constant —
@@ -164,6 +210,14 @@ export const MATERIAL_MASTERY_XP_THRESHOLDS: Record<string, number> = {
   thick_leather: 141922,
   rugged_leather: 139083,
   emberscar_leather: 129984,
+  // Tailoring's 6 tiers reuse the exact same craftSeconds/best-recipe-bar-
+  // count trick as Leatherworking above — same 6 Blacksmithing values.
+  linen_cloth: 173854,
+  wool_cloth: 163627,
+  silk_cloth: 144878,
+  mageweave_cloth: 141922,
+  runecloth: 139083,
+  ember_cloth: 129984,
 };
 
 // A material with no recipe tagged to it (shouldn't happen for any

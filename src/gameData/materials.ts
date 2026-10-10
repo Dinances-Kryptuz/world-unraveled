@@ -53,14 +53,28 @@ export const LEATHER_MATERIALS: MaterialDef[] = [
   { id: 'emberscar_leather', name: 'Emberscar Leather', barItemId: 'emberscar_leather' },
 ];
 
+// Tailoring's own material registry — same separate-array pattern as
+// LEATHER_MATERIALS above. name fields match the Tailoring overhaul's own
+// "Completion title" table verbatim (most are the bare material name;
+// Ember Cloth keeps "Cloth" since that's the material's actual full name).
+export const CLOTH_MATERIALS: MaterialDef[] = [
+  { id: 'linen_cloth', name: 'Linen', barItemId: 'linen_cloth' },
+  { id: 'wool_cloth', name: 'Wool', barItemId: 'wool_cloth' },
+  { id: 'silk_cloth', name: 'Silk', barItemId: 'silk_cloth' },
+  { id: 'mageweave_cloth', name: 'Mageweave', barItemId: 'mageweave_cloth' },
+  { id: 'runecloth', name: 'Runecloth', barItemId: 'runecloth' },
+  { id: 'ember_cloth', name: 'Ember Cloth', barItemId: 'ember_cloth' },
+];
+
 const MATERIALS_BY_ID: Record<string, MaterialDef> = Object.fromEntries(
-  [...MATERIALS, ...LEATHER_MATERIALS].map((m) => [m.id, m])
+  [...MATERIALS, ...LEATHER_MATERIALS, ...CLOTH_MATERIALS].map((m) => [m.id, m])
 );
 
-// Resolves across BOTH registries — CraftingScreen.tsx calls this generically
-// for any recipe.materialId regardless of profession, so Leatherworking
-// recipes need to resolve here too or their Mastery wiring would silently
-// never build (see MaterialMasteryInput construction in CraftingScreen.tsx).
+// Resolves across ALL registries — CraftingScreen.tsx calls this generically
+// for any recipe.materialId regardless of profession, so Leatherworking/
+// Tailoring recipes need to resolve here too or their Mastery wiring would
+// silently never build (see MaterialMasteryInput construction in
+// CraftingScreen.tsx).
 export function getMaterial(materialId: string): MaterialDef | undefined {
   return MATERIALS_BY_ID[materialId];
 }

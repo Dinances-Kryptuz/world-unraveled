@@ -342,6 +342,230 @@ export const ITEMS: Record<string, ItemDef> = {
     stackable: true, equipSlot: 'belt', statBonuses: { STA: 8, STR: 7 }, sellValue: 57,
   },
 
+  // ── Tailoring overhaul — 36 cloth armor items (6 tiers x 6 pieces) + 6
+  // capes, replacing the old ad-hoc linen/heavy/ashwoven/charred/ashenweave
+  // roster (frozen untouched, same convention as every other retired-content
+  // block). INT+STA (not STR+STA like Blacksmithing/Leatherworking) since
+  // cloth's primary audience is Priest/Mage — still wearable (off-stat) by
+  // Warrior/Paladin, exactly like the real layered-armor convention.
+  // tailored_linen_* ids are disambiguated from the old, frozen plain
+  // linen_robe/linen_gloves/linen_boots item ids (zone 1 kept the same
+  // cloth material name, so the new armor needed its own item-id prefix —
+  // same disambiguation pattern as Skinning's skinned_light_leather).
+  tailored_linen_helm: {
+    id: 'tailored_linen_helm', name: 'Linen Hood', type: 'equipment',
+    description: 'A linen hood, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'helmet', armorType: 'cloth', statBonuses: { INT: 3, STA: 3 }, sellValue: 18,
+  },
+  tailored_linen_robe: {
+    id: 'tailored_linen_robe', name: 'Linen Robe', type: 'equipment',
+    description: 'A linen robe, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'chest', armorType: 'cloth', statBonuses: { INT: 4, STA: 4 }, sellValue: 24,
+  },
+  tailored_linen_gloves: {
+    id: 'tailored_linen_gloves', name: 'Linen Gloves', type: 'equipment',
+    description: 'A linen gloves, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'gloves', armorType: 'cloth', statBonuses: { INT: 2, STA: 2 }, sellValue: 12,
+  },
+  tailored_linen_leggings: {
+    id: 'tailored_linen_leggings', name: 'Linen Leggings', type: 'equipment',
+    description: 'A linen leggings, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'legs', armorType: 'cloth', statBonuses: { INT: 4, STA: 3 }, sellValue: 21,
+  },
+  tailored_linen_boots: {
+    id: 'tailored_linen_boots', name: 'Linen Boots', type: 'equipment',
+    description: 'A linen boots, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'boots', armorType: 'cloth', statBonuses: { INT: 3, STA: 2 }, sellValue: 15,
+  },
+  tailored_linen_shoulders: {
+    id: 'tailored_linen_shoulders', name: 'Linen Shoulders', type: 'equipment',
+    description: 'A linen shoulders, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'shoulders', armorType: 'cloth', statBonuses: { INT: 2, STA: 2 }, sellValue: 12,
+  },
+  wool_robe_helm: {
+    id: 'wool_robe_helm', name: 'Wool Hood', type: 'equipment',
+    description: 'A wool hood, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'helmet', armorType: 'cloth', statBonuses: { INT: 4, STA: 4 }, sellValue: 26,
+  },
+  wool_robe: {
+    id: 'wool_robe', name: 'Wool Robe', type: 'equipment',
+    description: 'A wool robe, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'chest', armorType: 'cloth', statBonuses: { INT: 7, STA: 5 }, sellValue: 38,
+  },
+  wool_gloves: {
+    id: 'wool_gloves', name: 'Wool Gloves', type: 'equipment',
+    description: 'A wool gloves, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'gloves', armorType: 'cloth', statBonuses: { INT: 4, STA: 3 }, sellValue: 22,
+  },
+  wool_leggings: {
+    id: 'wool_leggings', name: 'Wool Leggings', type: 'equipment',
+    description: 'A wool leggings, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'legs', armorType: 'cloth', statBonuses: { INT: 6, STA: 5 }, sellValue: 35,
+  },
+  wool_boots: {
+    id: 'wool_boots', name: 'Wool Boots', type: 'equipment',
+    description: 'A wool boots, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'boots', armorType: 'cloth', statBonuses: { INT: 4, STA: 3 }, sellValue: 22,
+  },
+  wool_shoulders: {
+    id: 'wool_shoulders', name: 'Wool Shoulders', type: 'equipment',
+    description: 'A wool shoulders, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'shoulders', armorType: 'cloth', statBonuses: { INT: 4, STA: 3 }, sellValue: 22,
+  },
+  silk_robe_helm: {
+    id: 'silk_robe_helm', name: 'Silk Hood', type: 'equipment',
+    description: 'A silk hood, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'helmet', armorType: 'cloth', statBonuses: { INT: 6, STA: 5 }, sellValue: 37,
+  },
+  silk_robe: {
+    id: 'silk_robe', name: 'Silk Robe', type: 'equipment',
+    description: 'A silk robe, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'chest', armorType: 'cloth', statBonuses: { INT: 9, STA: 7 }, sellValue: 54,
+  },
+  silk_gloves: {
+    id: 'silk_gloves', name: 'Silk Gloves', type: 'equipment',
+    description: 'A silk gloves, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'gloves', armorType: 'cloth', statBonuses: { INT: 5, STA: 4 }, sellValue: 31,
+  },
+  silk_leggings: {
+    id: 'silk_leggings', name: 'Silk Leggings', type: 'equipment',
+    description: 'A silk leggings, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'legs', armorType: 'cloth', statBonuses: { INT: 8, STA: 6 }, sellValue: 48,
+  },
+  silk_boots: {
+    id: 'silk_boots', name: 'Silk Boots', type: 'equipment',
+    description: 'A silk boots, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'boots', armorType: 'cloth', statBonuses: { INT: 6, STA: 5 }, sellValue: 34,
+  },
+  silk_shoulders: {
+    id: 'silk_shoulders', name: 'Silk Shoulders', type: 'equipment',
+    description: 'A silk shoulders, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'shoulders', armorType: 'cloth', statBonuses: { INT: 5, STA: 4 }, sellValue: 31,
+  },
+  mageweave_robe_helm: {
+    id: 'mageweave_robe_helm', name: 'Mageweave Hood', type: 'equipment',
+    description: 'A mageweave hood, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'helmet', armorType: 'cloth', statBonuses: { INT: 8, STA: 6 }, sellValue: 49,
+  },
+  mageweave_robe: {
+    id: 'mageweave_robe', name: 'Mageweave Robe', type: 'equipment',
+    description: 'A mageweave robe, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'chest', armorType: 'cloth', statBonuses: { INT: 11, STA: 9 }, sellValue: 70,
+  },
+  mageweave_gloves: {
+    id: 'mageweave_gloves', name: 'Mageweave Gloves', type: 'equipment',
+    description: 'A mageweave gloves, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'gloves', armorType: 'cloth', statBonuses: { INT: 6, STA: 5 }, sellValue: 39,
+  },
+  mageweave_leggings: {
+    id: 'mageweave_leggings', name: 'Mageweave Leggings', type: 'equipment',
+    description: 'A mageweave leggings, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'legs', armorType: 'cloth', statBonuses: { INT: 10, STA: 8 }, sellValue: 63,
+  },
+  mageweave_boots: {
+    id: 'mageweave_boots', name: 'Mageweave Boots', type: 'equipment',
+    description: 'A mageweave boots, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'boots', armorType: 'cloth', statBonuses: { INT: 7, STA: 5 }, sellValue: 42,
+  },
+  mageweave_shoulders: {
+    id: 'mageweave_shoulders', name: 'Mageweave Shoulders', type: 'equipment',
+    description: 'A mageweave shoulders, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'shoulders', armorType: 'cloth', statBonuses: { INT: 6, STA: 5 }, sellValue: 39,
+  },
+  runecloth_robe_helm: {
+    id: 'runecloth_robe_helm', name: 'Runecloth Hood', type: 'equipment',
+    description: 'A runecloth hood, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'helmet', armorType: 'cloth', statBonuses: { INT: 9, STA: 8 }, sellValue: 61,
+  },
+  runecloth_robe: {
+    id: 'runecloth_robe', name: 'Runecloth Robe', type: 'equipment',
+    description: 'A runecloth robe, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'chest', armorType: 'cloth', statBonuses: { INT: 13, STA: 11 }, sellValue: 86,
+  },
+  runecloth_gloves: {
+    id: 'runecloth_gloves', name: 'Runecloth Gloves', type: 'equipment',
+    description: 'A runecloth gloves, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'gloves', armorType: 'cloth', statBonuses: { INT: 7, STA: 6 }, sellValue: 47,
+  },
+  runecloth_leggings: {
+    id: 'runecloth_leggings', name: 'Runecloth Leggings', type: 'equipment',
+    description: 'A runecloth leggings, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'legs', armorType: 'cloth', statBonuses: { INT: 12, STA: 10 }, sellValue: 79,
+  },
+  runecloth_boots: {
+    id: 'runecloth_boots', name: 'Runecloth Boots', type: 'equipment',
+    description: 'A runecloth boots, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'boots', armorType: 'cloth', statBonuses: { INT: 8, STA: 6 }, sellValue: 50,
+  },
+  runecloth_shoulders: {
+    id: 'runecloth_shoulders', name: 'Runecloth Shoulders', type: 'equipment',
+    description: 'A runecloth shoulders, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'shoulders', armorType: 'cloth', statBonuses: { INT: 7, STA: 6 }, sellValue: 47,
+  },
+  ember_robe_helm: {
+    id: 'ember_robe_helm', name: 'Ember Hood', type: 'equipment',
+    description: 'A ember hood, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'helmet', armorType: 'cloth', statBonuses: { INT: 11, STA: 9 }, sellValue: 76,
+  },
+  ember_robe: {
+    id: 'ember_robe', name: 'Ember Robe', type: 'equipment',
+    description: 'A ember robe, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'chest', armorType: 'cloth', statBonuses: { INT: 15, STA: 13 }, sellValue: 106,
+  },
+  ember_gloves: {
+    id: 'ember_gloves', name: 'Ember Gloves', type: 'equipment',
+    description: 'A ember gloves, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'gloves', armorType: 'cloth', statBonuses: { INT: 8, STA: 7 }, sellValue: 57,
+  },
+  ember_leggings: {
+    id: 'ember_leggings', name: 'Ember Leggings', type: 'equipment',
+    description: 'A ember leggings, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'legs', armorType: 'cloth', statBonuses: { INT: 14, STA: 11 }, sellValue: 95,
+  },
+  ember_boots: {
+    id: 'ember_boots', name: 'Ember Boots', type: 'equipment',
+    description: 'A ember boots, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'boots', armorType: 'cloth', statBonuses: { INT: 9, STA: 8 }, sellValue: 65,
+  },
+  ember_shoulders: {
+    id: 'ember_shoulders', name: 'Ember Shoulders', type: 'equipment',
+    description: 'A ember shoulders, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'shoulders', armorType: 'cloth', statBonuses: { INT: 8, STA: 7 }, sellValue: 57,
+  },
+  // ── Capes (zones 1-6) — universal (cloth is already allowed for every
+  // class), 2 random stats, same materialId as that tier's armor so they
+  // feed the SAME cloth mastery bar (no separate cape mastery).
+  cape_of_linen: {
+    id: 'cape_of_linen', name: 'Cape of Linen', type: 'equipment',
+    description: 'A plain linen cape, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'cape', armorType: 'cloth', statBonuses: { INT: 2, STA: 2 }, sellValue: 12,
+  },
+  cape_of_wool: {
+    id: 'cape_of_wool', name: 'Cape of Wool', type: 'equipment',
+    description: 'A woolen cape, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'cape', armorType: 'cloth', statBonuses: { INT: 4, STA: 3 }, sellValue: 22,
+  },
+  cape_of_silk: {
+    id: 'cape_of_silk', name: 'Cape of Silk', type: 'equipment',
+    description: 'A fine silk cape, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'cape', armorType: 'cloth', statBonuses: { INT: 5, STA: 4 }, sellValue: 31,
+  },
+  cape_of_mageweave: {
+    id: 'cape_of_mageweave', name: 'Cape of Mageweave', type: 'equipment',
+    description: 'A mageweave cape, humming faintly with old magic.',
+    stackable: true, equipSlot: 'cape', armorType: 'cloth', statBonuses: { INT: 6, STA: 5 }, sellValue: 39,
+  },
+  cape_of_runecloth: {
+    id: 'cape_of_runecloth', name: 'Cape of Runecloth', type: 'equipment',
+    description: 'A runecloth cape, its stitched runes still faintly warm.',
+    stackable: true, equipSlot: 'cape', armorType: 'cloth', statBonuses: { INT: 7, STA: 6 }, sellValue: 47,
+  },
+  cape_of_ember: {
+    id: 'cape_of_ember', name: 'Cape of Ember', type: 'equipment',
+    description: "An ember cloth cape, scorched but never burnt through.",
+    stackable: true, equipSlot: 'cape', armorType: 'cloth', statBonuses: { INT: 8, STA: 7 }, sellValue: 57,
+  },
+
   // ── Combat drops (non-leather) ──────────────────────────────────────
   boar_meat: {
     id: 'boar_meat',
@@ -383,6 +607,64 @@ export const ITEMS: Record<string, ItemDef> = {
     stackable: true,
     sellValue: 2,
   },
+
+  // ── Tailoring overhaul — 5 new cloth tiers (zones 2-6), reusing the exact
+  // monster sources the old coarse_cloth/heavy_cloth/ashwoven_cloth/
+  // charred_cloth/ashenweave_cloth dropped from (see monsters.ts) — only the
+  // item identity/name changes, to the Classic-inspired Wool/Silk/Mageweave/
+  // Runecloth/Ember naming. The 5 old items stay fully intact (frozen, no
+  // longer dropped by anything) for any already-held stock, same convention
+  // as every other retired-content block in this file.
+  wool_cloth: {
+    id: 'wool_cloth', name: 'Wool Cloth', type: 'material',
+    description: 'Thick woven cloth, stripped from a highland bandit.', stackable: true, sellValue: 3,
+  },
+  silk_cloth: {
+    id: 'silk_cloth', name: 'Silk Cloth', type: 'material',
+    description: 'Fine, strong cloth taken from a ridge marauder.', stackable: true, sellValue: 4,
+  },
+  mageweave_cloth: {
+    id: 'mageweave_cloth', name: 'Mageweave Cloth', type: 'material',
+    description: 'Cloth woven through with faint traces of old magic.', stackable: true, sellValue: 5,
+  },
+  runecloth: {
+    id: 'runecloth', name: 'Runecloth', type: 'material',
+    description: "Cultist robes, their stitched runes still faintly warm.", stackable: true, sellValue: 6,
+  },
+  ember_cloth: {
+    id: 'ember_cloth', name: 'Ember Cloth', type: 'material',
+    description: "Cloth from the crater's own fire-cultists, scorched but never burnt through.", stackable: true, sellValue: 7,
+  },
+
+  // ── Tailoring overhaul — 6 vendor-only thread tiers, replacing the old
+  // single simple_thread (frozen, same convention as the cloth retirement
+  // above). A deliberate gold sink: never gathered or dropped, consumed by
+  // every Tailoring recipe alongside cloth.
+  coarse_thread: {
+    id: 'coarse_thread', name: 'Coarse Thread', type: 'material',
+    description: 'Plain thread for stitching cloth together. Sold by vendors, not gathered.', stackable: true, sellValue: 1,
+  },
+  fine_thread: {
+    id: 'fine_thread', name: 'Fine Thread', type: 'material',
+    description: 'Finer thread, holding a seam better than Coarse Thread. Sold by vendors, not gathered.', stackable: true, sellValue: 2,
+  },
+  silken_thread: {
+    id: 'silken_thread', name: 'Silken Thread', type: 'material',
+    description: 'Thread spun fine enough for silk work. Sold by vendors, not gathered.', stackable: true, sellValue: 4,
+  },
+  heavy_silken_thread: {
+    id: 'heavy_silken_thread', name: 'Heavy Silken Thread', type: 'material',
+    description: 'A heavier silken thread, for sturdier stitching. Sold by vendors, not gathered.', stackable: true, sellValue: 7,
+  },
+  rune_thread: {
+    id: 'rune_thread', name: 'Rune Thread', type: 'material',
+    description: 'Thread spun with a faint rune-work shimmer. Sold by vendors, not gathered.', stackable: true, sellValue: 11,
+  },
+  ember_thread: {
+    id: 'ember_thread', name: 'Ember Thread', type: 'material',
+    description: 'Thread that never quite cools. Sold by vendors, not gathered.', stackable: true, sellValue: 16,
+  },
+
   copper_scrap: {
     id: 'copper_scrap',
     name: 'Copper Scrap',
