@@ -31,7 +31,7 @@ import {
 } from '../gameData/questEngine';
 import { grantInventoryItems, grantEquipmentInstances, grantChargedConsumables, getInventory } from './inventory';
 import { equipmentRefInventoryDelta, resolveEquippedRef } from './equipmentInstances';
-import { MATERIALS } from '../gameData/materials';
+import { MATERIALS, LEATHER_MATERIALS, type MaterialDef } from '../gameData/materials';
 import { MATERIAL_MASTERY_XP_THRESHOLDS, rollArmorStats, canonicalInstanceId } from '../gameData/equipmentRolls';
 import { herbZoneOf } from '../gameData/herbs';
 import { ALCHEMY_ZONE_MASTERY_THRESHOLD } from '../gameData/alchemyMastery';
@@ -569,8 +569,8 @@ function allAlchemyZonesMastered(mastery: ZoneMasteryState | undefined): boolean
   return Object.keys(ZONES).every((zoneId) => (mastery?.[zoneId]?.xp ?? 0) >= ALCHEMY_ZONE_MASTERY_THRESHOLD);
 }
 
-function allMaterialsMastered(mastery: MaterialMasteryState | undefined): boolean {
-  return MATERIALS.every((m) => (mastery?.[m.id]?.xp ?? 0) >= (MATERIAL_MASTERY_XP_THRESHOLDS[m.id] ?? Infinity));
+function allMaterialsMastered(mastery: MaterialMasteryState | undefined, registry: MaterialDef[] = MATERIALS): boolean {
+  return registry.every((m) => (mastery?.[m.id]?.xp ?? 0) >= (MATERIAL_MASTERY_XP_THRESHOLDS[m.id] ?? Infinity));
 }
 
 // All 6 crafting professions' shared 1-100 XP+Mastery engine
@@ -638,16 +638,30 @@ export async function applyCraftingProfessionResult(
         ...character.materialMastery,
         [result.materialMastery.materialId]: { xp: result.materialMastery.newMaterialMasteryXp },
       };
+      // Checks only the ONE touched materialId rather than looping every
+      // registered material — this also makes the check correct for
+      // Leatherworking (whose materialIds aren't in MATERIALS at all, so
+      // the old "for (const m of MATERIALS)" loop could never unlock a
+      // leather mastery_<id> achievement through this path). isLeather
+      // picks which registry/grandmaster-achievement this craft's own
+      // material belongs to — a Leatherworking craft never touches
+      // master_blacksmith's condition and vice versa.
       const newlyUnlockedIds: string[] = [];
-      for (const m of MATERIALS) {
-        const id = `mastery_${m.id}`;
-        if (character.unlockedAchievementIds.includes(id)) continue;
-        if ((hypotheticalMastery[m.id]?.xp ?? 0) >= (MATERIAL_MASTERY_XP_THRESHOLDS[m.id] ?? Infinity)) {
-          newlyUnlockedIds.push(id);
-        }
+      const touchedMaterialId = result.materialMastery.materialId;
+      const isLeather = LEATHER_MATERIALS.some((m) => m.id === touchedMaterialId);
+      const touchedMasteryId = `mastery_${touchedMaterialId}`;
+      if (
+        !character.unlockedAchievementIds.includes(touchedMasteryId) &&
+        (hypotheticalMastery[touchedMaterialId]?.xp ?? 0) >= (MATERIAL_MASTERY_XP_THRESHOLDS[touchedMaterialId] ?? Infinity)
+      ) {
+        newlyUnlockedIds.push(touchedMasteryId);
       }
-      if (!character.unlockedAchievementIds.includes('master_blacksmith') && allMaterialsMastered(hypotheticalMastery)) {
-        newlyUnlockedIds.push('master_blacksmith');
+      const grandmasterId = isLeather ? 'master_leatherworker' : 'master_blacksmith';
+      if (
+        !character.unlockedAchievementIds.includes(grandmasterId) &&
+        allMaterialsMastered(hypotheticalMastery, isLeather ? LEATHER_MATERIALS : MATERIALS)
+      ) {
+        newlyUnlockedIds.push(grandmasterId);
       }
       if (newlyUnlockedIds.length > 0) {
         characterUpdate.unlockedAchievementIds = arrayUnion(...newlyUnlockedIds);

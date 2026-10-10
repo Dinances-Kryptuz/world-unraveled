@@ -53,6 +53,295 @@ export const ITEMS: Record<string, ItemDef> = {
     sellValue: 1,
   },
 
+  // ── Active Skinning materials (zones 1-6) — the 6-tier leather/hide
+  // roster gathered from GATHER_NODES' skinning nodes, mirroring Mining's
+  // ore/rare-chunk pairing exactly (one primary leather + one rare hide per
+  // zone). `skinned_light_leather`/`skinned_thick_hide` use disambiguated
+  // item ids because `light_leather`/`thick_hide` above are already taken
+  // by old, now-retired Leatherworking output — their display names are
+  // still plain "Light Leather"/"Thick Hide".
+  skinned_light_leather: {
+    id: 'skinned_light_leather', name: 'Light Leather', type: 'material',
+    description: 'Supple leather skinned from creatures of Greenhollow Fields.', stackable: true, sellValue: 1,
+  },
+  light_hide: {
+    id: 'light_hide', name: 'Light Hide', type: 'material',
+    description: 'An unusually intact hide found while skinning in Greenhollow Fields.', stackable: true, sellValue: 1,
+  },
+  medium_leather: {
+    id: 'medium_leather', name: 'Medium Leather', type: 'material',
+    description: 'Tougher leather skinned from creatures of Stonecrag Foothills.', stackable: true, sellValue: 2,
+  },
+  medium_hide: {
+    id: 'medium_hide', name: 'Medium Hide', type: 'material',
+    description: 'An unusually intact hide found while skinning in Stonecrag Foothills.', stackable: true, sellValue: 2,
+  },
+  heavy_leather: {
+    id: 'heavy_leather', name: 'Heavy Leather', type: 'material',
+    description: 'Thick leather skinned from creatures of Emberfall Ridge.', stackable: true, sellValue: 3,
+  },
+  heavy_hide: {
+    id: 'heavy_hide', name: 'Heavy Hide', type: 'material',
+    description: 'An unusually intact hide found while skinning in Emberfall Ridge.', stackable: true, sellValue: 3,
+  },
+  thick_leather: {
+    id: 'thick_leather', name: 'Thick Leather', type: 'material',
+    description: 'Dense leather skinned from creatures of Cinderfall Depths.', stackable: true, sellValue: 4,
+  },
+  skinned_thick_hide: {
+    id: 'skinned_thick_hide', name: 'Thick Hide', type: 'material',
+    description: 'An unusually intact hide found while skinning in Cinderfall Depths.', stackable: true, sellValue: 4,
+  },
+  rugged_leather: {
+    id: 'rugged_leather', name: 'Rugged Leather', type: 'material',
+    description: 'Rugged leather skinned from creatures of the Molten Scar.', stackable: true, sellValue: 5,
+  },
+  rugged_hide: {
+    id: 'rugged_hide', name: 'Rugged Hide', type: 'material',
+    description: 'An unusually intact hide found while skinning in the Molten Scar.', stackable: true, sellValue: 5,
+  },
+  emberscar_leather: {
+    id: 'emberscar_leather', name: 'Emberscar Leather', type: 'material',
+    description: 'Fire-scarred leather skinned from creatures of Cinderheart Crater.', stackable: true, sellValue: 6,
+  },
+  emberscar_hide: {
+    id: 'emberscar_hide', name: 'Emberscar Hide', type: 'material',
+    description: 'An unusually intact hide found while skinning in Cinderheart Crater.', stackable: true, sellValue: 6,
+  },
+
+  // ── Leatherworking equipment (zones 1-6) — 42 items, 7 pieces × 6 tiers,
+  // mirroring Blacksmithing's own armor-set structure exactly (same
+  // material-cost-per-piece shape, same per-tier ARMOR_STAT_RANGES/roll
+  // system via equipmentRolls.ts — statBonuses here are the pre-roll
+  // fallback, same role as Blacksmithing's own armor statBonuses).
+  // Helmet/Chestplate/Gloves/Legplates/Boots/Shoulders are 'leather'
+  // armorType (warrior/paladin only, same ALLOWED_ARMOR_TYPES table as
+  // Blacksmithing); Belt has NO armorType — universal, equippable by every
+  // class regardless of armor proficiency (canClassEquip's
+  // `!item.armorType` path), matching the explicit "no armor type" belt
+  // requirement.
+  // ── Handstitched Leather (zone, requiredSkill 1) ──────────────────
+  handstitched_leather_helm: {
+    id: 'handstitched_leather_helm', name: 'Handstitched Leather Helm', type: 'equipment',
+    description: 'A Handstitched Leather helm, crafted by a skilled leatherworker.',
+    stackable: true, equipSlot: 'helmet', armorType: 'leather', statBonuses: { STA: 3, STR: 3 }, sellValue: 18,
+  },
+  handstitched_leather_chest: {
+    id: 'handstitched_leather_chest', name: 'Handstitched Leather Chestplate', type: 'equipment',
+    description: 'A Handstitched Leather chestplate, crafted by a skilled leatherworker.',
+    stackable: true, equipSlot: 'chest', armorType: 'leather', statBonuses: { STA: 4, STR: 4 }, sellValue: 24,
+  },
+  handstitched_leather_gloves: {
+    id: 'handstitched_leather_gloves', name: 'Handstitched Leather Gloves', type: 'equipment',
+    description: 'A Handstitched Leather gloves, crafted by a skilled leatherworker.',
+    stackable: true, equipSlot: 'gloves', armorType: 'leather', statBonuses: { STA: 2, STR: 2 }, sellValue: 12,
+  },
+  handstitched_leather_legs: {
+    id: 'handstitched_leather_legs', name: 'Handstitched Leather Legplates', type: 'equipment',
+    description: 'A Handstitched Leather legplates, crafted by a skilled leatherworker.',
+    stackable: true, equipSlot: 'legs', armorType: 'leather', statBonuses: { STA: 4, STR: 3 }, sellValue: 21,
+  },
+  handstitched_leather_boots: {
+    id: 'handstitched_leather_boots', name: 'Handstitched Leather Boots', type: 'equipment',
+    description: 'A Handstitched Leather boots, crafted by a skilled leatherworker.',
+    stackable: true, equipSlot: 'boots', armorType: 'leather', statBonuses: { STA: 3, STR: 2 }, sellValue: 15,
+  },
+  handstitched_leather_shoulders: {
+    id: 'handstitched_leather_shoulders', name: 'Handstitched Leather Shoulders', type: 'equipment',
+    description: 'A Handstitched Leather shoulders, crafted by a skilled leatherworker.',
+    stackable: true, equipSlot: 'shoulders', armorType: 'leather', statBonuses: { STA: 2, STR: 2 }, sellValue: 12,
+  },
+  handstitched_leather_belt: {
+    id: 'handstitched_leather_belt', name: 'Handstitched Leather Belt', type: 'equipment',
+    description: 'A sturdy handstitched leather belt, crafted by a skilled leatherworker. No armor training required — anyone can wear it.',
+    stackable: true, equipSlot: 'belt', statBonuses: { STA: 2, STR: 2 }, sellValue: 12,
+  },
+
+  // ── Fine Leather (zone, requiredSkill 18) ──────────────────
+  fine_leather_helm: {
+    id: 'fine_leather_helm', name: 'Fine Leather Helm', type: 'equipment',
+    description: 'A Fine Leather helm, crafted by a skilled leatherworker.',
+    stackable: true, equipSlot: 'helmet', armorType: 'leather', statBonuses: { STA: 4, STR: 4 }, sellValue: 26,
+  },
+  fine_leather_chest: {
+    id: 'fine_leather_chest', name: 'Fine Leather Chestplate', type: 'equipment',
+    description: 'A Fine Leather chestplate, crafted by a skilled leatherworker.',
+    stackable: true, equipSlot: 'chest', armorType: 'leather', statBonuses: { STA: 7, STR: 5 }, sellValue: 38,
+  },
+  fine_leather_gloves: {
+    id: 'fine_leather_gloves', name: 'Fine Leather Gloves', type: 'equipment',
+    description: 'A Fine Leather gloves, crafted by a skilled leatherworker.',
+    stackable: true, equipSlot: 'gloves', armorType: 'leather', statBonuses: { STA: 4, STR: 3 }, sellValue: 22,
+  },
+  fine_leather_legs: {
+    id: 'fine_leather_legs', name: 'Fine Leather Legplates', type: 'equipment',
+    description: 'A Fine Leather legplates, crafted by a skilled leatherworker.',
+    stackable: true, equipSlot: 'legs', armorType: 'leather', statBonuses: { STA: 6, STR: 5 }, sellValue: 35,
+  },
+  fine_leather_boots: {
+    id: 'fine_leather_boots', name: 'Fine Leather Boots', type: 'equipment',
+    description: 'A Fine Leather boots, crafted by a skilled leatherworker.',
+    stackable: true, equipSlot: 'boots', armorType: 'leather', statBonuses: { STA: 4, STR: 3 }, sellValue: 22,
+  },
+  fine_leather_shoulders: {
+    id: 'fine_leather_shoulders', name: 'Fine Leather Shoulders', type: 'equipment',
+    description: 'A Fine Leather shoulders, crafted by a skilled leatherworker.',
+    stackable: true, equipSlot: 'shoulders', armorType: 'leather', statBonuses: { STA: 4, STR: 3 }, sellValue: 22,
+  },
+  fine_leather_belt: {
+    id: 'fine_leather_belt', name: 'Fine Leather Belt', type: 'equipment',
+    description: 'A sturdy fine leather belt, crafted by a skilled leatherworker. No armor training required — anyone can wear it.',
+    stackable: true, equipSlot: 'belt', statBonuses: { STA: 4, STR: 3 }, sellValue: 22,
+  },
+
+  // ── Barbaric Leather (zone, requiredSkill 35) ──────────────────
+  barbaric_leather_helm: {
+    id: 'barbaric_leather_helm', name: 'Barbaric Leather Helm', type: 'equipment',
+    description: 'A Barbaric Leather helm, crafted by a skilled leatherworker.',
+    stackable: true, equipSlot: 'helmet', armorType: 'leather', statBonuses: { STA: 6, STR: 5 }, sellValue: 37,
+  },
+  barbaric_leather_chest: {
+    id: 'barbaric_leather_chest', name: 'Barbaric Leather Chestplate', type: 'equipment',
+    description: 'A Barbaric Leather chestplate, crafted by a skilled leatherworker.',
+    stackable: true, equipSlot: 'chest', armorType: 'leather', statBonuses: { STA: 9, STR: 7 }, sellValue: 54,
+  },
+  barbaric_leather_gloves: {
+    id: 'barbaric_leather_gloves', name: 'Barbaric Leather Gloves', type: 'equipment',
+    description: 'A Barbaric Leather gloves, crafted by a skilled leatherworker.',
+    stackable: true, equipSlot: 'gloves', armorType: 'leather', statBonuses: { STA: 5, STR: 4 }, sellValue: 31,
+  },
+  barbaric_leather_legs: {
+    id: 'barbaric_leather_legs', name: 'Barbaric Leather Legplates', type: 'equipment',
+    description: 'A Barbaric Leather legplates, crafted by a skilled leatherworker.',
+    stackable: true, equipSlot: 'legs', armorType: 'leather', statBonuses: { STA: 8, STR: 6 }, sellValue: 48,
+  },
+  barbaric_leather_boots: {
+    id: 'barbaric_leather_boots', name: 'Barbaric Leather Boots', type: 'equipment',
+    description: 'A Barbaric Leather boots, crafted by a skilled leatherworker.',
+    stackable: true, equipSlot: 'boots', armorType: 'leather', statBonuses: { STA: 6, STR: 5 }, sellValue: 34,
+  },
+  barbaric_leather_shoulders: {
+    id: 'barbaric_leather_shoulders', name: 'Barbaric Leather Shoulders', type: 'equipment',
+    description: 'A Barbaric Leather shoulders, crafted by a skilled leatherworker.',
+    stackable: true, equipSlot: 'shoulders', armorType: 'leather', statBonuses: { STA: 5, STR: 4 }, sellValue: 31,
+  },
+  barbaric_leather_belt: {
+    id: 'barbaric_leather_belt', name: 'Barbaric Leather Belt', type: 'equipment',
+    description: 'A sturdy barbaric leather belt, crafted by a skilled leatherworker. No armor training required — anyone can wear it.',
+    stackable: true, equipSlot: 'belt', statBonuses: { STA: 5, STR: 4 }, sellValue: 31,
+  },
+
+  // ── Nightscape Leather (zone, requiredSkill 52) ──────────────────
+  nightscape_leather_helm: {
+    id: 'nightscape_leather_helm', name: 'Nightscape Leather Helm', type: 'equipment',
+    description: 'A Nightscape Leather helm, crafted by a skilled leatherworker.',
+    stackable: true, equipSlot: 'helmet', armorType: 'leather', statBonuses: { STA: 8, STR: 6 }, sellValue: 49,
+  },
+  nightscape_leather_chest: {
+    id: 'nightscape_leather_chest', name: 'Nightscape Leather Chestplate', type: 'equipment',
+    description: 'A Nightscape Leather chestplate, crafted by a skilled leatherworker.',
+    stackable: true, equipSlot: 'chest', armorType: 'leather', statBonuses: { STA: 11, STR: 9 }, sellValue: 70,
+  },
+  nightscape_leather_gloves: {
+    id: 'nightscape_leather_gloves', name: 'Nightscape Leather Gloves', type: 'equipment',
+    description: 'A Nightscape Leather gloves, crafted by a skilled leatherworker.',
+    stackable: true, equipSlot: 'gloves', armorType: 'leather', statBonuses: { STA: 6, STR: 5 }, sellValue: 39,
+  },
+  nightscape_leather_legs: {
+    id: 'nightscape_leather_legs', name: 'Nightscape Leather Legplates', type: 'equipment',
+    description: 'A Nightscape Leather legplates, crafted by a skilled leatherworker.',
+    stackable: true, equipSlot: 'legs', armorType: 'leather', statBonuses: { STA: 10, STR: 8 }, sellValue: 63,
+  },
+  nightscape_leather_boots: {
+    id: 'nightscape_leather_boots', name: 'Nightscape Leather Boots', type: 'equipment',
+    description: 'A Nightscape Leather boots, crafted by a skilled leatherworker.',
+    stackable: true, equipSlot: 'boots', armorType: 'leather', statBonuses: { STA: 7, STR: 5 }, sellValue: 42,
+  },
+  nightscape_leather_shoulders: {
+    id: 'nightscape_leather_shoulders', name: 'Nightscape Leather Shoulders', type: 'equipment',
+    description: 'A Nightscape Leather shoulders, crafted by a skilled leatherworker.',
+    stackable: true, equipSlot: 'shoulders', armorType: 'leather', statBonuses: { STA: 6, STR: 5 }, sellValue: 39,
+  },
+  nightscape_leather_belt: {
+    id: 'nightscape_leather_belt', name: 'Nightscape Leather Belt', type: 'equipment',
+    description: 'A sturdy nightscape leather belt, crafted by a skilled leatherworker. No armor training required — anyone can wear it.',
+    stackable: true, equipSlot: 'belt', statBonuses: { STA: 6, STR: 5 }, sellValue: 39,
+  },
+
+  // ── Wicked Leather (zone, requiredSkill 69) ──────────────────
+  wicked_leather_helm: {
+    id: 'wicked_leather_helm', name: 'Wicked Leather Helm', type: 'equipment',
+    description: 'A Wicked Leather helm, crafted by a skilled leatherworker.',
+    stackable: true, equipSlot: 'helmet', armorType: 'leather', statBonuses: { STA: 9, STR: 8 }, sellValue: 61,
+  },
+  wicked_leather_chest: {
+    id: 'wicked_leather_chest', name: 'Wicked Leather Chestplate', type: 'equipment',
+    description: 'A Wicked Leather chestplate, crafted by a skilled leatherworker.',
+    stackable: true, equipSlot: 'chest', armorType: 'leather', statBonuses: { STA: 13, STR: 11 }, sellValue: 86,
+  },
+  wicked_leather_gloves: {
+    id: 'wicked_leather_gloves', name: 'Wicked Leather Gloves', type: 'equipment',
+    description: 'A Wicked Leather gloves, crafted by a skilled leatherworker.',
+    stackable: true, equipSlot: 'gloves', armorType: 'leather', statBonuses: { STA: 7, STR: 6 }, sellValue: 47,
+  },
+  wicked_leather_legs: {
+    id: 'wicked_leather_legs', name: 'Wicked Leather Legplates', type: 'equipment',
+    description: 'A Wicked Leather legplates, crafted by a skilled leatherworker.',
+    stackable: true, equipSlot: 'legs', armorType: 'leather', statBonuses: { STA: 12, STR: 10 }, sellValue: 79,
+  },
+  wicked_leather_boots: {
+    id: 'wicked_leather_boots', name: 'Wicked Leather Boots', type: 'equipment',
+    description: 'A Wicked Leather boots, crafted by a skilled leatherworker.',
+    stackable: true, equipSlot: 'boots', armorType: 'leather', statBonuses: { STA: 8, STR: 6 }, sellValue: 50,
+  },
+  wicked_leather_shoulders: {
+    id: 'wicked_leather_shoulders', name: 'Wicked Leather Shoulders', type: 'equipment',
+    description: 'A Wicked Leather shoulders, crafted by a skilled leatherworker.',
+    stackable: true, equipSlot: 'shoulders', armorType: 'leather', statBonuses: { STA: 7, STR: 6 }, sellValue: 47,
+  },
+  wicked_leather_belt: {
+    id: 'wicked_leather_belt', name: 'Wicked Leather Belt', type: 'equipment',
+    description: 'A sturdy wicked leather belt, crafted by a skilled leatherworker. No armor training required — anyone can wear it.',
+    stackable: true, equipSlot: 'belt', statBonuses: { STA: 7, STR: 6 }, sellValue: 47,
+  },
+
+  // ── Emberscar Leather (zone, requiredSkill 86) ──────────────────
+  emberscar_leather_helm: {
+    id: 'emberscar_leather_helm', name: 'Emberscar Leather Helm', type: 'equipment',
+    description: 'A Emberscar Leather helm, crafted by a skilled leatherworker.',
+    stackable: true, equipSlot: 'helmet', armorType: 'leather', statBonuses: { STA: 11, STR: 9 }, sellValue: 76,
+  },
+  emberscar_leather_chest: {
+    id: 'emberscar_leather_chest', name: 'Emberscar Leather Chestplate', type: 'equipment',
+    description: 'A Emberscar Leather chestplate, crafted by a skilled leatherworker.',
+    stackable: true, equipSlot: 'chest', armorType: 'leather', statBonuses: { STA: 15, STR: 13 }, sellValue: 106,
+  },
+  emberscar_leather_gloves: {
+    id: 'emberscar_leather_gloves', name: 'Emberscar Leather Gloves', type: 'equipment',
+    description: 'A Emberscar Leather gloves, crafted by a skilled leatherworker.',
+    stackable: true, equipSlot: 'gloves', armorType: 'leather', statBonuses: { STA: 8, STR: 7 }, sellValue: 57,
+  },
+  emberscar_leather_legs: {
+    id: 'emberscar_leather_legs', name: 'Emberscar Leather Legplates', type: 'equipment',
+    description: 'A Emberscar Leather legplates, crafted by a skilled leatherworker.',
+    stackable: true, equipSlot: 'legs', armorType: 'leather', statBonuses: { STA: 14, STR: 11 }, sellValue: 95,
+  },
+  emberscar_leather_boots: {
+    id: 'emberscar_leather_boots', name: 'Emberscar Leather Boots', type: 'equipment',
+    description: 'A Emberscar Leather boots, crafted by a skilled leatherworker.',
+    stackable: true, equipSlot: 'boots', armorType: 'leather', statBonuses: { STA: 9, STR: 8 }, sellValue: 65,
+  },
+  emberscar_leather_shoulders: {
+    id: 'emberscar_leather_shoulders', name: 'Emberscar Leather Shoulders', type: 'equipment',
+    description: 'A Emberscar Leather shoulders, crafted by a skilled leatherworker.',
+    stackable: true, equipSlot: 'shoulders', armorType: 'leather', statBonuses: { STA: 8, STR: 7 }, sellValue: 57,
+  },
+  emberscar_leather_belt: {
+    id: 'emberscar_leather_belt', name: 'Emberscar Leather Belt', type: 'equipment',
+    description: 'A sturdy emberscar leather belt, crafted by a skilled leatherworker. No armor training required — anyone can wear it.',
+    stackable: true, equipSlot: 'belt', statBonuses: { STA: 8, STR: 7 }, sellValue: 57,
+  },
+
   // ── Combat drops (non-leather) ──────────────────────────────────────
   boar_meat: {
     id: 'boar_meat',

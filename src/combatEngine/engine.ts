@@ -16,6 +16,9 @@ import {
   enemyDamageModifier,
   xpModifier,
   healingPowerMultiplier,
+  critChanceFromAgi,
+  dodgeChanceFromAgi,
+  CRIT_DAMAGE_MULTIPLIER,
 } from '../gameData/combatFormulas';
 import { EMPTY_TALENT_TOTALS, type TalentBonusTotals } from '../utils/talentEvaluator';
 import type { BuffTotals } from '../gameData/buffs';
@@ -119,6 +122,7 @@ function buildPlayerProfile(input: EncounterSetupInput): CasterProfile {
     Math.max(0.05, 1 - talentTotals.flatDmgTakenPct / 100) *
     (1 - buffTotals.mitigationMultiplierPct / 100) *
     (1 + extraDamageTakenPct / 100);
+  const totalAgi = statAtLevel(cls, 'AGI', level) + (equipmentBonuses.AGI ?? 0);
 
   return {
     normalizedHit: baseDamage(cls, level, equipmentBonuses),
@@ -142,6 +146,8 @@ function buildPlayerProfile(input: EncounterSetupInput): CasterProfile {
     armor,
     damageTakenMult,
     damageSchool: 'physical',
+    critChance: critChanceFromAgi(totalAgi),
+    dodgeChance: dodgeChanceFromAgi(totalAgi),
     healFrac: specDef.healFrac + talentTotals.healFracAddPct / 100,
     passiveHealPct:
       (specDef.passiveHealPct + talentTotals.passiveHealAddPct / 100) * (1 + talentTotals.healMultPct / 100),
@@ -168,6 +174,7 @@ function buildCompanionProfile(companion: CompanionCombatSetup, monster: Monster
   const effectiveSta = statAtLevel(cls, 'STA', level) + (equipmentBonuses.STA ?? 0);
   const armor = effectiveSta * 2 * survCoefFinal * (1 + totals.armorMultPct / 100);
   const avoidance = Math.min(0.75, specDef.avoidance + totals.avoidanceAddPct / 100);
+  const totalAgi = statAtLevel(cls, 'AGI', level) + (equipmentBonuses.AGI ?? 0);
   return {
     normalizedHit: baseDamage(cls, level, equipmentBonuses),
     damageCoef:
@@ -180,6 +187,8 @@ function buildCompanionProfile(companion: CompanionCombatSetup, monster: Monster
     armor,
     damageTakenMult: Math.max(0.05, 1 - totals.flatDmgTakenPct / 100),
     damageSchool: 'physical',
+    critChance: critChanceFromAgi(totalAgi),
+    dodgeChance: dodgeChanceFromAgi(totalAgi),
     healFrac: specDef.healFrac + totals.healFracAddPct / 100,
     passiveHealPct: (specDef.passiveHealPct + totals.passiveHealAddPct / 100) * (1 + totals.healMultPct / 100),
     healingPowerMult: healingPowerMultiplier(statAtLevel(cls, 'SPI', level) + (equipmentBonuses.SPI ?? 0)),
@@ -196,6 +205,8 @@ function buildMonsterProfile(monster: Monster, playerLevel: number, playerCombat
     armor: monsterArmor(monster.level),
     damageTakenMult: 1,
     damageSchool: monster.damageSchool ?? 'physical',
+    critChance: 0, // monsters have no AGI stat in the existing balance model
+    dodgeChance: 0,
     healFrac: 0,
     passiveHealPct: 0,
     healingPowerMult: 1,
@@ -387,10 +398,17 @@ function computeEffectDamage(
   levelGapAccuracy: number,
   effectDamageSchool: DamageSchool,
   consumableState: ConsumableAutomationRuntimeState | undefined
-): { hit: boolean; amount: number; healOnTrigger: number } {
+): { hit: boolean; amount: number; healOnTrigger: number; crit: boolean } {
   const accuracyRoll = attacker.isPlayer ? levelGapAccuracy : attacker.profile.accuracy;
-  const avoided = Math.random() > accuracyRoll || Math.random() < defender.profile.avoidance;
-  if (avoided) return { hit: false, amount: 0, healOnTrigger: 0 };
+  // dodgeChance is a separate independent roll from avoidance (AGI's own
+  // mechanic, not a replacement for the existing spec-driven avoidance
+  // stat) — see classStats.ts/combatFormulas.ts's AGI module comments.
+  const avoided =
+    Math.random() > accuracyRoll ||
+    Math.random() < defender.profile.avoidance ||
+    Math.random() < defender.profile.dodgeChance;
+  if (avoided) return { hit: false, amount: 0, healOnTrigger: 0, crit: false };
+  const isCrit = Math.random() < attacker.profile.critChance;
 
   let offensiveMultPct = 0;
   if (attacker.isPlayer && consumableState?.offensive && consumableState.offensive.chargesRemaining > 0) {
@@ -430,7 +448,8 @@ function computeEffectDamage(
     attacker.profile.damageCoef *
     (1 + offensiveMultPct / 100) *
     buffDamageDealtMult(attacker) *
-    armorMod;
+    armorMod *
+    (isCrit ? CRIT_DAMAGE_MULTIPLIER : 1);
   let amount = Math.max(
     0,
     Math.round(raw * defender.profile.damageTakenMult * buffDamageTakenMult(defender) * resistanceMod)
@@ -452,7 +471,7 @@ function computeEffectDamage(
   // like every other heal in this file does.
   const healOnTrigger = defensive?.healOnTriggerPct ? defender.maxHp * (defensive.healOnTriggerPct / 100) : 0;
 
-  return { hit: true, amount, healOnTrigger };
+  return { hit: true, amount, healOnTrigger, crit: isCrit };
 }
 
 export interface KillReward {
@@ -748,7 +767,7 @@ export function useAbility(
       switch (effect.type) {
         case 'damage': {
           const effectDamageSchool = effect.damageSchool ?? source.profile.damageSchool;
-          const { hit, amount, healOnTrigger } = computeEffectDamage(
+          const { hit, amount, healOnTrigger, crit } = computeEffectDamage(
             source,
             target,
             effect.power ?? 1,
@@ -790,7 +809,9 @@ export function useAbility(
           if (source.resources.rage) gain(source.resources, 'rage', Math.max(1, Math.round(amount * 0.05)));
           if (target.resources.rage) gain(target.resources, 'rage', Math.max(1, Math.round(amount * 0.1)));
           events.push({
-            message: `${source.name} uses ${ability.name} on ${target.name} for ${amount} damage.`,
+            message: crit
+              ? `${source.name} critically hits ${target.name} with ${ability.name} for ${amount} damage.`
+              : `${source.name} uses ${ability.name} on ${target.name} for ${amount} damage.`,
             kind: target.isPlayer ? 'damage_in' : 'damage_out',
           });
           if (target.hp <= 0 && target.isAlive) {

@@ -5,7 +5,7 @@ import { ALL_PROFESSION_IDS } from './professionTiers';
 import { COMPANIONS } from './companions';
 import { DUNGEONS } from './dungeons';
 import { MAX_CHARACTER_SLOTS } from './characterSlots';
-import { MATERIALS } from './materials';
+import { MATERIALS, LEATHER_MATERIALS } from './materials';
 import { MATERIAL_MASTERY_XP_THRESHOLDS } from './equipmentRolls';
 import { ZONES } from './zones';
 import { HERBALISM_ZONE_MASTERY_THRESHOLD } from './gatheringEngine';
@@ -70,6 +70,27 @@ const MASTER_BLACKSMITH_ACHIEVEMENT: AchievementDef = {
   check: (c) => MATERIALS.every((m) => isMaterialMastered(c, m.id)),
 };
 
+// Mirrors generateMasteryAchievements/MASTER_BLACKSMITH_ACHIEVEMENT exactly,
+// over LEATHER_MATERIALS instead of MATERIALS — same isMaterialMastered
+// check (it only depends on MATERIAL_MASTERY_XP_THRESHOLDS, which already
+// has entries for all 6 leather materialIds), same per-material title
+// wording the user specified ("Master of Light Leather", etc.).
+function generateLeatherMasteryAchievements(): AchievementDef[] {
+  return LEATHER_MATERIALS.map((material) => ({
+    id: `mastery_${material.id}`,
+    name: `Master of ${material.name}`,
+    description: `Reach 100% ${material.name} Mastery.`,
+    check: (c: Character) => isMaterialMastered(c, material.id),
+  }));
+}
+
+const MASTER_LEATHERWORKER_ACHIEVEMENT: AchievementDef = {
+  id: 'master_leatherworker',
+  name: 'Master Leatherworker',
+  description: 'Reach 100% Mastery in every Leatherworking material.',
+  check: (c) => LEATHER_MATERIALS.every((m) => isMaterialMastered(c, m.id)),
+};
+
 export function isHerbalismZoneMastered(character: Character, zoneId: string): boolean {
   const xp = character.herbalismZoneMastery?.[zoneId]?.xp ?? 0;
   return xp >= HERBALISM_ZONE_MASTERY_THRESHOLD;
@@ -119,6 +140,8 @@ const GRANDMASTER_ALCHEMIST_ACHIEVEMENT: AchievementDef = {
 export const ACHIEVEMENTS: AchievementDef[] = [
   ...generateMasteryAchievements(),
   MASTER_BLACKSMITH_ACHIEVEMENT,
+  ...generateLeatherMasteryAchievements(),
+  MASTER_LEATHERWORKER_ACHIEVEMENT,
   ...generateForagerAchievements(),
   GRANDMASTER_FORAGER_ACHIEVEMENT,
   ...generateAlchemistAchievements(),

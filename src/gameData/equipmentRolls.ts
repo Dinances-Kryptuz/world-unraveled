@@ -5,7 +5,11 @@
 // where these get called during crafting resolution).
 import type { BaseStat } from './classStats';
 
-const ARMOR_STATS: BaseStat[] = ['STR', 'STA', 'INT', 'SPI'];
+// AGI added for Leatherworking (see combatFormulas.ts for its crit/dodge
+// scaling) — the picker below is already generic over this list, so this is
+// the only line needed to make AGI rollable on ANY armor piece, old
+// Blacksmithing gear included, not just new Leatherworking gear.
+const ARMOR_STATS: BaseStat[] = ['STR', 'STA', 'INT', 'SPI', 'AGI'];
 
 // Per-base-item roll range, derived once (not hand-transcribed) from each
 // item's old plain+Sacred pair's values, padded ±1 so the roll's average
@@ -71,6 +75,53 @@ export const ARMOR_STAT_RANGES: Record<string, { min: number; max: number }> = {
   gold_ring: { min: 4, max: 7 },
   platinum_necklace: { min: 6, max: 10 },
   platinum_ring: { min: 5, max: 8 },
+
+  // ── Leatherworking (6 tiers × 7 pieces) — ranges copied 1:1 from the
+  // Blacksmithing analog piece of the same tier (helm/chestplate/gauntlets/
+  // legplates/greaves respectively; Shoulders and Belt mirror Gauntlets',
+  // since Blacksmithing has no equivalent of those two slots).
+  handstitched_leather_helm: { min: 2, max: 4 },
+  handstitched_leather_chest: { min: 3, max: 5 },
+  handstitched_leather_gloves: { min: 1, max: 3 },
+  handstitched_leather_legs: { min: 2, max: 5 },
+  handstitched_leather_boots: { min: 1, max: 4 },
+  handstitched_leather_shoulders: { min: 1, max: 3 },
+  handstitched_leather_belt: { min: 1, max: 3 },
+  fine_leather_helm: { min: 3, max: 5 },
+  fine_leather_chest: { min: 4, max: 8 },
+  fine_leather_gloves: { min: 2, max: 5 },
+  fine_leather_legs: { min: 4, max: 7 },
+  fine_leather_boots: { min: 2, max: 5 },
+  fine_leather_shoulders: { min: 2, max: 5 },
+  fine_leather_belt: { min: 2, max: 5 },
+  barbaric_leather_helm: { min: 4, max: 7 },
+  barbaric_leather_chest: { min: 6, max: 10 },
+  barbaric_leather_gloves: { min: 3, max: 6 },
+  barbaric_leather_legs: { min: 5, max: 9 },
+  barbaric_leather_boots: { min: 4, max: 7 },
+  barbaric_leather_shoulders: { min: 3, max: 6 },
+  barbaric_leather_belt: { min: 3, max: 6 },
+  nightscape_leather_helm: { min: 5, max: 9 },
+  nightscape_leather_chest: { min: 8, max: 12 },
+  nightscape_leather_gloves: { min: 4, max: 7 },
+  nightscape_leather_legs: { min: 7, max: 11 },
+  nightscape_leather_boots: { min: 4, max: 8 },
+  nightscape_leather_shoulders: { min: 4, max: 7 },
+  nightscape_leather_belt: { min: 4, max: 7 },
+  wicked_leather_helm: { min: 7, max: 10 },
+  wicked_leather_chest: { min: 10, max: 14 },
+  wicked_leather_gloves: { min: 5, max: 8 },
+  wicked_leather_legs: { min: 9, max: 13 },
+  wicked_leather_boots: { min: 5, max: 9 },
+  wicked_leather_shoulders: { min: 5, max: 8 },
+  wicked_leather_belt: { min: 5, max: 8 },
+  emberscar_leather_helm: { min: 8, max: 12 },
+  emberscar_leather_chest: { min: 12, max: 16 },
+  emberscar_leather_gloves: { min: 6, max: 9 },
+  emberscar_leather_legs: { min: 10, max: 15 },
+  emberscar_leather_boots: { min: 7, max: 10 },
+  emberscar_leather_shoulders: { min: 6, max: 9 },
+  emberscar_leather_belt: { min: 6, max: 9 },
 };
 
 // Mastery XP = (bars the recipe originally requires) × this constant —
@@ -101,6 +152,18 @@ export const MATERIAL_MASTERY_XP_THRESHOLDS: Record<string, number> = {
   silver: 65451,
   gold: 55633,
   platinum: 49233,
+  // Leatherworking's 6 tiers deliberately reuse craftSeconds (8/8.5/9.6/
+  // 9.8/10/10.7) AND best-recipe (Chestplate, 5 bars) bar count 1:1 from
+  // copper/bronze/iron/steel/mithril/thorium respectively (see recipes.ts's
+  // module comment) — since this threshold's calibration depends only on
+  // those two numbers, the already-calibrated Blacksmithing values apply
+  // unchanged rather than needing a fresh simulation.
+  light_leather: 173854,
+  medium_leather: 163627,
+  heavy_leather: 144878,
+  thick_leather: 141922,
+  rugged_leather: 139083,
+  emberscar_leather: 129984,
 };
 
 // A material with no recipe tagged to it (shouldn't happen for any

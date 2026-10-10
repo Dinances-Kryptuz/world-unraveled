@@ -461,6 +461,43 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     id: 'cinderheart_emberscale_nest', name: 'Emberscale Nest', profession: 'skinning', zoneId: 'cinderheart_crater',
     requiredLevel: 95, itemId: 'emberscale_claw', baseXp: 80, secondsPerAction: 14, requiredToolType: 'skinning_knife',
   },
+
+  // ── The new 6-tier Skinning roster — one node per zone, mirroring
+  // Mining's own per-zone requiredLevel/baseXp/secondsPerAction/rareBonus
+  // values exactly (same "no combat, no corpses" automated gathering node
+  // shape Skinning always had), retiring the 12 old Skinning nodes above
+  // (frozen, dropped from every Zone.gatherNodeIds list, same convention as
+  // every other retired-content block in this file).
+  greenhollow_skinning_grounds: {
+    id: 'greenhollow_skinning_grounds', name: 'Skinning Grounds', profession: 'skinning', zoneId: 'greenhollow_fields',
+    requiredLevel: 1, itemId: 'skinned_light_leather', baseXp: 10, secondsPerAction: 8,
+    requiredToolType: 'skinning_knife', rareBonus: { itemId: 'light_hide', chance: 0.1 },
+  },
+  stonecrag_skinning_grounds: {
+    id: 'stonecrag_skinning_grounds', name: 'Skinning Grounds', profession: 'skinning', zoneId: 'stonecrag_foothills',
+    requiredLevel: 10, itemId: 'medium_leather', baseXp: 13, secondsPerAction: 9,
+    requiredToolType: 'skinning_knife', rareBonus: { itemId: 'medium_hide', chance: 0.1 },
+  },
+  emberfall_skinning_grounds: {
+    id: 'emberfall_skinning_grounds', name: 'Skinning Grounds', profession: 'skinning', zoneId: 'emberfall_ridge',
+    requiredLevel: 30, itemId: 'heavy_leather', baseXp: 23, secondsPerAction: 10,
+    requiredToolType: 'skinning_knife', rareBonus: { itemId: 'heavy_hide', chance: 0.1 },
+  },
+  cinderfall_skinning_grounds: {
+    id: 'cinderfall_skinning_grounds', name: 'Skinning Grounds', profession: 'skinning', zoneId: 'cinderfall_depths',
+    requiredLevel: 50, itemId: 'thick_leather', baseXp: 40, secondsPerAction: 12,
+    requiredToolType: 'skinning_knife', rareBonus: { itemId: 'skinned_thick_hide', chance: 0.1 },
+  },
+  molten_scar_skinning_grounds: {
+    id: 'molten_scar_skinning_grounds', name: 'Skinning Grounds', profession: 'skinning', zoneId: 'molten_scar',
+    requiredLevel: 60, itemId: 'rugged_leather', baseXp: 53, secondsPerAction: 13,
+    requiredToolType: 'skinning_knife', rareBonus: { itemId: 'rugged_hide', chance: 0.1 },
+  },
+  cinderheart_skinning_grounds: {
+    id: 'cinderheart_skinning_grounds', name: 'Skinning Grounds', profession: 'skinning', zoneId: 'cinderheart_crater',
+    requiredLevel: 90, itemId: 'emberscar_leather', baseXp: 92, secondsPerAction: 16,
+    requiredToolType: 'skinning_knife', rareBonus: { itemId: 'emberscar_hide', chance: 0.1 },
+  },
 };
 
 export const ZONES: Record<string, Zone> = {
@@ -474,7 +511,7 @@ export const ZONES: Record<string, Zone> = {
     monsterIds: ['greenhorn_boar', 'forest_wolf', 'wild_kobold', 'thornback_hare'],
     gatherNodeIds: [
       'greenhollow_copper_vein', 'greenhollow_peacebloom_patch', 'greenhollow_silverleaf_patch',
-      'greenhollow_earthroot_patch', 'greenhollow_hunting_grounds', 'greenhollow_rabbit_warren',
+      'greenhollow_earthroot_patch', 'greenhollow_skinning_grounds',
     ],
     fishingHoleIds: ['greenhollow_fishing_hole'],
   },
@@ -489,7 +526,7 @@ export const ZONES: Record<string, Zone> = {
     monsterIds: ['ridge_jackal', 'craggy_goat', 'rubble_crawler', 'highland_bandit', 'crag_wolf_alpha'],
     gatherNodeIds: [
       'stonecrag_tin_vein', 'stonecrag_silver_vein', 'stonecrag_mageroyal_patch', 'stonecrag_briarthorn_patch',
-      'stonecrag_bruiseweed_patch', 'stonecrag_foothill_game', 'stonecrag_jackal_den',
+      'stonecrag_bruiseweed_patch', 'stonecrag_skinning_grounds',
     ],
     fishingHoleIds: ['stonecrag_fishing_hole'],
   },
@@ -504,7 +541,7 @@ export const ZONES: Record<string, Zone> = {
     monsterIds: ['cinder_wolf', 'ashwing_bat', 'molten_crawler', 'ridgeback_marauder', 'scorched_drake'],
     gatherNodeIds: [
       'emberfall_iron_vein', 'emberfall_kingsblood_patch', 'emberfall_liferoot_patch', 'emberfall_goldthorn_patch',
-      'emberfall_ashfang_den', 'emberfall_wolfrun_thicket',
+      'emberfall_skinning_grounds',
     ],
     fishingHoleIds: ['emberfall_fishing_hole'],
   },
@@ -519,7 +556,7 @@ export const ZONES: Record<string, Zone> = {
     monsterIds: ['ash_wraith', 'cinder_scavenger', 'ashforge_golem', 'ember_stalker', 'ruin_marauder'],
     gatherNodeIds: [
       'cinderfall_ore_seam', 'cinderfall_gold_vein', 'cinderfall_khadgars_whisker_patch', 'cinderfall_firebloom_patch',
-      'cinderfall_sungrass_patch', 'cinderfall_ash_burrow', 'cinderfall_scavenger_den',
+      'cinderfall_sungrass_patch', 'cinderfall_skinning_grounds',
     ],
     fishingHoleIds: ['cinderfall_fishing_hole'],
   },
@@ -534,7 +571,7 @@ export const ZONES: Record<string, Zone> = {
     monsterIds: ['cultist_adept', 'living_ember', 'scaleback_drake', 'cultist_zealot', 'magma_hound'],
     gatherNodeIds: [
       'molten_scar_brimstone_vein', 'molten_scar_blindweed_patch', 'molten_scar_ghost_mushroom_patch',
-      'molten_scar_gromsblood_patch', 'molten_scar_scaleback_den', 'molten_scar_scaleback_nest',
+      'molten_scar_gromsblood_patch', 'molten_scar_skinning_grounds',
     ],
     fishingHoleIds: ['molten_scar_fishing_hole'],
   },
@@ -549,8 +586,7 @@ export const ZONES: Record<string, Zone> = {
     monsterIds: ['emberlord_cultist', 'flamewalker', 'charhide_behemoth', 'ashfall_harbinger', 'emberguard_sentinel'],
     gatherNodeIds: [
       'cinderheart_ore_vein', 'cinderheart_platinum_vein', 'cinderheart_dreamfoil_patch',
-      'cinderheart_mountain_silversage_patch', 'cinderheart_black_lotus_patch', 'cinderheart_hide_grounds',
-      'cinderheart_emberscale_nest',
+      'cinderheart_mountain_silversage_patch', 'cinderheart_black_lotus_patch', 'cinderheart_skinning_grounds',
     ],
     fishingHoleIds: ['cinderheart_fishing_hole'],
   },

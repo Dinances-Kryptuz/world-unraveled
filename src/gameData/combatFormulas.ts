@@ -106,6 +106,28 @@ export function healingPowerMultiplier(totalSpi: number): number {
   return 1 + (totalSpi * SPI_HEALING_PCT_PER_POINT) / 100;
 }
 
+// AGI's two jobs, added for the Leatherworking overhaul (gameData/
+// equipmentRolls.ts's ARMOR_STATS now includes AGI): a flat % crit chance
+// and a flat % dodge chance per total point, same statAtLevel-plus-
+// equipment shape as SPI's healing multiplier above. CLASS_GROWTH.AGI is 0
+// for every class (classStats.ts), so totalAgi is just the universal
+// level-1 baseline (5) until a character equips AGI gear — existing combat
+// balance is unchanged for anyone without it. Crits apply
+// CRIT_DAMAGE_MULTIPLIER bonus damage in combatEngine/engine.ts's
+// computeEffectDamage; dodge is a full miss, checked alongside (not
+// replacing) the existing accuracy roll.
+export const AGI_CRIT_PCT_PER_POINT = 0.15;
+export const AGI_DODGE_PCT_PER_POINT = 0.1;
+export const CRIT_DAMAGE_MULTIPLIER = 1.5;
+
+export function critChanceFromAgi(totalAgi: number): number {
+  return Math.max(0, (totalAgi * AGI_CRIT_PCT_PER_POINT) / 100);
+}
+
+export function dodgeChanceFromAgi(totalAgi: number): number {
+  return Math.max(0, (totalAgi * AGI_DODGE_PCT_PER_POINT) / 100);
+}
+
 export function monsterArmor(level: number): number {
   return 3 * level;
 }
