@@ -1,4 +1,4 @@
-import { doc, updateDoc, increment, deleteField } from 'firebase/firestore';
+import { doc, updateDoc, increment, deleteField, arrayUnion } from 'firebase/firestore';
 import { db } from './config';
 import { getCharacter } from './character';
 import { getInventory, grantInventoryItems } from './inventory';
@@ -7,8 +7,9 @@ import { RECIPES } from '../gameData/recipes';
 import { checkLearnProfession, checkRankUp, nextTier } from '../gameData/professionTiers';
 import { TRAINER_ZONE_BY_RANK } from '../gameData/professionTrainers';
 import { ZONES } from '../gameData/zones';
+import { FISHING_ZONE_MASTERY_THRESHOLD } from '../gameData/gatheringEngine';
 import type { ProfessionId } from '../gameData/types';
-import type { Character } from '../types/character';
+import type { Character, ZoneMasteryState } from '../types/character';
 
 export interface ProfessionActionResult {
   success: boolean;
@@ -135,26 +136,71 @@ export async function learnRecipe(uid: string, recipeItemId: string): Promise<Pr
 // level, and only one activity screen is ever live at a time — the one
 // realistic staleness window is two tabs open on the same account
 // simultaneously, which nothing else in this app guards against either.
+//
+// Fishing overhaul: every FishingHole now resolves through the shared
+// zone-Mastery axis (fishingZoneMastery) instead of the old per-hole 0-50
+// Mastery bucket — holeId's old `professions.fishing.mastery.${holeId}`
+// entry is frozen (never written again), exactly like materialMastery
+// freezes a recipe's old per-recipe axis. `character` is a fresh snapshot
+// the caller already fetched (FishingScreen's autosave), reused here only
+// to read fishingZoneMastery/unlockedAchievementIds for the eager Master
+// Angler unlock check, mirroring applyGatheringProfessionResult's
+// herbalismZoneMastery branch exactly — including the rare pearl grant,
+// which (like Mining/Herbalism's rareBonus) is rolled independently of and
+// in addition to the guaranteed fish, at a fixed chance Mastery never
+// touches (see gatheringEngine.ts's resolveGatheringOffline).
 export async function applyFishingResult(
   uid: string,
-  holeId: string,
+  character: Character,
   result: {
     itemId: string;
     quantity: number;
+    rareBonusItemId?: string;
+    rareBonusQuantity: number;
     newSkillLevel: number;
     newSkillXp: number;
-    newMasteryLevel: number;
-    newMasteryXp: number;
+    fishingZoneMastery: { zoneId: string; xpGained: number };
   }
 ): Promise<void> {
-  await updateDoc(doc(db, 'characters', uid), {
+  const characterUpdate: Record<string, unknown> = {
     'professions.fishing.level': result.newSkillLevel,
     'professions.fishing.xp': result.newSkillXp,
-    [`professions.fishing.mastery.${holeId}`]: { level: result.newMasteryLevel, xp: result.newMasteryXp },
-  });
+  };
 
-  if (result.quantity > 0) {
-    await grantInventoryItems(uid, [{ itemId: result.itemId, quantity: result.quantity }]);
+  const { zoneId, xpGained } = result.fishingZoneMastery;
+  if (xpGained > 0) {
+    characterUpdate[`fishingZoneMastery.${zoneId}.xp`] = increment(xpGained);
+
+    const hypotheticalZoneMastery: ZoneMasteryState = {
+      ...character.fishingZoneMastery,
+      [zoneId]: { xp: (character.fishingZoneMastery?.[zoneId]?.xp ?? 0) + xpGained },
+    };
+    const newlyUnlockedIds: string[] = [];
+    const anglerId = `angler_${zoneId}`;
+    if (!character.unlockedAchievementIds.includes(anglerId) && (hypotheticalZoneMastery[zoneId]?.xp ?? 0) >= FISHING_ZONE_MASTERY_THRESHOLD) {
+      newlyUnlockedIds.push(anglerId);
+    }
+    if (
+      !character.unlockedAchievementIds.includes('grandmaster_angler') &&
+      Object.keys(ZONES).every((z) => (hypotheticalZoneMastery[z]?.xp ?? 0) >= FISHING_ZONE_MASTERY_THRESHOLD)
+    ) {
+      newlyUnlockedIds.push('grandmaster_angler');
+    }
+    if (newlyUnlockedIds.length > 0) {
+      characterUpdate.unlockedAchievementIds = arrayUnion(...newlyUnlockedIds);
+      characterUpdate.unlockedTitleIds = arrayUnion(...newlyUnlockedIds);
+    }
+  }
+
+  await updateDoc(doc(db, 'characters', uid), characterUpdate);
+
+  const grants: { itemId: string; quantity: number }[] = [];
+  if (result.quantity > 0) grants.push({ itemId: result.itemId, quantity: result.quantity });
+  if (result.rareBonusItemId && result.rareBonusQuantity > 0) {
+    grants.push({ itemId: result.rareBonusItemId, quantity: result.rareBonusQuantity });
+  }
+  if (grants.length > 0) {
+    await grantInventoryItems(uid, grants);
   }
 }
 

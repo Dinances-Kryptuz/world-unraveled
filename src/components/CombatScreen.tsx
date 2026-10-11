@@ -83,9 +83,10 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
   const combatStateRef = useRef<CombatState | null>(null);
   const pendingKillsRef = useRef<KillReward[]>([]);
   const pendingQuestSignalsRef = useRef<QuestSignals>({ healingDone: 0, abilityUseCounts: {} });
-  const pendingBuffTriggersRef = useRef<{ offensive_action: number; damage_taken: number }>({
+  const pendingBuffTriggersRef = useRef<{ offensive_action: number; damage_taken: number; stat_food_use: number }>({
     offensive_action: 0,
     damage_taken: 0,
+    stat_food_use: 0,
   });
   // Enchanting overhaul's charge counters — a SEPARATE tally from
   // pendingBuffTriggersRef above (not reusing it) because an offensive
@@ -183,7 +184,7 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
     retreatedRef.current = false;
     pendingKillsRef.current = [];
     pendingQuestSignalsRef.current = { healingDone: 0, abilityUseCounts: {} };
-    pendingBuffTriggersRef.current = { offensive_action: 0, damage_taken: 0 };
+    pendingBuffTriggersRef.current = { offensive_action: 0, damage_taken: 0, stat_food_use: 0 };
     pendingEnchantTriggersRef.current = { offensive_action: 0, damage_taken: 0 };
     consumableStateRef.current = buildConsumableAutomationState(character, inventory ?? { items: {} }, new Date());
     combatStateRef.current = createEncounterState(buildEncounterInput(character));
@@ -207,6 +208,10 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
       };
       const result = advanceCombat(combatStateRef.current, ctx, 1);
       pendingKillsRef.current.push(...result.kills);
+      // Cooking overhaul Tier 2 — Stat Food consumes 1 charge per solo
+      // kill (open-world combat only; DungeonScreen counts completed
+      // encounters instead — see its own matching comment).
+      pendingBuffTriggersRef.current.stat_food_use += result.kills.length;
       if (characterRef.current?.notificationsEnabled) {
         for (const kill of result.kills) {
           const lootLines = kill.loot.map((drop) => `${drop.quantity}x ${ITEMS[drop.itemId]?.name ?? drop.itemId}`);
@@ -262,17 +267,18 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
     const enchantTriggers = pendingEnchantTriggersRef.current;
     const consumableState = consumableStateRef.current;
     const hasQuestSignals = questSignals.healingDone > 0 || Object.keys(questSignals.abilityUseCounts).length > 0;
-    const hasBuffTriggers = buffTriggers.offensive_action > 0 || buffTriggers.damage_taken > 0;
+    const hasBuffTriggers = buffTriggers.offensive_action > 0 || buffTriggers.damage_taken > 0 || buffTriggers.stat_food_use > 0;
     const hasEnchantTriggers = kills.length > 0 || enchantTriggers.offensive_action > 0 || enchantTriggers.damage_taken > 0;
     const hasConsumableUsage =
       consumableState.offensiveChargesConsumed > 0 ||
       consumableState.defensiveChargesConsumed > 0 ||
       consumableState.healingUsed > 0 ||
-      consumableState.manaUsed > 0;
+      consumableState.manaUsed > 0 ||
+      consumableState.autoEatUsed > 0;
     if (kills.length === 0 && !hasQuestSignals && !hasBuffTriggers && !hasConsumableUsage) return;
     pendingKillsRef.current = [];
     pendingQuestSignalsRef.current = { healingDone: 0, abilityUseCounts: {} };
-    pendingBuffTriggersRef.current = { offensive_action: 0, damage_taken: 0 };
+    pendingBuffTriggersRef.current = { offensive_action: 0, damage_taken: 0, stat_food_use: 0 };
     pendingEnchantTriggersRef.current = { offensive_action: 0, damage_taken: 0 };
     const currentCharacterForBuffs = characterRef.current ?? character;
     if (hasBuffTriggers) void consumeBuffCharges(currentUser.uid, currentCharacterForBuffs, buffTriggers);
@@ -283,18 +289,26 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
         completedEncounters: kills.length,
       });
     }
-    if (hasConsumableUsage && currentCharacterForBuffs.consumableAutomation) {
+    if (hasConsumableUsage) {
       const usage = {
         offensiveChargesConsumed: consumableState.offensiveChargesConsumed,
         defensiveChargesConsumed: consumableState.defensiveChargesConsumed,
         healingUsed: consumableState.healingUsed,
         manaUsed: consumableState.manaUsed,
       };
+      const autoEatUsed = consumableState.autoEatUsed;
+      const autoEatItemId = consumableState.autoEat?.itemId;
       consumableState.offensiveChargesConsumed = 0;
       consumableState.defensiveChargesConsumed = 0;
       consumableState.healingUsed = 0;
       consumableState.manaUsed = 0;
-      void applyConsumableAutomationUsage(currentUser.uid, currentCharacterForBuffs.consumableAutomation, usage);
+      consumableState.autoEatUsed = 0;
+      void applyConsumableAutomationUsage(
+        currentUser.uid,
+        currentCharacterForBuffs.consumableAutomation,
+        usage,
+        autoEatUsed > 0 && autoEatItemId ? { used: autoEatUsed, itemId: autoEatItemId } : undefined
+      );
     }
 
     const xpGained = Math.round(kills.reduce((sum, k) => sum + k.xpGained, 0));
@@ -435,6 +449,7 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
     const result = tryManualUseAbility(state, 'player', abilityId, ctx);
     if (!result) return;
     pendingKillsRef.current.push(...result.kills);
+    pendingBuffTriggersRef.current.stat_food_use += result.kills.length;
     mergeQuestSignals(pendingQuestSignalsRef.current, result.questSignals);
     for (const event of result.events) {
       if (event.kind === 'damage_out') {
@@ -468,6 +483,16 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
     if (remainingCooldownSeconds(currentCharacter, itemId, effect.cooldownSeconds, new Date()) > 0) return;
 
     const player = state.party.find((p) => p.isPlayer)!;
+    if (effect.recoveryFood) {
+      // Cooking overhaul Tier 1 — Recovery Food's manual use: heals to
+      // FULL and resets the attack timer to 0 (a free action), the one
+      // consumable use with any effect on actionReadyIn. Open-world only —
+      // DungeonScreen's ConsumablesBar never lists a recoveryFood item at
+      // all (see its allowRecoveryFood={false}), so this handler is never
+      // reached from a dungeon/raid.
+      player.hp = player.maxHp;
+      player.actionReadyIn = 0;
+    }
     if (effect.healAmount) {
       player.hp = Math.min(player.maxHp, player.hp + effect.healAmount);
     }
@@ -527,6 +552,7 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
             character={character}
             inventoryItems={inventory?.items ?? {}}
             allowMana={true}
+            allowRecoveryFood={true}
             onUse={handleUseConsumable}
             onEquip={handleEquipConsumable}
           />

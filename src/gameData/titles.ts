@@ -57,6 +57,10 @@ function generateForagerTitles(): TitleDef[] {
   return Object.values(ZONES).map((zone) => ({ id: `forager_${zone.id}`, name: `Master Forager of ${zone.name}` }));
 }
 
+function generateAnglerTitles(): TitleDef[] {
+  return Object.values(ZONES).map((zone) => ({ id: `angler_${zone.id}`, name: `Master Angler of ${zone.name}` }));
+}
+
 function generateAlchemistTitles(): TitleDef[] {
   return Object.values(ZONES).map((zone) => ({ id: `alchemist_${zone.id}`, name: `Master Alchemist of ${zone.name}` }));
 }
@@ -67,6 +71,12 @@ function generateAlchemistTitles(): TitleDef[] {
 // Wand/Staff/Book equipment track).
 function generateEnchanterTitles(): TitleDef[] {
   return Object.values(ZONES).map((zone) => ({ id: `enchanter_${zone.id}`, name: `Master Enchanter of ${zone.name}` }));
+}
+
+// Cooking overhaul — mirrors achievements.ts's generateChefAchievements
+// exactly (same ids, same names).
+function generateChefTitles(): TitleDef[] {
+  return Object.values(ZONES).map((zone) => ({ id: `chef_${zone.id}`, name: `Master Chef of ${zone.name}` }));
 }
 
 export const TITLES: TitleDef[] = [
@@ -80,10 +90,14 @@ export const TITLES: TitleDef[] = [
   { id: 'master_enchanter_armaments', name: 'Master of Armaments' },
   ...generateForagerTitles(),
   { id: 'grandmaster_forager', name: 'Grandmaster Forager' },
+  ...generateAnglerTitles(),
+  { id: 'grandmaster_angler', name: 'Grandmaster Angler' },
   ...generateAlchemistTitles(),
   { id: 'grandmaster_alchemist', name: 'Grandmaster Alchemist' },
   ...generateEnchanterTitles(),
   { id: 'grandmaster_enchanter', name: 'Grandmaster Enchanter' },
+  ...generateChefTitles(),
+  { id: 'grandmaster_chef', name: 'Grandmaster Chef' },
 ];
 
 const TITLES_BY_ID: Record<string, TitleDef> = Object.fromEntries(TITLES.map((t) => [t.id, t]));

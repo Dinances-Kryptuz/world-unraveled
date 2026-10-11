@@ -137,7 +137,7 @@ export function WelcomeBackScreen({
             await setCharacterLevel(user.uid, result.finalLevel, result.hpAfter);
             if (result.finalLevel >= MAX_CHARACTER_LEVEL) void checkAndUnlockNextSlot(user.uid);
           }
-          if (character.consumableAutomation && result.finalConsumableState) {
+          if (result.finalConsumableState) {
             const fcs = result.finalConsumableState;
             const usage = {
               offensiveChargesConsumed: fcs.offensiveChargesConsumed,
@@ -145,8 +145,15 @@ export function WelcomeBackScreen({
               healingUsed: fcs.healingUsed,
               manaUsed: fcs.manaUsed,
             };
-            if (usage.offensiveChargesConsumed > 0 || usage.defensiveChargesConsumed > 0 || usage.healingUsed > 0 || usage.manaUsed > 0) {
-              await applyConsumableAutomationUsage(user.uid, character.consumableAutomation, usage);
+            const autoEat = fcs.autoEatUsed > 0 && fcs.autoEat?.itemId ? { used: fcs.autoEatUsed, itemId: fcs.autoEat.itemId } : undefined;
+            if (
+              usage.offensiveChargesConsumed > 0 ||
+              usage.defensiveChargesConsumed > 0 ||
+              usage.healingUsed > 0 ||
+              usage.manaUsed > 0 ||
+              autoEat
+            ) {
+              await applyConsumableAutomationUsage(user.uid, character.consumableAutomation, usage, autoEat);
             }
           }
           const { offensiveAction, damageTaken } = result.enchantTriggerCounts;
@@ -257,13 +264,13 @@ export function WelcomeBackScreen({
         const hole = FISHING_HOLES[activity.targetId];
         const itemName = ITEMS[hole.itemId]?.name ?? hole.itemId;
         const prof = getProfessionState(character.professions, 'fishing');
-        const masteryState = prof.mastery?.[hole.id] ?? { level: 0, xp: 0 };
         const holeLike: GatheringResourceLike = {
           itemId: hole.itemId,
           baseXp: hole.baseXp,
           secondsPerAction: hole.secondsPerAction,
           requiredLevel: hole.requiredLevel,
           catchChance: hole.catchChance,
+          rareBonus: hole.rareBonus,
         };
         const result = resolveGatheringOffline(
           activity.startedAt,
@@ -271,12 +278,13 @@ export function WelcomeBackScreen({
           holeLike,
           prof.level,
           prof.xp,
-          masteryState.level,
-          masteryState.xp,
+          0,
+          0,
           maxSkillForUnlockedTier('fishing', prof.unlockedTier),
           0,
           undefined,
-          gatheringShirtBonuses(activity.equippedShirtItemId)
+          gatheringShirtBonuses(activity.equippedShirtItemId),
+          { zoneMasteryStartingXp: character.fishingZoneMastery?.[hole.zoneId]?.xp ?? 0 }
         );
         const levelUpNote = result.finalSkill !== prof.level ? ` Your Fishing level reached ${result.finalSkill}!` : '';
         setSummary(

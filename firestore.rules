@@ -218,6 +218,9 @@ service cloud.firestore {
       && isValidUnlockedAchievementIds(after)
       && isValidMaterialMastery(after)
       && isValidHerbalismZoneMastery(after)
+      && isValidFishingZoneMastery(after)
+      && isValidCookingZoneMastery(after)
+      && isValidAutoEatRank(after)
       && isValidAlchemyZoneMastery(after)
       && isValidEnchantingZoneMastery(after)
       && isValidConsumableAutomation(after)
@@ -270,6 +273,15 @@ service cloud.firestore {
   // that writes this field.
   function isValidHerbalismZoneMastery(after) {
     return !('herbalismZoneMastery' in after) || (after.herbalismZoneMastery is map && after.herbalismZoneMastery.size() <= 6);
+  }
+
+  // Same shape-only treatment — Fishing overhaul's shared per-zone Mastery
+  // axis, replacing the old per-hole 0-50 bucket entirely. Full validation
+  // (that a zone id is real, that xp only ever increases) happens in
+  // firebase/professions.ts's applyFishingResult, the only path that writes
+  // this field.
+  function isValidFishingZoneMastery(after) {
+    return !('fishingZoneMastery' in after) || (after.fishingZoneMastery is map && after.fishingZoneMastery.size() <= 6);
   }
 
   // Same treatment as isValidHerbalismZoneMastery above — Alchemy's own
@@ -439,6 +451,22 @@ service cloud.firestore {
     return !('bagSlots' in after) || (after.bagSlots is number && after.bagSlots >= 24 && after.bagSlots <= 500);
   }
 
+  // Cooking overhaul Tier 1 — Auto Eat's rank, 0-3 (see gameData/
+  // cooking.ts's AUTO_EAT_RANKS). Full validation (sequential, zone-gated,
+  // gold spent) happens in firebase/cooking.ts's purchaseAutoEatRank, the
+  // only path that writes this field.
+  function isValidAutoEatRank(after) {
+    return !('autoEatRank' in after) || (after.autoEatRank is number && after.autoEatRank >= 0 && after.autoEatRank <= 3);
+  }
+
+  // Cooking overhaul's 6 independent zone-Mastery pools — same shape-only
+  // treatment as isValidFishingZoneMastery below. Full validation happens
+  // in firebase/character.ts's applyCraftingProfessionResult, the only
+  // path that writes this field.
+  function isValidCookingZoneMastery(after) {
+    return !('cookingZoneMastery' in after) || (after.cookingZoneMastery is map && after.cookingZoneMastery.size() <= 6);
+  }
+
   // Bounded 4-124 — see gameData/bank.ts's BASE_BANK_SLOTS/MAX_BANK_SLOTS.
   // Full validation (gold actually spent, one slot at a time) happens in
   // firebase/bank.ts's buyBankSlot, the only path that increases this.
@@ -449,7 +477,10 @@ service cloud.firestore {
   // Capped at 7 — the number of BuffCategory values (gameData/types.ts) —
   // since at most one buff per category can ever be active at once.
   function isValidActiveBuffs(after) {
-    return !('activeBuffs' in after) || (after.activeBuffs is map && after.activeBuffs.size() <= 7);
+    // Bounded by the number of registered BuffCategory values (8 as of the
+    // Cooking overhaul's 'stat_food' addition) — one active buff per
+    // category at most.
+    return !('activeBuffs' in after) || (after.activeBuffs is map && after.activeBuffs.size() <= 8);
   }
 
   // Same "may not exist yet on an old character" treatment as Smithing/

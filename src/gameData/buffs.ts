@@ -81,7 +81,10 @@ export function chargesToConsume(currentCharges: number, triggerCount: number): 
   return Math.min(currentCharges, triggerCount);
 }
 
-export const BUFF_CATEGORY_TRIGGER: Partial<Record<BuffCategory, 'offensive_action' | 'damage_taken'>> = {
+export const BUFF_CATEGORY_TRIGGER: Partial<Record<BuffCategory, 'offensive_action' | 'damage_taken' | 'stat_food_use'>> = {
   offensive_potion: 'offensive_action',
   defensive_potion: 'damage_taken',
+  // Cooking overhaul Tier 2 — see BuffEffect.trigger's doc comment for why
+  // one key covers both "per solo kill" and "per completed encounter."
+  stat_food: 'stat_food_use',
 };

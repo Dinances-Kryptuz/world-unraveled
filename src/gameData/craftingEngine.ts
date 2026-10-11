@@ -52,6 +52,12 @@ import {
   enchantingZoneMasteryXpToNextMilestone,
   enchantingMasteryMilestone,
 } from './enchantingMastery';
+import {
+  COOKING_ZONE_MASTERY_XP_PER_CRAFT,
+  cookingZoneMasteryPercent,
+  cookingZoneMasteryXpToNextMilestone,
+  cookingMasteryMilestone,
+} from './cookingMastery';
 
 export const CRAFTING_LEVEL_CAP = GATHERING_LEVEL_CAP; // 100, same cap, same curve
 export const craftingXpForNextLevel = gatheringXpForNextLevel;
@@ -163,6 +169,18 @@ export interface CraftingOfflineResult {
   // above, for Enchanting's own separate scroll-crafting zone-Mastery axis.
   enchantingZoneMasteryXpGained?: number;
   finalEnchantingZoneMasteryXp?: number;
+  // Only populated when resolveCraftingOffline is called with
+  // `cookingZoneMastery` (a Recipe.cookingZoneId-tagged recipe) — same role
+  // as enchantingZoneMasteryXpGained/finalEnchantingZoneMasteryXp above, for
+  // Cooking's own 6-zone Mastery axis.
+  cookingZoneMasteryXpGained?: number;
+  finalCookingZoneMasteryXp?: number;
+  // Only present for a Tier 2 (Stat Food) recipe — same batch-by-milestone
+  // shape as alchemyZoneMasteryBatches above, recording how many servings
+  // got rolled at which charge count. Absent for Tier 1/3 recipes (no
+  // charge-count concept — Recovery Food/Feasts are plain stackable
+  // grants), even when cookingZoneMastery is otherwise populated.
+  cookingZoneMasteryBatches?: { quantity: number; chargesAtCraft: number }[];
 }
 
 // Passed to resolveCraftingOffline only for a Recipe.materialId-tagged
@@ -207,6 +225,21 @@ export interface EnchantingZoneMasteryInput {
   startingXp: number;
 }
 
+// Passed to resolveCraftingOffline only for a Recipe.cookingZoneId-tagged
+// recipe (every Cooking overhaul recipe) — governs this recipe's OWN
+// craft-time reduction, ingredient-preservation chance, Tier 1 bonus-
+// serving chance, and (Tier 2 only) charge-count-per-serving from its
+// zone's current Cooking Mastery %. `cookingTier` picks the XP-per-craft
+// weight (gameData/cookingMastery.ts's COOKING_ZONE_MASTERY_XP_PER_CRAFT)
+// and whether charge-count batching applies at all (Tier 2 only — see
+// CraftingOfflineResult.cookingZoneMasteryBatches' doc comment). No per-
+// ingredient-unit split needed (unlike Alchemy's), since no Cooking recipe
+// spans two zones.
+export interface CookingZoneMasteryInput {
+  startingXp: number;
+  cookingTier: 1 | 2 | 3;
+}
+
 // Always the OFFLINE/batched resolver, even for a single ~20s autosave
 // chunk — same convention gatheringEngine.ts's resolveGatheringOffline
 // established (a small chunk just means the batch loop runs once or
@@ -227,7 +260,8 @@ export function resolveCraftingOffline(
   materialMastery?: MaterialMasteryInput,
   alchemyZoneMastery?: AlchemyZoneMasteryInput,
   craftingShirtBonuses?: CraftingShirtBonuses,
-  enchantingZoneMastery?: EnchantingZoneMasteryInput
+  enchantingZoneMastery?: EnchantingZoneMasteryInput,
+  cookingZoneMastery?: CookingZoneMasteryInput
 ): CraftingOfflineResult {
   const progress = resolveElapsedProgress(startedAt, now);
   let remainingSeconds = progress.effectiveHours * 3600;
@@ -245,6 +279,7 @@ export function resolveCraftingOffline(
   let materialXp = materialMastery?.startingXp ?? 0;
   let zoneXp = alchemyZoneMastery?.startingXp ?? 0;
   let enchantZoneXp = enchantingZoneMastery?.startingXp ?? 0;
+  let cookingZoneXp = cookingZoneMastery?.startingXp ?? 0;
   const startColorTier = craftingColorTier(skill, recipe.requiredSkill);
   const bankedCap = craftingBankedXpCapAt(skillCap);
 
@@ -259,6 +294,8 @@ export function resolveCraftingOffline(
   let alchemyZoneMasteryXpGained = 0;
   const alchemyZoneMasteryBatches: { quantity: number; chargesAtCraft: number }[] = [];
   let enchantingZoneMasteryXpGained = 0;
+  let cookingZoneMasteryXpGained = 0;
+  const cookingZoneMasteryBatches: { quantity: number; chargesAtCraft: number }[] = [];
   let iterations = 0;
   let stoppedForMaterials = false;
 
@@ -269,6 +306,8 @@ export function resolveCraftingOffline(
     const zoneMilestone = alchemyZoneMastery ? alchemyMasteryMilestone(zonePercent) : undefined;
     const enchantZonePercent = enchantingZoneMastery ? enchantingZoneMasteryPercent(enchantZoneXp) : 0;
     const enchantZoneMilestone = enchantingZoneMastery ? enchantingMasteryMilestone(enchantZonePercent) : undefined;
+    const cookingZonePercent = cookingZoneMastery ? cookingZoneMasteryPercent(cookingZoneXp) : 0;
+    const cookingZoneMilestone = cookingZoneMastery ? cookingMasteryMilestone(cookingZonePercent) : undefined;
     const speedMult = materialMastery
       ? materialMasterySpeedMultiplier(materialPercent)
       : craftingMasterySpeedMultiplier(masteryLevel);
@@ -276,7 +315,9 @@ export function resolveCraftingOffline(
       ? recipe.craftSeconds * (1 - zoneMilestone.craftTimeReductionPct / 100)
       : enchantZoneMilestone
         ? recipe.craftSeconds * (1 - enchantZoneMilestone.craftTimeReductionPct / 100)
-        : recipe.craftSeconds / speedMult;
+        : cookingZoneMilestone
+          ? recipe.craftSeconds * (1 - cookingZoneMilestone.craftTimeReductionPct / 100)
+          : recipe.craftSeconds / speedMult;
     const craftSeconds = craftSecondsBeforeShirt / (1 + (craftingShirtBonuses?.craftingSpeedPct ?? 0) / 100);
     const timeLimitedCrafts = Math.floor(remainingSeconds / craftSeconds);
     // Availability is checked against the FULL material cost (ignoring the
@@ -313,7 +354,11 @@ export function resolveCraftingOffline(
     const craftsToSkillCapOrLevel =
       belowCap || bankNotFull ? Math.max(1, Math.ceil(skillXpRoom / xpPerCraft)) : Infinity;
     const craftsToMasteryUp =
-      !materialMastery && !alchemyZoneMastery && !enchantingZoneMastery && masteryLevel < RECIPE_MASTERY_MAX_LEVEL
+      !materialMastery &&
+      !alchemyZoneMastery &&
+      !enchantingZoneMastery &&
+      !cookingZoneMastery &&
+      masteryLevel < RECIPE_MASTERY_MAX_LEVEL
         ? Math.max(1, Math.ceil((recipeMasteryXpForNextLevel(masteryLevel) - masteryXp) / masteryXpPerCraft))
         : Infinity;
     // Caps each iteration so material-Mastery percent moves at most ~1 point
@@ -346,6 +391,18 @@ export function resolveCraftingOffline(
       alchemyZoneMastery && zoneXpPerCraft > 0
         ? Math.max(1, Math.ceil(alchemyZoneMasteryXpToNextMilestone(zoneXp) / zoneXpPerCraft))
         : Infinity;
+    // Cooking's own zone-Mastery axis — flat XP per craft, WEIGHTED by
+    // Recipe.cookingTier (gameData/cookingMastery.ts's
+    // COOKING_ZONE_MASTERY_XP_PER_CRAFT), same milestone-tier stepping as
+    // Alchemy/Enchanting above.
+    const cookingZoneXpPerCraft = cookingZoneMastery
+      ? COOKING_ZONE_MASTERY_XP_PER_CRAFT[cookingZoneMastery.cookingTier] *
+        (1 + (craftingShirtBonuses?.masteryXpPct ?? 0) / 100)
+      : 0;
+    const craftsToNextCookingMilestone =
+      cookingZoneMastery && cookingZoneXpPerCraft > 0
+        ? Math.max(1, Math.ceil(cookingZoneMasteryXpToNextMilestone(cookingZoneXp) / cookingZoneXpPerCraft))
+        : Infinity;
 
     const craftAttempts = Math.min(
       craftsAvailableNow,
@@ -353,18 +410,29 @@ export function resolveCraftingOffline(
       craftsToMasteryUp,
       craftsToNextMasteryPercentPoint,
       craftsToNextMilestone,
-      craftsToNextEnchantMilestone
+      craftsToNextEnchantMilestone,
+      craftsToNextCookingMilestone
     );
     const bonusChance = materialMastery
       ? materialMasteryBonusChance(materialPercent)
-      : alchemyZoneMastery || enchantingZoneMastery
-        ? 0 // Zone-Mastery axes' bonuses are charges/speed/preserve only — never bonus output.
+      : alchemyZoneMastery || enchantingZoneMastery || cookingZoneMastery
+        ? 0 // Zone-Mastery axes' bonuses are charges/speed/preserve only — never probabilistic bonus output.
         : craftingMasteryBonusChance(masteryLevel);
+    // Cooking's Tier 1 "+1 serving from 25% zone Mastery" reward is a FLAT
+    // deterministic extra, not a probabilistic bonusChance fraction (unlike
+    // every other axis's bonus-output share) — per the design brief's own
+    // "+1 Tier1 serving" wording, applied only to Tier 1 (Recovery Food)
+    // recipes; Tier 2/3 recipes tagged with cookingZoneMastery get 0 here
+    // (their own reward is charges/speed/preserve instead).
+    const cookingBonusServingsPerCraft =
+      cookingZoneMastery && cookingZoneMastery.cookingTier === 1 ? cookingZoneMilestone!.tier1BonusServings : 0;
     // Ingredient-save is strictly a per-recipe-Mastery bonus — 0 whenever
     // materialMastery/alchemyZoneMastery is active (neither design includes
     // it); Enchanting's OWN zone Mastery is the one axis that DOES grant a
     // save chance, from its own milestone table (per the design brief's
-    // explicit "crafting speed + material-preservation chance"). The Shirt
+    // explicit "crafting speed + material-preservation chance"), and
+    // Cooking's zone Mastery grants the same kind of save chance from its
+    // own milestone table too. The Shirt
     // of Preservation's materialPreservePct is a separate bonus source and
     // always applies on top, regardless of which Mastery axis (if any)
     // governs this recipe.
@@ -373,10 +441,12 @@ export function resolveCraftingOffline(
         ? 0
         : enchantZoneMilestone
           ? enchantZoneMilestone.materialPreserveChancePct / 100
-          : craftingMasteryIngredientSaveChance(masteryLevel)) +
+          : cookingZoneMilestone
+            ? cookingZoneMilestone.materialPreserveChancePct / 100
+            : craftingMasteryIngredientSaveChance(masteryLevel)) +
       (craftingShirtBonuses?.materialPreservePct ?? 0) / 100;
 
-    const quantityThisBatch = craftAttempts * (1 + bonusChance);
+    const quantityThisBatch = craftAttempts * (1 + bonusChance) + craftAttempts * cookingBonusServingsPerCraft;
     itemsCrafted += quantityThisBatch;
     remainingSeconds -= craftAttempts * craftSeconds;
     if (recipe.goldCost) remainingGold -= craftAttempts * recipe.goldCost;
@@ -404,6 +474,18 @@ export function resolveCraftingOffline(
       const enchantZoneXpThisBatch = craftAttempts * enchantZoneXpPerCraft;
       enchantingZoneMasteryXpGained += enchantZoneXpThisBatch;
       enchantZoneXp += enchantZoneXpThisBatch;
+    } else if (cookingZoneMastery) {
+      // Charge-count batching only matters for a Tier 2 (Stat Food) recipe
+      // — Tier 1/3 recipes still accrue XP into the same zone pool (that's
+      // the whole point of the weighted XP), just with no charges concept
+      // to batch by, so the batches array stays empty for them (the
+      // caller's plain resultQuantity grant already handles those tiers).
+      if (cookingZoneMastery.cookingTier === 2) {
+        cookingZoneMasteryBatches.push({ quantity: quantityThisBatch, chargesAtCraft: cookingZoneMilestone!.tier2Charges });
+      }
+      const cookingZoneXpThisBatch = craftAttempts * cookingZoneXpPerCraft;
+      cookingZoneMasteryXpGained += cookingZoneXpThisBatch;
+      cookingZoneXp += cookingZoneXpThisBatch;
     } else {
       masteryXpGained += craftAttempts * masteryXpPerCraft;
       masteryXp += craftAttempts * masteryXpPerCraft;
@@ -413,7 +495,7 @@ export function resolveCraftingOffline(
       skillXp -= craftingXpForNextLevel(skill);
       skill++;
     }
-    if (!materialMastery && !alchemyZoneMastery && !enchantingZoneMastery) {
+    if (!materialMastery && !alchemyZoneMastery && !enchantingZoneMastery && !cookingZoneMastery) {
       while (masteryLevel < RECIPE_MASTERY_MAX_LEVEL && masteryXp >= recipeMasteryXpForNextLevel(masteryLevel)) {
         masteryXp -= recipeMasteryXpForNextLevel(masteryLevel);
         masteryLevel++;
@@ -456,6 +538,13 @@ export function resolveCraftingOffline(
       : {}),
     ...(enchantingZoneMastery
       ? { enchantingZoneMasteryXpGained, finalEnchantingZoneMasteryXp: enchantZoneXp }
+      : {}),
+    ...(cookingZoneMastery
+      ? {
+          cookingZoneMasteryXpGained,
+          finalCookingZoneMasteryXp: cookingZoneXp,
+          ...(cookingZoneMastery.cookingTier === 2 ? { cookingZoneMasteryBatches } : {}),
+        }
       : {}),
   };
 }

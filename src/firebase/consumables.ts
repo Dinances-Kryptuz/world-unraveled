@@ -56,11 +56,68 @@ export async function setEquippedConsumable(
     if (!item || item.type !== 'consumable' || !item.consumableEffect) {
       return { success: false, reason: 'That isn’t a consumable.' };
     }
-    const isFood = item.consumableEffect.buff?.category === 'well_fed';
+    const isFood = item.consumableEffect.buff?.category === 'well_fed' || !!item.consumableEffect.recoveryFood;
     if (slot === 'food' && !isFood) return { success: false, reason: 'Not a food item.' };
     if (slot === 'potion' && isFood) return { success: false, reason: 'Not a potion.' };
   }
   await updateDoc(doc(db, 'characters', uid), { [`equippedConsumables.${slot}`]: itemId });
+  return { success: true };
+}
+
+// Cooking overhaul Tier 2 — Stat Food. Unlike the fixed-charges-on-item
+// potions buffUpdateForItem above handles, a Stat Food serving's charge
+// count was rolled at CRAFT time (1-4, from that zone's Cooking Mastery —
+// see craftingEngine.ts/chargedConsumables), so "using" one means
+// consuming exactly ONE unit from inventory right now and copying THAT
+// specific bucket's remainingCharges into activeBuffs.stat_food — never
+// item.consumableEffect.buff.charges, which stays undefined for every
+// Stat Food item definition. Spends the weakest (fewest-remaining-charges)
+// owned bucket first, same "finish nearly-spent servings before touching
+// fresher ones" convention as gameData/consumableCharges.ts's
+// applyChargeConsumption. Replaces whatever Stat Food buff was already
+// active — its leftover charges are simply discarded, per the design
+// brief's explicit "replacing (not stacking) a previous Stat Food buff."
+export async function equipStatFood(uid: string, itemId: string): Promise<{ success: boolean; reason?: string }> {
+  const item = ITEMS[itemId];
+  if (!item?.consumableEffect?.buff || item.consumableEffect.buff.category !== 'stat_food') {
+    return { success: false, reason: 'That isn’t a Stat Food.' };
+  }
+
+  const inventory = await getInventory(uid);
+  const buckets = Object.values(inventory.chargedConsumables ?? {}).filter(
+    (b) => b.itemId === itemId && b.remainingCharges > 0 && b.quantity > 0
+  );
+  if (buckets.length === 0) return { success: false, reason: 'You don’t have any.' };
+  buckets.sort((a, b) => a.remainingCharges - b.remainingCharges);
+  const chosen = buckets[0];
+
+  const instanceId = chargedInstanceId(itemId, chosen.remainingCharges);
+  const inventoryUpdate: Record<string, unknown> =
+    chosen.quantity > 1
+      ? { [`chargedConsumables.${instanceId}.quantity`]: increment(-1) }
+      : { [`chargedConsumables.${instanceId}`]: deleteField() };
+
+  await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), inventoryUpdate);
+  await updateDoc(doc(db, 'characters', uid), {
+    'activeBuffs.stat_food': { itemId, charges: chosen.remainingCharges },
+  });
+  return { success: true };
+}
+
+// Cooking overhaul Tier 3 — Feasts. Consumed once at a dungeon/raid run's
+// start (see DungeonScreen.tsx's pre-run picker) — just an inventory
+// decrement; the caller already knows the item's feastStatBonuses (read
+// straight from ITEMS, same as Tier 1/2's catalog-driven display) and
+// keeps them in a local ref for the run's whole lifetime, since a dungeon
+// run has no persisted CurrentActivity to snapshot them onto (see
+// DungeonScreen.tsx's own module doc comment on why dungeon state is
+// client-session-only).
+export async function consumeFeast(uid: string, itemId: string): Promise<{ success: boolean; reason?: string }> {
+  const item = ITEMS[itemId];
+  if (!item?.consumableEffect?.feastStatBonuses) return { success: false, reason: 'That isn’t a Feast.' };
+  const inventory = await getInventory(uid);
+  if ((inventory.items[itemId] ?? 0) <= 0) return { success: false, reason: 'You don’t have any.' };
+  await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), { [`items.${itemId}`]: increment(-1) });
   return { success: true };
 }
 
@@ -72,7 +129,12 @@ export async function setEquippedConsumable(
 export async function useConsumableOutOfCombat(uid: string, itemId: string): Promise<{ success: boolean; reason?: string }> {
   const item = ITEMS[itemId];
   if (!item?.consumableEffect) return { success: false, reason: 'That can’t be used.' };
-  if (item.consumableEffect.healAmount === undefined && !item.consumableEffect.buff && item.consumableEffect.bagCapacityBonus === undefined) {
+  if (
+    item.consumableEffect.healAmount === undefined &&
+    !item.consumableEffect.buff &&
+    item.consumableEffect.bagCapacityBonus === undefined &&
+    !item.consumableEffect.recoveryFood
+  ) {
     return { success: false, reason: 'Only usable in combat.' };
   }
 
@@ -90,13 +152,18 @@ export async function useConsumableOutOfCombat(uid: string, itemId: string): Pro
     [`itemCooldowns.${itemId}`]: serverTimestamp(),
     ...buffUpdateForItem(item, itemId, now),
   };
-  if (item.consumableEffect.healAmount !== undefined) {
+  if (item.consumableEffect.healAmount !== undefined || item.consumableEffect.recoveryFood) {
     const equipBonuses = getEquipmentStatBonuses(character.equipment, character.enchantments, character.enchantmentCharges);
     const talentTotals = character.spec ? evaluateTalents(character.spec, character.talentPicks).totals : EMPTY_TALENT_TOTALS;
     const enchantTotals = buildActiveEnchantTotals(character.enchantments, character.enchantmentCharges);
     const charMaxHp = maxHp(character.class, character.level, equipBonuses, talentTotals.hpMultPct, enchantTotals.flatHpBonus);
-    const currentHp = resolveCurrentHp(character.currentHp, charMaxHp, character.hpCheckpointAt, now);
-    characterUpdate.currentHp = Math.min(charMaxHp, currentHp + item.consumableEffect.healAmount);
+    // Recovery Food's manual use heals to FULL, overriding healAmount —
+    // there's no live Combatant.actionReadyIn to reset out of combat (see
+    // CombatScreen's handleUseConsumable for the in-combat path, which
+    // resets it), so this is just the heal half of the effect.
+    characterUpdate.currentHp = item.consumableEffect.recoveryFood
+      ? charMaxHp
+      : Math.min(charMaxHp, resolveCurrentHp(character.currentHp, charMaxHp, character.hpCheckpointAt, now) + item.consumableEffect.healAmount!);
     characterUpdate.hpCheckpointAt = serverTimestamp();
   }
   if (item.consumableEffect.bagCapacityBonus !== undefined) {
@@ -119,7 +186,7 @@ export async function useConsumableOutOfCombat(uid: string, itemId: string): Pro
 export async function consumeBuffCharges(
   uid: string,
   character: Character,
-  triggerCounts: Partial<Record<'offensive_action' | 'damage_taken', number>>
+  triggerCounts: Partial<Record<'offensive_action' | 'damage_taken' | 'stat_food_use', number>>
 ): Promise<void> {
   const update: Record<string, unknown> = {};
   for (const [category, buff] of Object.entries(character.activeBuffs) as [BuffCategory, { itemId: string; charges?: number }][]) {
@@ -194,25 +261,39 @@ async function consumeChargedConsumable(uid: string, itemId: string, totalCharge
 // claim (WelcomeBackScreen) — never per tick/hit.
 export async function applyConsumableAutomationUsage(
   uid: string,
-  automation: ConsumableAutomationSettings,
-  usage: { offensiveChargesConsumed: number; defensiveChargesConsumed: number; healingUsed: number; manaUsed: number }
+  // Optional — Auto Eat (below) has its own rank-driven trigger, entirely
+  // independent of the player-configured Part 8 settings object, so a
+  // character who's never touched that settings screen (automation
+  // undefined) can still have autoEat usage to persist here.
+  automation: ConsumableAutomationSettings | undefined,
+  usage: { offensiveChargesConsumed: number; defensiveChargesConsumed: number; healingUsed: number; manaUsed: number },
+  // Cooking overhaul Tier 1 — Auto Eat's own usage tally + the item it
+  // actually ate (whatever was pinned to equippedConsumables.food when the
+  // engine built this batch's ConsumableAutomationRuntimeState — see
+  // buildAutoEatState), separate from `automation`/`usage` above since Auto
+  // Eat isn't part of the player-configured ConsumableAutomationSettings.
+  autoEat?: { used: number; itemId: string }
 ): Promise<void> {
-  if (usage.offensiveChargesConsumed > 0 && automation.offensiveItemId) {
+  if (usage.offensiveChargesConsumed > 0 && automation?.offensiveItemId) {
     await consumeChargedConsumable(uid, automation.offensiveItemId, usage.offensiveChargesConsumed);
   }
-  if (usage.defensiveChargesConsumed > 0 && automation.defensiveItemId) {
+  if (usage.defensiveChargesConsumed > 0 && automation?.defensiveItemId) {
     await consumeChargedConsumable(uid, automation.defensiveItemId, usage.defensiveChargesConsumed);
   }
 
   const characterUpdate: Record<string, unknown> = {};
   const inventoryUpdate: Record<string, unknown> = {};
-  if (usage.healingUsed > 0 && automation.healingItemId) {
+  if (usage.healingUsed > 0 && automation?.healingItemId) {
     inventoryUpdate[`items.${automation.healingItemId}`] = increment(-usage.healingUsed);
     characterUpdate[`itemCooldowns.${automation.healingItemId}`] = serverTimestamp();
   }
-  if (usage.manaUsed > 0 && automation.manaItemId) {
+  if (usage.manaUsed > 0 && automation?.manaItemId) {
     inventoryUpdate[`items.${automation.manaItemId}`] = increment(-usage.manaUsed);
     characterUpdate[`itemCooldowns.${automation.manaItemId}`] = serverTimestamp();
+  }
+  if (autoEat && autoEat.used > 0) {
+    inventoryUpdate[`items.${autoEat.itemId}`] = increment(-autoEat.used);
+    characterUpdate[`itemCooldowns.${autoEat.itemId}`] = serverTimestamp();
   }
   if (Object.keys(characterUpdate).length > 0) {
     await updateDoc(doc(db, 'characters', uid), characterUpdate);

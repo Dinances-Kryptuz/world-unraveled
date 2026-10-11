@@ -2370,8 +2370,9 @@ export const ITEMS: Record<string, ItemDef> = {
     stackable: true, equipSlot: 'tool', toolType: 'fishing_rod', gatherBonusPct: 10, sellValue: 95,
   },
 
-  // ── Fish — Fishing's primary yield, feeding Cooking. One common fish per
-  // zone, scaling in value and in the Cooking recipes that use them.
+  // ── Fish (legacy) — Fishing's original single-fish-per-zone yield, frozen
+  // in place and still catchable from each zone's original fishing hole.
+  // Superseded by the full targeted-fishing catalog below.
   brook_trout: {
     id: 'brook_trout', name: 'Brook Trout', type: 'material',
     description: 'A common trout pulled from Greenhollow’s streams.',
@@ -2401,6 +2402,165 @@ export const ITEMS: Record<string, ItemDef> = {
     id: 'emberheart_koi', name: 'Emberheart Koi', type: 'material',
     description: 'A striking, ember-scaled koi found only at the world’s molten heart.',
     stackable: true, sellValue: 20,
+  },
+
+  // ── Fishing — targeted catches across the six real zones. Each zone's
+  // fish share a zone-exclusive rare Pearl (fixed-chance catch bonus, see
+  // FISHING_HOLES rareBonus), which Cooking and other professions prize.
+  // Greenhollow Fields
+  brilliant_smallfish: {
+    id: 'brilliant_smallfish', name: 'Brilliant Smallfish', type: 'material',
+    description: 'A catch from the gentle streams of Greenhollow Fields.',
+    stackable: true, sellValue: 2,
+  },
+  longjaw_mud_snapper: {
+    id: 'longjaw_mud_snapper', name: 'Longjaw Mud Snapper', type: 'material',
+    description: 'A catch from the gentle streams of Greenhollow Fields.',
+    stackable: true, sellValue: 3,
+  },
+  slitherskin_mackerel: {
+    id: 'slitherskin_mackerel', name: 'Slitherskin Mackerel', type: 'material',
+    description: 'A catch from the gentle streams of Greenhollow Fields.',
+    stackable: true, sellValue: 4,
+  },
+  // Stonecrag Foothills
+  bristle_whisker_catfish: {
+    id: 'bristle_whisker_catfish', name: 'Bristle Whisker Catfish', type: 'material',
+    description: 'A catch from the rivers and marshes of Stonecrag Foothills.',
+    stackable: true, sellValue: 4,
+  },
+  rainbow_fin_albacore: {
+    id: 'rainbow_fin_albacore', name: 'Rainbow Fin Albacore', type: 'material',
+    description: 'A catch from the rivers and marshes of Stonecrag Foothills.',
+    stackable: true, sellValue: 5,
+  },
+  sagefish: {
+    id: 'sagefish', name: 'Sagefish', type: 'material',
+    description: 'A catch from the rivers and marshes of Stonecrag Foothills.',
+    stackable: true, sellValue: 6,
+  },
+  oily_blackmouth: {
+    id: 'oily_blackmouth', name: 'Oily Blackmouth', type: 'material',
+    description: 'A catch from the rivers and marshes of Stonecrag Foothills.',
+    stackable: true, sellValue: 7,
+  },
+  // Emberfall Ridge
+  mithril_head_trout: {
+    id: 'mithril_head_trout', name: 'Mithril Head Trout', type: 'material',
+    description: 'A catch from the deep waters of Emberfall Ridge.',
+    stackable: true, sellValue: 7,
+  },
+  rockscale_cod: {
+    id: 'rockscale_cod', name: 'Rockscale Cod', type: 'material',
+    description: 'A catch from the deep waters of Emberfall Ridge.',
+    stackable: true, sellValue: 8,
+  },
+  greater_sagefish: {
+    id: 'greater_sagefish', name: 'Greater Sagefish', type: 'material',
+    description: 'A catch from the deep waters of Emberfall Ridge.',
+    stackable: true, sellValue: 9,
+  },
+  firefin_snapper: {
+    id: 'firefin_snapper', name: 'Firefin Snapper', type: 'material',
+    description: 'A catch from the deep waters of Emberfall Ridge.',
+    stackable: true, sellValue: 10,
+  },
+  // Cinderfall Depths
+  redgill: {
+    id: 'redgill', name: 'Redgill', type: 'material',
+    description: 'A catch from the ancient waters of Cinderfall Depths.',
+    stackable: true, sellValue: 10,
+  },
+  nightfin_snapper: {
+    id: 'nightfin_snapper', name: 'Nightfin Snapper', type: 'material',
+    description: 'A catch from the ancient waters of Cinderfall Depths.',
+    stackable: true, sellValue: 11,
+  },
+  sunscale_salmon: {
+    id: 'sunscale_salmon', name: 'Sunscale Salmon', type: 'material',
+    description: 'A catch from the ancient waters of Cinderfall Depths.',
+    stackable: true, sellValue: 13,
+  },
+  spotted_yellowtail: {
+    id: 'spotted_yellowtail', name: 'Spotted Yellowtail', type: 'material',
+    description: 'A catch from the ancient waters of Cinderfall Depths.',
+    stackable: true, sellValue: 14,
+  },
+  // The Molten Scar
+  stonescale_eel: {
+    id: 'stonescale_eel', name: 'Stonescale Eel', type: 'material',
+    description: 'A catch from the dangerous waters of The Molten Scar.',
+    stackable: true, sellValue: 14,
+  },
+  glossy_mightfish: {
+    id: 'glossy_mightfish', name: 'Glossy Mightfish', type: 'material',
+    description: 'A catch from the dangerous waters of The Molten Scar.',
+    stackable: true, sellValue: 16,
+  },
+  whitescale_salmon: {
+    id: 'whitescale_salmon', name: 'Whitescale Salmon', type: 'material',
+    description: 'A catch from the dangerous waters of The Molten Scar.',
+    stackable: true, sellValue: 18,
+  },
+  darkclaw_lobster: {
+    id: 'darkclaw_lobster', name: 'Darkclaw Lobster', type: 'material',
+    description: 'A catch from the dangerous waters of The Molten Scar.',
+    stackable: true, sellValue: 20,
+  },
+  // Cinderheart Crater
+  emberfin_snapper: {
+    id: 'emberfin_snapper', name: 'Emberfin Snapper', type: 'material',
+    description: 'A catch from the ember-warmed waters of Cinderheart Crater.',
+    stackable: true, sellValue: 20,
+  },
+  magmascale_eel: {
+    id: 'magmascale_eel', name: 'Magmascale Eel', type: 'material',
+    description: 'A catch from the ember-warmed waters of Cinderheart Crater.',
+    stackable: true, sellValue: 21,
+  },
+  ashen_salmon: {
+    id: 'ashen_salmon', name: 'Ashen Salmon', type: 'material',
+    description: 'A catch from the ember-warmed waters of Cinderheart Crater.',
+    stackable: true, sellValue: 22,
+  },
+  molten_lobster: {
+    id: 'molten_lobster', name: 'Molten Lobster', type: 'material',
+    description: 'A catch from the ember-warmed waters of Cinderheart Crater.',
+    stackable: true, sellValue: 23,
+  },
+
+  // ── Zone pearls — a fixed 3% per-catch rare bonus from any fishing hole
+  // in that zone, independent of mastery/level/speed. Shared crafting
+  // materials across professions (not auto-consumed by any recipe).
+  freshwater_pearl: {
+    id: 'freshwater_pearl', name: 'Freshwater Pearl', type: 'material',
+    description: 'A rare, lustrous pearl found only in the waters of Greenhollow Fields.',
+    stackable: true, sellValue: 15,
+  },
+  river_pearl: {
+    id: 'river_pearl', name: 'River Pearl', type: 'material',
+    description: 'A rare, lustrous pearl found only in the waters of Stonecrag Foothills.',
+    stackable: true, sellValue: 28,
+  },
+  deepwater_pearl: {
+    id: 'deepwater_pearl', name: 'Deepwater Pearl', type: 'material',
+    description: 'A rare, lustrous pearl found only in the waters of Emberfall Ridge.',
+    stackable: true, sellValue: 45,
+  },
+  moonlit_pearl: {
+    id: 'moonlit_pearl', name: 'Moonlit Pearl', type: 'material',
+    description: 'A rare, lustrous pearl found only in the waters of Cinderfall Depths.',
+    stackable: true, sellValue: 65,
+  },
+  prismatic_pearl: {
+    id: 'prismatic_pearl', name: 'Prismatic Pearl', type: 'material',
+    description: 'A rare, lustrous pearl found only in the waters of The Molten Scar.',
+    stackable: true, sellValue: 90,
+  },
+  ember_pearl: {
+    id: 'ember_pearl', name: 'Ember Pearl', type: 'material',
+    description: 'A rare, lustrous pearl found only in the waters of Cinderheart Crater.',
+    stackable: true, sellValue: 120,
   },
 
   // ── Cooking's non-fish ingredients — monster drops (boar_meat/raw_meat
@@ -3255,7 +3415,9 @@ export const ITEMS: Record<string, ItemDef> = {
     consumableEffect: { cooldownSeconds: 60, buff: { category: 'defensive_potion', mitigationMultiplierPct: 18, charges: 25 } },
   },
 
-  // ── Cooking food — one "Well Fed" style dish per zone, scaling in both
+  // ── Cooking food (legacy) — frozen in place (their recipes are deleted,
+  // not these items — see recipes.ts) for the full 3-tier Cooking overhaul
+  // below. One "Well Fed" style dish per zone, scaling in both
   // heal amount and stat bonus. Only one Well Fed buff active at a time
   // (same exclusivity rule as potions), and food is a separate buff
   // category entirely so eating doesn't compete with potions for a slot.
@@ -3390,6 +3552,141 @@ export const ITEMS: Record<string, ItemDef> = {
     id: 'recipe_pyraxis_flame_seared_flank', name: 'Recipe: Pyraxis Flame-Seared Flank', type: 'recipe',
     description: 'A scorched recipe card, pried from Pyraxis’s hoard. Use to learn the recipe.',
     stackable: true, teachesRecipeId: 'pyraxis_flame_seared_flank', sellValue: 0,
+  },
+
+  // ── Cooking overhaul Tier 1 — Recovery Food. Pure sustain: manual use
+  // heals to FULL and resets the attack timer (see recoveryFood's doc
+  // comment in types.ts); Auto Eat (a purchased profession rank, not a
+  // recipe) uses the same item for a smaller rank-scaled heal. No stat
+  // bonuses, no buff, and completely unusable in a dungeon/raid either
+  // way. One dish per zone, primarily built from that zone's fish.
+  greenhollow_hearth_stew: {
+    id: 'greenhollow_hearth_stew', name: 'Greenhollow Hearth Stew', type: 'consumable',
+    description: 'A simple, filling stew of smallfish and boar meat. Restores all health when eaten manually.',
+    stackable: true, sellValue: 3,
+    consumableEffect: { cooldownSeconds: 20, recoveryFood: true },
+  },
+  stonecrag_camp_broth: {
+    id: 'stonecrag_camp_broth', name: 'Stonecrag Camp Broth', type: 'consumable',
+    description: 'A hearty trailside broth of catfish and game meat. Restores all health when eaten manually.',
+    stackable: true, sellValue: 6,
+    consumableEffect: { cooldownSeconds: 20, recoveryFood: true },
+  },
+  emberfall_field_rations: {
+    id: 'emberfall_field_rations', name: 'Emberfall Field Rations', type: 'consumable',
+    description: 'Dense, heat-cured trout rations carried by Emberfall’s hardiest travelers. Restores all health when eaten manually.',
+    stackable: true, sellValue: 12,
+    consumableEffect: { cooldownSeconds: 20, recoveryFood: true },
+  },
+  cinderfall_scavengers_stew: {
+    id: 'cinderfall_scavengers_stew', name: 'Cinderfall Scavenger’s Stew', type: 'consumable',
+    description: 'Redgill and scavenged meat, boiled down into something surprisingly restorative. Restores all health when eaten manually.',
+    stackable: true, sellValue: 22,
+    consumableEffect: { cooldownSeconds: 20, recoveryFood: true },
+  },
+  molten_hound_roast: {
+    id: 'molten_hound_roast', name: 'Molten Hound Roast', type: 'consumable',
+    description: 'Stonescale eel and magma hound meat, roasted together over the Scar’s own heat. Restores all health when eaten manually.',
+    stackable: true, sellValue: 38,
+    consumableEffect: { cooldownSeconds: 20, recoveryFood: true },
+  },
+  cinderheart_ember_roast: {
+    id: 'cinderheart_ember_roast', name: 'Cinderheart Ember Roast', type: 'consumable',
+    description: 'Emberfin snapper and behemoth flank, slow-roasted at the world’s molten heart. Restores all health when eaten manually.',
+    stackable: true, sellValue: 60,
+    consumableEffect: { cooldownSeconds: 20, recoveryFood: true },
+  },
+
+  // ── Cooking overhaul Tier 2 — Stat Food. One dish per zone, granting a
+  // temporary bonus to all 5 primary stats (run through the existing class/
+  // spec stat-conversion system — no new combat formulas). Charges are
+  // deliberately absent here: they're rolled at CRAFT time by that zone's
+  // Cooking Mastery (1-4, see gameData/cookingMastery.ts) into a
+  // chargedConsumables bucket, never a fixed property of the item itself —
+  // see firebase/consumables.ts's equipStatFood. No healAmount — Stat Food
+  // restores no health, per the design brief.
+  greenhollow_hunters_stew: {
+    id: 'greenhollow_hunters_stew', name: 'Greenhollow Hunter’s Stew', type: 'consumable',
+    description: 'A well-seasoned stew that keeps a hunter sharp. Grants a small bonus to all stats until its charges run out.',
+    stackable: true, sellValue: 8,
+    consumableEffect: { cooldownSeconds: 20, buff: { category: 'stat_food', statBonuses: { STR: 2, STA: 2, AGI: 2, INT: 2, SPI: 2 }, trigger: 'stat_food_use' } },
+  },
+  stonecrag_highland_fare: {
+    id: 'stonecrag_highland_fare', name: 'Stonecrag Highland Fare', type: 'consumable',
+    description: 'A trail-ready meal favored by Stonecrag’s highland scouts. Grants a bonus to all stats until its charges run out.',
+    stackable: true, sellValue: 16,
+    consumableEffect: { cooldownSeconds: 20, buff: { category: 'stat_food', statBonuses: { STR: 4, STA: 4, AGI: 4, INT: 4, SPI: 4 }, trigger: 'stat_food_use' } },
+  },
+  emberfall_ridge_platter: {
+    id: 'emberfall_ridge_platter', name: 'Emberfall Ridge Platter', type: 'consumable',
+    description: 'A rich, fire-cured platter that fortifies body and mind. Grants a bonus to all stats until its charges run out.',
+    stackable: true, sellValue: 28,
+    consumableEffect: { cooldownSeconds: 20, buff: { category: 'stat_food', statBonuses: { STR: 7, STA: 7, AGI: 7, INT: 7, SPI: 7 }, trigger: 'stat_food_use' } },
+  },
+  cinderfall_depths_banquet: {
+    id: 'cinderfall_depths_banquet', name: 'Cinderfall Depths Banquet', type: 'consumable',
+    description: 'A hearty banquet drawn from the ruins below. Grants a sizable bonus to all stats until its charges run out.',
+    stackable: true, sellValue: 44,
+    consumableEffect: { cooldownSeconds: 20, buff: { category: 'stat_food', statBonuses: { STR: 11, STA: 11, AGI: 11, INT: 11, SPI: 11 }, trigger: 'stat_food_use' } },
+  },
+  molten_scar_feast_platter: {
+    id: 'molten_scar_feast_platter', name: 'Molten Scar Feast Platter', type: 'consumable',
+    description: 'A heat-forged platter prepared for the Scar’s most dangerous hunts. Grants a strong bonus to all stats until its charges run out.',
+    stackable: true, sellValue: 68,
+    consumableEffect: { cooldownSeconds: 20, buff: { category: 'stat_food', statBonuses: { STR: 16, STA: 16, AGI: 16, INT: 16, SPI: 16 }, trigger: 'stat_food_use' } },
+  },
+  cinderheart_molten_banquet: {
+    id: 'cinderheart_molten_banquet', name: 'Cinderheart Molten Banquet', type: 'consumable',
+    description: 'A banquet worthy of the world’s molten heart. Grants a powerful bonus to all stats until its charges run out.',
+    stackable: true, sellValue: 95,
+    consumableEffect: { cooldownSeconds: 20, buff: { category: 'stat_food', statBonuses: { STR: 22, STA: 22, AGI: 22, INT: 22, SPI: 22 }, trigger: 'stat_food_use' } },
+  },
+
+  // ── Cooking overhaul Tier 3 — Feasts. Dungeon/raid-only, consumed ONCE
+  // at run start (see DungeonScreen.tsx's pre-run picker), party-wide
+  // (including companions) stat buffs lasting the whole run even on
+  // failure. No healAmount, no cooldownSeconds relevance (never used
+  // mid-combat), no charges — feastStatBonuses' presence alone marks an
+  // item as a Feast. Each biased toward the stats its name suggests,
+  // except the two "Banquet"/"Feast" entries, which spread evenly across
+  // all 5 — scaling up by zone, substantially pricier than the matching
+  // Tier 1/2 dish (more fish/meat plus a rare material, and two of the six
+  // selectively call for a zone pearl, never every Feast).
+  greenhollow_guardians_feast: {
+    id: 'greenhollow_guardians_feast', name: 'Greenhollow Guardian’s Feast', type: 'consumable',
+    description: 'A sturdy feast for those who hold the line. Grants the whole party a Stamina-focused bonus for the entire dungeon run.',
+    stackable: true, sellValue: 20,
+    consumableEffect: { cooldownSeconds: 0, feastStatBonuses: { STA: 6, STR: 2, AGI: 2, INT: 2, SPI: 2 } },
+  },
+  stonecrag_conquerors_feast: {
+    id: 'stonecrag_conquerors_feast', name: 'Stonecrag Conqueror’s Feast', type: 'consumable',
+    description: 'A feast for those who strike first and hardest. Grants the whole party a Strength/Agility-focused bonus for the entire dungeon run.',
+    stackable: true, sellValue: 38,
+    consumableEffect: { cooldownSeconds: 0, feastStatBonuses: { STR: 8, AGI: 8, STA: 3, INT: 3, SPI: 3 } },
+  },
+  emberfall_sages_feast: {
+    id: 'emberfall_sages_feast', name: 'Emberfall Sage’s Feast', type: 'consumable',
+    description: 'A feast favored by spellcasters and healers alike. Grants the whole party an Intellect/Spirit-focused bonus for the entire dungeon run.',
+    stackable: true, sellValue: 62,
+    consumableEffect: { cooldownSeconds: 0, feastStatBonuses: { INT: 13, SPI: 13, STR: 5, STA: 5, AGI: 5 } },
+  },
+  cinderfall_balanced_banquet: {
+    id: 'cinderfall_balanced_banquet', name: 'Cinderfall Balanced Banquet', type: 'consumable',
+    description: 'A well-rounded banquet with no favorites. Grants the whole party an even bonus to all stats for the entire dungeon run.',
+    stackable: true, sellValue: 90,
+    consumableEffect: { cooldownSeconds: 0, feastStatBonuses: { STR: 16, STA: 16, AGI: 16, INT: 16, SPI: 16 } },
+  },
+  molten_scar_war_feast: {
+    id: 'molten_scar_war_feast', name: 'Molten Scar War Feast', type: 'consumable',
+    description: 'A feast forged for the Scar’s harshest fights. Grants the whole party a Strength/Stamina-focused bonus for the entire dungeon run.',
+    stackable: true, sellValue: 130,
+    consumableEffect: { cooldownSeconds: 0, feastStatBonuses: { STR: 24, STA: 24, AGI: 9, INT: 9, SPI: 9 } },
+  },
+  cinderheart_emberheart_feast: {
+    id: 'cinderheart_emberheart_feast', name: 'Cinderheart Emberheart Feast', type: 'consumable',
+    description: 'The finest feast at the world’s molten heart. Grants the whole party a powerful, even bonus to all stats for the entire dungeon run.',
+    stackable: true, sellValue: 180,
+    consumableEffect: { cooldownSeconds: 0, feastStatBonuses: { STR: 32, STA: 32, AGI: 32, INT: 32, SPI: 32 } },
   },
 
   // ── Tailoring bags — permanent inventory capacity, consumed on use (see

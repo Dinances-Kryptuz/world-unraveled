@@ -23,6 +23,7 @@
 import type { Character, ConsumableAutomationSettings, Inventory } from '../types/character';
 import { ITEMS } from './items';
 import { totalChargesAvailable, type ChargeBucket } from './consumableCharges';
+import { autoEatRankDef } from './cooking';
 
 export interface OffensiveAutomationState {
   itemId: string;
@@ -66,14 +67,22 @@ export interface ConsumableAutomationRuntimeState {
   defensive?: DefensiveAutomationState;
   healing?: ResourceAutomationState;
   mana?: ResourceAutomationState;
+  // Cooking overhaul Tier 1 — Auto Eat. Reuses ResourceAutomationState's
+  // exact shape (thresholdPct/cooldown/stock) so engine.ts's trigger check
+  // is the same code path as the healing automation above, just fed
+  // rank-derived numbers (gameData/cooking.ts's AUTO_EAT_RANKS) instead of
+  // player-set ones, and gated additionally on "not a dungeon/raid" at the
+  // call site (see engine.ts's step 1b).
+  autoEat?: ResourceAutomationState;
   offensiveChargesConsumed: number;
   defensiveChargesConsumed: number;
   healingUsed: number;
   manaUsed: number;
+  autoEatUsed: number;
 }
 
 export function emptyConsumableAutomationState(): ConsumableAutomationRuntimeState {
-  return { offensiveChargesConsumed: 0, defensiveChargesConsumed: 0, healingUsed: 0, manaUsed: 0 };
+  return { offensiveChargesConsumed: 0, defensiveChargesConsumed: 0, healingUsed: 0, manaUsed: 0, autoEatUsed: 0 };
 }
 
 function bucketsForItem(inventory: Inventory, itemId: string): ChargeBucket[] {
@@ -166,5 +175,45 @@ export function buildConsumableAutomationState(
     ? buildResourceState(character, inventory, automation.manaItemId, automation.manaThresholdPct, now)
     : undefined;
 
-  return { offensive, defensive, healing, mana, offensiveChargesConsumed: 0, defensiveChargesConsumed: 0, healingUsed: 0, manaUsed: 0 };
+  return {
+    offensive,
+    defensive,
+    healing,
+    mana,
+    autoEat: buildAutoEatState(character, inventory, now),
+    offensiveChargesConsumed: 0,
+    defensiveChargesConsumed: 0,
+    healingUsed: 0,
+    manaUsed: 0,
+    autoEatUsed: 0,
+  };
+}
+
+// Auto Eat's own builder — same shape as buildResourceState above, but
+// rank-driven (no player on/off toggle or item/threshold picker: owning a
+// rank at all IS "enabled") and food-specific. Only fires if the pinned
+// Food slot (Character.equippedConsumables.food) is actually a Recovery
+// Food item right now — switching the pinned food to something else (or
+// unpinning it) silently turns Auto Eat off without touching autoEatRank
+// itself, same "the pin is just a pointer" posture as every other
+// equippedConsumables read in this codebase.
+function buildAutoEatState(character: Character, inventory: Inventory, now: Date): ResourceAutomationState | undefined {
+  const rank = character.autoEatRank ?? 0;
+  if (rank <= 0) return undefined;
+  const def = autoEatRankDef(rank);
+  if (!def) return undefined;
+  const itemId = character.equippedConsumables.food;
+  if (!itemId) return undefined;
+  const item = ITEMS[itemId];
+  if (!item?.consumableEffect?.recoveryFood) return undefined;
+  const stockRemaining = inventory.items[itemId] ?? 0;
+  if (stockRemaining <= 0) return undefined;
+  return {
+    itemId,
+    thresholdPct: def.hpTriggerPct,
+    cooldownSeconds: item.consumableEffect.cooldownSeconds,
+    cooldownRemaining: remainingCooldown(character, itemId, item.consumableEffect.cooldownSeconds, now),
+    stockRemaining,
+    healPctMax: def.healEfficiencyPct,
+  };
 }

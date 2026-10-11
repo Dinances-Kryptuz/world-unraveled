@@ -7,17 +7,19 @@ import { AUTOSAVE_INTERVAL_SECONDS } from '../gameData/activityEngine';
 import {
   resolveGatheringOffline,
   gatheringColorTier,
+  gatheringXpForNextLevel,
+  fishingZoneMasteryPercent,
+  fishingZoneMasteryEquivalentLevel,
   gatheringMasterySpeedMultiplier,
   gatheringMasteryBonusChance,
-  gatheringXpForNextLevel,
-  masteryXpForNextLevel,
-  MASTERY_MAX_LEVEL,
   GATHERING_COLOR_XP_PCT,
   type GatheringResourceLike,
   type GatheringOfflineResult,
+  type FishingZoneOverride,
 } from '../gameData/gatheringEngine';
 import { getProfessionState, maxSkillForUnlockedTier } from '../gameData/professionTiers';
 import { ITEMS } from '../gameData/items';
+import { ZONES } from '../gameData/zones';
 import { equippedItemId } from '../gameData/equipmentStats';
 import { notify } from '../utils/notifications';
 import { TickBar } from './TickBar';
@@ -28,7 +30,12 @@ import type { FishingHole } from '../gameData/types';
 // Fishing now shares gatheringEngine.ts's 1-100 XP+Mastery engine with
 // Mining/Herbalism/Skinning — structurally parallel to GatheringScreen, with
 // catchChance baked into the resolver as the one thing that still makes
-// Fishing different ("your fish got away": no fish, no XP, no Mastery).
+// Fishing different ("your fish got away": no fish, no XP, no Mastery), and
+// a SHARED PER-ZONE Mastery bar (not per-hole) that replaces the old
+// per-hole 0-50 axis entirely — every hole in a zone (old or new) now
+// contributes to and reads from the same fishingZoneMastery bucket, mapped
+// onto the existing gatheringMasterySpeedMultiplier/gatheringMasteryBonusChance
+// curve via fishingZoneMasteryEquivalentLevel (see gatheringEngine.ts).
 // Always uses the OFFLINE/batched resolver, even for a single ~20s autosave
 // chunk — same convention as GatheringScreen.
 export function FishingScreen({ hole }: { hole: FishingHole }) {
@@ -39,6 +46,7 @@ export function FishingScreen({ hole }: { hole: FishingHole }) {
   const secondsSinceSaveRef = useRef(0);
 
   const [bankedQuantity, setBankedQuantity] = useState(0);
+  const [bankedBonusQuantity, setBankedBonusQuantity] = useState(0);
   // Updated only from TickBar's onIteration below (the bar's own compositor
   // clock) — see TickBar.tsx's doc comment for why an independent JS timer
   // would drift against the bar's visual completion.
@@ -56,6 +64,7 @@ export function FishingScreen({ hole }: { hole: FishingHole }) {
 
   useEffect(() => {
     setBankedQuantity(0);
+    setBankedBonusQuantity(0);
     setLivePreview(null);
     anchorRef.current = character.currentActivity.startedAt;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -81,6 +90,7 @@ export function FishingScreen({ hole }: { hole: FishingHole }) {
       secondsPerAction: hole.secondsPerAction,
       requiredLevel: hole.requiredLevel,
       catchChance: hole.catchChance,
+      rareBonus: hole.rareBonus,
     };
   }
 
@@ -92,11 +102,13 @@ export function FishingScreen({ hole }: { hole: FishingHole }) {
 
     const now = new Date();
     const prof = getProfessionState(currentCharacter.professions, 'fishing');
-    const masteryState = prof.mastery?.[hole.id] ?? { level: 0, xp: 0 };
     const cap = maxSkillForUnlockedTier('fishing', prof.unlockedTier);
     const equippedToolId = equippedItemId(currentCharacter.equipment.tool);
     const equippedTool = equippedToolId ? ITEMS[equippedToolId] : null;
     const toolBonusPct = equippedTool?.toolType === 'fishing_rod' ? equippedTool.gatherBonusPct ?? 0 : 0;
+
+    const zoneMasteryStartingXp = currentCharacter.fishingZoneMastery?.[hole.zoneId]?.xp ?? 0;
+    const fishingZoneOverride: FishingZoneOverride = { zoneMasteryStartingXp };
 
     const result = resolveGatheringOffline(
       anchor,
@@ -104,19 +116,24 @@ export function FishingScreen({ hole }: { hole: FishingHole }) {
       resourceLike(),
       prof.level,
       prof.xp,
-      masteryState.level,
-      masteryState.xp,
+      0,
+      0,
       cap,
-      toolBonusPct
+      toolBonusPct,
+      undefined,
+      undefined,
+      fishingZoneOverride
     );
 
-    if (result.quantityGained === 0 && result.professionXpGained === 0) return;
+    if (result.quantityGained === 0 && result.rareBonusQuantity === 0 && result.professionXpGained === 0) return;
 
     const previousAnchor = anchor;
     const wholeQuantity = Math.floor(result.quantityGained);
+    const wholeBonus = Math.floor(result.rareBonusQuantity);
 
     anchorRef.current = now;
     setBankedQuantity((prev) => prev + wholeQuantity);
+    setBankedBonusQuantity((prev) => prev + wholeBonus);
     setLivePreview(null);
 
     if (currentCharacter.notificationsEnabled && wholeQuantity > 0) {
@@ -125,12 +142,15 @@ export function FishingScreen({ hole }: { hole: FishingHole }) {
     if (currentCharacter.skillXpNotificationsEnabled && result.professionXpGained > 0) {
       notify('Fishing XP gained', [`+${result.professionXpGained} XP`]);
     }
-    if (currentCharacter.masteryXpNotificationsEnabled && result.masteryXpGained > 0) {
-      notify('Mastery XP gained', [`+${result.masteryXpGained} ${ITEMS[hole.itemId]?.name ?? hole.itemId} Mastery XP`]);
+    if (currentCharacter.masteryXpNotificationsEnabled && (result.fishingZoneMasteryXpGained ?? 0) > 0) {
+      notify('Mastery XP gained', [`+${result.fishingZoneMasteryXpGained} ${ZONES[hole.zoneId]?.name ?? hole.zoneId} Mastery XP`]);
     }
 
     // A rough speculative estimate, superseded moments later by the
-    // authoritative reconciliation below once the write succeeds.
+    // authoritative reconciliation below once the write succeeds. The old
+    // per-hole Mastery bucket is frozen (never written) — fishingZoneMastery
+    // carries the real result instead, exactly like a Herbalism primary-herb
+    // node freezes professions.mastery in GatheringScreen.
     applyOptimisticUpdate((c) => ({
       ...c,
       professions: {
@@ -139,11 +159,11 @@ export function FishingScreen({ hole }: { hole: FishingHole }) {
           ...getProfessionState(c.professions, 'fishing'),
           level: result.finalSkill,
           xp: result.finalSkillXp,
-          mastery: {
-            ...getProfessionState(c.professions, 'fishing').mastery,
-            [hole.id]: { level: result.finalMasteryLevel, xp: result.finalMasteryXp },
-          },
         },
+      },
+      fishingZoneMastery: {
+        ...c.fishingZoneMastery,
+        [hole.zoneId]: { xp: result.finalFishingZoneMasteryXp ?? 0 },
       },
     }));
 
@@ -154,18 +174,19 @@ export function FishingScreen({ hole }: { hole: FishingHole }) {
       const fresh = await getCharacter(currentUser.uid);
       if (!fresh) throw new Error('Character not found during autosave');
 
-      await applyFishingResult(currentUser.uid, hole.id, {
+      await applyFishingResult(currentUser.uid, fresh, {
         itemId: hole.itemId,
         quantity: wholeQuantity,
+        rareBonusItemId: hole.rareBonus?.itemId,
+        rareBonusQuantity: wholeBonus,
         newSkillLevel: result.finalSkill,
         newSkillXp: result.finalSkillXp,
-        newMasteryLevel: result.finalMasteryLevel,
-        newMasteryXp: result.finalMasteryXp,
+        fishingZoneMastery: { zoneId: hole.zoneId, xpGained: result.fishingZoneMasteryXpGained ?? 0 },
       });
 
-      if (wholeQuantity > 0) {
-        await advanceQuests(currentUser.uid, fresh, [{ type: 'gather', itemId: hole.itemId, count: wholeQuantity }]);
-      }
+      const events = [{ type: 'gather' as const, itemId: hole.itemId, count: wholeQuantity }];
+      if (hole.rareBonus && wholeBonus > 0) events.push({ type: 'gather' as const, itemId: hole.rareBonus.itemId, count: wholeBonus });
+      await advanceQuests(currentUser.uid, fresh, events);
 
       applyOptimisticUpdate(() => ({
         ...fresh,
@@ -175,11 +196,11 @@ export function FishingScreen({ hole }: { hole: FishingHole }) {
             ...getProfessionState(fresh.professions, 'fishing'),
             level: result.finalSkill,
             xp: result.finalSkillXp,
-            mastery: {
-              ...getProfessionState(fresh.professions, 'fishing').mastery,
-              [hole.id]: { level: result.finalMasteryLevel, xp: result.finalMasteryXp },
-            },
           },
+        },
+        fishingZoneMastery: {
+          ...fresh.fishingZoneMastery,
+          [hole.zoneId]: { xp: result.finalFishingZoneMasteryXp ?? 0 },
         },
         // Fishing never touches currentActivity.startedAt server-side, so
         // without refreshing it locally too it sits stale from whenever the
@@ -190,6 +211,7 @@ export function FishingScreen({ hole }: { hole: FishingHole }) {
       console.error('Fishing autosave failed, will retry next cycle:', err);
       anchorRef.current = previousAnchor;
       setBankedQuantity((prev) => prev - wholeQuantity);
+      setBankedBonusQuantity((prev) => prev - wholeBonus);
       setLivePreview(null);
       applyOptimisticUpdate((c) => ({
         ...c,
@@ -197,6 +219,7 @@ export function FishingScreen({ hole }: { hole: FishingHole }) {
           ...c.professions,
           fishing: getProfessionState(currentCharacter.professions, 'fishing'),
         },
+        fishingZoneMastery: currentCharacter.fishingZoneMastery,
       }));
     }
   }
@@ -210,13 +233,15 @@ export function FishingScreen({ hole }: { hole: FishingHole }) {
   if (!character.currentActivity.startedAt) return null;
 
   const prof = getProfessionState(character.professions, 'fishing');
-  const masteryState = prof.mastery?.[hole.id] ?? { level: 0, xp: 0 };
   const tier = gatheringColorTier(prof.level, hole.requiredLevel);
   const xpPct = GATHERING_COLOR_XP_PCT[tier];
-  const speedMult = gatheringMasterySpeedMultiplier(masteryState.level);
-  const bonusChance = gatheringMasteryBonusChance(masteryState.level);
   const xpForNextSkillLevel = gatheringXpForNextLevel(prof.level);
-  const xpForNextMasteryLevel = masteryState.level < MASTERY_MAX_LEVEL ? masteryXpForNextLevel(masteryState.level) : null;
+  const zoneMasteryXp = character.fishingZoneMastery?.[hole.zoneId]?.xp ?? 0;
+  const zoneMasteryPercent = fishingZoneMasteryPercent(zoneMasteryXp);
+  const equivLevel = fishingZoneMasteryEquivalentLevel(zoneMasteryPercent);
+  const speedMult = gatheringMasterySpeedMultiplier(equivLevel);
+  const bonusChance = gatheringMasteryBonusChance(equivLevel);
+  const zoneName = ZONES[hole.zoneId]?.name ?? hole.zoneId;
 
   // Recomputed from TickBar's onIteration below — fired by the bar's own
   // CSS animation completing a loop (the compositor clock), not by the
@@ -236,14 +261,18 @@ export function FishingScreen({ hole }: { hole: FishingHole }) {
         resourceLike(),
         prof.level,
         prof.xp,
-        masteryState.level,
-        masteryState.xp,
+        0,
+        0,
         cap,
-        previewToolBonusPct
+        previewToolBonusPct,
+        undefined,
+        undefined,
+        { zoneMasteryStartingXp: zoneMasteryXp }
       )
     );
   }
   const displayQuantity = bankedQuantity + Math.floor(livePreview?.quantityGained ?? 0);
+  const displayBonusQuantity = bankedBonusQuantity + Math.floor(livePreview?.rareBonusQuantity ?? 0);
 
   return (
     <div className="fishing-screen">
@@ -255,6 +284,9 @@ export function FishingScreen({ hole }: { hole: FishingHole }) {
       </p>
       <p>
         This session: {displayQuantity}x {ITEMS[hole.itemId]?.name ?? hole.itemId}
+        {hole.rareBonus && displayBonusQuantity > 0
+          ? `, ${displayBonusQuantity}x ${ITEMS[hole.rareBonus.itemId]?.name ?? hole.rareBonus.itemId}`
+          : ''}
       </p>
       <p>
         Fishing level: {prof.level} ({Math.floor(prof.xp)} / {xpForNextSkillLevel} XP)
@@ -263,14 +295,18 @@ export function FishingScreen({ hole }: { hole: FishingHole }) {
         <div className="profession-xp-bar-fill" style={{ width: `${Math.min(100, (prof.xp / xpForNextSkillLevel) * 100)}%` }} />
       </div>
       <p>
-        {ITEMS[hole.itemId]?.name ?? hole.itemId} Mastery: {masteryState.level}/{MASTERY_MAX_LEVEL}
-        {xpForNextMasteryLevel !== null ? ` (${Math.floor(masteryState.xp)} / ${xpForNextMasteryLevel} XP)` : ' (max)'}
-        {' — '}+{((speedMult - 1) * 100).toFixed(0)}% speed, {(bonusChance * 100).toFixed(0)}% bonus yield
+        {zoneName} Mastery: {zoneMasteryPercent.toFixed(1)}%{' — '}+{((speedMult - 1) * 100).toFixed(0)}% speed,{' '}
+        {(bonusChance * 100).toFixed(0)}% bonus yield (never affects pearl chance); reach 100% for the Master Angler of {zoneName}{' '}
+        title.
       </p>
-      {xpForNextMasteryLevel !== null && (
-        <div className="profession-xp-bar-track">
-          <div className="profession-xp-bar-fill" style={{ width: `${Math.min(100, (masteryState.xp / xpForNextMasteryLevel) * 100)}%` }} />
-        </div>
+      <div className="profession-xp-bar-track">
+        <div className="profession-xp-bar-fill" style={{ width: `${zoneMasteryPercent}%` }} />
+      </div>
+      {hole.rareBonus && (
+        <p>
+          {(hole.rareBonus.chance * 100).toFixed(0)}% chance of a {ITEMS[hole.rareBonus.itemId]?.name ?? hole.rareBonus.itemId} per
+          successful catch — fixed, never increased by Mastery, level, or speed.
+        </p>
       )}
       <button onClick={handleStop}>Stop</button>
     </div>

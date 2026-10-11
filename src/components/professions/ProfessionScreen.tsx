@@ -5,7 +5,7 @@ import { startActivity } from '../../firebase/character';
 import { ZONES, GATHER_NODES, FISHING_HOLES } from '../../gameData/zones';
 import { RECIPES } from '../../gameData/recipes';
 import { PROFESSION_LABELS, PROFESSION_CATEGORY, getProfessionState } from '../../gameData/professionTiers';
-import { gatheringColorTier, GATHERING_COLOR_XP_PCT } from '../../gameData/gatheringEngine';
+import { gatheringColorTier, GATHERING_COLOR_XP_PCT, fishingZoneMasteryPercent } from '../../gameData/gatheringEngine';
 import { craftingColorTier, CRAFTING_COLOR_XP_PCT } from '../../gameData/craftingEngine';
 import { canUseRecipe } from '../../firebase/professions';
 import { useEnchantScroll, removeEnchant } from '../../firebase/enchanting';
@@ -21,6 +21,8 @@ import {
   materialMasteryBonusChance,
   MATERIAL_MASTERY_XP_THRESHOLDS,
 } from '../../gameData/equipmentRolls';
+import { AUTO_EAT_RANKS } from '../../gameData/cooking';
+import { purchaseAutoEatRank } from '../../firebase/cooking';
 import { TIER_COLORS } from '../MonsterLevelBadge';
 import { ItemSlot } from '../ItemSlot';
 import { ProfessionSummaryList } from './ProfessionSummaryList';
@@ -147,6 +149,27 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
   // item is seen, so "disenchant everything" needs no interaction beyond one
   // click, per the design brief's "further incentivize idle" ask.
   const [disenchantQty, setDisenchantQty] = useState<Record<string, number>>({});
+
+  // Cooking overhaul Tier 1 — Auto Eat's own tiny bit of local state, same
+  // shape as MountTrainerScreen's training/error pair.
+  const [autoEatTraining, setAutoEatTraining] = useState(false);
+  const [autoEatError, setAutoEatError] = useState<string | null>(null);
+
+  async function handleTrainAutoEat(rank: number) {
+    if (!user) return;
+    setAutoEatTraining(true);
+    setAutoEatError(null);
+    try {
+      const result = await purchaseAutoEatRank(user.uid, rank);
+      if (!result.success) {
+        setAutoEatError(result.reason ?? 'Could not learn that Auto Eat rank.');
+      } else {
+        await refetch();
+      }
+    } finally {
+      setAutoEatTraining(false);
+    }
+  }
 
   async function handleGather(nodeId: string) {
     if (!user) return;
@@ -359,6 +382,51 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
     );
   }
 
+  // Cooking overhaul Tier 1 — Auto Eat's permanent, sequentially-purchased
+  // rank, shown inline on the Cooking tab rather than as its own top-level
+  // screen (unlike Mount Trainer) since it's conceptually part of Cooking,
+  // not a separate character-progression system. Same sequential/zone-
+  // gated posture as MountTrainerScreen.
+  function renderAutoEatPanel() {
+    const currentRank = char.autoEatRank ?? 0;
+    const nextRank = AUTO_EAT_RANKS.find((r) => r.rank === currentRank + 1);
+    return (
+      <details open>
+        <summary>Auto Eat</summary>
+        <p>
+          A permanent upgrade that automatically eats whatever Recovery Food is pinned to your Food slot when your HP
+          drops low enough — never in a dungeon or raid.
+        </p>
+        <p>
+          Current rank: {currentRank === 0 ? 'None' : currentRank}
+          {currentRank > 0 && (
+            <>
+              {' '}— triggers at {AUTO_EAT_RANKS[currentRank - 1].hpTriggerPct}% HP, heals{' '}
+              {AUTO_EAT_RANKS[currentRank - 1].healEfficiencyPct}% of max HP.
+            </>
+          )}
+        </p>
+        {nextRank && (
+          <div className="item-row-main">
+            <span>
+              <strong>Rank {nextRank.rank}</strong> — triggers at {nextRank.hpTriggerPct}% HP, heals{' '}
+              {nextRank.healEfficiencyPct}% of max HP ({nextRank.cost.toLocaleString()} gold)
+              {zoneId !== nextRank.requiredZoneId && <small> — learn this at {ZONES[nextRank.requiredZoneId]?.name ?? nextRank.requiredZoneId}</small>}
+            </span>
+            <button
+              onClick={() => handleTrainAutoEat(nextRank.rank)}
+              disabled={autoEatTraining || zoneId !== nextRank.requiredZoneId || char.gold < nextRank.cost}
+            >
+              Learn
+            </button>
+          </div>
+        )}
+        {!nextRank && currentRank > 0 && <p>Auto Eat fully learned.</p>}
+        {autoEatError && <p className="error">{autoEatError}</p>}
+      </details>
+    );
+  }
+
   // Enchanting's crafting recipes (scroll_* — see recipes.ts's "Enchanting
   // scrolls" section) are just like any other profession's: renderRecipeList
   // below already handles them via the normal timed/offline CraftingScreen
@@ -556,44 +624,53 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
       )}
 
       {category === 'fishing' && (
-        <ul>
-          {zone.fishingHoleIds.map((holeId) => {
-            const hole = FISHING_HOLES[holeId];
-            if (!known) {
+        <>
+          {known && (
+            <p>
+              {zone.name} Fishing Mastery: {fishingZoneMasteryPercent(char.fishingZoneMastery?.[zone.id]?.xp ?? 0).toFixed(1)}% —
+              shared by every fishing hole in this zone; grants speed and bonus-yield, never pearl chance. Reach 100% for the
+              Master Angler of {zone.name} title.
+            </p>
+          )}
+          <ul>
+            {zone.fishingHoleIds.map((holeId) => {
+              const hole = FISHING_HOLES[holeId];
+              if (!known) {
+                return (
+                  <li key={holeId} style={{ opacity: 0.6 }}>
+                    {hole.name} — learn {label} below to fish here.
+                  </li>
+                );
+              }
+              const meetsLevel = professionLevel >= hole.requiredLevel;
+              const tier = !meetsLevel ? 'red' : gatheringColorTier(professionLevel, hole.requiredLevel);
+              const equippedToolId = equippedItemId(character.equipment.tool);
+              const equippedTool = equippedToolId ? ITEMS[equippedToolId] : null;
+              const hasRod = equippedTool?.toolType === 'fishing_rod';
+              const canFish = meetsLevel && hasRod;
+              const yieldItem = ITEMS[hole.itemId];
+              const pearlItem = hole.rareBonus ? ITEMS[hole.rareBonus.itemId] : null;
               return (
-                <li key={holeId} style={{ opacity: 0.6 }}>
-                  {hole.name} — learn {label} below to fish here.
+                <li key={holeId}>
+                  <div className="item-row-main">
+                    {yieldItem && <ItemSlot item={yieldItem} />}
+                    <span>
+                      <span style={{ color: TIER_COLORS[tier], fontWeight: 700 }}>{hole.name}</span> (level{' '}
+                      {hole.requiredLevel}+
+                      {meetsLevel ? `, ${(GATHERING_COLOR_XP_PCT[tier as keyof typeof GATHERING_COLOR_XP_PCT] * 100).toFixed(0)}% XP` : ''}
+                      ) — yields {yieldItem?.name ?? hole.itemId} ({(hole.catchChance * 100).toFixed(0)}% catch chance)
+                      {pearlItem ? `, ${(hole.rareBonus!.chance * 100).toFixed(0)}% chance of ${pearlItem.name}` : ''}
+                    </span>
+                  </div>
+                  <button onClick={() => handleFish(holeId)} disabled={!canFish}>
+                    {!meetsLevel ? `Need level ${hole.requiredLevel}` : !hasRod ? 'Need Fishing Rod equipped' : 'Fish'}
+                  </button>
                 </li>
               );
-            }
-            const meetsLevel = professionLevel >= hole.requiredLevel;
-            const tier = !meetsLevel ? 'red' : gatheringColorTier(professionLevel, hole.requiredLevel);
-            const equippedToolId = equippedItemId(character.equipment.tool);
-            const equippedTool = equippedToolId ? ITEMS[equippedToolId] : null;
-            const hasRod = equippedTool?.toolType === 'fishing_rod';
-            const canFish = meetsLevel && hasRod;
-            const yieldItem = ITEMS[hole.itemId];
-            const masteryLevel = getProfessionState(char.professions, 'fishing').mastery?.[holeId]?.level ?? 0;
-            return (
-              <li key={holeId}>
-                <div className="item-row-main">
-                  {yieldItem && <ItemSlot item={yieldItem} />}
-                  <span>
-                    <span style={{ color: TIER_COLORS[tier], fontWeight: 700 }}>{hole.name}</span> (level{' '}
-                    {hole.requiredLevel}+
-                    {meetsLevel ? `, ${(GATHERING_COLOR_XP_PCT[tier as keyof typeof GATHERING_COLOR_XP_PCT] * 100).toFixed(0)}% XP` : ''}
-                    ) — yields {yieldItem?.name ?? hole.itemId} ({(hole.catchChance * 100).toFixed(0)}% catch chance)
-                    {known ? ` — Mastery ${masteryLevel}` : ''}
-                  </span>
-                </div>
-                <button onClick={() => handleFish(holeId)} disabled={!canFish}>
-                  {!meetsLevel ? `Need level ${hole.requiredLevel}` : !hasRod ? 'Need Fishing Rod equipped' : 'Fish'}
-                </button>
-              </li>
-            );
-          })}
-          {zone.fishingHoleIds.length === 0 && <p>No fishing holes in {zone.name}.</p>}
-        </ul>
+            })}
+            {zone.fishingHoleIds.length === 0 && <p>No fishing holes in {zone.name}.</p>}
+          </ul>
+        </>
       )}
 
       {category === 'production' && professionId === 'enchanting' && renderEnchantingPanel()}
@@ -616,6 +693,11 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
               <>
                 {renderGroupedRecipesByTier(TAILORING_TIER_ORDER, TAILORING_TIER_LABELS)}
                 {renderMaterialMasteryPanel(CLOTH_MATERIALS)}
+              </>
+            ) : professionId === 'cooking' ? (
+              <>
+                {renderAutoEatPanel()}
+                {renderRecipeList()}
               </>
             ) : (
               renderRecipeList()

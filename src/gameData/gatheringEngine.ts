@@ -136,6 +136,56 @@ export function gatheringMasteryBonusChance(masteryLevel: number): number {
   return 0;
 }
 
+// ── Fishing zone Mastery (shared per-zone, like Herbalism's above, but a
+// REAL speed/bonus-yield axis rather than cosmetic-only) ──────────────────
+// Fishing overhaul: one shared mastery bar per zone (every fish caught in
+// that zone feeds the SAME pool), fed by successful catches — same flat
+// per-action XP and threshold as Herbalism's zone Mastery above (reused
+// rather than inventing new numbers; 1,000 successful catches/zone to max).
+// Unlike Herbalism, this axis DOES grant real gathering-efficiency bonuses
+// ("mastery should improve fishing speed and any other gathering efficiency
+// benefits already established," per the design brief) — rather than
+// inventing a new bonus curve, it maps this 0-100% pool onto the EXACT
+// existing per-resource 0-50 Mastery curve (gatheringMasterySpeedMultiplier/
+// gatheringMasteryBonusChance) via fishingZoneMasteryEquivalentLevel below,
+// so a Fishing zone's speed/bonus-yield bonus at any given percent is
+// identical to what Mining/Skinning's own per-resource Mastery already
+// grants at the equivalent level — "use the same calculation methods... as
+// the other gathering professions" as literally as this engine allows.
+export const FISHING_ZONE_MASTERY_XP_PER_CATCH = HERBALISM_ZONE_MASTERY_XP_PER_HARVEST;
+export const FISHING_ZONE_MASTERY_THRESHOLD = HERBALISM_ZONE_MASTERY_THRESHOLD;
+
+export function fishingZoneMasteryPercent(xp: number): number {
+  return Math.min(100, (xp / FISHING_ZONE_MASTERY_THRESHOLD) * 100);
+}
+
+// 0-100% zone mastery -> an equivalent point on the 0-50 per-resource
+// Mastery scale, so gatheringMasterySpeedMultiplier/gatheringMasteryBonusChance
+// (already milestone-stepped every 5 levels = every 10% here) can be reused
+// directly. The design brief's own suggested 0/25/60/90/100% breakpoints
+// fall within, not exactly on, this scale's milestone boundaries — a
+// continuous reuse of the existing curve rather than 4 hand-picked numbers.
+export function fishingZoneMasteryEquivalentLevel(percent: number): number {
+  return (percent / 100) * MASTERY_MAX_LEVEL;
+}
+
+// gatheringMasterySpeedMultiplier/gatheringMasteryBonusChance only change
+// at masteryLevel multiples of 5 (MASTERY_MILESTONE_EVERY) — 10 boundaries
+// across the 0-50 scale, i.e. every 10% of this zone pool. Used by
+// resolveGatheringOffline's batch loop to cap an iteration at the next
+// boundary, so a long offline window never applies a later tier's bonus to
+// catches made before crossing it — same "step by milestone, not by the
+// batch's ending value" correctness fix as materialMasteryXpToNextPercentPoint
+// (equipmentRolls.ts) and alchemyZoneMasteryXpToNextMilestone (alchemyMastery.ts).
+const FISHING_ZONE_MILESTONE_STEP_PCT = 100 / (MASTERY_MAX_LEVEL / MASTERY_MILESTONE_EVERY);
+
+export function fishingZoneMasteryXpToNextMilestone(xp: number): number {
+  const currentPct = fishingZoneMasteryPercent(xp);
+  if (currentPct >= 100) return Infinity;
+  const nextPct = Math.ceil((currentPct + 1e-9) / FISHING_ZONE_MILESTONE_STEP_PCT) * FISHING_ZONE_MILESTONE_STEP_PCT;
+  return (nextPct / 100) * FISHING_ZONE_MASTERY_THRESHOLD - xp;
+}
+
 // ── Trainer-cap banked XP ──────────────────────────────────────────────
 // A player who hits a rank's level ceiling without having bought the next
 // rank keeps gathering normally — level just can't rise past the cap. XP
@@ -206,6 +256,13 @@ export interface GatheringOfflineResult {
   // result instead.
   herbalismZoneMasteryXpGained?: number;
   finalHerbalismZoneMasteryXp?: number;
+  // Only populated when resolveGatheringOffline is called with
+  // `fishingZoneOverride` — mirrors herbalismZoneMasteryXpGained/
+  // finalHerbalismZoneMasteryXp above, but for Fishing's own zone-Mastery
+  // axis (which, unlike Herbalism's, feeds real speed/bonus-yield
+  // multipliers — see FishingZoneOverride's doc comment).
+  fishingZoneMasteryXpGained?: number;
+  finalFishingZoneMasteryXp?: number;
 }
 
 // Passed to resolveGatheringOffline only for a Herbalism primary-herb node
@@ -214,6 +271,16 @@ export interface GatheringOfflineResult {
 // gatheringXpForNextLevel and the old per-node 0-50 Mastery. Mirrors
 // craftingEngine.ts's MaterialMasteryInput pattern exactly.
 export interface HerbalismOverride {
+  zoneMasteryStartingXp: number;
+}
+
+// Passed to resolveGatheringOffline only for a FishingHole — same role as
+// HerbalismOverride (freezes the old per-hole 0-50 Mastery axis, runs the
+// shared zone-Mastery axis instead), but this axis DOES drive real speed/
+// bonus-yield bonuses each iteration (via fishingZoneMasteryEquivalentLevel)
+// rather than staying cosmetic — see this file's "Fishing zone Mastery"
+// section above for why no new bonus curve is invented for this.
+export interface FishingZoneOverride {
   zoneMasteryStartingXp: number;
 }
 
@@ -253,7 +320,8 @@ export function resolveGatheringOffline(
   skillCap: number,
   toolBonusPct = 0,
   herbalismOverride?: HerbalismOverride,
-  shirtBonuses?: GatheringShirtBonuses
+  shirtBonuses?: GatheringShirtBonuses,
+  fishingZoneOverride?: FishingZoneOverride
 ): GatheringOfflineResult {
   const progress = resolveElapsedProgress(startedAt, now);
   let remainingSeconds = progress.effectiveHours * 3600;
@@ -262,14 +330,15 @@ export function resolveGatheringOffline(
 
   let skill = startingSkill;
   let skillXp = startingSkillXp;
-  // The old per-node 0-50 Mastery axis is frozen (never advanced) when
-  // herbalismOverride is supplied — a Herbalism primary-herb node
+  // The old per-node/per-hole 0-50 Mastery axis is frozen (never advanced)
+  // when herbalismOverride/fishingZoneOverride is supplied — the resource
   // contributes only to the shared zone-Mastery axis instead, see
-  // HerbalismOverride's doc comment. zoneMasteryXp is that new axis's own
-  // running total.
+  // HerbalismOverride/FishingZoneOverride's doc comments. zoneMasteryXp is
+  // that new axis's own running total (mutually exclusive in practice — a
+  // resource is never tagged with both).
   let masteryLevel = startingMasteryLevel;
   let masteryXp = startingMasteryXp;
-  let zoneMasteryXp = herbalismOverride?.zoneMasteryStartingXp ?? 0;
+  let zoneMasteryXp = herbalismOverride?.zoneMasteryStartingXp ?? fishingZoneOverride?.zoneMasteryStartingXp ?? 0;
   const startColorTier = gatheringColorTier(skill, resource.requiredLevel);
   const bankedCap = bankedXpCapAt(skillCap);
 
@@ -278,12 +347,22 @@ export function resolveGatheringOffline(
   let professionXpGained = 0;
   let masteryXpGained = 0;
   let herbalismZoneMasteryXpGained = 0;
+  let fishingZoneMasteryXpGained = 0;
   let iterations = 0;
 
   while (remainingSeconds > 0 && iterations < MAX_BATCH_ITERATIONS) {
     iterations++;
+    // Fishing's zone-Mastery axis maps its own 0-100% pool onto the
+    // existing per-resource 0-50 curve (see fishingZoneMasteryEquivalentLevel's
+    // doc comment) — recomputed every iteration from the LIVE zoneMasteryXp,
+    // same "never apply a later tier retroactively" posture as masteryLevel.
+    const fishingEquivLevel = fishingZoneOverride
+      ? fishingZoneMasteryEquivalentLevel(fishingZoneMasteryPercent(zoneMasteryXp))
+      : 0;
+    const effectiveMasteryLevel = fishingZoneOverride ? fishingEquivLevel : masteryLevel;
     const speedMult =
-      gatheringMasterySpeedMultiplier(masteryLevel) * (1 + (toolBonusPct + (shirtBonuses?.gatheringSpeedPct ?? 0)) / 100);
+      gatheringMasterySpeedMultiplier(effectiveMasteryLevel) *
+      (1 + (toolBonusPct + (shirtBonuses?.gatheringSpeedPct ?? 0)) / 100);
     const secondsPerAction = resource.secondsPerAction / speedMult;
     const actionsForFullTime = Math.floor(remainingSeconds / secondsPerAction);
     if (actionsForFullTime <= 0) break;
@@ -297,6 +376,13 @@ export function resolveGatheringOffline(
       Math.max(1, Math.round(resource.baseXp * xpPct)) * catchChance * (1 + (shirtBonuses?.professionXpPct ?? 0) / 100);
     const masteryXpPerAction =
       resource.baseXp * catchChance * (1 + (shirtBonuses?.masteryXpPct ?? 0) / 100); // unthrottled by color, same as Smithing's shipped Mastery
+    // Fishing zone Mastery XP per action — flat per successful catch (EV-
+    // weighted by catchChance, same convention as xpPerAction/
+    // masteryXpPerAction above), same per-catch value Herbalism's zone
+    // Mastery already uses (FISHING_ZONE_MASTERY_XP_PER_CATCH).
+    const fishingZoneXpPerAction = fishingZoneOverride
+      ? FISHING_ZONE_MASTERY_XP_PER_CATCH * catchChance * (1 + (shirtBonuses?.masteryXpPct ?? 0) / 100)
+      : 0;
 
     // Both branches re-check the LIVE skill/skillXp every iteration (not a
     // snapshot from before the loop started) — a long offline catch-up can
@@ -309,13 +395,33 @@ export function resolveGatheringOffline(
     const actionsToSkillCapOrLevel =
       belowCap || bankNotFull ? Math.max(1, Math.ceil(skillXpRoom / xpPerAction)) : Infinity;
     const actionsToMasteryUp =
-      !herbalismOverride && masteryLevel < MASTERY_MAX_LEVEL
+      !herbalismOverride && !fishingZoneOverride && masteryLevel < MASTERY_MAX_LEVEL
         ? Math.max(1, Math.ceil((masteryXpForNextLevel(masteryLevel) - masteryXp) / masteryXpPerAction))
         : Infinity;
+    // Caps each iteration so Fishing's zone-Mastery percent never crosses a
+    // speed/bonus-yield tier boundary mid-batch without recomputing — see
+    // fishingZoneMasteryXpToNextMilestone's doc comment.
+    const actionsToNextFishingMilestone =
+      fishingZoneOverride && fishingZoneXpPerAction > 0
+        ? Math.max(1, Math.ceil(fishingZoneMasteryXpToNextMilestone(zoneMasteryXp) / fishingZoneXpPerAction))
+        : Infinity;
 
-    const actionsThisBatch = Math.min(actionsForFullTime, actionsToSkillCapOrLevel, actionsToMasteryUp);
+    const actionsThisBatch = Math.min(
+      actionsForFullTime,
+      actionsToSkillCapOrLevel,
+      actionsToMasteryUp,
+      actionsToNextFishingMilestone
+    );
 
-    quantityGained += actionsThisBatch * catchChance * (1 + gatheringMasteryBonusChance(masteryLevel));
+    // Mastery's bonus-YIELD chance affects only the normal catch quantity
+    // above — NEVER resource.rareBonus (the pearl roll), which stays a flat
+    // resource.rareBonus.chance * catchChance regardless of Mastery, tool,
+    // or shirt bonuses, per the design brief's explicit "the 3% probability
+    // is fixed and must not increase through mastery, Fishing level, or
+    // fishing speed" (a faster/more-masterful angler gets more CASTS per
+    // hour, and therefore more pearl rolls per hour, but never a better
+    // chance on any single one).
+    quantityGained += actionsThisBatch * catchChance * (1 + gatheringMasteryBonusChance(effectiveMasteryLevel));
     rareBonusQuantity += resource.rareBonus ? actionsThisBatch * resource.rareBonus.chance * catchChance : 0;
     remainingSeconds -= actionsThisBatch * secondsPerAction;
 
@@ -330,6 +436,10 @@ export function resolveGatheringOffline(
       const zoneMasteryXpThisBatch = actionsThisBatch * HERBALISM_ZONE_MASTERY_XP_PER_HARVEST * catchChance;
       herbalismZoneMasteryXpGained += zoneMasteryXpThisBatch;
       zoneMasteryXp += zoneMasteryXpThisBatch;
+    } else if (fishingZoneOverride) {
+      const zoneMasteryXpThisBatch = actionsThisBatch * fishingZoneXpPerAction;
+      fishingZoneMasteryXpGained += zoneMasteryXpThisBatch;
+      zoneMasteryXp += zoneMasteryXpThisBatch;
     } else {
       masteryXpGained += actionsThisBatch * masteryXpPerAction;
       masteryXp += actionsThisBatch * masteryXpPerAction;
@@ -339,7 +449,7 @@ export function resolveGatheringOffline(
       skillXp -= xpForNextLevel(skill);
       skill++;
     }
-    if (!herbalismOverride) {
+    if (!herbalismOverride && !fishingZoneOverride) {
       while (masteryLevel < MASTERY_MAX_LEVEL && masteryXp >= masteryXpForNextLevel(masteryLevel)) {
         masteryXp -= masteryXpForNextLevel(masteryLevel);
         masteryLevel++;
@@ -360,5 +470,6 @@ export function resolveGatheringOffline(
     finalColorTier: gatheringColorTier(skill, resource.requiredLevel),
     didNotConverge: iterations >= MAX_BATCH_ITERATIONS,
     ...(herbalismOverride ? { herbalismZoneMasteryXpGained, finalHerbalismZoneMasteryXp: zoneMasteryXp } : {}),
+    ...(fishingZoneOverride ? { fishingZoneMasteryXpGained, finalFishingZoneMasteryXp: zoneMasteryXp } : {}),
   };
 }
