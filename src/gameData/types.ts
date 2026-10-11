@@ -166,6 +166,16 @@ export interface ConsumableEffect {
   // with every other field above in practice (a bag is just a capacity
   // token) but not enforced structurally.
   bagCapacityBonus?: number;
+  // Cooking overhaul Tier 3 — Feasts. Consumed ONCE at a dungeon/raid run's
+  // start (never mid-run, never in open-world combat — see
+  // DungeonScreen.tsx's pre-run picker), lasting the WHOLE run even on
+  // failure/wipe. Party-wide (including companions), no charges, no HP
+  // restore, no automatic quantity multipliers from Cooking Mastery (only
+  // XP weight — see cookingMastery.ts). Stacks additively with a
+  // personally-equipped Stat Food buff (both just add into the same
+  // stat-bonus pool); presence of this field IS the "this item is a Feast"
+  // flag, same convention as recoveryFood's boolean below.
+  feastStatBonuses?: Partial<Record<import('./classStats').BaseStat, number>>;
   // Cooking overhaul Tier 1 — Recovery Food. A MANUAL use (never Auto Eat)
   // heals to FULL, overriding healAmount/healPctMax entirely, and resets
   // the player's live Combatant.actionReadyIn to 0 (a free action — see

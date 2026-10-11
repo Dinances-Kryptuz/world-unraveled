@@ -3642,6 +3642,53 @@ export const ITEMS: Record<string, ItemDef> = {
     consumableEffect: { cooldownSeconds: 20, buff: { category: 'stat_food', statBonuses: { STR: 22, STA: 22, AGI: 22, INT: 22, SPI: 22 }, trigger: 'stat_food_use' } },
   },
 
+  // ── Cooking overhaul Tier 3 — Feasts. Dungeon/raid-only, consumed ONCE
+  // at run start (see DungeonScreen.tsx's pre-run picker), party-wide
+  // (including companions) stat buffs lasting the whole run even on
+  // failure. No healAmount, no cooldownSeconds relevance (never used
+  // mid-combat), no charges — feastStatBonuses' presence alone marks an
+  // item as a Feast. Each biased toward the stats its name suggests,
+  // except the two "Banquet"/"Feast" entries, which spread evenly across
+  // all 5 — scaling up by zone, substantially pricier than the matching
+  // Tier 1/2 dish (more fish/meat plus a rare material, and two of the six
+  // selectively call for a zone pearl, never every Feast).
+  greenhollow_guardians_feast: {
+    id: 'greenhollow_guardians_feast', name: 'Greenhollow Guardian’s Feast', type: 'consumable',
+    description: 'A sturdy feast for those who hold the line. Grants the whole party a Stamina-focused bonus for the entire dungeon run.',
+    stackable: true, sellValue: 20,
+    consumableEffect: { cooldownSeconds: 0, feastStatBonuses: { STA: 6, STR: 2, AGI: 2, INT: 2, SPI: 2 } },
+  },
+  stonecrag_conquerors_feast: {
+    id: 'stonecrag_conquerors_feast', name: 'Stonecrag Conqueror’s Feast', type: 'consumable',
+    description: 'A feast for those who strike first and hardest. Grants the whole party a Strength/Agility-focused bonus for the entire dungeon run.',
+    stackable: true, sellValue: 38,
+    consumableEffect: { cooldownSeconds: 0, feastStatBonuses: { STR: 8, AGI: 8, STA: 3, INT: 3, SPI: 3 } },
+  },
+  emberfall_sages_feast: {
+    id: 'emberfall_sages_feast', name: 'Emberfall Sage’s Feast', type: 'consumable',
+    description: 'A feast favored by spellcasters and healers alike. Grants the whole party an Intellect/Spirit-focused bonus for the entire dungeon run.',
+    stackable: true, sellValue: 62,
+    consumableEffect: { cooldownSeconds: 0, feastStatBonuses: { INT: 13, SPI: 13, STR: 5, STA: 5, AGI: 5 } },
+  },
+  cinderfall_balanced_banquet: {
+    id: 'cinderfall_balanced_banquet', name: 'Cinderfall Balanced Banquet', type: 'consumable',
+    description: 'A well-rounded banquet with no favorites. Grants the whole party an even bonus to all stats for the entire dungeon run.',
+    stackable: true, sellValue: 90,
+    consumableEffect: { cooldownSeconds: 0, feastStatBonuses: { STR: 16, STA: 16, AGI: 16, INT: 16, SPI: 16 } },
+  },
+  molten_scar_war_feast: {
+    id: 'molten_scar_war_feast', name: 'Molten Scar War Feast', type: 'consumable',
+    description: 'A feast forged for the Scar’s harshest fights. Grants the whole party a Strength/Stamina-focused bonus for the entire dungeon run.',
+    stackable: true, sellValue: 130,
+    consumableEffect: { cooldownSeconds: 0, feastStatBonuses: { STR: 24, STA: 24, AGI: 9, INT: 9, SPI: 9 } },
+  },
+  cinderheart_emberheart_feast: {
+    id: 'cinderheart_emberheart_feast', name: 'Cinderheart Emberheart Feast', type: 'consumable',
+    description: 'The finest feast at the world’s molten heart. Grants the whole party a powerful, even bonus to all stats for the entire dungeon run.',
+    stackable: true, sellValue: 180,
+    consumableEffect: { cooldownSeconds: 0, feastStatBonuses: { STR: 32, STA: 32, AGI: 32, INT: 32, SPI: 32 } },
+  },
+
   // ── Tailoring bags — permanent inventory capacity, consumed on use (see
   // firebase/consumables.ts's bagCapacityBonus handling). Each is strictly
   // additive, so order of purchase/use never matters.

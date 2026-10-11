@@ -104,6 +104,23 @@ export async function equipStatFood(uid: string, itemId: string): Promise<{ succ
   return { success: true };
 }
 
+// Cooking overhaul Tier 3 — Feasts. Consumed once at a dungeon/raid run's
+// start (see DungeonScreen.tsx's pre-run picker) — just an inventory
+// decrement; the caller already knows the item's feastStatBonuses (read
+// straight from ITEMS, same as Tier 1/2's catalog-driven display) and
+// keeps them in a local ref for the run's whole lifetime, since a dungeon
+// run has no persisted CurrentActivity to snapshot them onto (see
+// DungeonScreen.tsx's own module doc comment on why dungeon state is
+// client-session-only).
+export async function consumeFeast(uid: string, itemId: string): Promise<{ success: boolean; reason?: string }> {
+  const item = ITEMS[itemId];
+  if (!item?.consumableEffect?.feastStatBonuses) return { success: false, reason: 'That isn’t a Feast.' };
+  const inventory = await getInventory(uid);
+  if ((inventory.items[itemId] ?? 0) <= 0) return { success: false, reason: 'You don’t have any.' };
+  await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), { [`items.${itemId}`]: increment(-1) });
+  return { success: true };
+}
+
 // Out-of-combat use (Inventory screen) — heals through the same
 // currentHp/hpCheckpointAt fields combat itself reads and writes. Only
 // meaningful for a healAmount consumable: mana has no persisted value

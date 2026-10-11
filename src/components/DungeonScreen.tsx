@@ -9,7 +9,9 @@ import {
   consumeBuffCharges,
   setEquippedConsumable,
   applyConsumableAutomationUsage,
+  consumeFeast,
 } from '../firebase/consumables';
+import type { BaseStat } from '../gameData/classStats';
 import { consumeEnchantCharges } from '../firebase/enchanting';
 import { DUNGEONS } from '../gameData/dungeons';
 import { MONSTERS } from '../gameData/monsters';
@@ -55,6 +57,7 @@ import { ResourceBars } from './ResourceBars';
 import { AbilityBar } from './AbilityBar';
 import { ConsumablesBar } from './ConsumablesBar';
 import { CombatLog } from './CombatLog';
+import { ItemSlot } from './ItemSlot';
 
 const AUTOSAVE_INTERVAL_SECONDS = 10;
 const MAX_LOG_LINES = 30;
@@ -127,6 +130,18 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
   // and mutated in place through every tick/manual-use via ctx.
   const consumableStateRef = useRef<ConsumableAutomationRuntimeState>(emptyConsumableAutomationState());
   const retreatedRef = useRef(false);
+  // Cooking overhaul Tier 3 — Feasts. Chosen ONCE per run via the pre-run
+  // picker below (before createEncounterState's first call, so it's baked
+  // into the player's/every companion's profile from the very first tick —
+  // this engine computes stats once at encounter setup, never live) and
+  // held for the run's whole lifetime, same client-session-only posture as
+  // every other piece of dungeon run state (see this file's module doc
+  // comment on why nothing here is written to CurrentActivity). Lasts
+  // through a wipe/retreat since nothing here ever clears it until the
+  // player actually leaves (onExit/a new dungeonId).
+  const feastStatBonusesRef = useRef<Partial<Record<BaseStat, number>>>({});
+  const [feastPending, setFeastPending] = useState(true);
+  const [feastError, setFeastError] = useState<string | null>(null);
   // Dungeons never write to Character.currentActivity (see this component's
   // own doc comment above), so there's no CurrentActivity.equippedShirtItemId
   // snapshot to read here — this ref plays the same role, captured once at
@@ -213,12 +228,38 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
     const specDef = resolveSpecDef(c.class, c.spec);
     const talentTotals = c.spec ? evaluateTalents(c.spec, c.talentPicks).totals : EMPTY_TALENT_TOTALS;
     const buffTotals = evaluateActiveBuffs(c.activeBuffs, new Date());
+    // Cooking overhaul Tier 3 — Feasts fold into the SAME statBonuses pool
+    // a Stat Food buff already uses (both just add — "stacks with personal
+    // Stat Food" per the design brief), so the player needs zero new
+    // CasterProfile plumbing. Mutating buffTotals.statBonuses directly
+    // (rather than threading a new field through buildPlayerProfile) is
+    // safe here: evaluateActiveBuffs just returned a fresh object this
+    // call owns outright.
+    for (const [stat, value] of Object.entries(feastStatBonusesRef.current)) {
+      const key = stat as BaseStat;
+      buffTotals.statBonuses[key] = (buffTotals.statBonuses[key] ?? 0) + (value ?? 0);
+    }
     const extraDamageTakenPct = getExtraDamageTakenPct(c.spec, c.talentPicks);
     const equipmentBonuses = getEquipmentStatBonuses(c.equipment, c.enchantments, c.enchantmentCharges);
     const enchantTotals = buildActiveEnchantTotals(c.enchantments, c.enchantmentCharges);
     const charMaxHp = maxHp(c.class, c.level, equipmentBonuses, talentTotals.hpMultPct, enchantTotals.flatHpBonus);
     const currentHp = resolveCurrentHp(c.currentHp, charMaxHp, c.hpCheckpointAt, new Date());
-    const companions = [...resolveActiveCompanionSetups(c), ...altSetupsRef.current];
+    // Feasts are party-wide — each companion/alt gets the exact same
+    // feastStatBonuses folded into its OWN equipmentBonuses, which
+    // buildCompanionProfile (combatEngine/engine.ts) already reads into
+    // every stat formula exactly like the player's equipment, so this is
+    // the only change companions need (no new profile field there either).
+    const companions = [...resolveActiveCompanionSetups(c), ...altSetupsRef.current].map((companion) => ({
+      ...companion,
+      equipmentBonuses: (() => {
+        const merged = { ...companion.equipmentBonuses };
+        for (const [stat, value] of Object.entries(feastStatBonusesRef.current)) {
+          const key = stat as BaseStat;
+          merged[key] = (merged[key] ?? 0) + (value ?? 0);
+        }
+        return merged;
+      })(),
+    }));
     return {
       cls: c.class,
       level: c.level,
@@ -251,7 +292,15 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
     };
   }
 
+  // Guards initializeEncounter's async work below against a rapid dungeonId
+  // change (unmount/remount) completing after a newer mount already reset
+  // this screen's state — same role as the plain `cancelled` flag the old
+  // single mount-effect IIFE used, just reusable from the Feast picker's
+  // button handler too, which fires well after this effect returns.
+  const mountGenerationRef = useRef(0);
+
   useEffect(() => {
+    mountGenerationRef.current++;
     setBankedTotals(EMPTY_TOTALS);
     setFullClears(0);
     setLog([]);
@@ -268,18 +317,46 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
     combatStateRef.current = null;
     consumableStateRef.current = buildConsumableAutomationState(character, inventory ?? { items: {} }, new Date());
     goldFindPctRef.current = shirtBonusPct(shirtBonusForItemId(equippedItemId(character.equipment.shirt)), 'gold_find');
-    let cancelled = false;
-    void (async () => {
-      altSetupsRef.current = user ? await resolveActiveAltSetups(user.uid, character) : [];
-      if (cancelled) return;
-      combatStateRef.current = createEncounterState(buildEncounterInput(character));
-      setTick((t) => t + 1);
-    })();
-    return () => {
-      cancelled = true;
-    };
+    feastStatBonusesRef.current = {};
+    setFeastPending(true);
+    setFeastError(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dungeonId]);
+
+  // Resolves alt setups (an async Firestore read per recruited alt — see
+  // altSetupsRef's doc comment) and creates the actual encounter — held
+  // back until the Feast choice below resolves, so whichever Feast (if
+  // any) was picked is already baked into the player's/every companion's
+  // profile from the very first tick (this engine computes stats once at
+  // encounter setup, never live mid-fight).
+  async function initializeEncounter() {
+    const generation = mountGenerationRef.current;
+    const setups = user ? await resolveActiveAltSetups(user.uid, character) : [];
+    if (mountGenerationRef.current !== generation) return;
+    altSetupsRef.current = setups;
+    combatStateRef.current = createEncounterState(buildEncounterInput(character));
+    setTick((t) => t + 1);
+  }
+
+  // Cooking overhaul Tier 3 — the pre-run Feast picker's "Enter" action.
+  // itemId === null means "skip, no Feast" — still proceeds into the run.
+  async function handleChooseFeast(itemId: string | null) {
+    const generation = mountGenerationRef.current;
+    if (itemId) {
+      if (!user) return;
+      setFeastError(null);
+      const result = await consumeFeast(user.uid, itemId);
+      if (mountGenerationRef.current !== generation) return;
+      if (!result.success) {
+        setFeastError(result.reason ?? 'Could not use that Feast.');
+        return;
+      }
+      feastStatBonusesRef.current = ITEMS[itemId]?.consumableEffect?.feastStatBonuses ?? {};
+      await refetch();
+    }
+    setFeastPending(false);
+    void initializeEncounter();
+  }
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -547,6 +624,35 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
     if (!currentUser) return;
     await setEquippedConsumable(currentUser.uid, slot, itemId);
     await refetch();
+  }
+
+  if (feastPending) {
+    const feastOptions = Object.values(ITEMS).filter(
+      (item) => item.consumableEffect?.feastStatBonuses && (inventory?.items[item.id] ?? 0) > 0
+    );
+    return (
+      <div className="dungeon-screen">
+        <h2>{dungeon.name}</h2>
+        <p>Choose a Feast for this run (optional). It lasts the whole run, even if your party wipes, and applies to every companion too.</p>
+        {feastOptions.length === 0 ? (
+          <p>You have no Feasts.</p>
+        ) : (
+          <ul>
+            {feastOptions.map((item) => (
+              <li key={item.id}>
+                <div className="item-row-main">
+                  <ItemSlot item={item} quantity={inventory?.items[item.id] ?? 0} />
+                  <span>{item.name}</span>
+                </div>
+                <button onClick={() => void handleChooseFeast(item.id)}>Use</button>
+              </li>
+            ))}
+          </ul>
+        )}
+        {feastError && <p className="error">{feastError}</p>}
+        <button onClick={() => void handleChooseFeast(null)}>Enter without a Feast</button>
+      </div>
+    );
   }
 
   if (!combatStateRef.current) return null;
