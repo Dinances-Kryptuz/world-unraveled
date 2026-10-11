@@ -13,7 +13,7 @@ import { MONSTERS } from '../gameData/monsters';
 import { GATHER_NODES, FISHING_HOLES } from '../gameData/zones';
 import { RECIPES } from '../gameData/recipes';
 import { ITEMS } from '../gameData/items';
-import { disenchantRequiredSkill, disenchantXpAward, disenchantYieldRange } from '../gameData/enchanting';
+import { disenchantRequiredSkill, disenchantXpAward, disenchantYieldRange, buildActiveEnchantTotals } from '../gameData/enchanting';
 import { resolveSpecDef, getExtraDamageTakenPct } from '../gameData/combatProfileWithTalents';
 import { simulateOfflineCombat } from '../combatEngine/offlineCombat';
 import { evaluateTalents, EMPTY_TALENT_TOTALS } from '../utils/talentEvaluator';
@@ -87,7 +87,8 @@ export function WelcomeBackScreen({
         const buffTotals = evaluateActiveBuffs(character.activeBuffs, now);
         const extraDmgTaken = getExtraDamageTakenPct(character.spec, character.talentPicks);
         const equipBonuses = getEquipmentStatBonuses(character.equipment, character.enchantments, character.enchantmentCharges);
-        const charMaxHp = maxHp(character.class, character.level, equipBonuses, talentTotals.hpMultPct);
+        const enchantTotals = buildActiveEnchantTotals(character.enchantments, character.enchantmentCharges);
+        const charMaxHp = maxHp(character.class, character.level, equipBonuses, talentTotals.hpMultPct, enchantTotals.flatHpBonus);
         const startingHp = resolveCurrentHp(character.currentHp, charMaxHp, character.hpCheckpointAt, activity.startedAt);
         // Herbalism/Alchemy overhaul's Part 8 automation — built from
         // inventory as of the moment the player went offline (activity.
@@ -120,6 +121,8 @@ export function WelcomeBackScreen({
           goldFindPct: shirtBonusPct(shirtBonusForItemId(activity.equippedShirtItemId), 'gold_find'),
           // Companions only fight in dungeons — idle/offline catch-up is
           // always open-world solo, same as live open-world combat.
+          enchantments: character.enchantments,
+          enchantmentCharges: character.enchantmentCharges,
         });
 
         if (user) {

@@ -30,7 +30,7 @@ import type { Inventory } from '../../types/character';
 // The 6 equipment slots any enchant actually targets (ENCHANTS' own slot
 // values — see gameData/enchanting.ts) in a sensible display order, used by
 // the Active Enchants list.
-const ENCHANT_SLOTS: EquipmentSlot[] = ['weapon', 'chest', 'gloves', 'legs', 'boots', 'ring'];
+const ENCHANT_SLOTS: EquipmentSlot[] = ['weapon', 'chest', 'bracers', 'gloves', 'legs', 'boots', 'ring', 'cape'];
 
 // Smithing's full-armor recipe ids are prefixed by their metal/jewelry tier
 // (see recipes.ts's Recipe.materialId and items.ts's generated Blacksmithing
@@ -111,12 +111,12 @@ const ENCHANTING_EQUIPMENT_TIER_LABELS: Record<string, string> = {
 // of {name}" title/achievement wording (renderMaterialMasteryPanel's
 // labelOverride only touches the bar header, nothing else).
 const ENCHANTING_ARMAMENTS_LABELS: Record<string, string> = {
-  rough_wood: 'Enchanted Armaments I',
-  aged_wood: 'Enchanted Armaments II',
-  heartwood: 'Enchanted Armaments III',
-  ironwood: 'Enchanted Armaments IV',
-  charwood: 'Enchanted Armaments V',
-  emberwood: 'Ember Armaments',
+  simple_wood: 'Enchanted Armaments I',
+  star_wood: 'Enchanted Armaments II',
+  mystic_wood: 'Enchanted Armaments III',
+  enchanted_hardwood: 'Enchanted Armaments IV',
+  ancient_runewood: 'Enchanted Armaments V',
+  emberheart_wood: 'Ember Armaments',
 };
 
 // A single profession's own page — one per sidebar nav item (see

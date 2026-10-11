@@ -24,6 +24,7 @@ import {
 import { maxHp, resolveCurrentHp, ATTACK_INTERVAL_SECONDS } from '../gameData/combatFormulas';
 import { AUTOSAVE_INTERVAL_SECONDS } from '../gameData/activityEngine';
 import { getEquipmentStatBonuses } from '../gameData/equipmentStats';
+import { buildActiveEnchantTotals } from '../gameData/enchanting';
 import { characterXpForLevelV2, MAX_CHARACTER_LEVEL } from '../gameData/xpTables';
 import { checkAndUnlockNextSlot } from '../firebase/characterSlots';
 import type { QuestEvent } from '../gameData/questEngine';
@@ -147,7 +148,8 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
     const buffTotals = evaluateActiveBuffs(c.activeBuffs, new Date());
     const extraDamageTakenPct = getExtraDamageTakenPct(c.spec, c.talentPicks);
     const equipmentBonuses = getEquipmentStatBonuses(c.equipment, c.enchantments, c.enchantmentCharges);
-    const charMaxHp = maxHp(c.class, c.level, equipmentBonuses, talentTotals.hpMultPct);
+    const enchantTotals = buildActiveEnchantTotals(c.enchantments, c.enchantmentCharges);
+    const charMaxHp = maxHp(c.class, c.level, equipmentBonuses, talentTotals.hpMultPct, enchantTotals.flatHpBonus);
     const startedAt = c.currentActivity.startedAt ?? new Date();
     const currentHp = resolveCurrentHp(c.currentHp, charMaxHp, c.hpCheckpointAt, startedAt);
     return {
@@ -170,6 +172,7 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
       // companion that tagged along on ordinary zone grinding made "bring
       // your crew" feel the same everywhere instead of being the thing
       // that makes a dungeon's full-group requirement meaningful.
+      ...enchantTotals,
     };
   }
 
@@ -363,7 +366,8 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
       if (newLevel !== fresh.level) {
         const equipBonuses = getEquipmentStatBonuses(fresh.equipment, fresh.enchantments, fresh.enchantmentCharges);
         const freshTalentTotals = fresh.spec ? evaluateTalents(fresh.spec, fresh.talentPicks).totals : EMPTY_TALENT_TOTALS;
-        restoredHp = maxHp(fresh.class, newLevel, equipBonuses, freshTalentTotals.hpMultPct);
+        const freshEnchantTotals = buildActiveEnchantTotals(fresh.enchantments, fresh.enchantmentCharges);
+        restoredHp = maxHp(fresh.class, newLevel, equipBonuses, freshTalentTotals.hpMultPct, freshEnchantTotals.flatHpBonus);
         await setCharacterLevel(currentUser.uid, newLevel, restoredHp);
         player.hp = restoredHp;
         player.maxHp = restoredHp;

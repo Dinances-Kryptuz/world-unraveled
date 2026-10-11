@@ -26,6 +26,7 @@ import {
 import { resolveActiveCompanionSetups, type CompanionCombatSetup } from '../gameData/companions';
 import { maxHp, resolveCurrentHp, ATTACK_INTERVAL_SECONDS } from '../gameData/combatFormulas';
 import { getEquipmentStatBonuses } from '../gameData/equipmentStats';
+import { buildActiveEnchantTotals } from '../gameData/enchanting';
 import { characterXpForLevelV2, MAX_CHARACTER_LEVEL } from '../gameData/xpTables';
 import { checkAndUnlockNextSlot, resolveActiveAltSetups } from '../firebase/characterSlots';
 import { equippedItemId } from '../gameData/equipmentStats';
@@ -208,7 +209,8 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
     const buffTotals = evaluateActiveBuffs(c.activeBuffs, new Date());
     const extraDamageTakenPct = getExtraDamageTakenPct(c.spec, c.talentPicks);
     const equipmentBonuses = getEquipmentStatBonuses(c.equipment, c.enchantments, c.enchantmentCharges);
-    const charMaxHp = maxHp(c.class, c.level, equipmentBonuses, talentTotals.hpMultPct);
+    const enchantTotals = buildActiveEnchantTotals(c.enchantments, c.enchantmentCharges);
+    const charMaxHp = maxHp(c.class, c.level, equipmentBonuses, talentTotals.hpMultPct, enchantTotals.flatHpBonus);
     const currentHp = resolveCurrentHp(c.currentHp, charMaxHp, c.hpCheckpointAt, new Date());
     const companions = [...resolveActiveCompanionSetups(c), ...altSetupsRef.current];
     return {
@@ -227,6 +229,7 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
       savedAbilityConditions: c.abilityConditions,
       disabledAbilityIds: c.disabledAbilityIds,
       companions,
+      ...enchantTotals,
       // A dungeon is fixed-size group content (REQUIRED_DUNGEON_PARTY_SIZE,
       // enforced before the player can even enter — see ZoneScreen.tsx) —
       // scale the monster's HP by the full party size so a 5-person group
@@ -412,7 +415,8 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
         if (newLevel !== fresh.level) {
           const equipBonuses = getEquipmentStatBonuses(fresh.equipment, fresh.enchantments, fresh.enchantmentCharges);
           const freshTalentTotals = fresh.spec ? evaluateTalents(fresh.spec, fresh.talentPicks).totals : EMPTY_TALENT_TOTALS;
-          const restoredHp = maxHp(fresh.class, newLevel, equipBonuses, freshTalentTotals.hpMultPct);
+          const freshEnchantTotals = buildActiveEnchantTotals(fresh.enchantments, fresh.enchantmentCharges);
+          const restoredHp = maxHp(fresh.class, newLevel, equipBonuses, freshTalentTotals.hpMultPct, freshEnchantTotals.flatHpBonus);
           await setCharacterLevel(currentUser.uid, newLevel, restoredHp);
           player.hp = restoredHp;
           player.maxHp = restoredHp;

@@ -996,6 +996,59 @@ export const ITEMS: Record<string, ItemDef> = {
     description: 'Teaches the recipe for a Ember Shirt of Preservation.',
     stackable: true, teachesRecipeId: 'ember_shirt_of_preservation', sellValue: 0,
   },
+
+  // ── Enchanting overhaul's Phase E6 rare formulas — same dungeon-boss
+  // 5%-drop mechanism as the Tailoring shirt formulas above (see
+  // monsters.ts's molten_herald/pyraxis loot tables), teaching the 9
+  // proc/special enchant scrolls the design brief gates behind "profession
+  // level + rare formula unlocks" (Fiery Weapon/Icy Chill/Lifestealing at
+  // both their zone-5 and Ember-tier zone-6 versions, plus Crusader/
+  // Spellpower/Healing Power) rather than ordinary trainer progression.
+  formula_scroll_fiery_weapon_z5: {
+    id: 'formula_scroll_fiery_weapon_z5', name: 'Formula: Fiery Weapon', type: 'recipe',
+    description: 'Teaches the recipe for Scroll: Fiery Weapon.',
+    stackable: true, teachesRecipeId: 'scroll_fiery_weapon_z5', sellValue: 0,
+  },
+  formula_scroll_icy_chill_z5: {
+    id: 'formula_scroll_icy_chill_z5', name: 'Formula: Icy Chill', type: 'recipe',
+    description: 'Teaches the recipe for Scroll: Icy Chill.',
+    stackable: true, teachesRecipeId: 'scroll_icy_chill_z5', sellValue: 0,
+  },
+  formula_scroll_lifestealing_z5: {
+    id: 'formula_scroll_lifestealing_z5', name: 'Formula: Lifestealing', type: 'recipe',
+    description: 'Teaches the recipe for Scroll: Lifestealing.',
+    stackable: true, teachesRecipeId: 'scroll_lifestealing_z5', sellValue: 0,
+  },
+  formula_scroll_ember_fiery_weapon: {
+    id: 'formula_scroll_ember_fiery_weapon', name: 'Formula: Ember Fiery Weapon', type: 'recipe',
+    description: 'Teaches the recipe for Scroll: Ember Fiery Weapon.',
+    stackable: true, teachesRecipeId: 'scroll_ember_fiery_weapon', sellValue: 0,
+  },
+  formula_scroll_ember_icy_chill: {
+    id: 'formula_scroll_ember_icy_chill', name: 'Formula: Ember Icy Chill', type: 'recipe',
+    description: 'Teaches the recipe for Scroll: Ember Icy Chill.',
+    stackable: true, teachesRecipeId: 'scroll_ember_icy_chill', sellValue: 0,
+  },
+  formula_scroll_ember_lifestealing: {
+    id: 'formula_scroll_ember_lifestealing', name: 'Formula: Ember Lifestealing', type: 'recipe',
+    description: 'Teaches the recipe for Scroll: Ember Lifestealing.',
+    stackable: true, teachesRecipeId: 'scroll_ember_lifestealing', sellValue: 0,
+  },
+  formula_scroll_crusader: {
+    id: 'formula_scroll_crusader', name: 'Formula: Crusader', type: 'recipe',
+    description: 'Teaches the recipe for Scroll: Crusader.',
+    stackable: true, teachesRecipeId: 'scroll_crusader', sellValue: 0,
+  },
+  formula_scroll_spellpower: {
+    id: 'formula_scroll_spellpower', name: 'Formula: Spellpower', type: 'recipe',
+    description: 'Teaches the recipe for Scroll: Spellpower.',
+    stackable: true, teachesRecipeId: 'scroll_spellpower', sellValue: 0,
+  },
+  formula_scroll_healing_power: {
+    id: 'formula_scroll_healing_power', name: 'Formula: Healing Power', type: 'recipe',
+    description: 'Teaches the recipe for Scroll: Healing Power.',
+    stackable: true, teachesRecipeId: 'scroll_healing_power', sellValue: 0,
+  },
   // ── Combat drops (non-leather) ──────────────────────────────────────
   boar_meat: {
     id: 'boar_meat',
@@ -2393,112 +2446,97 @@ export const ITEMS: Record<string, ItemDef> = {
   },
 
   // ── Enchanting materials — produced by Disenchanting (see
-  // gameData/enchanting.ts's widened ZONE_DISENCHANT_MATERIALS), consumed
-  // by enchant-scroll recipes (recipes.ts). Six zone-specific families now
-  // (one per real zone, Greenhollow Fields through Cinderheart Crater),
-  // widening the original 3 generic tiers rather than replacing them —
-  // arcane_dust/arcane_essence/arcane_crystal (below) are those original
-  // items, kept exactly as-is and simply reassigned to zone 1 (dust/lesser
-  // essence) and zone 5 (crystal, now Zone 5's "shard" tier) so no existing
-  // player's stock or recipe reference silently breaks. Each zone's dust
-  // and essence scale the disenchanted item's own level the same way the
-  // old 3 tiers did; essence additionally splits Lesser/Greater (ordinary
-  // vs. advanced recipes) for zones 1-5, collapsing to one tier for zone 6
-  // (Ember Essence — no Lesser/Greater split there). A shard tier only
-  // exists from zone 3 onward (no low-zone equivalent, same posture as a
-  // classic MMO's own low-level disenchant table); zone 6's shard (Ember
-  // Shards) is a wholly new material, not a reuse — see this file's
-  // ember_shard (singular, Emberfall Ridge loot, zone 3, unrelated) for why
-  // the plural id avoids colliding with it.
-  arcane_dust: {
-    id: 'arcane_dust', name: 'Arcane Dust', type: 'material',
+  // gameData/enchanting.ts's ZONE_DISENCHANT_MATERIALS), consumed by
+  // enchant-scroll recipes (recipes.ts). Names follow the Enchanting
+  // overhaul's own Classic-WoW-derived material table exactly (Strange
+  // Dust/Magic Essence through Illusion Dust/Eternal Essence for zones
+  // 1-5, Ember Shards for zone 6) rather than this file's earlier,
+  // differently-named first draft. A shard tier (Brilliant Shard) only
+  // exists at zone 5 — the design brief's own recipe catalog never
+  // references a shard before then; zone 6 skips a dust/essence of its
+  // own for CRAFTING (its recipes reuse zone 5's Greater Eternal Essence,
+  // see enchanting.ts's "E6" convention) but still gets its own Ember
+  // Dust/Ember Essence here for DISENCHANTING yield purposes only, per
+  // the brief's "Ember Shards and appropriate high-tier materials."
+  strange_dust: {
+    id: 'strange_dust', name: 'Strange Dust', type: 'material',
     description: 'A fine, faintly glowing dust left over from disenchanting lesser Greenhollow Fields equipment.',
     stackable: true, sellValue: 3,
   },
-  arcane_essence: {
-    id: 'arcane_essence', name: 'Lesser Arcane Essence', type: 'material',
+  lesser_magic_essence: {
+    id: 'lesser_magic_essence', name: 'Lesser Magic Essence', type: 'material',
     description: 'A condensed mote of magical residue, disenchanted from ordinary Greenhollow Fields equipment.',
     stackable: true, sellValue: 9,
   },
-  greater_arcane_essence: {
-    id: 'greater_arcane_essence', name: 'Greater Arcane Essence', type: 'material',
+  greater_magic_essence: {
+    id: 'greater_magic_essence', name: 'Greater Magic Essence', type: 'material',
     description: 'A potent mote of magical residue, disenchanted only from Greenhollow Fields’ finest equipment.',
     stackable: true, sellValue: 16,
   },
-  faded_dust: {
-    id: 'faded_dust', name: 'Faded Dust', type: 'material',
+  soul_dust: {
+    id: 'soul_dust', name: 'Soul Dust', type: 'material',
     description: 'A fine, faintly glowing dust left over from disenchanting lesser Stonecrag Foothills equipment.',
     stackable: true, sellValue: 5,
   },
-  lesser_faded_essence: {
-    id: 'lesser_faded_essence', name: 'Lesser Faded Essence', type: 'material',
+  lesser_astral_essence: {
+    id: 'lesser_astral_essence', name: 'Lesser Astral Essence', type: 'material',
     description: 'A condensed mote of magical residue, disenchanted from ordinary Stonecrag Foothills equipment.',
     stackable: true, sellValue: 13,
   },
-  greater_faded_essence: {
-    id: 'greater_faded_essence', name: 'Greater Faded Essence', type: 'material',
+  greater_astral_essence: {
+    id: 'greater_astral_essence', name: 'Greater Astral Essence', type: 'material',
     description: 'A potent mote of magical residue, disenchanted only from Stonecrag Foothills’ finest equipment.',
     stackable: true, sellValue: 22,
   },
-  smoldering_dust: {
-    id: 'smoldering_dust', name: 'Smoldering Dust', type: 'material',
+  vision_dust: {
+    id: 'vision_dust', name: 'Vision Dust', type: 'material',
     description: 'A fine, faintly glowing dust left over from disenchanting lesser Emberfall Ridge equipment.',
     stackable: true, sellValue: 7,
   },
-  lesser_smoldering_essence: {
-    id: 'lesser_smoldering_essence', name: 'Lesser Smoldering Essence', type: 'material',
+  lesser_mystic_essence: {
+    id: 'lesser_mystic_essence', name: 'Lesser Mystic Essence', type: 'material',
     description: 'A condensed mote of magical residue, disenchanted from ordinary Emberfall Ridge equipment.',
     stackable: true, sellValue: 18,
   },
-  greater_smoldering_essence: {
-    id: 'greater_smoldering_essence', name: 'Greater Smoldering Essence', type: 'material',
+  greater_mystic_essence: {
+    id: 'greater_mystic_essence', name: 'Greater Mystic Essence', type: 'material',
     description: 'A potent mote of magical residue, disenchanted only from Emberfall Ridge’s finest equipment.',
     stackable: true, sellValue: 30,
   },
-  smoldering_shard: {
-    id: 'smoldering_shard', name: 'Smoldering Shard', type: 'material',
-    description: 'A hardened shard of enchanting power, disenchanted only from Emberfall Ridge’s rarest equipment.',
-    stackable: true, sellValue: 40,
-  },
-  charred_dust: {
-    id: 'charred_dust', name: 'Charred Dust', type: 'material',
+  dream_dust: {
+    id: 'dream_dust', name: 'Dream Dust', type: 'material',
     description: 'A fine, faintly glowing dust left over from disenchanting lesser Cinderfall Depths equipment.',
     stackable: true, sellValue: 10,
   },
-  lesser_charred_essence: {
-    id: 'lesser_charred_essence', name: 'Lesser Charred Essence', type: 'material',
+  lesser_nether_essence: {
+    id: 'lesser_nether_essence', name: 'Lesser Nether Essence', type: 'material',
     description: 'A condensed mote of magical residue, disenchanted from ordinary Cinderfall Depths equipment.',
     stackable: true, sellValue: 24,
   },
-  greater_charred_essence: {
-    id: 'greater_charred_essence', name: 'Greater Charred Essence', type: 'material',
+  greater_nether_essence: {
+    id: 'greater_nether_essence', name: 'Greater Nether Essence', type: 'material',
     description: 'A potent mote of magical residue, disenchanted only from Cinderfall Depths’ finest equipment.',
     stackable: true, sellValue: 40,
   },
-  charred_shard: {
-    id: 'charred_shard', name: 'Charred Shard', type: 'material',
-    description: 'A hardened shard of enchanting power, disenchanted only from Cinderfall Depths’ rarest equipment.',
-    stackable: true, sellValue: 52,
-  },
-  molten_dust: {
-    id: 'molten_dust', name: 'Molten Dust', type: 'material',
+  illusion_dust: {
+    id: 'illusion_dust', name: 'Illusion Dust', type: 'material',
     description: 'A fine, faintly glowing dust left over from disenchanting lesser Molten Scar equipment.',
     stackable: true, sellValue: 14,
   },
-  lesser_molten_essence: {
-    id: 'lesser_molten_essence', name: 'Lesser Molten Essence', type: 'material',
+  lesser_eternal_essence: {
+    id: 'lesser_eternal_essence', name: 'Lesser Eternal Essence', type: 'material',
     description: 'A condensed mote of magical residue, disenchanted from ordinary Molten Scar equipment.',
     stackable: true, sellValue: 32,
   },
-  greater_molten_essence: {
-    id: 'greater_molten_essence', name: 'Greater Molten Essence', type: 'material',
+  greater_eternal_essence: {
+    id: 'greater_eternal_essence', name: 'Greater Eternal Essence', type: 'material',
     description: 'A potent mote of magical residue, disenchanted only from the Molten Scar’s finest equipment.',
     stackable: true, sellValue: 52,
   },
-  arcane_crystal: {
-    id: 'arcane_crystal', name: 'Arcane Crystal', type: 'material',
-    description: 'A hardened crystal of enchanting power, disenchanted only from the Molten Scar’s rarest equipment.',
-    stackable: true, sellValue: 25,
+  brilliant_shard: {
+    id: 'brilliant_shard', name: 'Brilliant Shard', type: 'material',
+    description: 'A hardened shard of enchanting power, disenchanted only from the Molten Scar’s rarest equipment.',
+    stackable: true, sellValue: 60,
   },
   ember_dust: {
     id: 'ember_dust', name: 'Ember Dust', type: 'material',
@@ -2522,33 +2560,33 @@ export const ITEMS: Record<string, ItemDef> = {
   // Staff/Book equipment-Mastery track for that zone (gameData/materials.ts's
   // WOOD_MATERIALS) the same way a cloth tier feeds Tailoring's armor+cape
   // Mastery — see recipes.ts's matching section.
-  rough_wood: {
-    id: 'rough_wood', name: 'Rough Wood', type: 'material',
+  simple_wood: {
+    id: 'simple_wood', name: 'Simple Wood', type: 'material',
     description: 'A plain, enchanter-grade timber, faintly receptive to magic. Sold by vendors, never found in the wild.',
     stackable: true, sellValue: 1,
   },
-  aged_wood: {
-    id: 'aged_wood', name: 'Aged Wood', type: 'material',
+  star_wood: {
+    id: 'star_wood', name: 'Star Wood', type: 'material',
     description: 'Timber seasoned until it holds a charge far better than anything freshly cut. Sold by vendors, never found in the wild.',
     stackable: true, sellValue: 4,
   },
-  heartwood: {
-    id: 'heartwood', name: 'Heartwood', type: 'material',
+  mystic_wood: {
+    id: 'mystic_wood', name: 'Mystic Wood', type: 'material',
     description: 'Cut from the dense core of an old trunk, humming faintly even before it’s enchanted. Sold by vendors, never found in the wild.',
     stackable: true, sellValue: 8,
   },
-  ironwood: {
-    id: 'ironwood', name: 'Ironwood', type: 'material',
+  enchanted_hardwood: {
+    id: 'enchanted_hardwood', name: 'Enchanted Hardwood', type: 'material',
     description: 'A timber as dense as its namesake metal, able to hold a far stronger enchantment. Sold by vendors, never found in the wild.',
     stackable: true, sellValue: 14,
   },
-  charwood: {
-    id: 'charwood', name: 'Charwood', type: 'material',
+  ancient_runewood: {
+    id: 'ancient_runewood', name: 'Ancient Runewood', type: 'material',
     description: 'Timber cured near open flame until it’s nearly as hot to the touch as it is magically receptive. Sold by vendors, never found in the wild.',
     stackable: true, sellValue: 22,
   },
-  emberwood: {
-    id: 'emberwood', name: 'Emberwood', type: 'material',
+  emberheart_wood: {
+    id: 'emberheart_wood', name: 'Emberheart Wood', type: 'material',
     description: 'Timber that smolders faintly of its own accord, the finest focus an Enchanter can work with. Sold by vendors, never found in the wild.',
     stackable: true, sellValue: 32,
   },
@@ -2655,80 +2693,501 @@ export const ITEMS: Record<string, ItemDef> = {
     stackable: true, equipSlot: 'offhand', sellValue: 58,
   },
 
-  // ── Enchanting scrolls — Enchanting's actual crafted output (see
-  // gameData/enchanting.ts's module doc comment and recipes.ts's matching
-  // section). Craft one through the normal timed/offline recipe pipeline,
-  // then use it on an equipped item for a free, instant apply — one per
-  // ENCHANTS entry, named to match.
-  scroll_weapon_minor_might: {
-    id: 'scroll_weapon_minor_might', name: 'Scroll: Minor Might', type: 'enchant_scroll',
-    description: 'Use on an equipped weapon to grant +4 Strength.', stackable: true,
-    scrollEnchantId: 'enchant_weapon_minor_might', sellValue: 3,
+  // ── Enchanting scrolls — see gameData/enchanting.ts's module doc comment
+  // and recipes.ts's matching section. The pre-catalog placeholder scrolls
+  // (12 simple stat enchants) that stood in during Phases E1-E5 have been
+  // removed wholesale and replaced by the full 6-zone catalog below (Phase
+  // E6), per the design brief's complete enchantment recipe expansion.
+
+  scroll_minor_health: {
+    id: 'scroll_minor_health', name: 'Scroll: Minor Health', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Minor Health enchant.', stackable: true,
+    scrollEnchantId: 'enchant_minor_health', sellValue: 3,
   },
-  scroll_weapon_greater_might: {
-    id: 'scroll_weapon_greater_might', name: 'Scroll: Greater Might', type: 'enchant_scroll',
-    description: 'Use on an equipped weapon to grant +10 Strength.', stackable: true,
-    scrollEnchantId: 'enchant_weapon_greater_might', sellValue: 12,
+  scroll_minor_mana: {
+    id: 'scroll_minor_mana', name: 'Scroll: Minor Mana', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Minor Mana enchant.', stackable: true,
+    scrollEnchantId: 'enchant_minor_mana', sellValue: 3,
   },
-  scroll_weapon_superior_might: {
-    id: 'scroll_weapon_superior_might', name: 'Scroll: Superior Might', type: 'enchant_scroll',
-    description: 'Use on an equipped weapon to grant +18 Strength.', stackable: true,
-    scrollEnchantId: 'enchant_weapon_superior_might', sellValue: 40,
+  scroll_minor_stamina: {
+    id: 'scroll_minor_stamina', name: 'Scroll: Minor Stamina', type: 'enchant_scroll',
+    description: 'Use on an equipped bracer item to apply the Minor Stamina enchant.', stackable: true,
+    scrollEnchantId: 'enchant_minor_stamina', sellValue: 3,
   },
-  scroll_chest_minor_stats: {
-    id: 'scroll_chest_minor_stats', name: 'Scroll: Minor Vigor', type: 'enchant_scroll',
-    description: 'Use on an equipped chest piece to grant +5 Stamina.', stackable: true,
-    scrollEnchantId: 'enchant_chest_minor_stats', sellValue: 3,
+  scroll_minor_strength: {
+    id: 'scroll_minor_strength', name: 'Scroll: Minor Strength', type: 'enchant_scroll',
+    description: 'Use on an equipped gloves item to apply the Minor Strength enchant.', stackable: true,
+    scrollEnchantId: 'enchant_minor_strength', sellValue: 3,
   },
-  scroll_chest_greater_stats: {
-    id: 'scroll_chest_greater_stats', name: 'Scroll: Greater Vigor', type: 'enchant_scroll',
-    description: 'Use on an equipped chest piece to grant +12 Stamina.', stackable: true,
-    scrollEnchantId: 'enchant_chest_greater_stats', sellValue: 12,
+  scroll_minor_agility: {
+    id: 'scroll_minor_agility', name: 'Scroll: Minor Agility', type: 'enchant_scroll',
+    description: 'Use on an equipped boots item to apply the Minor Agility enchant.', stackable: true,
+    scrollEnchantId: 'enchant_minor_agility', sellValue: 3,
   },
-  scroll_chest_superior_stats: {
-    id: 'scroll_chest_superior_stats', name: 'Scroll: Superior Vigor', type: 'enchant_scroll',
-    description: 'Use on an equipped chest piece to grant +20 Stamina.', stackable: true,
-    scrollEnchantId: 'enchant_chest_superior_stats', sellValue: 40,
+  scroll_minor_intellect: {
+    id: 'scroll_minor_intellect', name: 'Scroll: Minor Intellect', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Minor Intellect enchant.', stackable: true,
+    scrollEnchantId: 'enchant_minor_intellect', sellValue: 3,
   },
-  scroll_gloves_minor_focus: {
-    id: 'scroll_gloves_minor_focus', name: 'Scroll: Minor Focus', type: 'enchant_scroll',
-    description: 'Use on equipped gloves to grant +4 Intellect.', stackable: true,
-    scrollEnchantId: 'enchant_gloves_minor_focus', sellValue: 4,
+  scroll_minor_spirit: {
+    id: 'scroll_minor_spirit', name: 'Scroll: Minor Spirit', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Minor Spirit enchant.', stackable: true,
+    scrollEnchantId: 'enchant_minor_spirit', sellValue: 3,
   },
-  scroll_gloves_greater_focus: {
-    id: 'scroll_gloves_greater_focus', name: 'Scroll: Greater Focus', type: 'enchant_scroll',
-    description: 'Use on equipped gloves to grant +9 Intellect.', stackable: true,
-    scrollEnchantId: 'enchant_gloves_greater_focus', sellValue: 13,
+  scroll_minor_defense: {
+    id: 'scroll_minor_defense', name: 'Scroll: Minor Defense', type: 'enchant_scroll',
+    description: 'Use on an equipped cloak item to apply the Minor Defense enchant.', stackable: true,
+    scrollEnchantId: 'enchant_minor_defense', sellValue: 3,
   },
-  scroll_legs_minor_vitality: {
-    id: 'scroll_legs_minor_vitality', name: 'Scroll: Minor Vitality', type: 'enchant_scroll',
-    description: 'Use on equipped legs to grant +6 Stamina.', stackable: true,
-    scrollEnchantId: 'enchant_legs_minor_vitality', sellValue: 4,
+  scroll_minor_absorption: {
+    id: 'scroll_minor_absorption', name: 'Scroll: Minor Absorption', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Minor Absorption enchant.', stackable: true,
+    scrollEnchantId: 'enchant_minor_absorption', sellValue: 3,
   },
-  scroll_legs_greater_vitality: {
-    id: 'scroll_legs_greater_vitality', name: 'Scroll: Greater Vitality', type: 'enchant_scroll',
-    description: 'Use on equipped legs to grant +14 Stamina.', stackable: true,
-    scrollEnchantId: 'enchant_legs_greater_vitality', sellValue: 15,
+  scroll_minor_striking: {
+    id: 'scroll_minor_striking', name: 'Scroll: Minor Striking', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Minor Striking enchant.', stackable: true,
+    scrollEnchantId: 'enchant_minor_striking', sellValue: 3,
   },
-  scroll_boots_minor_spirit: {
-    id: 'scroll_boots_minor_spirit', name: 'Scroll: Minor Spirit', type: 'enchant_scroll',
-    description: 'Use on equipped boots to grant +4 Spirit.', stackable: true,
-    scrollEnchantId: 'enchant_boots_minor_spirit', sellValue: 2,
+  scroll_minor_impact: {
+    id: 'scroll_minor_impact', name: 'Scroll: Minor Impact', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Minor Impact enchant.', stackable: true,
+    scrollEnchantId: 'enchant_minor_impact', sellValue: 3,
   },
-  scroll_boots_greater_spirit: {
-    id: 'scroll_boots_greater_spirit', name: 'Scroll: Greater Spirit', type: 'enchant_scroll',
-    description: 'Use on equipped boots to grant +9 Spirit.', stackable: true,
-    scrollEnchantId: 'enchant_boots_greater_spirit', sellValue: 11,
+  scroll_minor_beastslayer: {
+    id: 'scroll_minor_beastslayer', name: 'Scroll: Minor Beastslayer', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Minor Beastslayer enchant.', stackable: true,
+    scrollEnchantId: 'enchant_minor_beastslayer', sellValue: 3,
   },
-  scroll_ring_minor_power: {
-    id: 'scroll_ring_minor_power', name: 'Scroll: Minor Power', type: 'enchant_scroll',
-    description: 'Use on an equipped ring to grant +3 Strength, +3 Intellect.', stackable: true,
-    scrollEnchantId: 'enchant_ring_minor_power', sellValue: 8,
+  scroll_lesser_health: {
+    id: 'scroll_lesser_health', name: 'Scroll: Lesser Health', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Lesser Health enchant.', stackable: true,
+    scrollEnchantId: 'enchant_lesser_health', sellValue: 6,
   },
-  scroll_ring_greater_power: {
-    id: 'scroll_ring_greater_power', name: 'Scroll: Greater Power', type: 'enchant_scroll',
-    description: 'Use on an equipped ring to grant +7 Strength, +7 Intellect.', stackable: true,
-    scrollEnchantId: 'enchant_ring_greater_power', sellValue: 30,
+  scroll_lesser_mana: {
+    id: 'scroll_lesser_mana', name: 'Scroll: Lesser Mana', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Lesser Mana enchant.', stackable: true,
+    scrollEnchantId: 'enchant_lesser_mana', sellValue: 6,
+  },
+  scroll_lesser_stamina: {
+    id: 'scroll_lesser_stamina', name: 'Scroll: Lesser Stamina', type: 'enchant_scroll',
+    description: 'Use on an equipped bracer item to apply the Lesser Stamina enchant.', stackable: true,
+    scrollEnchantId: 'enchant_lesser_stamina', sellValue: 6,
+  },
+  scroll_lesser_strength: {
+    id: 'scroll_lesser_strength', name: 'Scroll: Lesser Strength', type: 'enchant_scroll',
+    description: 'Use on an equipped gloves item to apply the Lesser Strength enchant.', stackable: true,
+    scrollEnchantId: 'enchant_lesser_strength', sellValue: 6,
+  },
+  scroll_lesser_agility: {
+    id: 'scroll_lesser_agility', name: 'Scroll: Lesser Agility', type: 'enchant_scroll',
+    description: 'Use on an equipped boots item to apply the Lesser Agility enchant.', stackable: true,
+    scrollEnchantId: 'enchant_lesser_agility', sellValue: 6,
+  },
+  scroll_lesser_intellect: {
+    id: 'scroll_lesser_intellect', name: 'Scroll: Lesser Intellect', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Lesser Intellect enchant.', stackable: true,
+    scrollEnchantId: 'enchant_lesser_intellect', sellValue: 6,
+  },
+  scroll_lesser_spirit: {
+    id: 'scroll_lesser_spirit', name: 'Scroll: Lesser Spirit', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Lesser Spirit enchant.', stackable: true,
+    scrollEnchantId: 'enchant_lesser_spirit', sellValue: 6,
+  },
+  scroll_lesser_defense: {
+    id: 'scroll_lesser_defense', name: 'Scroll: Lesser Defense', type: 'enchant_scroll',
+    description: 'Use on an equipped cloak item to apply the Lesser Defense enchant.', stackable: true,
+    scrollEnchantId: 'enchant_lesser_defense', sellValue: 6,
+  },
+  scroll_lesser_absorption: {
+    id: 'scroll_lesser_absorption', name: 'Scroll: Lesser Absorption', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Lesser Absorption enchant.', stackable: true,
+    scrollEnchantId: 'enchant_lesser_absorption', sellValue: 6,
+  },
+  scroll_lesser_striking: {
+    id: 'scroll_lesser_striking', name: 'Scroll: Lesser Striking', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Lesser Striking enchant.', stackable: true,
+    scrollEnchantId: 'enchant_lesser_striking', sellValue: 6,
+  },
+  scroll_lesser_impact: {
+    id: 'scroll_lesser_impact', name: 'Scroll: Lesser Impact', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Lesser Impact enchant.', stackable: true,
+    scrollEnchantId: 'enchant_lesser_impact', sellValue: 6,
+  },
+  scroll_lesser_beastslayer: {
+    id: 'scroll_lesser_beastslayer', name: 'Scroll: Lesser Beastslayer', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Lesser Beastslayer enchant.', stackable: true,
+    scrollEnchantId: 'enchant_lesser_beastslayer', sellValue: 6,
+  },
+  scroll_lesser_elemental_resistance: {
+    id: 'scroll_lesser_elemental_resistance', name: 'Scroll: Lesser Elemental Resistance', type: 'enchant_scroll',
+    description: 'Use on an equipped cloak item to apply the Lesser Elemental Resistance enchant.', stackable: true,
+    scrollEnchantId: 'enchant_lesser_elemental_resistance', sellValue: 6,
+  },
+  scroll_health_z3: {
+    id: 'scroll_health_z3', name: 'Scroll: Health', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Health enchant.', stackable: true,
+    scrollEnchantId: 'enchant_health_z3', sellValue: 9,
+  },
+  scroll_mana_z3: {
+    id: 'scroll_mana_z3', name: 'Scroll: Mana', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Mana enchant.', stackable: true,
+    scrollEnchantId: 'enchant_mana_z3', sellValue: 9,
+  },
+  scroll_stamina_z3: {
+    id: 'scroll_stamina_z3', name: 'Scroll: Stamina', type: 'enchant_scroll',
+    description: 'Use on an equipped bracer item to apply the Stamina enchant.', stackable: true,
+    scrollEnchantId: 'enchant_stamina_z3', sellValue: 9,
+  },
+  scroll_strength_z3: {
+    id: 'scroll_strength_z3', name: 'Scroll: Strength', type: 'enchant_scroll',
+    description: 'Use on an equipped gloves item to apply the Strength enchant.', stackable: true,
+    scrollEnchantId: 'enchant_strength_z3', sellValue: 9,
+  },
+  scroll_agility_z3: {
+    id: 'scroll_agility_z3', name: 'Scroll: Agility', type: 'enchant_scroll',
+    description: 'Use on an equipped boots item to apply the Agility enchant.', stackable: true,
+    scrollEnchantId: 'enchant_agility_z3', sellValue: 9,
+  },
+  scroll_intellect_z3: {
+    id: 'scroll_intellect_z3', name: 'Scroll: Intellect', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Intellect enchant.', stackable: true,
+    scrollEnchantId: 'enchant_intellect_z3', sellValue: 9,
+  },
+  scroll_spirit_z3: {
+    id: 'scroll_spirit_z3', name: 'Scroll: Spirit', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Spirit enchant.', stackable: true,
+    scrollEnchantId: 'enchant_spirit_z3', sellValue: 9,
+  },
+  scroll_greater_defense_z3: {
+    id: 'scroll_greater_defense_z3', name: 'Scroll: Greater Defense', type: 'enchant_scroll',
+    description: 'Use on an equipped cloak item to apply the Greater Defense enchant.', stackable: true,
+    scrollEnchantId: 'enchant_greater_defense_z3', sellValue: 9,
+  },
+  scroll_striking_z3: {
+    id: 'scroll_striking_z3', name: 'Scroll: Striking', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Striking enchant.', stackable: true,
+    scrollEnchantId: 'enchant_striking_z3', sellValue: 9,
+  },
+  scroll_impact_z3: {
+    id: 'scroll_impact_z3', name: 'Scroll: Impact', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Impact enchant.', stackable: true,
+    scrollEnchantId: 'enchant_impact_z3', sellValue: 9,
+  },
+  scroll_greater_beastslayer_z3: {
+    id: 'scroll_greater_beastslayer_z3', name: 'Scroll: Greater Beastslayer', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Greater Beastslayer enchant.', stackable: true,
+    scrollEnchantId: 'enchant_greater_beastslayer_z3', sellValue: 9,
+  },
+  scroll_minor_haste_z3: {
+    id: 'scroll_minor_haste_z3', name: 'Scroll: Minor Haste', type: 'enchant_scroll',
+    description: 'Use on an equipped gloves item to apply the Minor Haste enchant.', stackable: true,
+    scrollEnchantId: 'enchant_minor_haste_z3', sellValue: 9,
+  },
+  scroll_fire_resistance_z3: {
+    id: 'scroll_fire_resistance_z3', name: 'Scroll: Fire Resistance', type: 'enchant_scroll',
+    description: 'Use on an equipped cloak item to apply the Fire Resistance enchant.', stackable: true,
+    scrollEnchantId: 'enchant_fire_resistance_z3', sellValue: 9,
+  },
+  scroll_frost_resistance_z3: {
+    id: 'scroll_frost_resistance_z3', name: 'Scroll: Frost Resistance', type: 'enchant_scroll',
+    description: 'Use on an equipped cloak item to apply the Frost Resistance enchant.', stackable: true,
+    scrollEnchantId: 'enchant_frost_resistance_z3', sellValue: 9,
+  },
+  scroll_shadow_resistance_z3: {
+    id: 'scroll_shadow_resistance_z3', name: 'Scroll: Shadow Resistance', type: 'enchant_scroll',
+    description: 'Use on an equipped cloak item to apply the Shadow Resistance enchant.', stackable: true,
+    scrollEnchantId: 'enchant_shadow_resistance_z3', sellValue: 9,
+  },
+  scroll_greater_health_z4: {
+    id: 'scroll_greater_health_z4', name: 'Scroll: Greater Health', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Greater Health enchant.', stackable: true,
+    scrollEnchantId: 'enchant_greater_health_z4', sellValue: 12,
+  },
+  scroll_greater_mana_z4: {
+    id: 'scroll_greater_mana_z4', name: 'Scroll: Greater Mana', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Greater Mana enchant.', stackable: true,
+    scrollEnchantId: 'enchant_greater_mana_z4', sellValue: 12,
+  },
+  scroll_greater_stamina_z4: {
+    id: 'scroll_greater_stamina_z4', name: 'Scroll: Greater Stamina', type: 'enchant_scroll',
+    description: 'Use on an equipped bracer item to apply the Greater Stamina enchant.', stackable: true,
+    scrollEnchantId: 'enchant_greater_stamina_z4', sellValue: 12,
+  },
+  scroll_greater_strength_z4: {
+    id: 'scroll_greater_strength_z4', name: 'Scroll: Greater Strength', type: 'enchant_scroll',
+    description: 'Use on an equipped gloves item to apply the Greater Strength enchant.', stackable: true,
+    scrollEnchantId: 'enchant_greater_strength_z4', sellValue: 12,
+  },
+  scroll_greater_agility_z4: {
+    id: 'scroll_greater_agility_z4', name: 'Scroll: Greater Agility', type: 'enchant_scroll',
+    description: 'Use on an equipped boots item to apply the Greater Agility enchant.', stackable: true,
+    scrollEnchantId: 'enchant_greater_agility_z4', sellValue: 12,
+  },
+  scroll_greater_intellect_z4: {
+    id: 'scroll_greater_intellect_z4', name: 'Scroll: Greater Intellect', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Greater Intellect enchant.', stackable: true,
+    scrollEnchantId: 'enchant_greater_intellect_z4', sellValue: 12,
+  },
+  scroll_greater_spirit_z4: {
+    id: 'scroll_greater_spirit_z4', name: 'Scroll: Greater Spirit', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Greater Spirit enchant.', stackable: true,
+    scrollEnchantId: 'enchant_greater_spirit_z4', sellValue: 12,
+  },
+  scroll_superior_defense_z4: {
+    id: 'scroll_superior_defense_z4', name: 'Scroll: Superior Defense', type: 'enchant_scroll',
+    description: 'Use on an equipped cloak item to apply the Superior Defense enchant.', stackable: true,
+    scrollEnchantId: 'enchant_superior_defense_z4', sellValue: 12,
+  },
+  scroll_greater_striking_z4: {
+    id: 'scroll_greater_striking_z4', name: 'Scroll: Greater Striking', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Greater Striking enchant.', stackable: true,
+    scrollEnchantId: 'enchant_greater_striking_z4', sellValue: 12,
+  },
+  scroll_greater_impact_z4: {
+    id: 'scroll_greater_impact_z4', name: 'Scroll: Greater Impact', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Greater Impact enchant.', stackable: true,
+    scrollEnchantId: 'enchant_greater_impact_z4', sellValue: 12,
+  },
+  scroll_greater_haste_z4: {
+    id: 'scroll_greater_haste_z4', name: 'Scroll: Greater Haste', type: 'enchant_scroll',
+    description: 'Use on an equipped gloves item to apply the Greater Haste enchant.', stackable: true,
+    scrollEnchantId: 'enchant_greater_haste_z4', sellValue: 12,
+  },
+  scroll_greater_fire_resistance_z4: {
+    id: 'scroll_greater_fire_resistance_z4', name: 'Scroll: Greater Fire Resistance', type: 'enchant_scroll',
+    description: 'Use on an equipped cloak item to apply the Greater Fire Resistance enchant.', stackable: true,
+    scrollEnchantId: 'enchant_greater_fire_resistance_z4', sellValue: 12,
+  },
+  scroll_greater_frost_resistance_z4: {
+    id: 'scroll_greater_frost_resistance_z4', name: 'Scroll: Greater Frost Resistance', type: 'enchant_scroll',
+    description: 'Use on an equipped cloak item to apply the Greater Frost Resistance enchant.', stackable: true,
+    scrollEnchantId: 'enchant_greater_frost_resistance_z4', sellValue: 12,
+  },
+  scroll_greater_shadow_resistance_z4: {
+    id: 'scroll_greater_shadow_resistance_z4', name: 'Scroll: Greater Shadow Resistance', type: 'enchant_scroll',
+    description: 'Use on an equipped cloak item to apply the Greater Shadow Resistance enchant.', stackable: true,
+    scrollEnchantId: 'enchant_greater_shadow_resistance_z4', sellValue: 12,
+  },
+  scroll_demonslaying_z4: {
+    id: 'scroll_demonslaying_z4', name: 'Scroll: Demonslaying', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Demonslaying enchant.', stackable: true,
+    scrollEnchantId: 'enchant_demonslaying_z4', sellValue: 12,
+  },
+  scroll_superior_health_z5: {
+    id: 'scroll_superior_health_z5', name: 'Scroll: Superior Health', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Superior Health enchant.', stackable: true,
+    scrollEnchantId: 'enchant_superior_health_z5', sellValue: 15,
+  },
+  scroll_superior_mana_z5: {
+    id: 'scroll_superior_mana_z5', name: 'Scroll: Superior Mana', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Superior Mana enchant.', stackable: true,
+    scrollEnchantId: 'enchant_superior_mana_z5', sellValue: 15,
+  },
+  scroll_superior_stamina_z5: {
+    id: 'scroll_superior_stamina_z5', name: 'Scroll: Superior Stamina', type: 'enchant_scroll',
+    description: 'Use on an equipped bracer item to apply the Superior Stamina enchant.', stackable: true,
+    scrollEnchantId: 'enchant_superior_stamina_z5', sellValue: 15,
+  },
+  scroll_superior_strength_z5: {
+    id: 'scroll_superior_strength_z5', name: 'Scroll: Superior Strength', type: 'enchant_scroll',
+    description: 'Use on an equipped gloves item to apply the Superior Strength enchant.', stackable: true,
+    scrollEnchantId: 'enchant_superior_strength_z5', sellValue: 15,
+  },
+  scroll_superior_agility_z5: {
+    id: 'scroll_superior_agility_z5', name: 'Scroll: Superior Agility', type: 'enchant_scroll',
+    description: 'Use on an equipped boots item to apply the Superior Agility enchant.', stackable: true,
+    scrollEnchantId: 'enchant_superior_agility_z5', sellValue: 15,
+  },
+  scroll_superior_intellect_z5: {
+    id: 'scroll_superior_intellect_z5', name: 'Scroll: Superior Intellect', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Superior Intellect enchant.', stackable: true,
+    scrollEnchantId: 'enchant_superior_intellect_z5', sellValue: 15,
+  },
+  scroll_superior_spirit_z5: {
+    id: 'scroll_superior_spirit_z5', name: 'Scroll: Superior Spirit', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Superior Spirit enchant.', stackable: true,
+    scrollEnchantId: 'enchant_superior_spirit_z5', sellValue: 15,
+  },
+  scroll_greater_stats_z5: {
+    id: 'scroll_greater_stats_z5', name: 'Scroll: Greater Stats', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Greater Stats enchant.', stackable: true,
+    scrollEnchantId: 'enchant_greater_stats_z5', sellValue: 15,
+  },
+  scroll_superior_defense_z5: {
+    id: 'scroll_superior_defense_z5', name: 'Scroll: Superior Defense', type: 'enchant_scroll',
+    description: 'Use on an equipped cloak item to apply the Superior Defense enchant.', stackable: true,
+    scrollEnchantId: 'enchant_superior_defense_z5', sellValue: 15,
+  },
+  scroll_superior_striking_z5: {
+    id: 'scroll_superior_striking_z5', name: 'Scroll: Superior Striking', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Superior Striking enchant.', stackable: true,
+    scrollEnchantId: 'enchant_superior_striking_z5', sellValue: 15,
+  },
+  scroll_superior_impact_z5: {
+    id: 'scroll_superior_impact_z5', name: 'Scroll: Superior Impact', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Superior Impact enchant.', stackable: true,
+    scrollEnchantId: 'enchant_superior_impact_z5', sellValue: 15,
+  },
+  scroll_greater_haste_z5: {
+    id: 'scroll_greater_haste_z5', name: 'Scroll: Greater Haste', type: 'enchant_scroll',
+    description: 'Use on an equipped gloves item to apply the Greater Haste enchant.', stackable: true,
+    scrollEnchantId: 'enchant_greater_haste_z5', sellValue: 15,
+  },
+  scroll_greater_fire_resistance_z5: {
+    id: 'scroll_greater_fire_resistance_z5', name: 'Scroll: Greater Fire Resistance', type: 'enchant_scroll',
+    description: 'Use on an equipped cloak item to apply the Greater Fire Resistance enchant.', stackable: true,
+    scrollEnchantId: 'enchant_greater_fire_resistance_z5', sellValue: 15,
+  },
+  scroll_greater_frost_resistance_z5: {
+    id: 'scroll_greater_frost_resistance_z5', name: 'Scroll: Greater Frost Resistance', type: 'enchant_scroll',
+    description: 'Use on an equipped cloak item to apply the Greater Frost Resistance enchant.', stackable: true,
+    scrollEnchantId: 'enchant_greater_frost_resistance_z5', sellValue: 15,
+  },
+  scroll_greater_shadow_resistance_z5: {
+    id: 'scroll_greater_shadow_resistance_z5', name: 'Scroll: Greater Shadow Resistance', type: 'enchant_scroll',
+    description: 'Use on an equipped cloak item to apply the Greater Shadow Resistance enchant.', stackable: true,
+    scrollEnchantId: 'enchant_greater_shadow_resistance_z5', sellValue: 15,
+  },
+  scroll_fiery_weapon_z5: {
+    id: 'scroll_fiery_weapon_z5', name: 'Scroll: Fiery Weapon', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Fiery Weapon enchant.', stackable: true,
+    scrollEnchantId: 'enchant_fiery_weapon_z5', sellValue: 30,
+  },
+  scroll_icy_chill_z5: {
+    id: 'scroll_icy_chill_z5', name: 'Scroll: Icy Chill', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Icy Chill enchant.', stackable: true,
+    scrollEnchantId: 'enchant_icy_chill_z5', sellValue: 30,
+  },
+  scroll_lifestealing_z5: {
+    id: 'scroll_lifestealing_z5', name: 'Scroll: Lifestealing', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Lifestealing enchant.', stackable: true,
+    scrollEnchantId: 'enchant_lifestealing_z5', sellValue: 30,
+  },
+  scroll_ember_health: {
+    id: 'scroll_ember_health', name: 'Scroll: Ember Health', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Ember Health enchant.', stackable: true,
+    scrollEnchantId: 'enchant_ember_health', sellValue: 18,
+  },
+  scroll_ember_mana: {
+    id: 'scroll_ember_mana', name: 'Scroll: Ember Mana', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Ember Mana enchant.', stackable: true,
+    scrollEnchantId: 'enchant_ember_mana', sellValue: 18,
+  },
+  scroll_ember_stamina: {
+    id: 'scroll_ember_stamina', name: 'Scroll: Ember Stamina', type: 'enchant_scroll',
+    description: 'Use on an equipped bracer item to apply the Ember Stamina enchant.', stackable: true,
+    scrollEnchantId: 'enchant_ember_stamina', sellValue: 18,
+  },
+  scroll_ember_strength: {
+    id: 'scroll_ember_strength', name: 'Scroll: Ember Strength', type: 'enchant_scroll',
+    description: 'Use on an equipped gloves item to apply the Ember Strength enchant.', stackable: true,
+    scrollEnchantId: 'enchant_ember_strength', sellValue: 18,
+  },
+  scroll_ember_agility: {
+    id: 'scroll_ember_agility', name: 'Scroll: Ember Agility', type: 'enchant_scroll',
+    description: 'Use on an equipped boots item to apply the Ember Agility enchant.', stackable: true,
+    scrollEnchantId: 'enchant_ember_agility', sellValue: 18,
+  },
+  scroll_ember_intellect: {
+    id: 'scroll_ember_intellect', name: 'Scroll: Ember Intellect', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Ember Intellect enchant.', stackable: true,
+    scrollEnchantId: 'enchant_ember_intellect', sellValue: 18,
+  },
+  scroll_ember_spirit: {
+    id: 'scroll_ember_spirit', name: 'Scroll: Ember Spirit', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Ember Spirit enchant.', stackable: true,
+    scrollEnchantId: 'enchant_ember_spirit', sellValue: 18,
+  },
+  scroll_ember_stats: {
+    id: 'scroll_ember_stats', name: 'Scroll: Ember Stats', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Ember Stats enchant.', stackable: true,
+    scrollEnchantId: 'enchant_ember_stats', sellValue: 18,
+  },
+  scroll_ember_defense: {
+    id: 'scroll_ember_defense', name: 'Scroll: Ember Defense', type: 'enchant_scroll',
+    description: 'Use on an equipped cloak item to apply the Ember Defense enchant.', stackable: true,
+    scrollEnchantId: 'enchant_ember_defense', sellValue: 18,
+  },
+  scroll_ember_striking: {
+    id: 'scroll_ember_striking', name: 'Scroll: Ember Striking', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Ember Striking enchant.', stackable: true,
+    scrollEnchantId: 'enchant_ember_striking', sellValue: 18,
+  },
+  scroll_ember_impact: {
+    id: 'scroll_ember_impact', name: 'Scroll: Ember Impact', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Ember Impact enchant.', stackable: true,
+    scrollEnchantId: 'enchant_ember_impact', sellValue: 18,
+  },
+  scroll_ember_haste: {
+    id: 'scroll_ember_haste', name: 'Scroll: Ember Haste', type: 'enchant_scroll',
+    description: 'Use on an equipped gloves item to apply the Ember Haste enchant.', stackable: true,
+    scrollEnchantId: 'enchant_ember_haste', sellValue: 18,
+  },
+  scroll_ember_fire_resistance: {
+    id: 'scroll_ember_fire_resistance', name: 'Scroll: Ember Fire Resistance', type: 'enchant_scroll',
+    description: 'Use on an equipped cloak item to apply the Ember Fire Resistance enchant.', stackable: true,
+    scrollEnchantId: 'enchant_ember_fire_resistance', sellValue: 18,
+  },
+  scroll_ember_frost_resistance: {
+    id: 'scroll_ember_frost_resistance', name: 'Scroll: Ember Frost Resistance', type: 'enchant_scroll',
+    description: 'Use on an equipped cloak item to apply the Ember Frost Resistance enchant.', stackable: true,
+    scrollEnchantId: 'enchant_ember_frost_resistance', sellValue: 18,
+  },
+  scroll_ember_shadow_resistance: {
+    id: 'scroll_ember_shadow_resistance', name: 'Scroll: Ember Shadow Resistance', type: 'enchant_scroll',
+    description: 'Use on an equipped cloak item to apply the Ember Shadow Resistance enchant.', stackable: true,
+    scrollEnchantId: 'enchant_ember_shadow_resistance', sellValue: 18,
+  },
+  scroll_ember_fiery_weapon: {
+    id: 'scroll_ember_fiery_weapon', name: 'Scroll: Ember Fiery Weapon', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Ember Fiery Weapon enchant.', stackable: true,
+    scrollEnchantId: 'enchant_ember_fiery_weapon', sellValue: 36,
+  },
+  scroll_ember_icy_chill: {
+    id: 'scroll_ember_icy_chill', name: 'Scroll: Ember Icy Chill', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Ember Icy Chill enchant.', stackable: true,
+    scrollEnchantId: 'enchant_ember_icy_chill', sellValue: 36,
+  },
+  scroll_ember_lifestealing: {
+    id: 'scroll_ember_lifestealing', name: 'Scroll: Ember Lifestealing', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Ember Lifestealing enchant.', stackable: true,
+    scrollEnchantId: 'enchant_ember_lifestealing', sellValue: 36,
+  },
+  scroll_crusader: {
+    id: 'scroll_crusader', name: 'Scroll: Crusader', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Crusader enchant.', stackable: true,
+    scrollEnchantId: 'enchant_crusader', sellValue: 36,
+  },
+  scroll_spellpower: {
+    id: 'scroll_spellpower', name: 'Scroll: Spellpower', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Spellpower enchant.', stackable: true,
+    scrollEnchantId: 'enchant_spellpower', sellValue: 36,
+  },
+  scroll_healing_power: {
+    id: 'scroll_healing_power', name: 'Scroll: Healing Power', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Healing Power enchant.', stackable: true,
+    scrollEnchantId: 'enchant_healing_power', sellValue: 36,
+  },
+  scroll_mighty_intellect: {
+    id: 'scroll_mighty_intellect', name: 'Scroll: Mighty Intellect', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Mighty Intellect enchant.', stackable: true,
+    scrollEnchantId: 'enchant_mighty_intellect', sellValue: 18,
+  },
+  scroll_mighty_spirit: {
+    id: 'scroll_mighty_spirit', name: 'Scroll: Mighty Spirit', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Mighty Spirit enchant.', stackable: true,
+    scrollEnchantId: 'enchant_mighty_spirit', sellValue: 18,
+  },
+  scroll_mighty_strength: {
+    id: 'scroll_mighty_strength', name: 'Scroll: Mighty Strength', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Mighty Strength enchant.', stackable: true,
+    scrollEnchantId: 'enchant_mighty_strength', sellValue: 18,
+  },
+  scroll_mighty_agility: {
+    id: 'scroll_mighty_agility', name: 'Scroll: Mighty Agility', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Mighty Agility enchant.', stackable: true,
+    scrollEnchantId: 'enchant_mighty_agility', sellValue: 18,
   },
 
   // ── Alchemy potions — healAmount/manaAmount potions stay simple instant

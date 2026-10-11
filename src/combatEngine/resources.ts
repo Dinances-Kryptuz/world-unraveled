@@ -5,30 +5,39 @@ import type { ResourcePool, ResourceType } from './types';
 // have more than one (Paladin: Mana + Holy Power) — Phase 1 abilities only
 // spend Holy Power, but Mana is tracked now so mana-spending Paladin
 // abilities in a later phase don't need a resource-model change.
-export function initialResources(cls: ClassId, level: number, intStat: number): Partial<Record<ResourceType, ResourcePool>> {
+// flatManaBonus: Enchanting overhaul's flat Mana enchants (Minor/Lesser/
+// .../Ember Mana) — see maxHp()'s matching flatHpBonus doc comment in
+// combatFormulas.ts for why this is a literal flat addend, not a stat-point
+// conversion.
+export function initialResources(
+  cls: ClassId,
+  level: number,
+  intStat: number,
+  flatManaBonus = 0
+): Partial<Record<ResourceType, ResourcePool>> {
   switch (cls) {
     case 'warrior':
       return { rage: { current: 0, max: 100 } };
     case 'priest': {
-      const max = manaMax(level, intStat);
+      const max = manaMax(level, intStat, flatManaBonus);
       return { mana: { current: max, max } };
     }
     case 'paladin': {
-      const max = manaMax(level, intStat);
+      const max = manaMax(level, intStat, flatManaBonus);
       return {
         mana: { current: max, max },
         holyPower: { current: 0, max: 5 },
       };
     }
     case 'mage': {
-      const max = manaMax(level, intStat);
+      const max = manaMax(level, intStat, flatManaBonus);
       return { mana: { current: max, max } };
     }
   }
 }
 
-function manaMax(level: number, intStat: number): number {
-  return Math.round(50 + level * 10 + intStat * 2);
+function manaMax(level: number, intStat: number, flatManaBonus = 0): number {
+  return Math.round(50 + level * 10 + intStat * 2 + flatManaBonus);
 }
 
 // Which resource types a class's combatant ever has, in the same order

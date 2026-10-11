@@ -207,6 +207,69 @@ export interface CasterProfile {
   // always absent for the player/companions (nothing in this game lets a
   // player BE a beast or demon).
   creatureType?: 'beast' | 'demon';
+  // Phase E6 catalog additions — all ATTACKER-side (checked against the
+  // DEFENDER's creatureType above) except flatDamageReduction/
+  // fireResistancePct/shadowResistancePct, which are DEFENDER-side (checked
+  // against the ATTACKER's damageSchool). Always 0 for monsters/companions
+  // (buildMonsterProfile/buildCompanionProfile); for the player, resolved
+  // once at encounter setup from buildActiveEnchantTotals (gameData/
+  // enchanting.ts), same static-per-encounter posture as hastePct/
+  // flatDamageBonus above.
+  //
+  // beastDamageBonusPct/demonDamageBonusPct: Beastslayer/Demonslaying —
+  // multiply final damage when defender.profile.creatureType matches.
+  // Demonslaying never actually fires (no monster is tagged 'demon' yet —
+  // see Monster.creatureType's doc comment) but is still modeled here, per
+  // the design brief's explicit "keep the recipe defined but unavailable."
+  beastDamageBonusPct: number;
+  demonDamageBonusPct: number;
+  // flatDamageReduction: Minor/Lesser/... Absorption — reduces incoming
+  // damage by a flat amount (minimum 1 post-reduction, applied only when
+  // the hit would otherwise deal damage) before any other defender-side
+  // multiplier.
+  flatDamageReduction: number;
+  // fireResistancePct/shadowResistancePct: the enchant-sourced (always-on,
+  // while the enchant is charged) counterpart to the Herbalism/Alchemy
+  // overhaul's consumable-only resistance (BuffEffect.fireResistancePct/
+  // shadowResistancePct) — the two are SUMMED in computeEffectDamage and
+  // clamped to the same 75% cap, never a second independent pipeline.
+  // frostResistancePct is deliberately NOT modeled — no frost damage school
+  // exists in this combat engine (DamageSchool is 'physical' | 'fire' |
+  // 'shadow'), so a Frost Resistance enchant is defined in the catalog but
+  // mechanically inert, per the design brief's own "only include resistance
+  // types supported by existing combat" instruction.
+  fireResistancePct: number;
+  shadowResistancePct: number;
+  // weaponProc: Fiery Weapon/Lifestealing/Crusader (and their Ember-tier
+  // upgrades) — a chance-on-hit effect carried by whatever's enchanted into
+  // the WEAPON slot right now. Always undefined for monsters/companions
+  // (companions have no enchantments storage at all — see Character.
+  // enchantmentCharges's doc comment). "Cannot trigger additional enchant
+  // procs" (every proc enchant's own description) is enforced by
+  // computeEffectDamage simply never rolling source.profile.weaponProc
+  // again for a proc's OWN bonus-damage sub-event.
+  weaponProc?: EnchantWeaponProc;
+}
+
+// EnchantProcKind values map 1:1 onto the design brief's Zone 5/6 proc
+// enchants — fiery_weapon/lifestealing/crusader are real mechanics (see
+// computeEffectDamage); icy_chill is defined/craftable/appliable but its
+// slow effect is a deliberate no-op (per this session's earlier-approved
+// "skip Icy Chill's slow proc" resolution — no attack-speed-debuff concept
+// exists on the DEFENDER side of this engine, only the player's own
+// hastePct lever).
+export type EnchantProcKind = 'fiery_weapon' | 'lifestealing' | 'icy_chill' | 'crusader';
+
+export interface EnchantWeaponProc {
+  kind: EnchantProcKind;
+  chancePct: number;
+  // Meaning varies by kind: fiery_weapon = bonus fire damage as a % of the
+  // triggering hit's amount; lifestealing = self-heal as a % of the
+  // triggering hit's amount (capped by missing health); icy_chill/crusader
+  // ignore this field (crusader's heal/buff magnitudes are fixed by the
+  // design brief, not tunable per-tier the way fiery_weapon/lifestealing
+  // are — see computeEffectDamage).
+  power: number;
 }
 
 export interface CombatState {

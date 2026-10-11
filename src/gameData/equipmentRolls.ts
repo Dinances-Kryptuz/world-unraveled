@@ -247,12 +247,12 @@ export const MATERIAL_MASTERY_XP_THRESHOLDS: Record<string, number> = {
   // Enchanting's 6 zones reuse the exact same craftSeconds/best-recipe-bar-
   // count trick as Leatherworking/Tailoring above — same 6 Blacksmithing
   // values, now covering the ONE combined Wand/Staff/Book track per zone.
-  rough_wood: 173854,
-  aged_wood: 163627,
-  heartwood: 144878,
-  ironwood: 141922,
-  charwood: 139083,
-  emberwood: 129984,
+  simple_wood: 173854,
+  star_wood: 163627,
+  mystic_wood: 144878,
+  enchanted_hardwood: 141922,
+  ancient_runewood: 139083,
+  emberheart_wood: 129984,
 };
 
 // A material with no recipe tagged to it (shouldn't happen for any

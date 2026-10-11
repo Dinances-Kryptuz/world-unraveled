@@ -77,12 +77,12 @@ export const CLOTH_MATERIALS: MaterialDef[] = [
 // here stays a bare wood name so "Master of {name}" titles/achievements
 // read naturally like every other material's.
 export const WOOD_MATERIALS: MaterialDef[] = [
-  { id: 'rough_wood', name: 'Rough Wood', barItemId: 'rough_wood' },
-  { id: 'aged_wood', name: 'Aged Wood', barItemId: 'aged_wood' },
-  { id: 'heartwood', name: 'Heartwood', barItemId: 'heartwood' },
-  { id: 'ironwood', name: 'Ironwood', barItemId: 'ironwood' },
-  { id: 'charwood', name: 'Charwood', barItemId: 'charwood' },
-  { id: 'emberwood', name: 'Emberwood', barItemId: 'emberwood' },
+  { id: 'simple_wood', name: 'Simple Wood', barItemId: 'simple_wood' },
+  { id: 'star_wood', name: 'Star Wood', barItemId: 'star_wood' },
+  { id: 'mystic_wood', name: 'Mystic Wood', barItemId: 'mystic_wood' },
+  { id: 'enchanted_hardwood', name: 'Enchanted Hardwood', barItemId: 'enchanted_hardwood' },
+  { id: 'ancient_runewood', name: 'Ancient Runewood', barItemId: 'ancient_runewood' },
+  { id: 'emberheart_wood', name: 'Emberheart Wood', barItemId: 'emberheart_wood' },
 ];
 
 const MATERIALS_BY_ID: Record<string, MaterialDef> = Object.fromEntries(

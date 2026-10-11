@@ -32,7 +32,17 @@ import { effectiveLoadout, effectiveAbilityConditions } from './progression';
 import { initialResources, regenResources, canAfford, spend, gain } from './resources';
 import { resolveTarget } from './targeting';
 import { pickAbility } from './priority';
-import type { Ability, CasterProfile, Combatant, CombatState, CombatEvent, ConditionGroup } from './types';
+import type {
+  Ability,
+  ActiveBuff,
+  CasterProfile,
+  Combatant,
+  CombatState,
+  CombatEvent,
+  ConditionGroup,
+  EnchantProcKind,
+  EnchantWeaponProc,
+} from './types';
 
 export interface EncounterSetupInput {
   cls: ClassId;
@@ -104,6 +114,19 @@ export interface EncounterSetupInput {
   hastePct?: number;
   flatDamageBonus?: number;
   healingPowerFlatBonus?: number;
+  // Phase E6 catalog additions — same "resolved once by the caller from
+  // buildActiveEnchantTotals, baked in at encounter setup" posture as the
+  // three fields above. See CasterProfile's matching doc comments
+  // (combatEngine/types.ts) for what each one does mechanically.
+  flatHpBonus?: number;
+  flatManaBonus?: number;
+  flatArmorBonus?: number;
+  beastDamageBonusPct?: number;
+  demonDamageBonusPct?: number;
+  flatDamageReduction?: number;
+  fireResistancePct?: number;
+  shadowResistancePct?: number;
+  weaponProc?: EnchantWeaponProc;
 }
 
 // Folds active-buff stat bonuses (Alchemy stat potions, Cooking's Well Fed)
@@ -131,7 +154,11 @@ function buildPlayerProfile(input: EncounterSetupInput): CasterProfile {
   const diff = monster.level - level;
   const survCoefFinal = specDef.survivabilityCoef * (1 + talentTotals.survCoefMultPct / 100);
   const effectiveSta = statAtLevel(cls, 'STA', level) + (equipmentBonuses.STA ?? 0);
-  const armor = effectiveSta * 2 * survCoefFinal * (1 + talentTotals.armorMultPct / 100);
+  // flatArmorBonus (the Defense family of enchants — Minor/Lesser/.../Ember
+  // Defense) is the closest existing lever to the design brief's flat
+  // "Defense" stat, which this engine doesn't otherwise model — folded in
+  // post-multiplier, same flat-addend posture as flatHpBonus/flatManaBonus.
+  const armor = effectiveSta * 2 * survCoefFinal * (1 + talentTotals.armorMultPct / 100) + (input.flatArmorBonus ?? 0);
   const avoidance = Math.min(
     0.75,
     specDef.avoidance + talentTotals.avoidanceAddPct / 100 + buffTotals.avoidanceAddPct / 100
@@ -180,6 +207,12 @@ function buildPlayerProfile(input: EncounterSetupInput): CasterProfile {
       statAtLevel(cls, 'SPI', level) + (equipmentBonuses.SPI ?? 0) + (input.healingPowerFlatBonus ?? 0)
     ),
     hastePct: input.hastePct ?? 0,
+    beastDamageBonusPct: input.beastDamageBonusPct ?? 0,
+    demonDamageBonusPct: input.demonDamageBonusPct ?? 0,
+    flatDamageReduction: input.flatDamageReduction ?? 0,
+    fireResistancePct: input.fireResistancePct ?? 0,
+    shadowResistancePct: input.shadowResistancePct ?? 0,
+    weaponProc: input.weaponProc,
   };
 }
 
@@ -221,6 +254,12 @@ function buildCompanionProfile(companion: CompanionCombatSetup, monster: Monster
     passiveHealPct: (specDef.passiveHealPct + totals.passiveHealAddPct / 100) * (1 + totals.healMultPct / 100),
     healingPowerMult: healingPowerMultiplier(statAtLevel(cls, 'SPI', level) + (equipmentBonuses.SPI ?? 0)),
     hastePct: 0, // no companion Combat Setup screen to equip a Haste enchant through in this V1
+    beastDamageBonusPct: 0,
+    demonDamageBonusPct: 0,
+    flatDamageReduction: 0,
+    fireResistancePct: 0,
+    shadowResistancePct: 0,
+    // weaponProc stays undefined — companions have no enchantments storage.
   };
 }
 
@@ -241,6 +280,11 @@ function buildMonsterProfile(monster: Monster, playerLevel: number, playerCombat
     healingPowerMult: 1,
     hastePct: 0, // monsters never get a Haste enchant
     creatureType: monster.creatureType,
+    beastDamageBonusPct: 0,
+    demonDamageBonusPct: 0,
+    flatDamageReduction: 0,
+    fireResistancePct: 0,
+    shadowResistancePct: 0,
   };
 }
 
@@ -311,7 +355,7 @@ export function createPlayerCombatant(input: EncounterSetupInput): Combatant {
   const loadout = effectiveLoadout(input.cls, input.specId, input.level, input.savedEquippedAbilityIds, input.trainedAbilityIds);
   const mergedBonuses = mergeStatBonuses(input.equipmentBonuses, input.buffTotals.statBonuses);
   const intStat = statAtLevel(input.cls, 'INT', input.level) + (mergedBonuses.INT ?? 0);
-  const playerMaxHp = computeMaxHp(input.cls, input.level, mergedBonuses, input.talentTotals.hpMultPct);
+  const playerMaxHp = computeMaxHp(input.cls, input.level, mergedBonuses, input.talentTotals.hpMultPct, input.flatHpBonus ?? 0);
   const profile = buildPlayerProfile(input);
 
   return {
@@ -321,7 +365,7 @@ export function createPlayerCombatant(input: EncounterSetupInput): Combatant {
     hp: Math.min(input.currentHp, playerMaxHp),
     maxHp: playerMaxHp,
     isAlive: input.currentHp > 0,
-    resources: initialResources(input.cls, input.level, intStat),
+    resources: initialResources(input.cls, input.level, intStat, input.flatManaBonus ?? 0),
     cooldowns: {},
     dots: [],
     hots: [],
@@ -413,6 +457,24 @@ function buffDamageTakenMult(c: Combatant): number {
   return 1 + c.buffs.reduce((sum, b) => sum + b.damageTakenPct, 0) / 100;
 }
 
+// Replaces any existing buff tagged with the same abilityId rather than
+// stacking a second copy — Crusader's "+10% of unbuffed Strength... for the
+// next 3 eligible attacks, refreshing rather than stacking" (per the design
+// brief) is the only caller today.
+function upsertBuff(c: Combatant, buff: ActiveBuff): void {
+  c.buffs = c.buffs.filter((b) => b.abilityId !== buff.abilityId);
+  c.buffs.push(buff);
+}
+
+// Crusader's temporary Strength buff, approximated as a flat damageDealtPct
+// bonus on the existing ActiveBuff mechanism (Battle Cry's own mechanism)
+// rather than a live STR/normalizedHit recompute — this engine bakes
+// normalizedHit once at encounter setup, so a mid-fight STR change can't
+// otherwise feed back into it without a much larger rework. A deliberate,
+// flagged simplification (see this phase's final summary).
+const CRUSADER_PROC_DAMAGE_DEALT_PCT = 10;
+const CRUSADER_PROC_HEAL_PCT_OF_MAX_HP = 5;
+
 // One roll for a landed hit's damage: attacker's normalized hit, spec/talent
 // coefficient, active buffs, the defender's armor, and a level-gap accuracy
 // check when the attacker is the player (mirrors the old aggregate model's
@@ -433,7 +495,14 @@ function computeEffectDamage(
   levelGapAccuracy: number,
   effectDamageSchool: DamageSchool,
   consumableState: ConsumableAutomationRuntimeState | undefined
-): { hit: boolean; amount: number; healOnTrigger: number; crit: boolean } {
+): {
+  hit: boolean;
+  amount: number;
+  healOnTrigger: number;
+  attackerHealOnTrigger: number;
+  crit: boolean;
+  procTriggered?: EnchantProcKind;
+} {
   const accuracyRoll = attacker.isPlayer ? levelGapAccuracy : attacker.profile.accuracy;
   // dodgeChance is a separate independent roll from avoidance (AGI's own
   // mechanic, not a replacement for the existing spec-driven avoidance
@@ -442,7 +511,7 @@ function computeEffectDamage(
     Math.random() > accuracyRoll ||
     Math.random() < defender.profile.avoidance ||
     Math.random() < defender.profile.dodgeChance;
-  if (avoided) return { hit: false, amount: 0, healOnTrigger: 0, crit: false };
+  if (avoided) return { hit: false, amount: 0, healOnTrigger: 0, attackerHealOnTrigger: 0, crit: false };
   const isCrit = Math.random() < attacker.profile.critChance;
 
   let offensiveMultPct = 0;
@@ -466,14 +535,17 @@ function computeEffectDamage(
   // profile itself, matching BuffEffect.armorBonusPct's doc comment.
   const effectiveArmor = defender.profile.armor * (1 + (defensive?.armorBonusPct ?? 0) / 100);
   const armorMod = 1 - armorReduction(effectiveArmor);
-  // Consumable-only elemental resistance — only ever reduces damage from an
-  // attack whose school matches the active defensive buff's resistance,
+  // Elemental resistance — only ever reduces damage from an attack whose
+  // school matches. SUMS the consumable-only defensive buff (Herbalism/
+  // Alchemy overhaul) with the always-on enchant-sourced resistance
+  // (Phase E6's Fire/Frost/Shadow Resistance family, CasterProfile.
+  // fireResistancePct/shadowResistancePct) — one pipeline, two sources —
   // clamped to the same 75% cap the game's avoidance stat already uses.
   const resistancePct =
     effectDamageSchool === 'fire'
-      ? defensive?.fireResistancePct ?? 0
+      ? (defensive?.fireResistancePct ?? 0) + defender.profile.fireResistancePct
       : effectDamageSchool === 'shadow'
-        ? defensive?.shadowResistancePct ?? 0
+        ? (defensive?.shadowResistancePct ?? 0) + defender.profile.shadowResistancePct
         : 0;
   const resistanceMod = 1 - Math.min(0.75, resistancePct / 100);
 
@@ -489,6 +561,22 @@ function computeEffectDamage(
     0,
     Math.round(raw * defender.profile.damageTakenMult * buffDamageTakenMult(defender) * resistanceMod)
   );
+
+  // Beastslayer/Demonslaying — attacker-side %, applied as a final
+  // multiplier on the already-mitigated hit, only when the DEFENDER's
+  // creatureType matches (Demonslaying never actually fires today — no
+  // monster is tagged 'demon' yet, per Monster.creatureType's doc comment).
+  let creatureBonusPct = 0;
+  if (defender.profile.creatureType === 'beast') creatureBonusPct += attacker.profile.beastDamageBonusPct;
+  if (defender.profile.creatureType === 'demon') creatureBonusPct += attacker.profile.demonDamageBonusPct;
+  if (amount > 0 && creatureBonusPct > 0) amount = Math.round(amount * (1 + creatureBonusPct / 100));
+
+  // Minor/Lesser/Mystic/Nether/Superior/Ember Absorption — flat reduction,
+  // minimum 1, applied only to an already-positive hit (a hit already
+  // mitigated to 0 by armor stays 0, never floored back up to 1).
+  if (amount > 0 && defender.profile.flatDamageReduction > 0) {
+    amount = Math.max(1, amount - defender.profile.flatDamageReduction);
+  }
 
   // Elixir of Fortitude's maxHpBonusPct — "temporarily raises the ceiling
   // used for THIS hit's survival math only, never persisted" (see
@@ -506,7 +594,41 @@ function computeEffectDamage(
   // like every other heal in this file does.
   const healOnTrigger = defensive?.healOnTriggerPct ? defender.maxHp * (defensive.healOnTriggerPct / 100) : 0;
 
-  return { hit: true, amount, healOnTrigger, crit: isCrit };
+  // Enchanting overhaul's weapon procs — Fiery Weapon/Lifestealing/Crusader
+  // (and their Ember-tier upgrades), player-attacker only (CasterProfile.
+  // weaponProc is always undefined for monsters/companions). Rolled once
+  // per landed hit, AFTER every mitigation step above, off the hit's final
+  // amount ("approximately 15% of the character's normal attack damage,"
+  // per the design brief). The bonus fire damage this adds to `amount`
+  // itself never re-triggers this same roll — there is no second
+  // computeEffectDamage call for it — satisfying "procs cannot trigger
+  // additional enchant procs." Icy Chill is intentionally a no-op here (see
+  // EnchantProcKind's doc comment — no attack-speed-debuff concept exists
+  // on the defender side of this engine).
+  let attackerHealOnTrigger = 0;
+  let procTriggered: EnchantProcKind | undefined;
+  const proc = attacker.profile.weaponProc;
+  if (proc && amount > 0 && Math.random() * 100 < proc.chancePct) {
+    procTriggered = proc.kind;
+    if (proc.kind === 'fiery_weapon') {
+      amount += Math.round(amount * (proc.power / 100));
+    } else if (proc.kind === 'lifestealing') {
+      attackerHealOnTrigger = Math.max(0, Math.min(amount * (proc.power / 100), attacker.maxHp - attacker.hp));
+    } else if (proc.kind === 'crusader') {
+      upsertBuff(attacker, {
+        abilityId: 'enchant_proc_crusader',
+        remainingSeconds: (3 * ATTACK_INTERVAL_SECONDS) / (1 + attacker.profile.hastePct / 100),
+        damageDealtPct: CRUSADER_PROC_DAMAGE_DEALT_PCT,
+        damageTakenPct: 0,
+      });
+      attackerHealOnTrigger = Math.max(
+        0,
+        Math.min(attacker.maxHp * (CRUSADER_PROC_HEAL_PCT_OF_MAX_HP / 100), attacker.maxHp - attacker.hp)
+      );
+    }
+  }
+
+  return { hit: true, amount, healOnTrigger, attackerHealOnTrigger, crit: isCrit, procTriggered };
 }
 
 export interface KillReward {
@@ -813,7 +935,7 @@ export function useAbility(
       switch (effect.type) {
         case 'damage': {
           const effectDamageSchool = effect.damageSchool ?? source.profile.damageSchool;
-          const { hit, amount, healOnTrigger, crit } = computeEffectDamage(
+          const { hit, amount, healOnTrigger, attackerHealOnTrigger, crit, procTriggered } = computeEffectDamage(
             source,
             target,
             effect.power ?? 1,
@@ -836,6 +958,20 @@ export function useAbility(
             const before = target.hp;
             target.hp = Math.min(target.maxHp, target.hp + healOnTrigger);
             if (target.isPlayer) questSignals.healingDone += target.hp - before;
+          }
+          // Lifestealing/Crusader's attacker-side proc heal — same
+          // skip-a-dead-attacker guard as every other heal in this file.
+          if (attackerHealOnTrigger > 0 && source.isAlive) {
+            const before = source.hp;
+            source.hp = Math.min(source.maxHp, source.hp + attackerHealOnTrigger);
+            if (source.isPlayer) questSignals.healingDone += source.hp - before;
+          }
+          if (procTriggered === 'fiery_weapon') {
+            events.push({ message: `${source.name}'s weapon enchant bursts into flame!`, kind: 'status' });
+          } else if (procTriggered === 'lifestealing') {
+            events.push({ message: `${source.name}'s weapon enchant drains life from ${target.name}.`, kind: 'status' });
+          } else if (procTriggered === 'crusader') {
+            events.push({ message: `${source.name} is empowered by a Crusader enchant.`, kind: 'status' });
           }
           // healFrac (Shadow Priest's "sustain from the damage you deal," per
           // its own spec blurb) was computed onto the profile since Phase 1

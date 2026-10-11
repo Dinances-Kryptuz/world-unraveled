@@ -10,11 +10,12 @@ import type { ClassId, SpecDef, SpecId, BaseStat } from '../gameData/classStats'
 import { maxHp } from '../gameData/combatFormulas';
 import type { TalentBonusTotals } from '../utils/talentEvaluator';
 import type { BuffTotals } from '../gameData/buffs';
-import type { Monster } from '../gameData/types';
+import type { EquipmentSlot, Monster } from '../gameData/types';
 import { characterXpForLevelV2, MAX_CHARACTER_LEVEL } from '../gameData/xpTables';
 import { resolveElapsedProgress } from '../gameData/activityEngine';
 import type { CompanionCombatSetup } from '../gameData/companions';
 import type { ConsumableAutomationRuntimeState } from '../gameData/consumableAutomation';
+import { ENCHANTS, buildActiveEnchantTotals } from '../gameData/enchanting';
 import {
   createEncounterState,
   createPlayerCombatant,
@@ -61,13 +62,18 @@ export interface OfflineCombatInput {
   // mechanism applies (CurrentActivity.equippedShirtItemId for ordinary
   // offline combat, or the dungeon's own entry-time snapshot).
   goldFindPct?: number;
-  // Enchanting overhaul's passive stat-enchant levers — see
-  // EncounterSetupInput's matching doc comment in engine.ts. Resolved once
-  // by the caller (same snapshot-at-window-start posture as every other
-  // offline input here) rather than re-read mid-simulation.
-  hastePct?: number;
-  flatDamageBonus?: number;
-  healingPowerFlatBonus?: number;
+  // Enchanting overhaul's per-slot charge model — passed RAW (not
+  // pre-summed into hastePct/flatDamageBonus/etc, unlike every other
+  // bonus in this input) specifically so this loop can track each slot's
+  // remaining charges tick-by-tick and stop applying an enchant's effect
+  // the instant its charges hit 0 — "do not allow an expired enchantment
+  // to affect the remainder of an offline session," per the design
+  // brief's explicit, repeated instruction. See simulateOfflineCombat's
+  // buildInput/charges handling below. Absent/undefined behaves exactly
+  // like an empty enchantments record (zero effect, matching every
+  // character before this field existed).
+  enchantments?: Partial<Record<EquipmentSlot, string>>;
+  enchantmentCharges?: Partial<Record<EquipmentSlot, number>>;
 }
 
 export interface OfflineCombatResult {
@@ -113,7 +119,23 @@ export function simulateOfflineCombat(input: OfflineCombatInput): OfflineCombatR
   // hand-derived DPS formula.
   const combatSecondsBudget = progress.effectiveHours * 3600;
 
+  // Enchanting overhaul's per-slot charge model — a LOCAL mutable copy,
+  // decremented tick by tick below as this exact simulation actually
+  // consumes charges, never mutated back onto `input`. The DB-side final
+  // charge count is still resolved the existing way (consumeEnchantCharges,
+  // via this function's returned enchantTriggerCounts/monstersDefeated —
+  // subtracting the AGGREGATE trigger count from the starting charge,
+  // floored at 0, which produces the exact same FINAL number a one-at-a-
+  // time decrement-with-floor would). This local copy exists purely so
+  // buildInput() below can stop crediting an enchant's MECHANICAL effect
+  // (haste, flat damage, resistance, proc, etc.) for the remainder of the
+  // window the instant its charges reach 0 mid-simulation — "do not allow
+  // an expired enchantment to affect the remainder of an offline session."
+  const enchantments = input.enchantments ?? {};
+  const charges: Partial<Record<EquipmentSlot, number>> = { ...(input.enchantmentCharges ?? {}) };
+
   function buildInput(level: number, currentHp: number): EncounterSetupInput {
+    const enchantTotals = buildActiveEnchantTotals(enchantments, charges);
     return {
       cls: input.cls,
       level,
@@ -130,10 +152,31 @@ export function simulateOfflineCombat(input: OfflineCombatInput): OfflineCombatR
       savedAbilityConditions: input.savedAbilityConditions,
       disabledAbilityIds: input.disabledAbilityIds,
       companions: input.companions?.map((c) => ({ ...c, level })),
-      hastePct: input.hastePct,
-      flatDamageBonus: input.flatDamageBonus,
-      healingPowerFlatBonus: input.healingPowerFlatBonus,
+      ...enchantTotals,
     };
+  }
+
+  // Decrements `charges` for every slot whose enchant's charge-consumption
+  // category matches this tick's events — the SAME category->trigger
+  // mapping consumeEnchantCharges (firebase/enchanting.ts) uses for the
+  // real DB write, just applied one tick at a time instead of once at the
+  // end of the window. Returns whether any slot just crossed to exactly 0,
+  // so the caller knows whether a rebuild is actually needed.
+  function decrementCharges(offensiveActions: number, damageTaken: number, kills: number): boolean {
+    let anyJustExhausted = false;
+    for (const [slot, enchantId] of Object.entries(enchantments) as [EquipmentSlot, string | undefined][]) {
+      if (!enchantId) continue;
+      const enchant = ENCHANTS[enchantId];
+      const current = charges[slot];
+      if (!enchant || current === undefined || current <= 0) continue;
+      const count =
+        enchant.category === 'offensive' ? offensiveActions : enchant.category === 'defensive' ? damageTaken : kills;
+      if (count <= 0) continue;
+      const next = Math.max(0, current - count);
+      charges[slot] = next;
+      if (next === 0) anyJustExhausted = true;
+    }
+    return anyJustExhausted;
   }
 
   let level = input.startingLevel;
@@ -164,9 +207,16 @@ export function simulateOfflineCombat(input: OfflineCombatInput): OfflineCombatR
 
     // Enchanting overhaul's charge-trigger tally — see
     // OfflineCombatResult.enchantTriggerCounts's doc comment.
+    let tickOffensiveActions = 0;
+    let tickDamageTaken = 0;
     for (const event of result.events) {
-      if (event.kind === 'damage_out' || event.kind === 'miss_out') offensiveActionCount++;
-      else if (event.kind === 'damage_in') damageTakenCount++;
+      if (event.kind === 'damage_out' || event.kind === 'miss_out') {
+        offensiveActionCount++;
+        tickOffensiveActions++;
+      } else if (event.kind === 'damage_in') {
+        damageTakenCount++;
+        tickDamageTaken++;
+      }
     }
 
     for (const kill of result.kills) {
@@ -178,6 +228,15 @@ export function simulateOfflineCombat(input: OfflineCombatInput): OfflineCombatR
         lootTotals[drop.itemId] = (lootTotals[drop.itemId] ?? 0) + drop.quantity;
       }
     }
+
+    // Mid-window enchant-exhaustion rebuild — the local `charges` copy is
+    // decremented at the SAME per-tick granularity live combat consumes
+    // charges at, so a slot can cross to 0 partway through this one tick's
+    // events. Rebuilding every exhaustion (not just level-ups) is what
+    // makes "the first 80 of 100 attacks get the bonus, the last 20 don't"
+    // exact instead of approximated — same property this whole offline
+    // simulation already has for everything else.
+    const anyExhausted = decrementCharges(tickOffensiveActions, tickDamageTaken, result.kills.length);
 
     if (result.playerDied) {
       forcedRetreat = true;
@@ -194,10 +253,18 @@ export function simulateOfflineCombat(input: OfflineCombatInput): OfflineCombatR
       level++;
       leveledUp = true;
     }
-    if (leveledUp) {
+    if (leveledUp || anyExhausted) {
       ctx.playerLevel = level;
-      const freshMaxHp = maxHp(input.cls, level, input.equipmentBonuses, input.talentTotals.hpMultPct);
-      const freshParty = [createPlayerCombatant(buildInput(level, freshMaxHp))];
+      const currentPlayer = state.party.find((p) => p.isPlayer)!;
+      // A level-up fully restores HP (existing behavior, unchanged); a
+      // charge exhaustion with no level-up keeps whatever HP the player
+      // currently has, capped against the freshly-recomputed max (which
+      // only actually shrinks if the enchant that just ran out was a flat
+      // Health enchant — createPlayerCombatant's own Math.min handles the
+      // capping, same as it already does for ordinary re-equips).
+      const enchantTotals = buildActiveEnchantTotals(enchantments, charges);
+      const freshMaxHp = maxHp(input.cls, level, input.equipmentBonuses, input.talentTotals.hpMultPct, enchantTotals.flatHpBonus);
+      const freshParty = [createPlayerCombatant(buildInput(level, leveledUp ? freshMaxHp : currentPlayer.hp))];
       for (const companion of input.companions ?? []) {
         freshParty.push(createCompanionCombatant({ ...companion, level }, input.monster));
       }
