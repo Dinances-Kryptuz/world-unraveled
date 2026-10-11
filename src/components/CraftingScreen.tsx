@@ -17,6 +17,7 @@ import {
   type CraftingOfflineResult,
   type MaterialMasteryInput,
   type AlchemyZoneMasteryInput,
+  type EnchantingZoneMasteryInput,
   type CraftingShirtBonuses,
 } from '../gameData/craftingEngine';
 import { getProfessionState, maxSkillForUnlockedTier, PROFESSION_CATEGORY, PROFESSION_LABELS } from '../gameData/professionTiers';
@@ -25,6 +26,7 @@ import { getMaterial } from '../gameData/materials';
 import { materialMasteryPercent, materialMasterySpeedMultiplier, materialMasteryBonusChance } from '../gameData/equipmentRolls';
 import { herbZoneOf } from '../gameData/herbs';
 import { alchemyZoneMasteryPercent, alchemyMasteryMilestone } from '../gameData/alchemyMastery';
+import { enchantingZoneMasteryPercent, enchantingMasteryMilestone } from '../gameData/enchantingMastery';
 import { ZONES } from '../gameData/zones';
 import { shirtBonusForItemId, shirtBonusPct } from '../gameData/shirts';
 import { ItemSlot } from './ItemSlot';
@@ -161,6 +163,10 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
             .reduce((sum, m) => sum + m.quantity, 0),
         }
       : undefined;
+    const enchantingZoneMasteryInput: EnchantingZoneMasteryInput | undefined = recipe.enchantingZoneId
+      ? { startingXp: currentCharacter.enchantingZoneMastery?.[recipe.enchantingZoneId]?.xp ?? 0 }
+      : undefined;
+    const anyZoneOrMaterialMastery = materialMasteryInput || alchemyZoneMasteryInput || enchantingZoneMasteryInput;
 
     const result = resolveCraftingOffline(
       anchor,
@@ -168,14 +174,15 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
       recipeLike(),
       prof.level,
       prof.xp,
-      materialMasteryInput || alchemyZoneMasteryInput ? 0 : masteryState.level,
-      materialMasteryInput || alchemyZoneMasteryInput ? 0 : masteryState.xp,
+      anyZoneOrMaterialMastery ? 0 : masteryState.level,
+      anyZoneOrMaterialMastery ? 0 : masteryState.xp,
       cap,
       materialsRef.current,
       goldRef.current,
       materialMasteryInput,
       alchemyZoneMasteryInput,
-      craftingShirtBonuses(currentCharacter.currentActivity.equippedShirtItemId)
+      craftingShirtBonuses(currentCharacter.currentActivity.equippedShirtItemId),
+      enchantingZoneMasteryInput
     );
 
     if (result.itemsCrafted === 0) {
@@ -214,9 +221,16 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
         ? result.materialMasteryXpGained ?? 0
         : alchemyZoneMasteryInput
           ? result.alchemyZoneMasteryXpGained ?? 0
-          : result.masteryXpGained;
+          : enchantingZoneMasteryInput
+            ? result.enchantingZoneMasteryXpGained ?? 0
+            : result.masteryXpGained;
       if (masteryXpGained > 0) {
-        const masteryLabel = material?.name ?? (recipe.alchemyZoneId ? ZONES[recipe.alchemyZoneId]?.name : undefined) ?? ITEMS[recipe.resultItemId]?.name ?? recipe.resultItemId;
+        const masteryLabel =
+          material?.name ??
+          (recipe.alchemyZoneId ? ZONES[recipe.alchemyZoneId]?.name : undefined) ??
+          (recipe.enchantingZoneId ? ZONES[recipe.enchantingZoneId]?.name : undefined) ??
+          ITEMS[recipe.resultItemId]?.name ??
+          recipe.resultItemId;
         notify('Mastery XP gained', [`+${masteryXpGained} ${masteryLabel} Mastery XP`]);
       }
     }
@@ -232,7 +246,7 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
               ...getProfessionState(c.professions, recipe.profession),
               level: result.finalSkill,
               xp: result.finalSkillXp,
-              ...(materialMasteryInput || alchemyZoneMasteryInput
+              ...(anyZoneOrMaterialMastery
                 ? {}
                 : {
                     mastery: {
@@ -248,6 +262,14 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
         : {}),
       ...(recipe.alchemyZoneId && earnsProfessionXp
         ? { alchemyZoneMastery: { ...c.alchemyZoneMastery, [recipe.alchemyZoneId]: { xp: result.finalAlchemyZoneMasteryXp ?? 0 } } }
+        : {}),
+      ...(recipe.enchantingZoneId && earnsProfessionXp
+        ? {
+            enchantingZoneMastery: {
+              ...c.enchantingZoneMastery,
+              [recipe.enchantingZoneId]: { xp: result.finalEnchantingZoneMasteryXp ?? 0 },
+            },
+          }
         : {}),
       gold: c.gold - result.goldSpent,
     }));
@@ -281,6 +303,14 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
         ...(recipe.alchemyZoneId
           ? { alchemyZoneMastery: { batches: result.alchemyZoneMasteryBatches ?? [] } }
           : {}),
+        ...(recipe.enchantingZoneId
+          ? {
+              enchantingZoneMastery: {
+                zoneId: recipe.enchantingZoneId,
+                newEnchantingZoneMasteryXp: result.finalEnchantingZoneMasteryXp ?? 0,
+              },
+            }
+          : {}),
       });
 
       await advanceQuests(currentUser.uid, fresh, [{ type: 'craft', itemId: recipe.resultItemId, count: wholeCrafted }]);
@@ -294,7 +324,7 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
                 ...getProfessionState(fresh.professions, recipe.profession),
                 level: result.finalSkill,
                 xp: result.finalSkillXp,
-                ...(materialMasteryInput || alchemyZoneMasteryInput
+                ...(anyZoneOrMaterialMastery
                   ? {}
                   : {
                       mastery: {
@@ -369,6 +399,14 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
   const alchemyZoneXp = displayAlchemyZone ? character.alchemyZoneMastery?.[displayAlchemyZone.id]?.xp ?? 0 : 0;
   const alchemyZonePercent = displayAlchemyZone ? alchemyZoneMasteryPercent(alchemyZoneXp) : 0;
   const alchemyMilestoneInfo = displayAlchemyZone ? alchemyMasteryMilestone(alchemyZonePercent) : undefined;
+  // An enchantingZoneId-tagged recipe's craft-speed/material-preservation
+  // (and the Mastery progress line below) come from that zone's shared
+  // scroll-crafting track instead of this recipe's own per-recipe Mastery —
+  // same displayAlchemyZone pattern, just Enchanting's own separate axis.
+  const displayEnchantingZone = recipe.enchantingZoneId ? ZONES[recipe.enchantingZoneId] : undefined;
+  const enchantingZoneXp = displayEnchantingZone ? character.enchantingZoneMastery?.[displayEnchantingZone.id]?.xp ?? 0 : 0;
+  const enchantingZonePercent = displayEnchantingZone ? enchantingZoneMasteryPercent(enchantingZoneXp) : 0;
+  const enchantingMilestoneInfo = displayEnchantingZone ? enchantingMasteryMilestone(enchantingZonePercent) : undefined;
   const xpForNextSkillLevel = craftingXpForNextLevel(prof.level);
   const xpForNextMasteryLevel =
     masteryState.level < RECIPE_MASTERY_MAX_LEVEL ? recipeMasteryXpForNextLevel(masteryState.level) : null;
@@ -396,6 +434,11 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
           .reduce((sum, m) => sum + m.quantity, 0),
       }
     : undefined;
+  const previewEnchantingZoneMasteryInput: EnchantingZoneMasteryInput | undefined = displayEnchantingZone
+    ? { startingXp: enchantingZoneXp }
+    : undefined;
+  const previewAnyZoneOrMaterialMastery =
+    previewMaterialMasteryInput || previewAlchemyZoneMasteryInput || previewEnchantingZoneMasteryInput;
   function handleTickIteration() {
     if (!anchorRef.current) return;
     setLivePreview(
@@ -405,14 +448,15 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
         recipeLike(),
         prof.level,
         prof.xp,
-        previewMaterialMasteryInput || previewAlchemyZoneMasteryInput ? 0 : masteryState.level,
-        previewMaterialMasteryInput || previewAlchemyZoneMasteryInput ? 0 : masteryState.xp,
+        previewAnyZoneOrMaterialMastery ? 0 : masteryState.level,
+        previewAnyZoneOrMaterialMastery ? 0 : masteryState.xp,
         cap,
         materialsRef.current,
         goldRef.current,
         previewMaterialMasteryInput,
         previewAlchemyZoneMasteryInput,
-        craftingShirtBonuses(character.currentActivity.equippedShirtItemId)
+        craftingShirtBonuses(character.currentActivity.equippedShirtItemId),
+        previewEnchantingZoneMasteryInput
       )
     );
   }
@@ -450,7 +494,9 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
           seconds={
             (displayAlchemyZone
               ? recipe.craftSeconds * (1 - alchemyMilestoneInfo!.craftTimeReductionPct / 100)
-              : recipe.craftSeconds / (earnsProfessionXp ? speedMult : 1)) /
+              : displayEnchantingZone
+                ? recipe.craftSeconds * (1 - enchantingMilestoneInfo!.craftTimeReductionPct / 100)
+                : recipe.craftSeconds / (earnsProfessionXp ? speedMult : 1)) /
             (1 + previewShirtSpeedPct / 100)
           }
           color="#6b4f2a"
@@ -479,6 +525,17 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
               </p>
               <div className="profession-xp-bar-track">
                 <div className="profession-xp-bar-fill" style={{ width: `${alchemyZonePercent}%` }} />
+              </div>
+            </>
+          ) : displayEnchantingZone ? (
+            <>
+              <p>
+                {displayEnchantingZone.name} Enchantments Mastery: {enchantingZonePercent.toFixed(1)}% — crafts{' '}
+                {enchantingMilestoneInfo!.craftTimeReductionPct}% faster, {enchantingMilestoneInfo!.materialPreserveChancePct}%
+                chance to preserve materials.
+              </p>
+              <div className="profession-xp-bar-track">
+                <div className="profession-xp-bar-fill" style={{ width: `${enchantingZonePercent}%` }} />
               </div>
             </>
           ) : displayMaterial ? (

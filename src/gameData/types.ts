@@ -428,6 +428,14 @@ export interface Recipe {
   // "whose 25/60/90% milestone table governs this recipe's own charges and
   // speed." Absent for every other profession's recipes.
   alchemyZoneId?: string;
+  // Which zone (gameData/zones.ts ZONE id) this Enchanting scroll recipe's
+  // crafting-speed/material-preservation Mastery milestones are looked up
+  // against — set on every Phase E6 scroll recipe (gameData/recipes.ts),
+  // always that recipe's own zone (no scroll recipe spans two zones, unlike
+  // Alchemy's one cross-zone recipe) — see gameData/enchantingMastery.ts.
+  // Absent for the Wand/Staff/Book equipment recipes (materialId-tagged
+  // instead) and every other profession's recipes.
+  enchantingZoneId?: string;
   // Gold consumed per item crafted, in addition to materials — undefined/0
   // for the overwhelming majority of recipes (materials alone). Currently
   // only set on the Blacksmith repair recipes (see the "Blacksmith

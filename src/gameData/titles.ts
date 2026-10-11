@@ -61,6 +61,14 @@ function generateAlchemistTitles(): TitleDef[] {
   return Object.values(ZONES).map((zone) => ({ id: `alchemist_${zone.id}`, name: `Master Alchemist of ${zone.name}` }));
 }
 
+// Enchanting overhaul's Phase E7 scroll-crafting zone-Mastery — mirrors
+// achievements.ts's generateEnchanterAchievements exactly (same ids, same
+// names), distinct from 'master_enchanter_armaments' above (the combined
+// Wand/Staff/Book equipment track).
+function generateEnchanterTitles(): TitleDef[] {
+  return Object.values(ZONES).map((zone) => ({ id: `enchanter_${zone.id}`, name: `Master Enchanter of ${zone.name}` }));
+}
+
 export const TITLES: TitleDef[] = [
   ...generateMaterialTitles(),
   { id: 'master_blacksmith', name: 'Master Blacksmith' },
@@ -74,6 +82,8 @@ export const TITLES: TitleDef[] = [
   { id: 'grandmaster_forager', name: 'Grandmaster Forager' },
   ...generateAlchemistTitles(),
   { id: 'grandmaster_alchemist', name: 'Grandmaster Alchemist' },
+  ...generateEnchanterTitles(),
+  { id: 'grandmaster_enchanter', name: 'Grandmaster Enchanter' },
 ];
 
 const TITLES_BY_ID: Record<string, TitleDef> = Object.fromEntries(TITLES.map((t) => [t.id, t]));

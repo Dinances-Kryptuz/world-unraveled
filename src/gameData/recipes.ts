@@ -2457,6 +2457,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_minor_health', resultQuantity: 1,
     materials: [{ itemId: 'strange_dust', quantity: 2 }], goldCost: 5,
     craftSeconds: 8.0, xpAward: 10,
+    enchantingZoneId: 'greenhollow_fields',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_minor_mana: {
@@ -2464,6 +2465,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_minor_mana', resultQuantity: 1,
     materials: [{ itemId: 'lesser_magic_essence', quantity: 2 }], goldCost: 5,
     craftSeconds: 8.0, xpAward: 10,
+    enchantingZoneId: 'greenhollow_fields',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_minor_stamina: {
@@ -2471,6 +2473,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_minor_stamina', resultQuantity: 1,
     materials: [{ itemId: 'strange_dust', quantity: 2 }], goldCost: 5,
     craftSeconds: 8.0, xpAward: 10,
+    enchantingZoneId: 'greenhollow_fields',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_minor_strength: {
@@ -2478,6 +2481,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_minor_strength', resultQuantity: 1,
     materials: [{ itemId: 'strange_dust', quantity: 2 }, { itemId: 'lesser_magic_essence', quantity: 1 }], goldCost: 5,
     craftSeconds: 8.0, xpAward: 10,
+    enchantingZoneId: 'greenhollow_fields',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_minor_agility: {
@@ -2485,6 +2489,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_minor_agility', resultQuantity: 1,
     materials: [{ itemId: 'strange_dust', quantity: 2 }, { itemId: 'lesser_magic_essence', quantity: 1 }], goldCost: 5,
     craftSeconds: 8.0, xpAward: 10,
+    enchantingZoneId: 'greenhollow_fields',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_minor_intellect: {
@@ -2492,6 +2497,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_minor_intellect', resultQuantity: 1,
     materials: [{ itemId: 'lesser_magic_essence', quantity: 2 }], goldCost: 5,
     craftSeconds: 8.0, xpAward: 10,
+    enchantingZoneId: 'greenhollow_fields',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_minor_spirit: {
@@ -2499,6 +2505,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_minor_spirit', resultQuantity: 1,
     materials: [{ itemId: 'strange_dust', quantity: 2 }, { itemId: 'lesser_magic_essence', quantity: 1 }], goldCost: 5,
     craftSeconds: 8.0, xpAward: 10,
+    enchantingZoneId: 'greenhollow_fields',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_minor_defense: {
@@ -2506,6 +2513,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_minor_defense', resultQuantity: 1,
     materials: [{ itemId: 'strange_dust', quantity: 2 }], goldCost: 5,
     craftSeconds: 8.0, xpAward: 10,
+    enchantingZoneId: 'greenhollow_fields',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_minor_absorption: {
@@ -2513,6 +2521,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_minor_absorption', resultQuantity: 1,
     materials: [{ itemId: 'strange_dust', quantity: 3 }, { itemId: 'lesser_magic_essence', quantity: 1 }], goldCost: 5,
     craftSeconds: 8.0, xpAward: 10,
+    enchantingZoneId: 'greenhollow_fields',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_minor_striking: {
@@ -2520,6 +2529,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_minor_striking', resultQuantity: 1,
     materials: [{ itemId: 'strange_dust', quantity: 2 }, { itemId: 'lesser_magic_essence', quantity: 1 }], goldCost: 5,
     craftSeconds: 8.0, xpAward: 10,
+    enchantingZoneId: 'greenhollow_fields',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_minor_impact: {
@@ -2527,6 +2537,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_minor_impact', resultQuantity: 1,
     materials: [{ itemId: 'strange_dust', quantity: 3 }, { itemId: 'lesser_magic_essence', quantity: 1 }], goldCost: 5,
     craftSeconds: 8.0, xpAward: 10,
+    enchantingZoneId: 'greenhollow_fields',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_minor_beastslayer: {
@@ -2534,6 +2545,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_minor_beastslayer', resultQuantity: 1,
     materials: [{ itemId: 'strange_dust', quantity: 2 }, { itemId: 'lesser_magic_essence', quantity: 1 }], goldCost: 5,
     craftSeconds: 8.0, xpAward: 10,
+    enchantingZoneId: 'greenhollow_fields',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_lesser_health: {
@@ -2541,6 +2553,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_lesser_health', resultQuantity: 1,
     materials: [{ itemId: 'soul_dust', quantity: 3 }], goldCost: 12,
     craftSeconds: 8.5, xpAward: 13,
+    enchantingZoneId: 'stonecrag_foothills',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_lesser_mana: {
@@ -2548,6 +2561,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_lesser_mana', resultQuantity: 1,
     materials: [{ itemId: 'lesser_astral_essence', quantity: 2 }], goldCost: 12,
     craftSeconds: 8.5, xpAward: 13,
+    enchantingZoneId: 'stonecrag_foothills',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_lesser_stamina: {
@@ -2555,6 +2569,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_lesser_stamina', resultQuantity: 1,
     materials: [{ itemId: 'soul_dust', quantity: 3 }], goldCost: 12,
     craftSeconds: 8.5, xpAward: 13,
+    enchantingZoneId: 'stonecrag_foothills',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_lesser_strength: {
@@ -2562,6 +2577,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_lesser_strength', resultQuantity: 1,
     materials: [{ itemId: 'soul_dust', quantity: 2 }, { itemId: 'lesser_astral_essence', quantity: 1 }], goldCost: 12,
     craftSeconds: 8.5, xpAward: 13,
+    enchantingZoneId: 'stonecrag_foothills',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_lesser_agility: {
@@ -2569,6 +2585,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_lesser_agility', resultQuantity: 1,
     materials: [{ itemId: 'soul_dust', quantity: 2 }, { itemId: 'lesser_astral_essence', quantity: 1 }], goldCost: 12,
     craftSeconds: 8.5, xpAward: 13,
+    enchantingZoneId: 'stonecrag_foothills',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_lesser_intellect: {
@@ -2576,6 +2593,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_lesser_intellect', resultQuantity: 1,
     materials: [{ itemId: 'lesser_astral_essence', quantity: 2 }], goldCost: 12,
     craftSeconds: 8.5, xpAward: 13,
+    enchantingZoneId: 'stonecrag_foothills',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_lesser_spirit: {
@@ -2583,6 +2601,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_lesser_spirit', resultQuantity: 1,
     materials: [{ itemId: 'soul_dust', quantity: 2 }, { itemId: 'lesser_astral_essence', quantity: 1 }], goldCost: 12,
     craftSeconds: 8.5, xpAward: 13,
+    enchantingZoneId: 'stonecrag_foothills',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_lesser_defense: {
@@ -2590,6 +2609,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_lesser_defense', resultQuantity: 1,
     materials: [{ itemId: 'soul_dust', quantity: 3 }], goldCost: 12,
     craftSeconds: 8.5, xpAward: 13,
+    enchantingZoneId: 'stonecrag_foothills',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_lesser_absorption: {
@@ -2597,6 +2617,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_lesser_absorption', resultQuantity: 1,
     materials: [{ itemId: 'soul_dust', quantity: 3 }, { itemId: 'lesser_astral_essence', quantity: 2 }], goldCost: 12,
     craftSeconds: 8.5, xpAward: 13,
+    enchantingZoneId: 'stonecrag_foothills',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_lesser_striking: {
@@ -2604,6 +2625,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_lesser_striking', resultQuantity: 1,
     materials: [{ itemId: 'soul_dust', quantity: 2 }, { itemId: 'lesser_astral_essence', quantity: 2 }], goldCost: 12,
     craftSeconds: 8.5, xpAward: 13,
+    enchantingZoneId: 'stonecrag_foothills',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_lesser_impact: {
@@ -2611,6 +2633,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_lesser_impact', resultQuantity: 1,
     materials: [{ itemId: 'soul_dust', quantity: 3 }, { itemId: 'lesser_astral_essence', quantity: 2 }], goldCost: 12,
     craftSeconds: 8.5, xpAward: 13,
+    enchantingZoneId: 'stonecrag_foothills',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_lesser_beastslayer: {
@@ -2618,6 +2641,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_lesser_beastslayer', resultQuantity: 1,
     materials: [{ itemId: 'soul_dust', quantity: 2 }, { itemId: 'lesser_astral_essence', quantity: 2 }], goldCost: 12,
     craftSeconds: 8.5, xpAward: 13,
+    enchantingZoneId: 'stonecrag_foothills',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_lesser_elemental_resistance: {
@@ -2625,6 +2649,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_lesser_elemental_resistance', resultQuantity: 1,
     materials: [{ itemId: 'soul_dust', quantity: 3 }, { itemId: 'lesser_astral_essence', quantity: 1 }], goldCost: 12,
     craftSeconds: 8.5, xpAward: 13,
+    enchantingZoneId: 'stonecrag_foothills',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_health_z3: {
@@ -2632,6 +2657,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_health_z3', resultQuantity: 1,
     materials: [{ itemId: 'vision_dust', quantity: 4 }], goldCost: 22,
     craftSeconds: 9.6, xpAward: 23,
+    enchantingZoneId: 'emberfall_ridge',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_mana_z3: {
@@ -2639,6 +2665,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_mana_z3', resultQuantity: 1,
     materials: [{ itemId: 'lesser_mystic_essence', quantity: 3 }], goldCost: 22,
     craftSeconds: 9.6, xpAward: 23,
+    enchantingZoneId: 'emberfall_ridge',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_stamina_z3: {
@@ -2646,6 +2673,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_stamina_z3', resultQuantity: 1,
     materials: [{ itemId: 'vision_dust', quantity: 3 }, { itemId: 'lesser_mystic_essence', quantity: 1 }], goldCost: 22,
     craftSeconds: 9.6, xpAward: 23,
+    enchantingZoneId: 'emberfall_ridge',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_strength_z3: {
@@ -2653,6 +2681,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_strength_z3', resultQuantity: 1,
     materials: [{ itemId: 'vision_dust', quantity: 3 }, { itemId: 'lesser_mystic_essence', quantity: 2 }], goldCost: 22,
     craftSeconds: 9.6, xpAward: 23,
+    enchantingZoneId: 'emberfall_ridge',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_agility_z3: {
@@ -2660,6 +2689,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_agility_z3', resultQuantity: 1,
     materials: [{ itemId: 'vision_dust', quantity: 3 }, { itemId: 'lesser_mystic_essence', quantity: 2 }], goldCost: 22,
     craftSeconds: 9.6, xpAward: 23,
+    enchantingZoneId: 'emberfall_ridge',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_intellect_z3: {
@@ -2667,6 +2697,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_intellect_z3', resultQuantity: 1,
     materials: [{ itemId: 'lesser_mystic_essence', quantity: 3 }], goldCost: 22,
     craftSeconds: 9.6, xpAward: 23,
+    enchantingZoneId: 'emberfall_ridge',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_spirit_z3: {
@@ -2674,6 +2705,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_spirit_z3', resultQuantity: 1,
     materials: [{ itemId: 'vision_dust', quantity: 3 }, { itemId: 'lesser_mystic_essence', quantity: 1 }], goldCost: 22,
     craftSeconds: 9.6, xpAward: 23,
+    enchantingZoneId: 'emberfall_ridge',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_greater_defense_z3: {
@@ -2681,6 +2713,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_greater_defense_z3', resultQuantity: 1,
     materials: [{ itemId: 'vision_dust', quantity: 4 }], goldCost: 22,
     craftSeconds: 9.6, xpAward: 23,
+    enchantingZoneId: 'emberfall_ridge',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_striking_z3: {
@@ -2688,6 +2721,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_striking_z3', resultQuantity: 1,
     materials: [{ itemId: 'vision_dust', quantity: 3 }, { itemId: 'lesser_mystic_essence', quantity: 2 }], goldCost: 22,
     craftSeconds: 9.6, xpAward: 23,
+    enchantingZoneId: 'emberfall_ridge',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_impact_z3: {
@@ -2695,6 +2729,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_impact_z3', resultQuantity: 1,
     materials: [{ itemId: 'vision_dust', quantity: 4 }, { itemId: 'lesser_mystic_essence', quantity: 2 }], goldCost: 22,
     craftSeconds: 9.6, xpAward: 23,
+    enchantingZoneId: 'emberfall_ridge',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_greater_beastslayer_z3: {
@@ -2702,6 +2737,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_greater_beastslayer_z3', resultQuantity: 1,
     materials: [{ itemId: 'vision_dust', quantity: 3 }, { itemId: 'lesser_mystic_essence', quantity: 2 }], goldCost: 22,
     craftSeconds: 9.6, xpAward: 23,
+    enchantingZoneId: 'emberfall_ridge',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_minor_haste_z3: {
@@ -2709,6 +2745,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_minor_haste_z3', resultQuantity: 1,
     materials: [{ itemId: 'vision_dust', quantity: 4 }, { itemId: 'lesser_mystic_essence', quantity: 2 }], goldCost: 22,
     craftSeconds: 9.6, xpAward: 23,
+    enchantingZoneId: 'emberfall_ridge',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_fire_resistance_z3: {
@@ -2716,6 +2753,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_fire_resistance_z3', resultQuantity: 1,
     materials: [{ itemId: 'vision_dust', quantity: 3 }, { itemId: 'lesser_mystic_essence', quantity: 2 }], goldCost: 22,
     craftSeconds: 9.6, xpAward: 23,
+    enchantingZoneId: 'emberfall_ridge',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_frost_resistance_z3: {
@@ -2723,6 +2761,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_frost_resistance_z3', resultQuantity: 1,
     materials: [{ itemId: 'vision_dust', quantity: 3 }, { itemId: 'lesser_mystic_essence', quantity: 2 }], goldCost: 22,
     craftSeconds: 9.6, xpAward: 23,
+    enchantingZoneId: 'emberfall_ridge',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_shadow_resistance_z3: {
@@ -2730,6 +2769,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_shadow_resistance_z3', resultQuantity: 1,
     materials: [{ itemId: 'vision_dust', quantity: 3 }, { itemId: 'lesser_mystic_essence', quantity: 2 }], goldCost: 22,
     craftSeconds: 9.6, xpAward: 23,
+    enchantingZoneId: 'emberfall_ridge',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_greater_health_z4: {
@@ -2737,6 +2777,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_greater_health_z4', resultQuantity: 1,
     materials: [{ itemId: 'dream_dust', quantity: 4 }, { itemId: 'lesser_nether_essence', quantity: 1 }], goldCost: 35,
     craftSeconds: 9.8, xpAward: 40,
+    enchantingZoneId: 'cinderfall_depths',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_greater_mana_z4: {
@@ -2744,6 +2785,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_greater_mana_z4', resultQuantity: 1,
     materials: [{ itemId: 'lesser_nether_essence', quantity: 3 }], goldCost: 35,
     craftSeconds: 9.8, xpAward: 40,
+    enchantingZoneId: 'cinderfall_depths',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_greater_stamina_z4: {
@@ -2751,6 +2793,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_greater_stamina_z4', resultQuantity: 1,
     materials: [{ itemId: 'dream_dust', quantity: 4 }, { itemId: 'lesser_nether_essence', quantity: 2 }], goldCost: 35,
     craftSeconds: 9.8, xpAward: 40,
+    enchantingZoneId: 'cinderfall_depths',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_greater_strength_z4: {
@@ -2758,6 +2801,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_greater_strength_z4', resultQuantity: 1,
     materials: [{ itemId: 'dream_dust', quantity: 3 }, { itemId: 'lesser_nether_essence', quantity: 2 }], goldCost: 35,
     craftSeconds: 9.8, xpAward: 40,
+    enchantingZoneId: 'cinderfall_depths',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_greater_agility_z4: {
@@ -2765,6 +2809,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_greater_agility_z4', resultQuantity: 1,
     materials: [{ itemId: 'dream_dust', quantity: 3 }, { itemId: 'lesser_nether_essence', quantity: 2 }], goldCost: 35,
     craftSeconds: 9.8, xpAward: 40,
+    enchantingZoneId: 'cinderfall_depths',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_greater_intellect_z4: {
@@ -2772,6 +2817,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_greater_intellect_z4', resultQuantity: 1,
     materials: [{ itemId: 'lesser_nether_essence', quantity: 3 }], goldCost: 35,
     craftSeconds: 9.8, xpAward: 40,
+    enchantingZoneId: 'cinderfall_depths',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_greater_spirit_z4: {
@@ -2779,6 +2825,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_greater_spirit_z4', resultQuantity: 1,
     materials: [{ itemId: 'dream_dust', quantity: 3 }, { itemId: 'lesser_nether_essence', quantity: 2 }], goldCost: 35,
     craftSeconds: 9.8, xpAward: 40,
+    enchantingZoneId: 'cinderfall_depths',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_superior_defense_z4: {
@@ -2786,6 +2833,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_superior_defense_z4', resultQuantity: 1,
     materials: [{ itemId: 'dream_dust', quantity: 4 }, { itemId: 'lesser_nether_essence', quantity: 2 }], goldCost: 35,
     craftSeconds: 9.8, xpAward: 40,
+    enchantingZoneId: 'cinderfall_depths',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_greater_striking_z4: {
@@ -2793,6 +2841,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_greater_striking_z4', resultQuantity: 1,
     materials: [{ itemId: 'dream_dust', quantity: 4 }, { itemId: 'lesser_nether_essence', quantity: 2 }], goldCost: 35,
     craftSeconds: 9.8, xpAward: 40,
+    enchantingZoneId: 'cinderfall_depths',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_greater_impact_z4: {
@@ -2800,6 +2849,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_greater_impact_z4', resultQuantity: 1,
     materials: [{ itemId: 'dream_dust', quantity: 4 }, { itemId: 'lesser_nether_essence', quantity: 3 }], goldCost: 35,
     craftSeconds: 9.8, xpAward: 40,
+    enchantingZoneId: 'cinderfall_depths',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_greater_haste_z4: {
@@ -2807,6 +2857,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_greater_haste_z4', resultQuantity: 1,
     materials: [{ itemId: 'dream_dust', quantity: 4 }, { itemId: 'lesser_nether_essence', quantity: 3 }], goldCost: 35,
     craftSeconds: 9.8, xpAward: 40,
+    enchantingZoneId: 'cinderfall_depths',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_greater_fire_resistance_z4: {
@@ -2814,6 +2865,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_greater_fire_resistance_z4', resultQuantity: 1,
     materials: [{ itemId: 'dream_dust', quantity: 4 }, { itemId: 'lesser_nether_essence', quantity: 2 }], goldCost: 35,
     craftSeconds: 9.8, xpAward: 40,
+    enchantingZoneId: 'cinderfall_depths',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_greater_frost_resistance_z4: {
@@ -2821,6 +2873,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_greater_frost_resistance_z4', resultQuantity: 1,
     materials: [{ itemId: 'dream_dust', quantity: 4 }, { itemId: 'lesser_nether_essence', quantity: 2 }], goldCost: 35,
     craftSeconds: 9.8, xpAward: 40,
+    enchantingZoneId: 'cinderfall_depths',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_greater_shadow_resistance_z4: {
@@ -2828,6 +2881,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_greater_shadow_resistance_z4', resultQuantity: 1,
     materials: [{ itemId: 'dream_dust', quantity: 4 }, { itemId: 'lesser_nether_essence', quantity: 2 }], goldCost: 35,
     craftSeconds: 9.8, xpAward: 40,
+    enchantingZoneId: 'cinderfall_depths',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_demonslaying_z4: {
@@ -2835,6 +2889,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_demonslaying_z4', resultQuantity: 1,
     materials: [{ itemId: 'dream_dust', quantity: 4 }, { itemId: 'lesser_nether_essence', quantity: 3 }], goldCost: 35,
     craftSeconds: 9.8, xpAward: 40,
+    enchantingZoneId: 'cinderfall_depths',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_superior_health_z5: {
@@ -2842,6 +2897,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_superior_health_z5', resultQuantity: 1,
     materials: [{ itemId: 'illusion_dust', quantity: 5 }, { itemId: 'greater_eternal_essence', quantity: 2 }], goldCost: 55,
     craftSeconds: 10.0, xpAward: 53,
+    enchantingZoneId: 'molten_scar',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_superior_mana_z5: {
@@ -2849,6 +2905,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_superior_mana_z5', resultQuantity: 1,
     materials: [{ itemId: 'greater_eternal_essence', quantity: 4 }], goldCost: 55,
     craftSeconds: 10.0, xpAward: 53,
+    enchantingZoneId: 'molten_scar',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_superior_stamina_z5: {
@@ -2856,6 +2913,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_superior_stamina_z5', resultQuantity: 1,
     materials: [{ itemId: 'illusion_dust', quantity: 5 }, { itemId: 'greater_eternal_essence', quantity: 2 }], goldCost: 55,
     craftSeconds: 10.0, xpAward: 53,
+    enchantingZoneId: 'molten_scar',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_superior_strength_z5: {
@@ -2863,6 +2921,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_superior_strength_z5', resultQuantity: 1,
     materials: [{ itemId: 'illusion_dust', quantity: 4 }, { itemId: 'greater_eternal_essence', quantity: 3 }], goldCost: 55,
     craftSeconds: 10.0, xpAward: 53,
+    enchantingZoneId: 'molten_scar',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_superior_agility_z5: {
@@ -2870,6 +2929,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_superior_agility_z5', resultQuantity: 1,
     materials: [{ itemId: 'illusion_dust', quantity: 4 }, { itemId: 'greater_eternal_essence', quantity: 3 }], goldCost: 55,
     craftSeconds: 10.0, xpAward: 53,
+    enchantingZoneId: 'molten_scar',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_superior_intellect_z5: {
@@ -2877,6 +2937,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_superior_intellect_z5', resultQuantity: 1,
     materials: [{ itemId: 'greater_eternal_essence', quantity: 4 }], goldCost: 55,
     craftSeconds: 10.0, xpAward: 53,
+    enchantingZoneId: 'molten_scar',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_superior_spirit_z5: {
@@ -2884,6 +2945,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_superior_spirit_z5', resultQuantity: 1,
     materials: [{ itemId: 'illusion_dust', quantity: 4 }, { itemId: 'greater_eternal_essence', quantity: 2 }], goldCost: 55,
     craftSeconds: 10.0, xpAward: 53,
+    enchantingZoneId: 'molten_scar',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_greater_stats_z5: {
@@ -2891,6 +2953,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_greater_stats_z5', resultQuantity: 1,
     materials: [{ itemId: 'illusion_dust', quantity: 5 }, { itemId: 'greater_eternal_essence', quantity: 3 }, { itemId: 'brilliant_shard', quantity: 1 }], goldCost: 55,
     craftSeconds: 10.0, xpAward: 53,
+    enchantingZoneId: 'molten_scar',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_superior_defense_z5: {
@@ -2898,6 +2961,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_superior_defense_z5', resultQuantity: 1,
     materials: [{ itemId: 'illusion_dust', quantity: 5 }, { itemId: 'greater_eternal_essence', quantity: 2 }], goldCost: 55,
     craftSeconds: 10.0, xpAward: 53,
+    enchantingZoneId: 'molten_scar',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_superior_striking_z5: {
@@ -2905,6 +2969,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_superior_striking_z5', resultQuantity: 1,
     materials: [{ itemId: 'illusion_dust', quantity: 4 }, { itemId: 'greater_eternal_essence', quantity: 3 }, { itemId: 'brilliant_shard', quantity: 1 }], goldCost: 55,
     craftSeconds: 10.0, xpAward: 53,
+    enchantingZoneId: 'molten_scar',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_superior_impact_z5: {
@@ -2912,6 +2977,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_superior_impact_z5', resultQuantity: 1,
     materials: [{ itemId: 'illusion_dust', quantity: 5 }, { itemId: 'greater_eternal_essence', quantity: 3 }, { itemId: 'brilliant_shard', quantity: 1 }], goldCost: 55,
     craftSeconds: 10.0, xpAward: 53,
+    enchantingZoneId: 'molten_scar',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_greater_haste_z5: {
@@ -2919,6 +2985,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_greater_haste_z5', resultQuantity: 1,
     materials: [{ itemId: 'illusion_dust', quantity: 5 }, { itemId: 'greater_eternal_essence', quantity: 3 }, { itemId: 'brilliant_shard', quantity: 1 }], goldCost: 55,
     craftSeconds: 10.0, xpAward: 53,
+    enchantingZoneId: 'molten_scar',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_greater_fire_resistance_z5: {
@@ -2926,6 +2993,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_greater_fire_resistance_z5', resultQuantity: 1,
     materials: [{ itemId: 'illusion_dust', quantity: 5 }, { itemId: 'greater_eternal_essence', quantity: 2 }, { itemId: 'brilliant_shard', quantity: 1 }], goldCost: 55,
     craftSeconds: 10.0, xpAward: 53,
+    enchantingZoneId: 'molten_scar',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_greater_frost_resistance_z5: {
@@ -2933,6 +3001,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_greater_frost_resistance_z5', resultQuantity: 1,
     materials: [{ itemId: 'illusion_dust', quantity: 5 }, { itemId: 'greater_eternal_essence', quantity: 2 }, { itemId: 'brilliant_shard', quantity: 1 }], goldCost: 55,
     craftSeconds: 10.0, xpAward: 53,
+    enchantingZoneId: 'molten_scar',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_greater_shadow_resistance_z5: {
@@ -2940,6 +3009,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_greater_shadow_resistance_z5', resultQuantity: 1,
     materials: [{ itemId: 'illusion_dust', quantity: 5 }, { itemId: 'greater_eternal_essence', quantity: 2 }, { itemId: 'brilliant_shard', quantity: 1 }], goldCost: 55,
     craftSeconds: 10.0, xpAward: 53,
+    enchantingZoneId: 'molten_scar',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_fiery_weapon_z5: {
@@ -2947,6 +3017,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_fiery_weapon_z5', resultQuantity: 1,
     materials: [{ itemId: 'illusion_dust', quantity: 4 }, { itemId: 'greater_eternal_essence', quantity: 2 }, { itemId: 'brilliant_shard', quantity: 2 }], goldCost: 82,
     craftSeconds: 10.0, xpAward: 80,
+    enchantingZoneId: 'molten_scar',
     source: 'dungeon_drop', rarity: 'rare', learnedAutomatically: false,
   },
   scroll_icy_chill_z5: {
@@ -2954,6 +3025,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_icy_chill_z5', resultQuantity: 1,
     materials: [{ itemId: 'illusion_dust', quantity: 4 }, { itemId: 'greater_eternal_essence', quantity: 2 }, { itemId: 'brilliant_shard', quantity: 2 }], goldCost: 82,
     craftSeconds: 10.0, xpAward: 80,
+    enchantingZoneId: 'molten_scar',
     source: 'dungeon_drop', rarity: 'rare', learnedAutomatically: false,
   },
   scroll_lifestealing_z5: {
@@ -2961,6 +3033,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_lifestealing_z5', resultQuantity: 1,
     materials: [{ itemId: 'illusion_dust', quantity: 4 }, { itemId: 'greater_eternal_essence', quantity: 3 }, { itemId: 'brilliant_shard', quantity: 2 }], goldCost: 82,
     craftSeconds: 10.0, xpAward: 80,
+    enchantingZoneId: 'molten_scar',
     source: 'dungeon_drop', rarity: 'rare', learnedAutomatically: false,
   },
   scroll_ember_health: {
@@ -2968,6 +3041,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_ember_health', resultQuantity: 1,
     materials: [{ itemId: 'ember_shards', quantity: 3 }, { itemId: 'greater_eternal_essence', quantity: 4 }], goldCost: 85,
     craftSeconds: 10.7, xpAward: 92,
+    enchantingZoneId: 'cinderheart_crater',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_ember_mana: {
@@ -2975,6 +3049,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_ember_mana', resultQuantity: 1,
     materials: [{ itemId: 'ember_shards', quantity: 3 }, { itemId: 'greater_eternal_essence', quantity: 4 }], goldCost: 85,
     craftSeconds: 10.7, xpAward: 92,
+    enchantingZoneId: 'cinderheart_crater',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_ember_stamina: {
@@ -2982,6 +3057,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_ember_stamina', resultQuantity: 1,
     materials: [{ itemId: 'ember_shards', quantity: 3 }, { itemId: 'greater_eternal_essence', quantity: 4 }], goldCost: 85,
     craftSeconds: 10.7, xpAward: 92,
+    enchantingZoneId: 'cinderheart_crater',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_ember_strength: {
@@ -2989,6 +3065,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_ember_strength', resultQuantity: 1,
     materials: [{ itemId: 'ember_shards', quantity: 3 }, { itemId: 'greater_eternal_essence', quantity: 4 }], goldCost: 85,
     craftSeconds: 10.7, xpAward: 92,
+    enchantingZoneId: 'cinderheart_crater',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_ember_agility: {
@@ -2996,6 +3073,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_ember_agility', resultQuantity: 1,
     materials: [{ itemId: 'ember_shards', quantity: 3 }, { itemId: 'greater_eternal_essence', quantity: 4 }], goldCost: 85,
     craftSeconds: 10.7, xpAward: 92,
+    enchantingZoneId: 'cinderheart_crater',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_ember_intellect: {
@@ -3003,6 +3081,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_ember_intellect', resultQuantity: 1,
     materials: [{ itemId: 'ember_shards', quantity: 3 }, { itemId: 'greater_eternal_essence', quantity: 4 }], goldCost: 85,
     craftSeconds: 10.7, xpAward: 92,
+    enchantingZoneId: 'cinderheart_crater',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_ember_spirit: {
@@ -3010,6 +3089,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_ember_spirit', resultQuantity: 1,
     materials: [{ itemId: 'ember_shards', quantity: 3 }, { itemId: 'greater_eternal_essence', quantity: 4 }], goldCost: 85,
     craftSeconds: 10.7, xpAward: 92,
+    enchantingZoneId: 'cinderheart_crater',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_ember_stats: {
@@ -3017,6 +3097,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_ember_stats', resultQuantity: 1,
     materials: [{ itemId: 'ember_shards', quantity: 5 }, { itemId: 'greater_eternal_essence', quantity: 5 }], goldCost: 85,
     craftSeconds: 10.7, xpAward: 92,
+    enchantingZoneId: 'cinderheart_crater',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_ember_defense: {
@@ -3024,6 +3105,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_ember_defense', resultQuantity: 1,
     materials: [{ itemId: 'ember_shards', quantity: 3 }, { itemId: 'greater_eternal_essence', quantity: 4 }], goldCost: 85,
     craftSeconds: 10.7, xpAward: 92,
+    enchantingZoneId: 'cinderheart_crater',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_ember_striking: {
@@ -3031,6 +3113,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_ember_striking', resultQuantity: 1,
     materials: [{ itemId: 'ember_shards', quantity: 4 }, { itemId: 'greater_eternal_essence', quantity: 4 }], goldCost: 85,
     craftSeconds: 10.7, xpAward: 92,
+    enchantingZoneId: 'cinderheart_crater',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_ember_impact: {
@@ -3038,6 +3121,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_ember_impact', resultQuantity: 1,
     materials: [{ itemId: 'ember_shards', quantity: 5 }, { itemId: 'greater_eternal_essence', quantity: 4 }], goldCost: 85,
     craftSeconds: 10.7, xpAward: 92,
+    enchantingZoneId: 'cinderheart_crater',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_ember_haste: {
@@ -3045,6 +3129,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_ember_haste', resultQuantity: 1,
     materials: [{ itemId: 'ember_shards', quantity: 4 }, { itemId: 'greater_eternal_essence', quantity: 4 }], goldCost: 85,
     craftSeconds: 10.7, xpAward: 92,
+    enchantingZoneId: 'cinderheart_crater',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_ember_fire_resistance: {
@@ -3052,6 +3137,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_ember_fire_resistance', resultQuantity: 1,
     materials: [{ itemId: 'ember_shards', quantity: 4 }, { itemId: 'greater_eternal_essence', quantity: 4 }], goldCost: 85,
     craftSeconds: 10.7, xpAward: 92,
+    enchantingZoneId: 'cinderheart_crater',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_ember_frost_resistance: {
@@ -3059,6 +3145,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_ember_frost_resistance', resultQuantity: 1,
     materials: [{ itemId: 'ember_shards', quantity: 4 }, { itemId: 'greater_eternal_essence', quantity: 4 }], goldCost: 85,
     craftSeconds: 10.7, xpAward: 92,
+    enchantingZoneId: 'cinderheart_crater',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_ember_shadow_resistance: {
@@ -3066,6 +3153,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_ember_shadow_resistance', resultQuantity: 1,
     materials: [{ itemId: 'ember_shards', quantity: 4 }, { itemId: 'greater_eternal_essence', quantity: 4 }], goldCost: 85,
     craftSeconds: 10.7, xpAward: 92,
+    enchantingZoneId: 'cinderheart_crater',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_ember_fiery_weapon: {
@@ -3073,6 +3161,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_ember_fiery_weapon', resultQuantity: 1,
     materials: [{ itemId: 'ember_shards', quantity: 5 }, { itemId: 'greater_eternal_essence', quantity: 5 }], goldCost: 128,
     craftSeconds: 10.7, xpAward: 138,
+    enchantingZoneId: 'cinderheart_crater',
     source: 'dungeon_drop', rarity: 'rare', learnedAutomatically: false,
   },
   scroll_ember_icy_chill: {
@@ -3080,6 +3169,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_ember_icy_chill', resultQuantity: 1,
     materials: [{ itemId: 'ember_shards', quantity: 5 }, { itemId: 'greater_eternal_essence', quantity: 5 }], goldCost: 128,
     craftSeconds: 10.7, xpAward: 138,
+    enchantingZoneId: 'cinderheart_crater',
     source: 'dungeon_drop', rarity: 'rare', learnedAutomatically: false,
   },
   scroll_ember_lifestealing: {
@@ -3087,6 +3177,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_ember_lifestealing', resultQuantity: 1,
     materials: [{ itemId: 'ember_shards', quantity: 5 }, { itemId: 'greater_eternal_essence', quantity: 5 }], goldCost: 128,
     craftSeconds: 10.7, xpAward: 138,
+    enchantingZoneId: 'cinderheart_crater',
     source: 'dungeon_drop', rarity: 'rare', learnedAutomatically: false,
   },
   scroll_crusader: {
@@ -3094,6 +3185,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_crusader', resultQuantity: 1,
     materials: [{ itemId: 'ember_shards', quantity: 6 }, { itemId: 'greater_eternal_essence', quantity: 5 }], goldCost: 136,
     craftSeconds: 10.7, xpAward: 147,
+    enchantingZoneId: 'cinderheart_crater',
     source: 'dungeon_drop', rarity: 'rare', learnedAutomatically: false,
   },
   scroll_spellpower: {
@@ -3101,6 +3193,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_spellpower', resultQuantity: 1,
     materials: [{ itemId: 'ember_shards', quantity: 6 }, { itemId: 'greater_eternal_essence', quantity: 5 }], goldCost: 119,
     craftSeconds: 10.7, xpAward: 129,
+    enchantingZoneId: 'cinderheart_crater',
     source: 'dungeon_drop', rarity: 'rare', learnedAutomatically: false,
   },
   scroll_healing_power: {
@@ -3108,6 +3201,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_healing_power', resultQuantity: 1,
     materials: [{ itemId: 'ember_shards', quantity: 6 }, { itemId: 'greater_eternal_essence', quantity: 5 }], goldCost: 119,
     craftSeconds: 10.7, xpAward: 129,
+    enchantingZoneId: 'cinderheart_crater',
     source: 'dungeon_drop', rarity: 'rare', learnedAutomatically: false,
   },
   scroll_mighty_intellect: {
@@ -3115,6 +3209,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_mighty_intellect', resultQuantity: 1,
     materials: [{ itemId: 'ember_shards', quantity: 6 }, { itemId: 'greater_eternal_essence', quantity: 5 }], goldCost: 119,
     craftSeconds: 10.7, xpAward: 129,
+    enchantingZoneId: 'cinderheart_crater',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_mighty_spirit: {
@@ -3122,6 +3217,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_mighty_spirit', resultQuantity: 1,
     materials: [{ itemId: 'ember_shards', quantity: 6 }, { itemId: 'greater_eternal_essence', quantity: 5 }], goldCost: 119,
     craftSeconds: 10.7, xpAward: 129,
+    enchantingZoneId: 'cinderheart_crater',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_mighty_strength: {
@@ -3129,6 +3225,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_mighty_strength', resultQuantity: 1,
     materials: [{ itemId: 'ember_shards', quantity: 6 }, { itemId: 'greater_eternal_essence', quantity: 5 }], goldCost: 119,
     craftSeconds: 10.7, xpAward: 129,
+    enchantingZoneId: 'cinderheart_crater',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_mighty_agility: {
@@ -3136,6 +3233,7 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'scroll_mighty_agility', resultQuantity: 1,
     materials: [{ itemId: 'ember_shards', quantity: 6 }, { itemId: 'greater_eternal_essence', quantity: 5 }], goldCost: 119,
     craftSeconds: 10.7, xpAward: 129,
+    enchantingZoneId: 'cinderheart_crater',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
 };

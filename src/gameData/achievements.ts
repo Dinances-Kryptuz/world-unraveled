@@ -10,6 +10,7 @@ import { MATERIAL_MASTERY_XP_THRESHOLDS } from './equipmentRolls';
 import { ZONES } from './zones';
 import { HERBALISM_ZONE_MASTERY_THRESHOLD } from './gatheringEngine';
 import { ALCHEMY_ZONE_MASTERY_THRESHOLD } from './alchemyMastery';
+import { ENCHANTING_ZONE_MASTERY_THRESHOLD } from './enchantingMastery';
 
 // Snapshot-checked, not event-driven: each check() reads CURRENT persisted
 // state and either is or isn't true right now. "Unlocked" is still
@@ -140,6 +141,15 @@ export function isAlchemyZoneMastered(character: Character, zoneId: string): boo
   return xp >= ALCHEMY_ZONE_MASTERY_THRESHOLD;
 }
 
+// Enchanting overhaul's Phase E7 scroll-crafting zone-Mastery — separate
+// from isMaterialMastered/MASTER_ENCHANTER_EQUIPMENT_ACHIEVEMENT above
+// (the combined Wand/Staff/Book equipment track), per the design brief's
+// explicit "separate scroll-crafting Mastery per zone" ask.
+export function isEnchantingZoneMastered(character: Character, zoneId: string): boolean {
+  const xp = character.enchantingZoneMastery?.[zoneId]?.xp ?? 0;
+  return xp >= ENCHANTING_ZONE_MASTERY_THRESHOLD;
+}
+
 // One "Master Forager of {zone.name}" achievement per gameData/zones.ts
 // ZONE — same fully data-driven, zero-per-zone-hardcoding pattern as
 // generateMasteryAchievements above, reading the real ZONES registry
@@ -176,6 +186,25 @@ const GRANDMASTER_ALCHEMIST_ACHIEVEMENT: AchievementDef = {
   check: (c) => Object.values(ZONES).every((z) => isAlchemyZoneMastered(c, z.id)),
 };
 
+// Enchanting overhaul's Phase E7 scroll-crafting zone-Mastery — "Enchanter"
+// (not "Alchemist"/"Blacksmith") to read distinctly from the equipment-side
+// MASTER_ENCHANTER_EQUIPMENT_ACHIEVEMENT ("Master of Armaments") above.
+function generateEnchanterAchievements(): AchievementDef[] {
+  return Object.values(ZONES).map((zone) => ({
+    id: `enchanter_${zone.id}`,
+    name: `Master Enchanter of ${zone.name}`,
+    description: `Reach 100% scroll-crafting Mastery in ${zone.name}.`,
+    check: (c: Character) => isEnchantingZoneMastered(c, zone.id),
+  }));
+}
+
+const GRANDMASTER_ENCHANTER_ACHIEVEMENT: AchievementDef = {
+  id: 'grandmaster_enchanter',
+  name: 'Grandmaster Enchanter',
+  description: 'Reach 100% scroll-crafting Mastery in every zone.',
+  check: (c) => Object.values(ZONES).every((z) => isEnchantingZoneMastered(c, z.id)),
+};
+
 export const ACHIEVEMENTS: AchievementDef[] = [
   ...generateMasteryAchievements(),
   MASTER_BLACKSMITH_ACHIEVEMENT,
@@ -189,6 +218,8 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   GRANDMASTER_FORAGER_ACHIEVEMENT,
   ...generateAlchemistAchievements(),
   GRANDMASTER_ALCHEMIST_ACHIEVEMENT,
+  ...generateEnchanterAchievements(),
+  GRANDMASTER_ENCHANTER_ACHIEVEMENT,
   { id: 'first_steps', name: 'First Steps', description: 'Reach character level 5.', check: (c) => c.level >= 5 },
   { id: 'adventurer', name: 'Adventurer', description: 'Reach character level 25.', check: (c) => c.level >= 25 },
   { id: 'veteran', name: 'Veteran', description: 'Reach character level 40.', check: (c) => c.level >= 40 },

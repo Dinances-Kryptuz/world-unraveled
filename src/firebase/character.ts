@@ -35,6 +35,7 @@ import { MATERIALS, LEATHER_MATERIALS, type MaterialDef } from '../gameData/mate
 import { MATERIAL_MASTERY_XP_THRESHOLDS, rollArmorStats, canonicalInstanceId } from '../gameData/equipmentRolls';
 import { herbZoneOf } from '../gameData/herbs';
 import { ALCHEMY_ZONE_MASTERY_THRESHOLD } from '../gameData/alchemyMastery';
+import { ENCHANTING_ZONE_MASTERY_THRESHOLD } from '../gameData/enchantingMastery';
 
 export const BASE_BAG_SLOTS = 24;
 
@@ -578,6 +579,12 @@ function allAlchemyZonesMastered(mastery: ZoneMasteryState | undefined): boolean
   return Object.keys(ZONES).every((zoneId) => (mastery?.[zoneId]?.xp ?? 0) >= ALCHEMY_ZONE_MASTERY_THRESHOLD);
 }
 
+// Same role as allAlchemyZonesMastered, for Enchanting's own separate
+// scroll-crafting zone-Mastery axis (Phase E7).
+function allEnchantingZonesMastered(mastery: ZoneMasteryState | undefined): boolean {
+  return Object.keys(ZONES).every((zoneId) => (mastery?.[zoneId]?.xp ?? 0) >= ENCHANTING_ZONE_MASTERY_THRESHOLD);
+}
+
 function allMaterialsMastered(mastery: MaterialMasteryState | undefined, registry: MaterialDef[] = MATERIALS): boolean {
   return registry.every((m) => (mastery?.[m.id]?.xp ?? 0) >= (MATERIAL_MASTERY_XP_THRESHOLDS[m.id] ?? Infinity));
 }
@@ -624,6 +631,16 @@ export async function applyCraftingProfessionResult(
     // with both a materialId and an alchemyZoneId).
     alchemyZoneMastery?: {
       batches: { quantity: number; chargesAtCraft: number }[];
+    };
+    // Only set for a Recipe.enchantingZoneId-tagged recipe (every Phase E6
+    // scroll recipe) — see craftingEngine.ts's resolveCraftingOffline/
+    // EnchantingZoneMasteryInput. No batches array needed (unlike
+    // materialMastery/alchemyZoneMastery): a scroll is a plain stackable
+    // item with no stat roll or charge-count variant to pick per-batch, so
+    // the normal resultQuantity grant below already handles it correctly.
+    enchantingZoneMastery?: {
+      zoneId: string;
+      newEnchantingZoneMasteryXp: number;
     };
   }
 ): Promise<void> {
@@ -712,6 +729,35 @@ export async function applyCraftingProfessionResult(
         allAlchemyZonesMastered(hypotheticalZoneMastery)
       ) {
         newlyUnlockedIds.push('grandmaster_alchemist');
+      }
+      if (newlyUnlockedIds.length > 0) {
+        characterUpdate.unlockedAchievementIds = arrayUnion(...newlyUnlockedIds);
+        characterUpdate.unlockedTitleIds = arrayUnion(...newlyUnlockedIds);
+      }
+    } else if (result.enchantingZoneMastery) {
+      // Enchanting's own zone-Mastery axis — no cross-zone split needed
+      // (unlike Alchemy's), since every scroll recipe has exactly one
+      // enchantingZoneId. Same eager-unlock treatment as the
+      // alchemyZoneMastery branch above.
+      const { zoneId, newEnchantingZoneMasteryXp } = result.enchantingZoneMastery;
+      characterUpdate[`enchantingZoneMastery.${zoneId}.xp`] = newEnchantingZoneMasteryXp;
+      const hypotheticalZoneMastery: ZoneMasteryState = {
+        ...character.enchantingZoneMastery,
+        [zoneId]: { xp: newEnchantingZoneMasteryXp },
+      };
+      const newlyUnlockedIds: string[] = [];
+      const touchedId = `enchanter_${zoneId}`;
+      if (
+        !character.unlockedAchievementIds.includes(touchedId) &&
+        newEnchantingZoneMasteryXp >= ENCHANTING_ZONE_MASTERY_THRESHOLD
+      ) {
+        newlyUnlockedIds.push(touchedId);
+      }
+      if (
+        !character.unlockedAchievementIds.includes('grandmaster_enchanter') &&
+        allEnchantingZonesMastered(hypotheticalZoneMastery)
+      ) {
+        newlyUnlockedIds.push('grandmaster_enchanter');
       }
       if (newlyUnlockedIds.length > 0) {
         characterUpdate.unlockedAchievementIds = arrayUnion(...newlyUnlockedIds);

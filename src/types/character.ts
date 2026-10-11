@@ -152,6 +152,14 @@ export interface Character {
   // convention as materialMastery.
   herbalismZoneMastery?: ZoneMasteryState;
   alchemyZoneMastery?: ZoneMasteryState;
+  // Enchanting overhaul's Phase E7 scroll-crafting zone-Mastery — a THIRD,
+  // independent zone-Mastery axis (same ZoneMasteryState shape), distinct
+  // from the combined Wand/Staff/Book equipment-Mastery track
+  // (materialMastery, keyed by WOOD_MATERIALS id) per the design brief's
+  // explicit "separate scroll-crafting Mastery per zone" ask. Drives
+  // crafting-speed/material-preservation milestones only (gameData/
+  // enchantingMastery.ts) — never charges, never bonus output.
+  enchantingZoneMastery?: ZoneMasteryState;
   // Enchantment id per equipment slot — bound to the SLOT, not a unique item
   // instance (this engine doesn't instance equipment; see gameData/
   // enchanting.ts's doc comment for why). Re-enchanting a slot overwrites
