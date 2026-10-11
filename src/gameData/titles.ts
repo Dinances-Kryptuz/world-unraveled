@@ -57,6 +57,10 @@ function generateForagerTitles(): TitleDef[] {
   return Object.values(ZONES).map((zone) => ({ id: `forager_${zone.id}`, name: `Master Forager of ${zone.name}` }));
 }
 
+function generateAnglerTitles(): TitleDef[] {
+  return Object.values(ZONES).map((zone) => ({ id: `angler_${zone.id}`, name: `Master Angler of ${zone.name}` }));
+}
+
 function generateAlchemistTitles(): TitleDef[] {
   return Object.values(ZONES).map((zone) => ({ id: `alchemist_${zone.id}`, name: `Master Alchemist of ${zone.name}` }));
 }
@@ -80,6 +84,8 @@ export const TITLES: TitleDef[] = [
   { id: 'master_enchanter_armaments', name: 'Master of Armaments' },
   ...generateForagerTitles(),
   { id: 'grandmaster_forager', name: 'Grandmaster Forager' },
+  ...generateAnglerTitles(),
+  { id: 'grandmaster_angler', name: 'Grandmaster Angler' },
   ...generateAlchemistTitles(),
   { id: 'grandmaster_alchemist', name: 'Grandmaster Alchemist' },
   ...generateEnchanterTitles(),

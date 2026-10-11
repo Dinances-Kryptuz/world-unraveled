@@ -303,6 +303,13 @@ export interface FishingHole {
   secondsPerAction: number;
   // 0–1, checked once per cast before any XP/Mastery/color-tier math runs.
   catchChance: number;
+  // Fishing overhaul's rare pearl — mirrors GatherNode.rareBonus exactly
+  // (a flat chance checked per action, in addition to the guaranteed
+  // yield), except here it's additionally gated behind catchChance in
+  // gatheringEngine.ts's resolver: the pearl only ever rolls on a
+  // SUCCESSFUL catch, never on a cast that lands nothing. One pearl per
+  // zone, shared by every fishing hole in that zone (see zones.ts).
+  rareBonus?: { itemId: string; chance: number };
 }
 
 export type UnlockRequirement =

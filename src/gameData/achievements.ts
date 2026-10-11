@@ -8,7 +8,7 @@ import { MAX_CHARACTER_SLOTS } from './characterSlots';
 import { MATERIALS, LEATHER_MATERIALS, CLOTH_MATERIALS, WOOD_MATERIALS } from './materials';
 import { MATERIAL_MASTERY_XP_THRESHOLDS } from './equipmentRolls';
 import { ZONES } from './zones';
-import { HERBALISM_ZONE_MASTERY_THRESHOLD } from './gatheringEngine';
+import { HERBALISM_ZONE_MASTERY_THRESHOLD, FISHING_ZONE_MASTERY_THRESHOLD } from './gatheringEngine';
 import { ALCHEMY_ZONE_MASTERY_THRESHOLD } from './alchemyMastery';
 import { ENCHANTING_ZONE_MASTERY_THRESHOLD } from './enchantingMastery';
 
@@ -136,6 +136,11 @@ export function isHerbalismZoneMastered(character: Character, zoneId: string): b
   return xp >= HERBALISM_ZONE_MASTERY_THRESHOLD;
 }
 
+export function isFishingZoneMastered(character: Character, zoneId: string): boolean {
+  const xp = character.fishingZoneMastery?.[zoneId]?.xp ?? 0;
+  return xp >= FISHING_ZONE_MASTERY_THRESHOLD;
+}
+
 export function isAlchemyZoneMastered(character: Character, zoneId: string): boolean {
   const xp = character.alchemyZoneMastery?.[zoneId]?.xp ?? 0;
   return xp >= ALCHEMY_ZONE_MASTERY_THRESHOLD;
@@ -168,6 +173,25 @@ const GRANDMASTER_FORAGER_ACHIEVEMENT: AchievementDef = {
   name: 'Grandmaster Forager',
   description: 'Reach 100% Herbalism Mastery in every zone.',
   check: (c) => Object.values(ZONES).every((z) => isHerbalismZoneMastered(c, z.id)),
+};
+
+// One "Master Angler of {zone.name}" achievement per gameData/zones.ts
+// ZONE — same fully data-driven pattern as generateForagerAchievements,
+// over the Fishing overhaul's own zone-Mastery axis.
+function generateAnglerAchievements(): AchievementDef[] {
+  return Object.values(ZONES).map((zone) => ({
+    id: `angler_${zone.id}`,
+    name: `Master Angler of ${zone.name}`,
+    description: `Reach 100% Fishing Mastery in ${zone.name}.`,
+    check: (c: Character) => isFishingZoneMastered(c, zone.id),
+  }));
+}
+
+const GRANDMASTER_ANGLER_ACHIEVEMENT: AchievementDef = {
+  id: 'grandmaster_angler',
+  name: 'Grandmaster Angler',
+  description: 'Reach 100% Fishing Mastery in every zone.',
+  check: (c) => Object.values(ZONES).every((z) => isFishingZoneMastered(c, z.id)),
 };
 
 function generateAlchemistAchievements(): AchievementDef[] {
@@ -216,6 +240,8 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   MASTER_ENCHANTER_EQUIPMENT_ACHIEVEMENT,
   ...generateForagerAchievements(),
   GRANDMASTER_FORAGER_ACHIEVEMENT,
+  ...generateAnglerAchievements(),
+  GRANDMASTER_ANGLER_ACHIEVEMENT,
   ...generateAlchemistAchievements(),
   GRANDMASTER_ALCHEMIST_ACHIEVEMENT,
   ...generateEnchanterAchievements(),

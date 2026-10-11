@@ -5,7 +5,7 @@ import { startActivity } from '../../firebase/character';
 import { ZONES, GATHER_NODES, FISHING_HOLES } from '../../gameData/zones';
 import { RECIPES } from '../../gameData/recipes';
 import { PROFESSION_LABELS, PROFESSION_CATEGORY, getProfessionState } from '../../gameData/professionTiers';
-import { gatheringColorTier, GATHERING_COLOR_XP_PCT } from '../../gameData/gatheringEngine';
+import { gatheringColorTier, GATHERING_COLOR_XP_PCT, fishingZoneMasteryPercent } from '../../gameData/gatheringEngine';
 import { craftingColorTier, CRAFTING_COLOR_XP_PCT } from '../../gameData/craftingEngine';
 import { canUseRecipe } from '../../firebase/professions';
 import { useEnchantScroll, removeEnchant } from '../../firebase/enchanting';
@@ -556,44 +556,53 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
       )}
 
       {category === 'fishing' && (
-        <ul>
-          {zone.fishingHoleIds.map((holeId) => {
-            const hole = FISHING_HOLES[holeId];
-            if (!known) {
+        <>
+          {known && (
+            <p>
+              {zone.name} Fishing Mastery: {fishingZoneMasteryPercent(char.fishingZoneMastery?.[zone.id]?.xp ?? 0).toFixed(1)}% —
+              shared by every fishing hole in this zone; grants speed and bonus-yield, never pearl chance. Reach 100% for the
+              Master Angler of {zone.name} title.
+            </p>
+          )}
+          <ul>
+            {zone.fishingHoleIds.map((holeId) => {
+              const hole = FISHING_HOLES[holeId];
+              if (!known) {
+                return (
+                  <li key={holeId} style={{ opacity: 0.6 }}>
+                    {hole.name} — learn {label} below to fish here.
+                  </li>
+                );
+              }
+              const meetsLevel = professionLevel >= hole.requiredLevel;
+              const tier = !meetsLevel ? 'red' : gatheringColorTier(professionLevel, hole.requiredLevel);
+              const equippedToolId = equippedItemId(character.equipment.tool);
+              const equippedTool = equippedToolId ? ITEMS[equippedToolId] : null;
+              const hasRod = equippedTool?.toolType === 'fishing_rod';
+              const canFish = meetsLevel && hasRod;
+              const yieldItem = ITEMS[hole.itemId];
+              const pearlItem = hole.rareBonus ? ITEMS[hole.rareBonus.itemId] : null;
               return (
-                <li key={holeId} style={{ opacity: 0.6 }}>
-                  {hole.name} — learn {label} below to fish here.
+                <li key={holeId}>
+                  <div className="item-row-main">
+                    {yieldItem && <ItemSlot item={yieldItem} />}
+                    <span>
+                      <span style={{ color: TIER_COLORS[tier], fontWeight: 700 }}>{hole.name}</span> (level{' '}
+                      {hole.requiredLevel}+
+                      {meetsLevel ? `, ${(GATHERING_COLOR_XP_PCT[tier as keyof typeof GATHERING_COLOR_XP_PCT] * 100).toFixed(0)}% XP` : ''}
+                      ) — yields {yieldItem?.name ?? hole.itemId} ({(hole.catchChance * 100).toFixed(0)}% catch chance)
+                      {pearlItem ? `, ${(hole.rareBonus!.chance * 100).toFixed(0)}% chance of ${pearlItem.name}` : ''}
+                    </span>
+                  </div>
+                  <button onClick={() => handleFish(holeId)} disabled={!canFish}>
+                    {!meetsLevel ? `Need level ${hole.requiredLevel}` : !hasRod ? 'Need Fishing Rod equipped' : 'Fish'}
+                  </button>
                 </li>
               );
-            }
-            const meetsLevel = professionLevel >= hole.requiredLevel;
-            const tier = !meetsLevel ? 'red' : gatheringColorTier(professionLevel, hole.requiredLevel);
-            const equippedToolId = equippedItemId(character.equipment.tool);
-            const equippedTool = equippedToolId ? ITEMS[equippedToolId] : null;
-            const hasRod = equippedTool?.toolType === 'fishing_rod';
-            const canFish = meetsLevel && hasRod;
-            const yieldItem = ITEMS[hole.itemId];
-            const masteryLevel = getProfessionState(char.professions, 'fishing').mastery?.[holeId]?.level ?? 0;
-            return (
-              <li key={holeId}>
-                <div className="item-row-main">
-                  {yieldItem && <ItemSlot item={yieldItem} />}
-                  <span>
-                    <span style={{ color: TIER_COLORS[tier], fontWeight: 700 }}>{hole.name}</span> (level{' '}
-                    {hole.requiredLevel}+
-                    {meetsLevel ? `, ${(GATHERING_COLOR_XP_PCT[tier as keyof typeof GATHERING_COLOR_XP_PCT] * 100).toFixed(0)}% XP` : ''}
-                    ) — yields {yieldItem?.name ?? hole.itemId} ({(hole.catchChance * 100).toFixed(0)}% catch chance)
-                    {known ? ` — Mastery ${masteryLevel}` : ''}
-                  </span>
-                </div>
-                <button onClick={() => handleFish(holeId)} disabled={!canFish}>
-                  {!meetsLevel ? `Need level ${hole.requiredLevel}` : !hasRod ? 'Need Fishing Rod equipped' : 'Fish'}
-                </button>
-              </li>
-            );
-          })}
-          {zone.fishingHoleIds.length === 0 && <p>No fishing holes in {zone.name}.</p>}
-        </ul>
+            })}
+            {zone.fishingHoleIds.length === 0 && <p>No fishing holes in {zone.name}.</p>}
+          </ul>
+        </>
       )}
 
       {category === 'production' && professionId === 'enchanting' && renderEnchantingPanel()}

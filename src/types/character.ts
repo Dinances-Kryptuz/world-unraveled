@@ -160,6 +160,15 @@ export interface Character {
   // crafting-speed/material-preservation milestones only (gameData/
   // enchantingMastery.ts) — never charges, never bonus output.
   enchantingZoneMastery?: ZoneMasteryState;
+  // Fishing overhaul's zone-Mastery — SHARED per zone (not per-hole),
+  // replacing the old per-hole 0-50 Mastery axis entirely (every
+  // FishingHole now resolves through this). Unlike herbalismZoneMastery,
+  // this one is NOT cosmetic-only: it drives real speed/bonus-yield effects
+  // via gatheringEngine.ts's fishingZoneMasteryEquivalentLevel mapping onto
+  // the existing gatheringMasterySpeedMultiplier/gatheringMasteryBonusChance
+  // curve. Never affects pearl (rareBonus) drop chance. Same "absence is
+  // the zero state" convention as the other zone-Mastery axes above.
+  fishingZoneMastery?: ZoneMasteryState;
   // Enchantment id per equipment slot — bound to the SLOT, not a unique item
   // instance (this engine doesn't instance equipment; see gameData/
   // enchanting.ts's doc comment for why). Re-enchanting a slot overwrites

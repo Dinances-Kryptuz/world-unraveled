@@ -257,13 +257,13 @@ export function WelcomeBackScreen({
         const hole = FISHING_HOLES[activity.targetId];
         const itemName = ITEMS[hole.itemId]?.name ?? hole.itemId;
         const prof = getProfessionState(character.professions, 'fishing');
-        const masteryState = prof.mastery?.[hole.id] ?? { level: 0, xp: 0 };
         const holeLike: GatheringResourceLike = {
           itemId: hole.itemId,
           baseXp: hole.baseXp,
           secondsPerAction: hole.secondsPerAction,
           requiredLevel: hole.requiredLevel,
           catchChance: hole.catchChance,
+          rareBonus: hole.rareBonus,
         };
         const result = resolveGatheringOffline(
           activity.startedAt,
@@ -271,12 +271,13 @@ export function WelcomeBackScreen({
           holeLike,
           prof.level,
           prof.xp,
-          masteryState.level,
-          masteryState.xp,
+          0,
+          0,
           maxSkillForUnlockedTier('fishing', prof.unlockedTier),
           0,
           undefined,
-          gatheringShirtBonuses(activity.equippedShirtItemId)
+          gatheringShirtBonuses(activity.equippedShirtItemId),
+          { zoneMasteryStartingXp: character.fishingZoneMastery?.[hole.zoneId]?.xp ?? 0 }
         );
         const levelUpNote = result.finalSkill !== prof.level ? ` Your Fishing level reached ${result.finalSkill}!` : '';
         setSummary(

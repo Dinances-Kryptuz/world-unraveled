@@ -2370,8 +2370,9 @@ export const ITEMS: Record<string, ItemDef> = {
     stackable: true, equipSlot: 'tool', toolType: 'fishing_rod', gatherBonusPct: 10, sellValue: 95,
   },
 
-  // ── Fish — Fishing's primary yield, feeding Cooking. One common fish per
-  // zone, scaling in value and in the Cooking recipes that use them.
+  // ── Fish (legacy) — Fishing's original single-fish-per-zone yield, frozen
+  // in place and still catchable from each zone's original fishing hole.
+  // Superseded by the full targeted-fishing catalog below.
   brook_trout: {
     id: 'brook_trout', name: 'Brook Trout', type: 'material',
     description: 'A common trout pulled from Greenhollow’s streams.',
@@ -2401,6 +2402,165 @@ export const ITEMS: Record<string, ItemDef> = {
     id: 'emberheart_koi', name: 'Emberheart Koi', type: 'material',
     description: 'A striking, ember-scaled koi found only at the world’s molten heart.',
     stackable: true, sellValue: 20,
+  },
+
+  // ── Fishing — targeted catches across the six real zones. Each zone's
+  // fish share a zone-exclusive rare Pearl (fixed-chance catch bonus, see
+  // FISHING_HOLES rareBonus), which Cooking and other professions prize.
+  // Greenhollow Fields
+  brilliant_smallfish: {
+    id: 'brilliant_smallfish', name: 'Brilliant Smallfish', type: 'material',
+    description: 'A catch from the gentle streams of Greenhollow Fields.',
+    stackable: true, sellValue: 2,
+  },
+  longjaw_mud_snapper: {
+    id: 'longjaw_mud_snapper', name: 'Longjaw Mud Snapper', type: 'material',
+    description: 'A catch from the gentle streams of Greenhollow Fields.',
+    stackable: true, sellValue: 3,
+  },
+  slitherskin_mackerel: {
+    id: 'slitherskin_mackerel', name: 'Slitherskin Mackerel', type: 'material',
+    description: 'A catch from the gentle streams of Greenhollow Fields.',
+    stackable: true, sellValue: 4,
+  },
+  // Stonecrag Foothills
+  bristle_whisker_catfish: {
+    id: 'bristle_whisker_catfish', name: 'Bristle Whisker Catfish', type: 'material',
+    description: 'A catch from the rivers and marshes of Stonecrag Foothills.',
+    stackable: true, sellValue: 4,
+  },
+  rainbow_fin_albacore: {
+    id: 'rainbow_fin_albacore', name: 'Rainbow Fin Albacore', type: 'material',
+    description: 'A catch from the rivers and marshes of Stonecrag Foothills.',
+    stackable: true, sellValue: 5,
+  },
+  sagefish: {
+    id: 'sagefish', name: 'Sagefish', type: 'material',
+    description: 'A catch from the rivers and marshes of Stonecrag Foothills.',
+    stackable: true, sellValue: 6,
+  },
+  oily_blackmouth: {
+    id: 'oily_blackmouth', name: 'Oily Blackmouth', type: 'material',
+    description: 'A catch from the rivers and marshes of Stonecrag Foothills.',
+    stackable: true, sellValue: 7,
+  },
+  // Emberfall Ridge
+  mithril_head_trout: {
+    id: 'mithril_head_trout', name: 'Mithril Head Trout', type: 'material',
+    description: 'A catch from the deep waters of Emberfall Ridge.',
+    stackable: true, sellValue: 7,
+  },
+  rockscale_cod: {
+    id: 'rockscale_cod', name: 'Rockscale Cod', type: 'material',
+    description: 'A catch from the deep waters of Emberfall Ridge.',
+    stackable: true, sellValue: 8,
+  },
+  greater_sagefish: {
+    id: 'greater_sagefish', name: 'Greater Sagefish', type: 'material',
+    description: 'A catch from the deep waters of Emberfall Ridge.',
+    stackable: true, sellValue: 9,
+  },
+  firefin_snapper: {
+    id: 'firefin_snapper', name: 'Firefin Snapper', type: 'material',
+    description: 'A catch from the deep waters of Emberfall Ridge.',
+    stackable: true, sellValue: 10,
+  },
+  // Cinderfall Depths
+  redgill: {
+    id: 'redgill', name: 'Redgill', type: 'material',
+    description: 'A catch from the ancient waters of Cinderfall Depths.',
+    stackable: true, sellValue: 10,
+  },
+  nightfin_snapper: {
+    id: 'nightfin_snapper', name: 'Nightfin Snapper', type: 'material',
+    description: 'A catch from the ancient waters of Cinderfall Depths.',
+    stackable: true, sellValue: 11,
+  },
+  sunscale_salmon: {
+    id: 'sunscale_salmon', name: 'Sunscale Salmon', type: 'material',
+    description: 'A catch from the ancient waters of Cinderfall Depths.',
+    stackable: true, sellValue: 13,
+  },
+  spotted_yellowtail: {
+    id: 'spotted_yellowtail', name: 'Spotted Yellowtail', type: 'material',
+    description: 'A catch from the ancient waters of Cinderfall Depths.',
+    stackable: true, sellValue: 14,
+  },
+  // The Molten Scar
+  stonescale_eel: {
+    id: 'stonescale_eel', name: 'Stonescale Eel', type: 'material',
+    description: 'A catch from the dangerous waters of The Molten Scar.',
+    stackable: true, sellValue: 14,
+  },
+  glossy_mightfish: {
+    id: 'glossy_mightfish', name: 'Glossy Mightfish', type: 'material',
+    description: 'A catch from the dangerous waters of The Molten Scar.',
+    stackable: true, sellValue: 16,
+  },
+  whitescale_salmon: {
+    id: 'whitescale_salmon', name: 'Whitescale Salmon', type: 'material',
+    description: 'A catch from the dangerous waters of The Molten Scar.',
+    stackable: true, sellValue: 18,
+  },
+  darkclaw_lobster: {
+    id: 'darkclaw_lobster', name: 'Darkclaw Lobster', type: 'material',
+    description: 'A catch from the dangerous waters of The Molten Scar.',
+    stackable: true, sellValue: 20,
+  },
+  // Cinderheart Crater
+  emberfin_snapper: {
+    id: 'emberfin_snapper', name: 'Emberfin Snapper', type: 'material',
+    description: 'A catch from the ember-warmed waters of Cinderheart Crater.',
+    stackable: true, sellValue: 20,
+  },
+  magmascale_eel: {
+    id: 'magmascale_eel', name: 'Magmascale Eel', type: 'material',
+    description: 'A catch from the ember-warmed waters of Cinderheart Crater.',
+    stackable: true, sellValue: 21,
+  },
+  ashen_salmon: {
+    id: 'ashen_salmon', name: 'Ashen Salmon', type: 'material',
+    description: 'A catch from the ember-warmed waters of Cinderheart Crater.',
+    stackable: true, sellValue: 22,
+  },
+  molten_lobster: {
+    id: 'molten_lobster', name: 'Molten Lobster', type: 'material',
+    description: 'A catch from the ember-warmed waters of Cinderheart Crater.',
+    stackable: true, sellValue: 23,
+  },
+
+  // ── Zone pearls — a fixed 3% per-catch rare bonus from any fishing hole
+  // in that zone, independent of mastery/level/speed. Shared crafting
+  // materials across professions (not auto-consumed by any recipe).
+  freshwater_pearl: {
+    id: 'freshwater_pearl', name: 'Freshwater Pearl', type: 'material',
+    description: 'A rare, lustrous pearl found only in the waters of Greenhollow Fields.',
+    stackable: true, sellValue: 15,
+  },
+  river_pearl: {
+    id: 'river_pearl', name: 'River Pearl', type: 'material',
+    description: 'A rare, lustrous pearl found only in the waters of Stonecrag Foothills.',
+    stackable: true, sellValue: 28,
+  },
+  deepwater_pearl: {
+    id: 'deepwater_pearl', name: 'Deepwater Pearl', type: 'material',
+    description: 'A rare, lustrous pearl found only in the waters of Emberfall Ridge.',
+    stackable: true, sellValue: 45,
+  },
+  moonlit_pearl: {
+    id: 'moonlit_pearl', name: 'Moonlit Pearl', type: 'material',
+    description: 'A rare, lustrous pearl found only in the waters of Cinderfall Depths.',
+    stackable: true, sellValue: 65,
+  },
+  prismatic_pearl: {
+    id: 'prismatic_pearl', name: 'Prismatic Pearl', type: 'material',
+    description: 'A rare, lustrous pearl found only in the waters of The Molten Scar.',
+    stackable: true, sellValue: 90,
+  },
+  ember_pearl: {
+    id: 'ember_pearl', name: 'Ember Pearl', type: 'material',
+    description: 'A rare, lustrous pearl found only in the waters of Cinderheart Crater.',
+    stackable: true, sellValue: 120,
   },
 
   // ── Cooking's non-fish ingredients — monster drops (boar_meat/raw_meat

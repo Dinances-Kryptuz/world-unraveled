@@ -35,7 +35,7 @@ export function isZoneUnlocked(zone: Zone, characterLevel: number): boolean {
 // curve is harsher. 6 tiers (1 per zone, spread 1-90) rather than the 9-12
 // the other three professions use, since Fishing has only ever had one fish
 // per zone.
-export const FISHING_HOLES: Record<string, FishingHole> = {
+const LEGACY_FISHING_HOLES: Record<string, FishingHole> = {
   greenhollow_fishing_hole: {
     id: 'greenhollow_fishing_hole', name: 'Greenhollow Stream', zoneId: 'greenhollow_fields',
     requiredLevel: 1, itemId: 'brook_trout', baseXp: 10, secondsPerAction: 9, catchChance: 0.78,
@@ -60,6 +60,142 @@ export const FISHING_HOLES: Record<string, FishingHole> = {
     id: 'cinderheart_fishing_hole', name: 'Cinderheart Ember Pool', zoneId: 'cinderheart_crater',
     requiredLevel: 90, itemId: 'emberheart_koi', baseXp: 114, secondsPerAction: 17, catchChance: 0.78,
   },
+};
+
+// 23 targeted fishing holes (3-4 per zone) added across the Fishing overhaul,
+// alongside the 6 original single-fish holes above (frozen, unchanged, so
+// existing characters already fishing them keep working exactly as before).
+// Each new hole in a zone shares that zone's exclusive rare pearl — a flat
+// 3% chance per SUCCESSFUL catch (i.e. gated behind catchChance), never
+// scaled by Mastery/level/speed — rolled by resolveGatheringOffline's
+// rareBonus path, independent of and in addition to the guaranteed fish.
+const TARGETED_FISHING_HOLES: Record<string, FishingHole> = {
+  // Greenhollow Fields
+  brilliant_smallfish_hole: {
+    id: 'brilliant_smallfish_hole', name: 'Brilliant Smallfish Hole', zoneId: 'greenhollow_fields',
+    requiredLevel: 1, itemId: 'brilliant_smallfish', baseXp: 10, secondsPerAction: 9.0, catchChance: 0.78,
+    rareBonus: { itemId: 'freshwater_pearl', chance: 0.03 },
+  },
+  longjaw_mud_snapper_hole: {
+    id: 'longjaw_mud_snapper_hole', name: 'Longjaw Mud Snapper Hole', zoneId: 'greenhollow_fields',
+    requiredLevel: 7, itemId: 'longjaw_mud_snapper', baseXp: 13, secondsPerAction: 9.4, catchChance: 0.78,
+    rareBonus: { itemId: 'freshwater_pearl', chance: 0.03 },
+  },
+  slitherskin_mackerel_hole: {
+    id: 'slitherskin_mackerel_hole', name: 'Slitherskin Mackerel Hole', zoneId: 'greenhollow_fields',
+    requiredLevel: 14, itemId: 'slitherskin_mackerel', baseXp: 16, secondsPerAction: 9.9, catchChance: 0.78,
+    rareBonus: { itemId: 'freshwater_pearl', chance: 0.03 },
+  },
+  // Stonecrag Foothills
+  bristle_whisker_catfish_hole: {
+    id: 'bristle_whisker_catfish_hole', name: 'Bristle Whisker Catfish Hole', zoneId: 'stonecrag_foothills',
+    requiredLevel: 15, itemId: 'bristle_whisker_catfish', baseXp: 16, secondsPerAction: 10.0, catchChance: 0.78,
+    rareBonus: { itemId: 'river_pearl', chance: 0.03 },
+  },
+  rainbow_fin_albacore_hole: {
+    id: 'rainbow_fin_albacore_hole', name: 'Rainbow Fin Albacore Hole', zoneId: 'stonecrag_foothills',
+    requiredLevel: 20, itemId: 'rainbow_fin_albacore', baseXp: 19, secondsPerAction: 10.3, catchChance: 0.78,
+    rareBonus: { itemId: 'river_pearl', chance: 0.03 },
+  },
+  sagefish_hole: {
+    id: 'sagefish_hole', name: 'Sagefish Hole', zoneId: 'stonecrag_foothills',
+    requiredLevel: 24, itemId: 'sagefish', baseXp: 22, secondsPerAction: 10.6, catchChance: 0.78,
+    rareBonus: { itemId: 'river_pearl', chance: 0.03 },
+  },
+  oily_blackmouth_hole: {
+    id: 'oily_blackmouth_hole', name: 'Oily Blackmouth Hole', zoneId: 'stonecrag_foothills',
+    requiredLevel: 29, itemId: 'oily_blackmouth', baseXp: 25, secondsPerAction: 10.9, catchChance: 0.78,
+    rareBonus: { itemId: 'river_pearl', chance: 0.03 },
+  },
+  // Emberfall Ridge
+  mithril_head_trout_hole: {
+    id: 'mithril_head_trout_hole', name: 'Mithril Head Trout Hole', zoneId: 'emberfall_ridge',
+    requiredLevel: 30, itemId: 'mithril_head_trout', baseXp: 26, secondsPerAction: 11.0, catchChance: 0.78,
+    rareBonus: { itemId: 'deepwater_pearl', chance: 0.03 },
+  },
+  rockscale_cod_hole: {
+    id: 'rockscale_cod_hole', name: 'Rockscale Cod Hole', zoneId: 'emberfall_ridge',
+    requiredLevel: 36, itemId: 'rockscale_cod', baseXp: 32, secondsPerAction: 11.7, catchChance: 0.78,
+    rareBonus: { itemId: 'deepwater_pearl', chance: 0.03 },
+  },
+  greater_sagefish_hole: {
+    id: 'greater_sagefish_hole', name: 'Greater Sagefish Hole', zoneId: 'emberfall_ridge',
+    requiredLevel: 41, itemId: 'greater_sagefish', baseXp: 36, secondsPerAction: 12.2, catchChance: 0.78,
+    rareBonus: { itemId: 'deepwater_pearl', chance: 0.03 },
+  },
+  firefin_snapper_hole: {
+    id: 'firefin_snapper_hole', name: 'Firefin Snapper Hole', zoneId: 'emberfall_ridge',
+    requiredLevel: 47, itemId: 'firefin_snapper', baseXp: 42, secondsPerAction: 12.9, catchChance: 0.78,
+    rareBonus: { itemId: 'deepwater_pearl', chance: 0.03 },
+  },
+  // Cinderfall Depths
+  redgill_hole: {
+    id: 'redgill_hole', name: 'Redgill Hole', zoneId: 'cinderfall_depths',
+    requiredLevel: 48, itemId: 'redgill', baseXp: 43, secondsPerAction: 13.0, catchChance: 0.78,
+    rareBonus: { itemId: 'moonlit_pearl', chance: 0.03 },
+  },
+  nightfin_snapper_hole: {
+    id: 'nightfin_snapper_hole', name: 'Nightfin Snapper Hole', zoneId: 'cinderfall_depths',
+    requiredLevel: 54, itemId: 'nightfin_snapper', baseXp: 51, secondsPerAction: 13.6, catchChance: 0.78,
+    rareBonus: { itemId: 'moonlit_pearl', chance: 0.03 },
+  },
+  sunscale_salmon_hole: {
+    id: 'sunscale_salmon_hole', name: 'Sunscale Salmon Hole', zoneId: 'cinderfall_depths',
+    requiredLevel: 61, itemId: 'sunscale_salmon', baseXp: 61, secondsPerAction: 14.3, catchChance: 0.78,
+    rareBonus: { itemId: 'moonlit_pearl', chance: 0.03 },
+  },
+  spotted_yellowtail_hole: {
+    id: 'spotted_yellowtail_hole', name: 'Spotted Yellowtail Hole', zoneId: 'cinderfall_depths',
+    requiredLevel: 67, itemId: 'spotted_yellowtail', baseXp: 69, secondsPerAction: 14.9, catchChance: 0.78,
+    rareBonus: { itemId: 'moonlit_pearl', chance: 0.03 },
+  },
+  // The Molten Scar
+  stonescale_eel_hole: {
+    id: 'stonescale_eel_hole', name: 'Stonescale Eel Hole', zoneId: 'molten_scar',
+    requiredLevel: 68, itemId: 'stonescale_eel', baseXp: 70, secondsPerAction: 15.0, catchChance: 0.78,
+    rareBonus: { itemId: 'prismatic_pearl', chance: 0.03 },
+  },
+  glossy_mightfish_hole: {
+    id: 'glossy_mightfish_hole', name: 'Glossy Mightfish Hole', zoneId: 'molten_scar',
+    requiredLevel: 75, itemId: 'glossy_mightfish', baseXp: 84, secondsPerAction: 15.6, catchChance: 0.78,
+    rareBonus: { itemId: 'prismatic_pearl', chance: 0.03 },
+  },
+  whitescale_salmon_hole: {
+    id: 'whitescale_salmon_hole', name: 'Whitescale Salmon Hole', zoneId: 'molten_scar',
+    requiredLevel: 82, itemId: 'whitescale_salmon', baseXp: 98, secondsPerAction: 16.3, catchChance: 0.78,
+    rareBonus: { itemId: 'prismatic_pearl', chance: 0.03 },
+  },
+  darkclaw_lobster_hole: {
+    id: 'darkclaw_lobster_hole', name: 'Darkclaw Lobster Hole', zoneId: 'molten_scar',
+    requiredLevel: 89, itemId: 'darkclaw_lobster', baseXp: 112, secondsPerAction: 16.9, catchChance: 0.78,
+    rareBonus: { itemId: 'prismatic_pearl', chance: 0.03 },
+  },
+  // Cinderheart Crater
+  emberfin_snapper_hole: {
+    id: 'emberfin_snapper_hole', name: 'Emberfin Snapper Hole', zoneId: 'cinderheart_crater',
+    requiredLevel: 90, itemId: 'emberfin_snapper', baseXp: 114, secondsPerAction: 17.0, catchChance: 0.78,
+    rareBonus: { itemId: 'ember_pearl', chance: 0.03 },
+  },
+  magmascale_eel_hole: {
+    id: 'magmascale_eel_hole', name: 'Magmascale Eel Hole', zoneId: 'cinderheart_crater',
+    requiredLevel: 93, itemId: 'magmascale_eel', baseXp: 120, secondsPerAction: 17.3, catchChance: 0.78,
+    rareBonus: { itemId: 'ember_pearl', chance: 0.03 },
+  },
+  ashen_salmon_hole: {
+    id: 'ashen_salmon_hole', name: 'Ashen Salmon Hole', zoneId: 'cinderheart_crater',
+    requiredLevel: 97, itemId: 'ashen_salmon', baseXp: 128, secondsPerAction: 17.6, catchChance: 0.78,
+    rareBonus: { itemId: 'ember_pearl', chance: 0.03 },
+  },
+  molten_lobster_hole: {
+    id: 'molten_lobster_hole', name: 'Molten Lobster Hole', zoneId: 'cinderheart_crater',
+    requiredLevel: 100, itemId: 'molten_lobster', baseXp: 134, secondsPerAction: 17.9, catchChance: 0.78,
+    rareBonus: { itemId: 'ember_pearl', chance: 0.03 },
+  },
+};
+
+export const FISHING_HOLES: Record<string, FishingHole> = {
+  ...LEGACY_FISHING_HOLES,
+  ...TARGETED_FISHING_HOLES,
 };
 
 // All 4 gathering professions (Mining, Herbalism, Skinning here; Fishing
@@ -513,7 +649,9 @@ export const ZONES: Record<string, Zone> = {
       'greenhollow_copper_vein', 'greenhollow_peacebloom_patch', 'greenhollow_silverleaf_patch',
       'greenhollow_earthroot_patch', 'greenhollow_skinning_grounds',
     ],
-    fishingHoleIds: ['greenhollow_fishing_hole'],
+    fishingHoleIds: [
+      'greenhollow_fishing_hole', 'brilliant_smallfish_hole', 'longjaw_mud_snapper_hole', 'slitherskin_mackerel_hole',
+    ],
   },
 
   stonecrag_foothills: {
@@ -528,7 +666,10 @@ export const ZONES: Record<string, Zone> = {
       'stonecrag_tin_vein', 'stonecrag_silver_vein', 'stonecrag_mageroyal_patch', 'stonecrag_briarthorn_patch',
       'stonecrag_bruiseweed_patch', 'stonecrag_skinning_grounds',
     ],
-    fishingHoleIds: ['stonecrag_fishing_hole'],
+    fishingHoleIds: [
+      'stonecrag_fishing_hole', 'bristle_whisker_catfish_hole', 'rainbow_fin_albacore_hole', 'sagefish_hole',
+      'oily_blackmouth_hole',
+    ],
   },
 
   emberfall_ridge: {
@@ -543,7 +684,10 @@ export const ZONES: Record<string, Zone> = {
       'emberfall_iron_vein', 'emberfall_kingsblood_patch', 'emberfall_liferoot_patch', 'emberfall_goldthorn_patch',
       'emberfall_skinning_grounds',
     ],
-    fishingHoleIds: ['emberfall_fishing_hole'],
+    fishingHoleIds: [
+      'emberfall_fishing_hole', 'mithril_head_trout_hole', 'rockscale_cod_hole', 'greater_sagefish_hole',
+      'firefin_snapper_hole',
+    ],
   },
 
   cinderfall_depths: {
@@ -558,7 +702,10 @@ export const ZONES: Record<string, Zone> = {
       'cinderfall_ore_seam', 'cinderfall_gold_vein', 'cinderfall_khadgars_whisker_patch', 'cinderfall_firebloom_patch',
       'cinderfall_sungrass_patch', 'cinderfall_skinning_grounds',
     ],
-    fishingHoleIds: ['cinderfall_fishing_hole'],
+    fishingHoleIds: [
+      'cinderfall_fishing_hole', 'redgill_hole', 'nightfin_snapper_hole', 'sunscale_salmon_hole',
+      'spotted_yellowtail_hole',
+    ],
   },
 
   molten_scar: {
@@ -573,7 +720,10 @@ export const ZONES: Record<string, Zone> = {
       'molten_scar_brimstone_vein', 'molten_scar_blindweed_patch', 'molten_scar_ghost_mushroom_patch',
       'molten_scar_gromsblood_patch', 'molten_scar_skinning_grounds',
     ],
-    fishingHoleIds: ['molten_scar_fishing_hole'],
+    fishingHoleIds: [
+      'molten_scar_fishing_hole', 'stonescale_eel_hole', 'glossy_mightfish_hole', 'whitescale_salmon_hole',
+      'darkclaw_lobster_hole',
+    ],
   },
 
   cinderheart_crater: {
@@ -588,7 +738,10 @@ export const ZONES: Record<string, Zone> = {
       'cinderheart_ore_vein', 'cinderheart_platinum_vein', 'cinderheart_dreamfoil_patch',
       'cinderheart_mountain_silversage_patch', 'cinderheart_black_lotus_patch', 'cinderheart_skinning_grounds',
     ],
-    fishingHoleIds: ['cinderheart_fishing_hole'],
+    fishingHoleIds: [
+      'cinderheart_fishing_hole', 'emberfin_snapper_hole', 'magmascale_eel_hole', 'ashen_salmon_hole',
+      'molten_lobster_hole',
+    ],
   },
 };
 

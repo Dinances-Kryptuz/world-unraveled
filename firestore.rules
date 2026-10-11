@@ -218,6 +218,7 @@ service cloud.firestore {
       && isValidUnlockedAchievementIds(after)
       && isValidMaterialMastery(after)
       && isValidHerbalismZoneMastery(after)
+      && isValidFishingZoneMastery(after)
       && isValidAlchemyZoneMastery(after)
       && isValidEnchantingZoneMastery(after)
       && isValidConsumableAutomation(after)
@@ -270,6 +271,15 @@ service cloud.firestore {
   // that writes this field.
   function isValidHerbalismZoneMastery(after) {
     return !('herbalismZoneMastery' in after) || (after.herbalismZoneMastery is map && after.herbalismZoneMastery.size() <= 6);
+  }
+
+  // Same shape-only treatment — Fishing overhaul's shared per-zone Mastery
+  // axis, replacing the old per-hole 0-50 bucket entirely. Full validation
+  // (that a zone id is real, that xp only ever increases) happens in
+  // firebase/professions.ts's applyFishingResult, the only path that writes
+  // this field.
+  function isValidFishingZoneMastery(after) {
+    return !('fishingZoneMastery' in after) || (after.fishingZoneMastery is map && after.fishingZoneMastery.size() <= 6);
   }
 
   // Same treatment as isValidHerbalismZoneMastery above — Alchemy's own
