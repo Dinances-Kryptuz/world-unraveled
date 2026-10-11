@@ -10,6 +10,7 @@ import {
   setEquippedConsumable,
   applyConsumableAutomationUsage,
 } from '../firebase/consumables';
+import { consumeEnchantCharges } from '../firebase/enchanting';
 import { DUNGEONS } from '../gameData/dungeons';
 import { MONSTERS } from '../gameData/monsters';
 import { notify } from '../utils/notifications';
@@ -109,6 +110,13 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
   const pendingKillsRef = useRef<KillReward[]>([]);
   const pendingQuestSignalsRef = useRef<QuestSignals>({ healingDone: 0, abilityUseCounts: {} });
   const pendingBuffTriggersRef = useRef<{ offensive_action: number; damage_taken: number }>({
+    offensive_action: 0,
+    damage_taken: 0,
+  });
+  // Enchanting overhaul's charge counters — see CombatScreen.tsx's matching
+  // pendingEnchantTriggersRef comment for why this is a separate tally from
+  // pendingBuffTriggersRef above.
+  const pendingEnchantTriggersRef = useRef<{ offensive_action: number; damage_taken: number }>({
     offensive_action: 0,
     damage_taken: 0,
   });
@@ -243,6 +251,7 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
     pendingKillsRef.current = [];
     pendingQuestSignalsRef.current = { healingDone: 0, abilityUseCounts: {} };
     pendingBuffTriggersRef.current = { offensive_action: 0, damage_taken: 0 };
+    pendingEnchantTriggersRef.current = { offensive_action: 0, damage_taken: 0 };
     stageIndexRef.current = 0;
     fullClearsRef.current = 0;
     pendingDungeonClearsRef.current = 0;
@@ -283,8 +292,15 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
       notifyKills(result.kills);
       mergeQuestSignals(pendingQuestSignalsRef.current, result.questSignals);
       for (const event of result.events) {
-        if (event.kind === 'damage_out') pendingBuffTriggersRef.current.offensive_action++;
-        else if (event.kind === 'damage_in') pendingBuffTriggersRef.current.damage_taken++;
+        if (event.kind === 'damage_out') {
+          pendingBuffTriggersRef.current.offensive_action++;
+          pendingEnchantTriggersRef.current.offensive_action++;
+        } else if (event.kind === 'damage_in') {
+          pendingBuffTriggersRef.current.damage_taken++;
+          pendingEnchantTriggersRef.current.damage_taken++;
+        } else if (event.kind === 'miss_out') {
+          pendingEnchantTriggersRef.current.offensive_action++;
+        }
       }
       const extra = pendingLogRef.current;
       pendingLogRef.current = [];
@@ -318,9 +334,11 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
     const kills = pendingKillsRef.current;
     const questSignals = pendingQuestSignalsRef.current;
     const buffTriggers = pendingBuffTriggersRef.current;
+    const enchantTriggers = pendingEnchantTriggersRef.current;
     const consumableState = consumableStateRef.current;
     const hasQuestSignals = questSignals.healingDone > 0 || Object.keys(questSignals.abilityUseCounts).length > 0;
     const hasBuffTriggers = buffTriggers.offensive_action > 0 || buffTriggers.damage_taken > 0;
+    const hasEnchantTriggers = kills.length > 0 || enchantTriggers.offensive_action > 0 || enchantTriggers.damage_taken > 0;
     const hasConsumableUsage =
       consumableState.offensiveChargesConsumed > 0 ||
       consumableState.defensiveChargesConsumed > 0 ||
@@ -330,10 +348,18 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
     pendingKillsRef.current = [];
     pendingQuestSignalsRef.current = { healingDone: 0, abilityUseCounts: {} };
     pendingBuffTriggersRef.current = { offensive_action: 0, damage_taken: 0 };
+    pendingEnchantTriggersRef.current = { offensive_action: 0, damage_taken: 0 };
     const dungeonClearsGained = pendingDungeonClearsRef.current;
     pendingDungeonClearsRef.current = 0;
     const currentCharacterForBuffs = characterRef.current ?? character;
     if (hasBuffTriggers) void consumeBuffCharges(currentUser.uid, currentCharacterForBuffs, buffTriggers);
+    if (hasEnchantTriggers) {
+      void consumeEnchantCharges(currentUser.uid, currentCharacterForBuffs, {
+        offensive_action: enchantTriggers.offensive_action,
+        damage_taken: enchantTriggers.damage_taken,
+        completedEncounters: kills.length,
+      });
+    }
     if (hasConsumableUsage && currentCharacterForBuffs.consumableAutomation) {
       const usage = {
         offensiveChargesConsumed: consumableState.offensiveChargesConsumed,
@@ -453,8 +479,15 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
     notifyKills(result.kills);
     mergeQuestSignals(pendingQuestSignalsRef.current, result.questSignals);
     for (const event of result.events) {
-      if (event.kind === 'damage_out') pendingBuffTriggersRef.current.offensive_action++;
-      else if (event.kind === 'damage_in') pendingBuffTriggersRef.current.damage_taken++;
+      if (event.kind === 'damage_out') {
+        pendingBuffTriggersRef.current.offensive_action++;
+        pendingEnchantTriggersRef.current.offensive_action++;
+      } else if (event.kind === 'damage_in') {
+        pendingBuffTriggersRef.current.damage_taken++;
+        pendingEnchantTriggersRef.current.damage_taken++;
+      } else if (event.kind === 'miss_out') {
+        pendingEnchantTriggersRef.current.offensive_action++;
+      }
     }
     if (result.events.length > 0) {
       setLog((prev) => [...result.events, ...prev].slice(0, MAX_LOG_LINES));

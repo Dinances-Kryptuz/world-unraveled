@@ -87,6 +87,16 @@ export interface OfflineCombatResult {
   // firebase/consumables.ts's applyConsumableAutomationUsage), the same
   // "accumulate in memory, write once" rule the online autosave path follows.
   finalConsumableState?: ConsumableAutomationRuntimeState;
+  // Enchanting overhaul's charge-consumption counts, tallied across the
+  // WHOLE simulated window from the same per-tick events online combat
+  // counts from (damage_out/miss_out -> offensiveAction, damage_in ->
+  // damageTaken) — this is what makes offline enchant-charge consumption
+  // exact rather than an aggregate approximation, same "simulate tick by
+  // tick, write once" property every other offline-exact mechanic in this
+  // engine already has. The caller combines offensiveAction/damageTaken
+  // with monstersDefeated (this result's own kill count, for passive
+  // enchants) into one consumeEnchantCharges call.
+  enchantTriggerCounts: { offensiveAction: number; damageTaken: number };
 }
 
 const TICK_SECONDS = 1;
@@ -133,6 +143,8 @@ export function simulateOfflineCombat(input: OfflineCombatInput): OfflineCombatR
   let monstersDefeated = 0;
   let forcedRetreat = false;
   const lootTotals: Record<string, number> = {};
+  let offensiveActionCount = 0;
+  let damageTakenCount = 0;
 
   const state: CombatState = createEncounterState(buildInput(level, input.startingHp));
   const ctx: TickContext = {
@@ -149,6 +161,13 @@ export function simulateOfflineCombat(input: OfflineCombatInput): OfflineCombatR
     const result = advanceCombat(state, ctx, TICK_SECONDS);
     elapsed += TICK_SECONDS;
     ticks++;
+
+    // Enchanting overhaul's charge-trigger tally — see
+    // OfflineCombatResult.enchantTriggerCounts's doc comment.
+    for (const event of result.events) {
+      if (event.kind === 'damage_out' || event.kind === 'miss_out') offensiveActionCount++;
+      else if (event.kind === 'damage_in') damageTakenCount++;
+    }
 
     for (const kill of result.kills) {
       monstersDefeated++;
@@ -198,5 +217,6 @@ export function simulateOfflineCombat(input: OfflineCombatInput): OfflineCombatR
     forcedRetreat,
     simulatedCombatSeconds: elapsed,
     finalConsumableState: ctx.consumableState,
+    enchantTriggerCounts: { offensiveAction: offensiveActionCount, damageTaken: damageTakenCount },
   };
 }

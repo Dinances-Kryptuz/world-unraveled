@@ -244,7 +244,14 @@ export interface ConditionGroup {
 // color, damage taken in red, healing in green, misses greyed out, deaths
 // bolded) without re-parsing message text — engine.ts sets this at the
 // point it already knows what happened, which is the only place that does.
-export type CombatEventKind = 'damage_out' | 'damage_in' | 'heal' | 'miss' | 'death' | 'status';
+// miss_out/miss_in (split the same way damage_out/damage_in already are,
+// by which side's attack failed to land) exist so the Enchanting
+// overhaul's offensive-enchant charge counting — which must consume 1
+// charge per ELIGIBLE OUTGOING ATTACK regardless of whether it actually
+// hits, unlike a defensive enchant's charge (only a successful incoming
+// hit, see Character.enchantmentCharges's doc comment) — can tell a
+// player's own missed swing apart from a monster's.
+export type CombatEventKind = 'damage_out' | 'damage_in' | 'heal' | 'miss_out' | 'miss_in' | 'death' | 'status';
 
 export interface CombatEvent {
   message: string;

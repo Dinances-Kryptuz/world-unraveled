@@ -24,6 +24,7 @@ import { evaluateActiveBuffs } from '../gameData/buffs';
 import { getInventory } from '../firebase/inventory';
 import { applyCombatResult, setCharacterLevel } from '../firebase/character';
 import { applyConsumableAutomationUsage } from '../firebase/consumables';
+import { consumeEnchantCharges } from '../firebase/enchanting';
 import { checkAndUnlockNextSlot } from '../firebase/characterSlots';
 import { MAX_CHARACTER_LEVEL } from '../gameData/xpTables';
 import { buildConsumableAutomationState } from '../gameData/consumableAutomation';
@@ -144,6 +145,14 @@ export function WelcomeBackScreen({
             if (usage.offensiveChargesConsumed > 0 || usage.defensiveChargesConsumed > 0 || usage.healingUsed > 0 || usage.manaUsed > 0) {
               await applyConsumableAutomationUsage(user.uid, character.consumableAutomation, usage);
             }
+          }
+          const { offensiveAction, damageTaken } = result.enchantTriggerCounts;
+          if (offensiveAction > 0 || damageTaken > 0 || result.monstersDefeated > 0) {
+            await consumeEnchantCharges(user.uid, character, {
+              offensive_action: offensiveAction,
+              damage_taken: damageTaken,
+              completedEncounters: result.monstersDefeated,
+            });
           }
           // Deliberately NOT refetching here — the persisted write resets
           // currentActivity.startedAt to now, which would make

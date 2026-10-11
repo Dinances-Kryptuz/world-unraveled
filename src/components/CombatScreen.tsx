@@ -10,6 +10,7 @@ import {
   setEquippedConsumable,
   applyConsumableAutomationUsage,
 } from '../firebase/consumables';
+import { consumeEnchantCharges } from '../firebase/enchanting';
 import { MONSTERS } from '../gameData/monsters';
 import { ITEMS } from '../gameData/items';
 import { resolveSpecDef, getExtraDamageTakenPct } from '../gameData/combatProfileWithTalents';
@@ -82,6 +83,19 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
   const pendingKillsRef = useRef<KillReward[]>([]);
   const pendingQuestSignalsRef = useRef<QuestSignals>({ healingDone: 0, abilityUseCounts: {} });
   const pendingBuffTriggersRef = useRef<{ offensive_action: number; damage_taken: number }>({
+    offensive_action: 0,
+    damage_taken: 0,
+  });
+  // Enchanting overhaul's charge counters — a SEPARATE tally from
+  // pendingBuffTriggersRef above (not reusing it) because an offensive
+  // enchant's charge semantics differ from an Alchemy offensive potion's:
+  // it spends 1 charge per ELIGIBLE OUTGOING ATTACK whether or not it
+  // actually lands (miss_out counts alongside damage_out here), while a
+  // potion's existing offensive_action trigger intentionally stays
+  // landed-hits-only — see firebase/enchanting.ts's consumeEnchantCharges
+  // doc comment. damage_taken is landed-hits-only for both, so no
+  // difference there.
+  const pendingEnchantTriggersRef = useRef<{ offensive_action: number; damage_taken: number }>({
     offensive_action: 0,
     damage_taken: 0,
   });
@@ -167,6 +181,7 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
     pendingKillsRef.current = [];
     pendingQuestSignalsRef.current = { healingDone: 0, abilityUseCounts: {} };
     pendingBuffTriggersRef.current = { offensive_action: 0, damage_taken: 0 };
+    pendingEnchantTriggersRef.current = { offensive_action: 0, damage_taken: 0 };
     consumableStateRef.current = buildConsumableAutomationState(character, inventory ?? { items: {} }, new Date());
     combatStateRef.current = createEncounterState(buildEncounterInput(character));
     // Refs don't trigger a re-render on their own — without this, the
@@ -201,8 +216,15 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
       }
       mergeQuestSignals(pendingQuestSignalsRef.current, result.questSignals);
       for (const event of result.events) {
-        if (event.kind === 'damage_out') pendingBuffTriggersRef.current.offensive_action++;
-        else if (event.kind === 'damage_in') pendingBuffTriggersRef.current.damage_taken++;
+        if (event.kind === 'damage_out') {
+          pendingBuffTriggersRef.current.offensive_action++;
+          pendingEnchantTriggersRef.current.offensive_action++;
+        } else if (event.kind === 'damage_in') {
+          pendingBuffTriggersRef.current.damage_taken++;
+          pendingEnchantTriggersRef.current.damage_taken++;
+        } else if (event.kind === 'miss_out') {
+          pendingEnchantTriggersRef.current.offensive_action++;
+        }
       }
       if (result.events.length > 0) {
         setLog((prev) => [...result.events, ...prev].slice(0, MAX_LOG_LINES));
@@ -234,9 +256,11 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
     const kills = pendingKillsRef.current;
     const questSignals = pendingQuestSignalsRef.current;
     const buffTriggers = pendingBuffTriggersRef.current;
+    const enchantTriggers = pendingEnchantTriggersRef.current;
     const consumableState = consumableStateRef.current;
     const hasQuestSignals = questSignals.healingDone > 0 || Object.keys(questSignals.abilityUseCounts).length > 0;
     const hasBuffTriggers = buffTriggers.offensive_action > 0 || buffTriggers.damage_taken > 0;
+    const hasEnchantTriggers = kills.length > 0 || enchantTriggers.offensive_action > 0 || enchantTriggers.damage_taken > 0;
     const hasConsumableUsage =
       consumableState.offensiveChargesConsumed > 0 ||
       consumableState.defensiveChargesConsumed > 0 ||
@@ -246,8 +270,16 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
     pendingKillsRef.current = [];
     pendingQuestSignalsRef.current = { healingDone: 0, abilityUseCounts: {} };
     pendingBuffTriggersRef.current = { offensive_action: 0, damage_taken: 0 };
+    pendingEnchantTriggersRef.current = { offensive_action: 0, damage_taken: 0 };
     const currentCharacterForBuffs = characterRef.current ?? character;
     if (hasBuffTriggers) void consumeBuffCharges(currentUser.uid, currentCharacterForBuffs, buffTriggers);
+    if (hasEnchantTriggers) {
+      void consumeEnchantCharges(currentUser.uid, currentCharacterForBuffs, {
+        offensive_action: enchantTriggers.offensive_action,
+        damage_taken: enchantTriggers.damage_taken,
+        completedEncounters: kills.length,
+      });
+    }
     if (hasConsumableUsage && currentCharacterForBuffs.consumableAutomation) {
       const usage = {
         offensiveChargesConsumed: consumableState.offensiveChargesConsumed,
@@ -401,8 +433,15 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
     pendingKillsRef.current.push(...result.kills);
     mergeQuestSignals(pendingQuestSignalsRef.current, result.questSignals);
     for (const event of result.events) {
-      if (event.kind === 'damage_out') pendingBuffTriggersRef.current.offensive_action++;
-      else if (event.kind === 'damage_in') pendingBuffTriggersRef.current.damage_taken++;
+      if (event.kind === 'damage_out') {
+        pendingBuffTriggersRef.current.offensive_action++;
+        pendingEnchantTriggersRef.current.offensive_action++;
+      } else if (event.kind === 'damage_in') {
+        pendingBuffTriggersRef.current.damage_taken++;
+        pendingEnchantTriggersRef.current.damage_taken++;
+      } else if (event.kind === 'miss_out') {
+        pendingEnchantTriggersRef.current.offensive_action++;
+      }
     }
     if (result.events.length > 0) {
       setLog((prev) => [...result.events, ...prev].slice(0, MAX_LOG_LINES));

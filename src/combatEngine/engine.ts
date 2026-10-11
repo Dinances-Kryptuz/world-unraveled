@@ -822,7 +822,10 @@ export function useAbility(
             ctx.consumableState
           );
           if (!hit) {
-            events.push({ message: `${source.name} uses ${ability.name} on ${target.name}, but it misses.`, kind: 'miss' });
+            events.push({
+              message: `${source.name} uses ${ability.name} on ${target.name}, but it misses.`,
+              kind: target.isPlayer ? 'miss_in' : 'miss_out',
+            });
             break;
           }
           target.hp = Math.max(0, target.hp - amount);
