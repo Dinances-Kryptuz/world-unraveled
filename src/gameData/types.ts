@@ -89,7 +89,13 @@ export type BuffCategory =
   | 'resistance_potion'
   | 'precision_potion'
   | 'evasion_potion'
-  | 'well_fed';
+  | 'well_fed'
+  // Cooking overhaul Tier 2 — Stat Food. Charge-based (one charge per solo
+  // kill or per completed dungeon/raid encounter, see BUFF_CATEGORY_TRIGGER
+  // in gameData/buffs.ts), replacing the old duration-based 'well_fed'
+  // mechanic for the new recipe catalog ('well_fed' items are frozen, not
+  // deleted, same retire-in-place convention as every prior overhaul).
+  | 'stat_food';
 
 export interface BuffEffect {
   category: BuffCategory;
@@ -121,7 +127,11 @@ export interface BuffEffect {
   // charge per matching combat trigger instead of expiring on a timer —
   // exactly one of charges/durationSeconds is set.
   charges?: number;
-  trigger?: 'offensive_action' | 'damage_taken';
+  // Cooking overhaul Tier 2 — 'monster_kill'/'dungeon_encounter' consume a
+  // charge once per solo kill or once per completed dungeon/raid encounter
+  // (never per enemy in multi-target group content), a coarser granularity
+  // than the per-hit offensive/defensive-potion triggers above.
+  trigger?: 'offensive_action' | 'damage_taken' | 'monster_kill' | 'dungeon_encounter';
   durationSeconds?: number;
 }
 
@@ -153,6 +163,15 @@ export interface ConsumableEffect {
   // with every other field above in practice (a bag is just a capacity
   // token) but not enforced structurally.
   bagCapacityBonus?: number;
+  // Cooking overhaul Tier 1 — Recovery Food. A MANUAL use (never Auto Eat)
+  // heals to FULL, overriding healAmount/healPctMax entirely, and resets
+  // the player's live Combatant.actionReadyIn to 0 (a free action — see
+  // CombatScreen's handleUseConsumable), the one consumable use with any
+  // effect on the attack timer. No stat bonuses, no buff — pure sustain.
+  // Completely unusable in a dungeon/raid, manually or through Auto Eat
+  // (see ConsumablesBar's allowRecoveryFood prop and engine.ts's
+  // ctx.nextMonster dungeon check).
+  recoveryFood?: boolean;
 }
 
 // Which classes can equip a given piece of armor — see classStats.ts's
@@ -443,6 +462,20 @@ export interface Recipe {
   // Absent for the Wand/Staff/Book equipment recipes (materialId-tagged
   // instead) and every other profession's recipes.
   enchantingZoneId?: string;
+  // Cooking overhaul — which zone (gameData/zones.ts ZONE id) this recipe's
+  // charge-count (Stat Food)/milestone-reward Mastery is looked up against,
+  // and which of the 6 independent cookingZoneMastery pools its XP credits
+  // (always that zone's own pool — Cooking recipes don't split XP across
+  // zones the way Alchemy's one cross-zone potion does). Set on every
+  // Recovery Food/Stat Food/Feast recipe below; absent for every other
+  // profession's recipes, including the frozen legacy Cooking block above.
+  cookingZoneId?: string;
+  // Cooking overhaul — which of the 3 design-brief tiers this recipe is,
+  // driving its Mastery XP WEIGHT (gameData/cookingMastery.ts:
+  // Tier1=1x/Tier2=5x/Tier3=25x) and gating tier-specific mechanics (Auto
+  // Eat never touches Tier 2/3, charges only apply to Tier 2, Feasts are
+  // Tier 3's dungeon-only/party-wide shape). Set alongside cookingZoneId.
+  cookingTier?: 1 | 2 | 3;
   // Gold consumed per item crafted, in addition to materials — undefined/0
   // for the overwhelming majority of recipes (materials alone). Currently
   // only set on the Blacksmith repair recipes (see the "Blacksmith

@@ -219,6 +219,8 @@ service cloud.firestore {
       && isValidMaterialMastery(after)
       && isValidHerbalismZoneMastery(after)
       && isValidFishingZoneMastery(after)
+      && isValidCookingZoneMastery(after)
+      && isValidAutoEatRank(after)
       && isValidAlchemyZoneMastery(after)
       && isValidEnchantingZoneMastery(after)
       && isValidConsumableAutomation(after)
@@ -447,6 +449,22 @@ service cloud.firestore {
   // genuine bag-capacity ceiling is never mistaken for a rules bug.
   function isValidBagSlots(after) {
     return !('bagSlots' in after) || (after.bagSlots is number && after.bagSlots >= 24 && after.bagSlots <= 500);
+  }
+
+  // Cooking overhaul Tier 1 — Auto Eat's rank, 0-3 (see gameData/
+  // cooking.ts's AUTO_EAT_RANKS). Full validation (sequential, zone-gated,
+  // gold spent) happens in firebase/cooking.ts's purchaseAutoEatRank, the
+  // only path that writes this field.
+  function isValidAutoEatRank(after) {
+    return !('autoEatRank' in after) || (after.autoEatRank is number && after.autoEatRank >= 0 && after.autoEatRank <= 3);
+  }
+
+  // Cooking overhaul's 6 independent zone-Mastery pools — same shape-only
+  // treatment as isValidFishingZoneMastery below. Not written by any path
+  // yet (reserved ahead of the Cooking Mastery phase of this overhaul);
+  // included now so its shape is already locked in once it is.
+  function isValidCookingZoneMastery(after) {
+    return !('cookingZoneMastery' in after) || (after.cookingZoneMastery is map && after.cookingZoneMastery.size() <= 6);
   }
 
   // Bounded 4-124 — see gameData/bank.ts's BASE_BANK_SLOTS/MAX_BANK_SLOTS.

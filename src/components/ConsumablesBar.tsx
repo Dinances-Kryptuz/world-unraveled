@@ -6,7 +6,7 @@ import type { Character } from '../types/character';
 import type { ItemDef } from '../gameData/types';
 
 function isFoodItem(item: ItemDef): boolean {
-  return item.consumableEffect?.buff?.category === 'well_fed';
+  return item.consumableEffect?.buff?.category === 'well_fed' || !!item.consumableEffect?.recoveryFood;
 }
 
 // The two pinned quick-use slots (Character.equippedConsumables) — pick one
@@ -21,6 +21,7 @@ function EquippedSlot({
   character,
   inventoryItems,
   allowMana,
+  allowRecoveryFood,
   onUse,
   onEquip,
 }: {
@@ -29,6 +30,7 @@ function EquippedSlot({
   character: Character;
   inventoryItems: Record<string, number>;
   allowMana: boolean;
+  allowRecoveryFood: boolean;
   onUse: (itemId: string) => void;
   onEquip: (slot: 'food' | 'potion', itemId: string | null) => void;
 }) {
@@ -40,6 +42,7 @@ function EquippedSlot({
       item.type === 'consumable' &&
       item.consumableEffect &&
       isFoodItem(item) === (slot === 'food') &&
+      (allowRecoveryFood || !item.consumableEffect.recoveryFood) &&
       (inventoryItems[item.id] ?? 0) > 0
   );
 
@@ -48,13 +51,23 @@ function EquippedSlot({
   const manaOnly = !!effect && effect.healAmount === undefined && effect.manaAmount !== undefined;
   const remaining = pinnedItem ? remainingCooldownSeconds(character, pinnedId!, effect!.cooldownSeconds, new Date()) : 0;
   const blockedOutOfCombat = manaOnly && !allowMana;
+  // Cooking overhaul Tier 1 — Recovery Food is completely prohibited in a
+  // dungeon/raid: if it's still pinned from open-world play, disable it
+  // here rather than silently unpinning (the pin is just a pointer, and
+  // the player can still use it the moment they leave).
+  const blockedInDungeon = !allowRecoveryFood && !!effect?.recoveryFood;
 
   return (
     <div className="equipped-consumable-slot">
       <small>{label}</small>
       <div className="item-row-main">
         {pinnedItem ? (
-          <ItemSlot item={pinnedItem} quantity={quantity} onClick={() => onUse(pinnedId!)} disabled={quantity <= 0 || remaining > 0 || blockedOutOfCombat} />
+          <ItemSlot
+            item={pinnedItem}
+            quantity={quantity}
+            onClick={() => onUse(pinnedId!)}
+            disabled={quantity <= 0 || remaining > 0 || blockedOutOfCombat || blockedInDungeon}
+          />
         ) : (
           <div className="item-slot item-slot-empty" />
         )}
@@ -85,12 +98,20 @@ export function ConsumablesBar({
   character,
   inventoryItems,
   allowMana,
+  // Cooking overhaul Tier 1 — Recovery Food is completely prohibited in a
+  // dungeon/raid, manually or through Auto Eat (the engine-side half of
+  // that rule is ctx.nextMonster in combatEngine/engine.ts). This is the
+  // UI-side half: DungeonScreen passes false so no recoveryFood item ever
+  // appears here at all, not even disabled; CombatScreen/Inventory/
+  // Equipment pass true.
+  allowRecoveryFood,
   onUse,
   onEquip,
 }: {
   character: Character;
   inventoryItems: Record<string, number>;
   allowMana: boolean;
+  allowRecoveryFood: boolean;
   onUse: (itemId: string) => void;
   onEquip: (slot: 'food' | 'potion', itemId: string | null) => void;
 }) {
@@ -103,14 +124,36 @@ export function ConsumablesBar({
   }, []);
 
   const consumables = Object.values(ITEMS).filter(
-    (item) => item.type === 'consumable' && item.consumableEffect && (inventoryItems[item.id] ?? 0) > 0
+    (item) =>
+      item.type === 'consumable' &&
+      item.consumableEffect &&
+      (allowRecoveryFood || !item.consumableEffect.recoveryFood) &&
+      (inventoryItems[item.id] ?? 0) > 0
   );
 
   return (
     <>
       <div className="equipped-consumable-slots">
-        <EquippedSlot slot="food" label="Food" character={character} inventoryItems={inventoryItems} allowMana={allowMana} onUse={onUse} onEquip={onEquip} />
-        <EquippedSlot slot="potion" label="Potion" character={character} inventoryItems={inventoryItems} allowMana={allowMana} onUse={onUse} onEquip={onEquip} />
+        <EquippedSlot
+          slot="food"
+          label="Food"
+          character={character}
+          inventoryItems={inventoryItems}
+          allowMana={allowMana}
+          allowRecoveryFood={allowRecoveryFood}
+          onUse={onUse}
+          onEquip={onEquip}
+        />
+        <EquippedSlot
+          slot="potion"
+          label="Potion"
+          character={character}
+          inventoryItems={inventoryItems}
+          allowMana={allowMana}
+          allowRecoveryFood={allowRecoveryFood}
+          onUse={onUse}
+          onEquip={onEquip}
+        />
       </div>
       {consumables.length > 0 && (
         <details>

@@ -806,6 +806,34 @@ export function advanceCombat(state: CombatState, ctx: TickContext, deltaSeconds
         }
       }
     }
+    // Cooking overhaul Tier 1 — Auto Eat. Same cooldown/threshold/stock
+    // shape as the healing automation above, but additionally gated on
+    // "not a dungeon/raid" (ctx.nextMonster is only ever set for a dungeon
+    // encounter — see TickContext's doc comment), per the design brief's
+    // explicit "never in dungeons/raids" rule. Running after step 1's dot/
+    // hot ticks and the two automations above (all still "post-damage-
+    // resolution, this tick"), and gated on automationPlayer.isAlive same
+    // as them, satisfies "evaluated only if the character survives, never
+    // retroactively preventing lethal damage."
+    if (cs.autoEat && !ctx.nextMonster) {
+      cs.autoEat.cooldownRemaining = Math.max(0, cs.autoEat.cooldownRemaining - deltaSeconds);
+      const hpPct = (automationPlayer.hp / automationPlayer.maxHp) * 100;
+      if (
+        cs.autoEat.cooldownRemaining <= 0 &&
+        cs.autoEat.stockRemaining > 0 &&
+        hpPct <= cs.autoEat.thresholdPct &&
+        automationPlayer.hp < automationPlayer.maxHp
+      ) {
+        const healAmt = automationPlayer.maxHp * ((cs.autoEat.healPctMax ?? 0) / 100);
+        const before = automationPlayer.hp;
+        automationPlayer.hp = Math.min(automationPlayer.maxHp, automationPlayer.hp + healAmt);
+        questSignals.healingDone += automationPlayer.hp - before;
+        cs.autoEat.cooldownRemaining = cs.autoEat.cooldownSeconds;
+        cs.autoEat.stockRemaining--;
+        cs.autoEatUsed++;
+        events.push({ message: `${automationPlayer.name} automatically eats some Recovery Food.`, kind: 'heal' });
+      }
+    }
   }
 
   // 2. Let anyone whose action timer has elapsed act — a stunned combatant's

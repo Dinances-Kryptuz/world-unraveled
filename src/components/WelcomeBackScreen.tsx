@@ -137,7 +137,7 @@ export function WelcomeBackScreen({
             await setCharacterLevel(user.uid, result.finalLevel, result.hpAfter);
             if (result.finalLevel >= MAX_CHARACTER_LEVEL) void checkAndUnlockNextSlot(user.uid);
           }
-          if (character.consumableAutomation && result.finalConsumableState) {
+          if (result.finalConsumableState) {
             const fcs = result.finalConsumableState;
             const usage = {
               offensiveChargesConsumed: fcs.offensiveChargesConsumed,
@@ -145,8 +145,15 @@ export function WelcomeBackScreen({
               healingUsed: fcs.healingUsed,
               manaUsed: fcs.manaUsed,
             };
-            if (usage.offensiveChargesConsumed > 0 || usage.defensiveChargesConsumed > 0 || usage.healingUsed > 0 || usage.manaUsed > 0) {
-              await applyConsumableAutomationUsage(user.uid, character.consumableAutomation, usage);
+            const autoEat = fcs.autoEatUsed > 0 && fcs.autoEat?.itemId ? { used: fcs.autoEatUsed, itemId: fcs.autoEat.itemId } : undefined;
+            if (
+              usage.offensiveChargesConsumed > 0 ||
+              usage.defensiveChargesConsumed > 0 ||
+              usage.healingUsed > 0 ||
+              usage.manaUsed > 0 ||
+              autoEat
+            ) {
+              await applyConsumableAutomationUsage(user.uid, character.consumableAutomation, usage, autoEat);
             }
           }
           const { offensiveAction, damageTaken } = result.enchantTriggerCounts;

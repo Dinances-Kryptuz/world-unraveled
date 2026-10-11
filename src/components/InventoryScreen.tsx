@@ -98,6 +98,7 @@ export function InventoryScreen() {
         character={character}
         inventoryItems={inventory.items}
         allowMana={false}
+        allowRecoveryFood={true}
         onUse={handleUseConsumable}
         onEquip={handleEquipConsumable}
       />

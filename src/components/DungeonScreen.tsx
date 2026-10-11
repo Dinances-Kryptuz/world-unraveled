@@ -506,6 +506,12 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
     const item = ITEMS[itemId];
     const effect = item?.consumableEffect;
     if (!effect) return;
+    // Cooking overhaul Tier 1 — Recovery Food is completely prohibited in
+    // a dungeon/raid. ConsumablesBar's allowRecoveryFood={false} already
+    // keeps it off this screen's UI entirely, but this handler never
+    // trusts the UI alone (same posture as every server-revalidated action
+    // in this codebase).
+    if (effect.recoveryFood) return;
     const currentCharacter = characterRef.current ?? character;
     if (remainingCooldownSeconds(currentCharacter, itemId, effect.cooldownSeconds, new Date()) > 0) return;
 
@@ -594,6 +600,7 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
             character={character}
             inventoryItems={inventory?.items ?? {}}
             allowMana={true}
+            allowRecoveryFood={false}
             onUse={handleUseConsumable}
             onEquip={handleEquipConsumable}
           />

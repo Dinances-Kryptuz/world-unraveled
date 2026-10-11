@@ -1410,181 +1410,65 @@ export const RECIPES: Record<string, Recipe> = {
     rarity: 'common',
     learnedAutomatically: true,
   },
-  // ── Cooking — rebuilt onto craftingEngine.ts's shared 1-100 curve
-  // (calibrated to ~32h active crafting time to level 100, same
-  // methodology as every other crafting profession — see the session's
-  // design notes). Four categories per the design brief: Basic Food (cheap,
-  // pure heal, no buff — roasted_boar_meat/hunters_jerky), Stat Food (the
-  // original 6 single-fish dishes, rescaled), Combination Meals (fish +
-  // monster drops + herbs/seasoning together — strictly better buffs than
-  // any single-source dish at the same level, per the brief's own "Wolf &
-  // Trout Stew"/"Hunter's Seafood Feast" examples), and Feasts (high-level,
-  // multi-source, bigger duration/buffs, a real material sink). Draws
-  // ingredients from Fishing (brook_trout..emberheart_koi), combat drops
-  // (boar_meat/raw_meat and the new scavenger_meat/hound_meat/drake_meat/
-  // behemoth_flank/pyraxis_flank/common_seasoning/rare_seasoning — see
-  // monsters.ts), AND Herbalism (wildroot) in the two feasts, so Cooking
-  // draws from several systems rather than having its own dedicated
-  // gathering profession, exactly as the brief specifies.
-  farmhouse_stew: {
-    id: 'farmhouse_stew', name: 'Farmhouse Stew', profession: 'cooking', requiredSkill: 1,
-    resultItemId: 'farmhouse_stew', resultQuantity: 1,
-    materials: [{ itemId: 'brook_trout', quantity: 3 }],
-    craftSeconds: 6, xpAward: 2,
+  // ── Cooking (legacy) — the original 17 recipes from the crafting
+  // redesign phase, retired in place for the full 3-tier Cooking overhaul
+  // below (Recovery Food / Stat Food / Feasts). Deleted here (not listed/
+  // craftable) but their ITEMS stay in items.ts, frozen, same "retired
+  // recipes deleted, items kept" convention as every prior profession
+  // overhaul in this codebase.
+
+  // ── Cooking overhaul Tier 1 — Recovery Food. Fixed-heal, no-buff, pure
+  // sustain (see items.ts's recoveryFood doc comment) — one dish per zone,
+  // primarily built from that zone's own fish (Fishing overhaul) plus a
+  // thematic monster-meat drop where one exists. cookingZoneId/cookingTier
+  // feed the zone-Mastery axis below (gameData/cookingMastery.ts).
+  greenhollow_hearth_stew: {
+    id: 'greenhollow_hearth_stew', name: 'Greenhollow Hearth Stew', profession: 'cooking', requiredSkill: 1,
+    resultItemId: 'greenhollow_hearth_stew', resultQuantity: 1,
+    materials: [{ itemId: 'brilliant_smallfish', quantity: 3 }, { itemId: 'boar_meat', quantity: 2 }],
+    cookingZoneId: 'greenhollow_fields', cookingTier: 1,
+    craftSeconds: 6, xpAward: 10,
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
-  roasted_boar_meat: {
-    id: 'roasted_boar_meat', name: 'Roasted Boar Meat', profession: 'cooking', requiredSkill: 1,
-    resultItemId: 'roasted_boar_meat', resultQuantity: 1,
-    materials: [{ itemId: 'boar_meat', quantity: 3 }],
-    craftSeconds: 6, xpAward: 2,
+  stonecrag_camp_broth: {
+    id: 'stonecrag_camp_broth', name: 'Stonecrag Camp Broth', profession: 'cooking', requiredSkill: 16,
+    resultItemId: 'stonecrag_camp_broth', resultQuantity: 1,
+    materials: [{ itemId: 'bristle_whisker_catfish', quantity: 3 }, { itemId: 'raw_meat', quantity: 2 }],
+    cookingZoneId: 'stonecrag_foothills', cookingTier: 1,
+    craftSeconds: 9, xpAward: 16,
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
-  wolf_trout_stew: {
-    id: 'wolf_trout_stew', name: 'Wolf & Trout Stew', profession: 'cooking', requiredSkill: 10,
-    resultItemId: 'wolf_trout_stew', resultQuantity: 1,
-    materials: [
-      { itemId: 'brook_trout', quantity: 2 },
-      { itemId: 'raw_meat', quantity: 1 },
-      { itemId: 'wildroot', quantity: 1 },
-    ],
-    craftSeconds: 7.2, xpAward: 16,
+  emberfall_field_rations: {
+    id: 'emberfall_field_rations', name: 'Emberfall Field Rations', profession: 'cooking', requiredSkill: 31,
+    resultItemId: 'emberfall_field_rations', resultQuantity: 1,
+    materials: [{ itemId: 'mithril_head_trout', quantity: 4 }, { itemId: 'common_seasoning', quantity: 1 }],
+    cookingZoneId: 'emberfall_ridge', cookingTier: 1,
+    craftSeconds: 11, xpAward: 26,
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
-  highland_roast: {
-    id: 'highland_roast', name: 'Highland Roast', profession: 'cooking', requiredSkill: 20,
-    resultItemId: 'highland_roast', resultQuantity: 1,
-    materials: [{ itemId: 'mountain_char', quantity: 4 }],
-    craftSeconds: 8.5, xpAward: 29,
+  cinderfall_scavengers_stew: {
+    id: 'cinderfall_scavengers_stew', name: 'Cinderfall Scavenger’s Stew', profession: 'cooking', requiredSkill: 46,
+    resultItemId: 'cinderfall_scavengers_stew', resultQuantity: 1,
+    materials: [{ itemId: 'redgill', quantity: 3 }, { itemId: 'scavenger_meat', quantity: 2 }],
+    cookingZoneId: 'cinderfall_depths', cookingTier: 1,
+    craftSeconds: 13, xpAward: 43,
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
-  hunters_jerky: {
-    id: 'hunters_jerky', name: 'Hunter’s Jerky', profession: 'cooking', requiredSkill: 25,
-    resultItemId: 'hunters_jerky', resultQuantity: 1,
-    materials: [{ itemId: 'raw_meat', quantity: 4 }],
-    craftSeconds: 9.2, xpAward: 34,
+  molten_hound_roast: {
+    id: 'molten_hound_roast', name: 'Molten Hound Roast', profession: 'cooking', requiredSkill: 61,
+    resultItemId: 'molten_hound_roast', resultQuantity: 1,
+    materials: [{ itemId: 'stonescale_eel', quantity: 3 }, { itemId: 'hound_meat', quantity: 2 }],
+    cookingZoneId: 'molten_scar', cookingTier: 1,
+    craftSeconds: 15, xpAward: 70,
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
-  spiced_trail_soup: {
-    id: 'spiced_trail_soup', name: 'Spiced Trail Soup', profession: 'cooking', requiredSkill: 32,
-    resultItemId: 'spiced_trail_soup', resultQuantity: 1,
-    materials: [
-      { itemId: 'mountain_char', quantity: 2 },
-      { itemId: 'raw_meat', quantity: 1 },
-      { itemId: 'common_seasoning', quantity: 1 },
-    ],
-    craftSeconds: 10.1, xpAward: 42,
+  cinderheart_ember_roast: {
+    id: 'cinderheart_ember_roast', name: 'Cinderheart Ember Roast', profession: 'cooking', requiredSkill: 81,
+    resultItemId: 'cinderheart_ember_roast', resultQuantity: 1,
+    materials: [{ itemId: 'emberfin_snapper', quantity: 3 }, { itemId: 'behemoth_flank', quantity: 2 }],
+    cookingZoneId: 'cinderheart_crater', cookingTier: 1,
+    craftSeconds: 17, xpAward: 114,
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
-  },
-  embercured_fillet: {
-    id: 'embercured_fillet', name: 'Embercured Fillet', profession: 'cooking', requiredSkill: 39,
-    resultItemId: 'embercured_fillet', resultQuantity: 1,
-    materials: [{ itemId: 'ember_eel', quantity: 4 }],
-    craftSeconds: 11, xpAward: 50,
-    source: 'trainer', rarity: 'common', learnedAutomatically: true,
-  },
-  scavengers_broth: {
-    id: 'scavengers_broth', name: 'Scavenger’s Broth', profession: 'cooking', requiredSkill: 48,
-    resultItemId: 'scavengers_broth', resultQuantity: 1,
-    materials: [
-      { itemId: 'ember_eel', quantity: 2 },
-      { itemId: 'scavenger_meat', quantity: 1 },
-    ],
-    craftSeconds: 12.2, xpAward: 59,
-    source: 'trainer', rarity: 'common', learnedAutomatically: true,
-  },
-  charred_skewer: {
-    id: 'charred_skewer', name: 'Charred Skewer', profession: 'cooking', requiredSkill: 55,
-    resultItemId: 'charred_skewer', resultQuantity: 1,
-    materials: [
-      { itemId: 'ashfin_carp', quantity: 2 },
-      { itemId: 'hound_meat', quantity: 1 },
-    ],
-    craftSeconds: 13.1, xpAward: 66,
-    source: 'trainer', rarity: 'uncommon', learnedAutomatically: true,
-  },
-  ashfin_chowder: {
-    id: 'ashfin_chowder', name: 'Ashfin Chowder', profession: 'cooking', requiredSkill: 58,
-    resultItemId: 'ashfin_chowder', resultQuantity: 1,
-    materials: [{ itemId: 'ashfin_carp', quantity: 5 }],
-    craftSeconds: 13.5, xpAward: 69,
-    source: 'trainer', rarity: 'uncommon', learnedAutomatically: true,
-  },
-  hunters_seafood_feast: {
-    id: 'hunters_seafood_feast', name: 'Hunter’s Seafood Feast', profession: 'cooking', requiredSkill: 65,
-    resultItemId: 'hunters_seafood_feast', resultQuantity: 1,
-    materials: [
-      { itemId: 'magma_darter', quantity: 2 },
-      { itemId: 'hound_meat', quantity: 2 },
-      { itemId: 'common_seasoning', quantity: 1 },
-    ],
-    craftSeconds: 14.4, xpAward: 75,
-    source: 'trainer', rarity: 'uncommon', learnedAutomatically: true,
-  },
-  drake_meat_platter: {
-    id: 'drake_meat_platter', name: 'Drake Meat Platter', profession: 'cooking', requiredSkill: 72,
-    resultItemId: 'drake_meat_platter', resultQuantity: 1,
-    materials: [
-      { itemId: 'drake_meat', quantity: 2 },
-      { itemId: 'magma_darter', quantity: 1 },
-    ],
-    craftSeconds: 15.3, xpAward: 82,
-    source: 'trainer', rarity: 'uncommon', learnedAutomatically: true,
-  },
-  magma_darter_skewers: {
-    id: 'magma_darter_skewers', name: 'Magma Darter Skewers', profession: 'cooking', requiredSkill: 77,
-    resultItemId: 'magma_darter_skewers', resultQuantity: 1,
-    materials: [{ itemId: 'magma_darter', quantity: 5 }],
-    craftSeconds: 16, xpAward: 87,
-    source: 'trainer', rarity: 'uncommon', learnedAutomatically: true,
-  },
-  behemoth_feast: {
-    id: 'behemoth_feast', name: 'Behemoth Feast', profession: 'cooking', requiredSkill: 88,
-    resultItemId: 'behemoth_feast', resultQuantity: 1,
-    materials: [
-      { itemId: 'behemoth_flank', quantity: 3 },
-      { itemId: 'magma_darter', quantity: 4 },
-      { itemId: 'rare_seasoning', quantity: 2 },
-    ],
-    craftSeconds: 17.4, xpAward: 97,
-    source: 'trainer', rarity: 'rare', learnedAutomatically: true,
-  },
-  // Deliberately requires 10 low-level brook_trout alongside high-level
-  // fish and meat — per the design brief's "Master Fisherman's Feast"
-  // example, keeping demand for beginner materials alive at the endgame.
-  master_fishermans_feast: {
-    id: 'master_fishermans_feast', name: 'Master Fisherman’s Feast', profession: 'cooking', requiredSkill: 95,
-    resultItemId: 'master_fishermans_feast', resultQuantity: 1,
-    materials: [
-      { itemId: 'emberheart_koi', quantity: 5 },
-      { itemId: 'brook_trout', quantity: 10 },
-      { itemId: 'drake_meat', quantity: 3 },
-      { itemId: 'wildroot', quantity: 2 },
-    ],
-    craftSeconds: 18.3, xpAward: 103,
-    source: 'trainer', rarity: 'rare', learnedAutomatically: true,
-  },
-  emberheart_feast: {
-    id: 'emberheart_feast', name: 'Emberheart Feast', profession: 'cooking', requiredSkill: 100,
-    resultItemId: 'emberheart_feast', resultQuantity: 1,
-    materials: [{ itemId: 'emberheart_koi', quantity: 6 }],
-    craftSeconds: 19, xpAward: 107,
-    source: 'trainer', rarity: 'rare', learnedAutomatically: true,
-  },
-  // Rare: taught only by Recipe: Pyraxis Flame-Seared Flank (a rare drop
-  // from Pyraxis itself — see monsters.ts), matching the design brief's
-  // explicit "a boss might drop the recipe, but the ingredients still need
-  // to be gathered separately" example almost exactly.
-  pyraxis_flame_seared_flank: {
-    id: 'pyraxis_flame_seared_flank', name: 'Pyraxis Flame-Seared Flank', profession: 'cooking', requiredSkill: 100,
-    resultItemId: 'pyraxis_flame_seared_flank', resultQuantity: 1,
-    materials: [
-      { itemId: 'pyraxis_flank', quantity: 1 },
-      { itemId: 'emberheart_koi', quantity: 2 },
-      { itemId: 'rare_seasoning', quantity: 1 },
-    ],
-    craftSeconds: 19, xpAward: 107,
-    source: 'dungeon_drop', rarity: 'rare', learnedAutomatically: false,
   },
 
   // ── Tailoring bags — permanent inventory capacity (see items.ts).

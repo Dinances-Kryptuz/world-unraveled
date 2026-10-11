@@ -169,6 +169,20 @@ export interface Character {
   // curve. Never affects pearl (rareBonus) drop chance. Same "absence is
   // the zero state" convention as the other zone-Mastery axes above.
   fishingZoneMastery?: ZoneMasteryState;
+  // Cooking overhaul's 6 independent zone-Mastery pools (Tier1=1x/Tier2=5x/
+  // Tier3=25x weighted XP, see gameData/cookingMastery.ts), driving Stat
+  // Food's craft-time charges-per-serving and Feast/Stat-Food-adjacent
+  // speed/preservation milestones. Same "absence is the zero state"
+  // convention as the other zone-Mastery axes above.
+  cookingZoneMastery?: ZoneMasteryState;
+  // Cooking overhaul Tier 1 — Auto Eat: a permanent, sequentially-purchased
+  // rank (0 = not bought; see gameData/cooking.ts's AUTO_EAT_RANKS),
+  // evaluated post-damage each combat tick exactly like the existing Part 8
+  // auto-heal automation, but rank-driven (not player-configured) and fed
+  // from whatever Recovery Food is pinned to equippedConsumables.food.
+  // Absence means rank 0 (not bought), same "absence is the zero state"
+  // convention as every other optional field here.
+  autoEatRank?: number;
   // Enchantment id per equipment slot — bound to the SLOT, not a unique item
   // instance (this engine doesn't instance equipment; see gameData/
   // enchanting.ts's doc comment for why). Re-enchanting a slot overwrites

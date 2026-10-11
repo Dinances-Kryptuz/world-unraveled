@@ -21,6 +21,8 @@ import {
   materialMasteryBonusChance,
   MATERIAL_MASTERY_XP_THRESHOLDS,
 } from '../../gameData/equipmentRolls';
+import { AUTO_EAT_RANKS } from '../../gameData/cooking';
+import { purchaseAutoEatRank } from '../../firebase/cooking';
 import { TIER_COLORS } from '../MonsterLevelBadge';
 import { ItemSlot } from '../ItemSlot';
 import { ProfessionSummaryList } from './ProfessionSummaryList';
@@ -147,6 +149,27 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
   // item is seen, so "disenchant everything" needs no interaction beyond one
   // click, per the design brief's "further incentivize idle" ask.
   const [disenchantQty, setDisenchantQty] = useState<Record<string, number>>({});
+
+  // Cooking overhaul Tier 1 — Auto Eat's own tiny bit of local state, same
+  // shape as MountTrainerScreen's training/error pair.
+  const [autoEatTraining, setAutoEatTraining] = useState(false);
+  const [autoEatError, setAutoEatError] = useState<string | null>(null);
+
+  async function handleTrainAutoEat(rank: number) {
+    if (!user) return;
+    setAutoEatTraining(true);
+    setAutoEatError(null);
+    try {
+      const result = await purchaseAutoEatRank(user.uid, rank);
+      if (!result.success) {
+        setAutoEatError(result.reason ?? 'Could not learn that Auto Eat rank.');
+      } else {
+        await refetch();
+      }
+    } finally {
+      setAutoEatTraining(false);
+    }
+  }
 
   async function handleGather(nodeId: string) {
     if (!user) return;
@@ -355,6 +378,51 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
             );
           })}
         </ul>
+      </details>
+    );
+  }
+
+  // Cooking overhaul Tier 1 — Auto Eat's permanent, sequentially-purchased
+  // rank, shown inline on the Cooking tab rather than as its own top-level
+  // screen (unlike Mount Trainer) since it's conceptually part of Cooking,
+  // not a separate character-progression system. Same sequential/zone-
+  // gated posture as MountTrainerScreen.
+  function renderAutoEatPanel() {
+    const currentRank = char.autoEatRank ?? 0;
+    const nextRank = AUTO_EAT_RANKS.find((r) => r.rank === currentRank + 1);
+    return (
+      <details open>
+        <summary>Auto Eat</summary>
+        <p>
+          A permanent upgrade that automatically eats whatever Recovery Food is pinned to your Food slot when your HP
+          drops low enough — never in a dungeon or raid.
+        </p>
+        <p>
+          Current rank: {currentRank === 0 ? 'None' : currentRank}
+          {currentRank > 0 && (
+            <>
+              {' '}— triggers at {AUTO_EAT_RANKS[currentRank - 1].hpTriggerPct}% HP, heals{' '}
+              {AUTO_EAT_RANKS[currentRank - 1].healEfficiencyPct}% of max HP.
+            </>
+          )}
+        </p>
+        {nextRank && (
+          <div className="item-row-main">
+            <span>
+              <strong>Rank {nextRank.rank}</strong> — triggers at {nextRank.hpTriggerPct}% HP, heals{' '}
+              {nextRank.healEfficiencyPct}% of max HP ({nextRank.cost.toLocaleString()} gold)
+              {zoneId !== nextRank.requiredZoneId && <small> — learn this at {ZONES[nextRank.requiredZoneId]?.name ?? nextRank.requiredZoneId}</small>}
+            </span>
+            <button
+              onClick={() => handleTrainAutoEat(nextRank.rank)}
+              disabled={autoEatTraining || zoneId !== nextRank.requiredZoneId || char.gold < nextRank.cost}
+            >
+              Learn
+            </button>
+          </div>
+        )}
+        {!nextRank && currentRank > 0 && <p>Auto Eat fully learned.</p>}
+        {autoEatError && <p className="error">{autoEatError}</p>}
       </details>
     );
   }
@@ -625,6 +693,11 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
               <>
                 {renderGroupedRecipesByTier(TAILORING_TIER_ORDER, TAILORING_TIER_LABELS)}
                 {renderMaterialMasteryPanel(CLOTH_MATERIALS)}
+              </>
+            ) : professionId === 'cooking' ? (
+              <>
+                {renderAutoEatPanel()}
+                {renderRecipeList()}
               </>
             ) : (
               renderRecipeList()

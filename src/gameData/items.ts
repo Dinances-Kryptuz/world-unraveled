@@ -3415,7 +3415,9 @@ export const ITEMS: Record<string, ItemDef> = {
     consumableEffect: { cooldownSeconds: 60, buff: { category: 'defensive_potion', mitigationMultiplierPct: 18, charges: 25 } },
   },
 
-  // ── Cooking food — one "Well Fed" style dish per zone, scaling in both
+  // ── Cooking food (legacy) — frozen in place (their recipes are deleted,
+  // not these items — see recipes.ts) for the full 3-tier Cooking overhaul
+  // below. One "Well Fed" style dish per zone, scaling in both
   // heal amount and stat bonus. Only one Well Fed buff active at a time
   // (same exclusivity rule as potions), and food is a separate buff
   // category entirely so eating doesn't compete with potions for a slot.
@@ -3550,6 +3552,49 @@ export const ITEMS: Record<string, ItemDef> = {
     id: 'recipe_pyraxis_flame_seared_flank', name: 'Recipe: Pyraxis Flame-Seared Flank', type: 'recipe',
     description: 'A scorched recipe card, pried from Pyraxis’s hoard. Use to learn the recipe.',
     stackable: true, teachesRecipeId: 'pyraxis_flame_seared_flank', sellValue: 0,
+  },
+
+  // ── Cooking overhaul Tier 1 — Recovery Food. Pure sustain: manual use
+  // heals to FULL and resets the attack timer (see recoveryFood's doc
+  // comment in types.ts); Auto Eat (a purchased profession rank, not a
+  // recipe) uses the same item for a smaller rank-scaled heal. No stat
+  // bonuses, no buff, and completely unusable in a dungeon/raid either
+  // way. One dish per zone, primarily built from that zone's fish.
+  greenhollow_hearth_stew: {
+    id: 'greenhollow_hearth_stew', name: 'Greenhollow Hearth Stew', type: 'consumable',
+    description: 'A simple, filling stew of smallfish and boar meat. Restores all health when eaten manually.',
+    stackable: true, sellValue: 3,
+    consumableEffect: { cooldownSeconds: 20, recoveryFood: true },
+  },
+  stonecrag_camp_broth: {
+    id: 'stonecrag_camp_broth', name: 'Stonecrag Camp Broth', type: 'consumable',
+    description: 'A hearty trailside broth of catfish and game meat. Restores all health when eaten manually.',
+    stackable: true, sellValue: 6,
+    consumableEffect: { cooldownSeconds: 20, recoveryFood: true },
+  },
+  emberfall_field_rations: {
+    id: 'emberfall_field_rations', name: 'Emberfall Field Rations', type: 'consumable',
+    description: 'Dense, heat-cured trout rations carried by Emberfall’s hardiest travelers. Restores all health when eaten manually.',
+    stackable: true, sellValue: 12,
+    consumableEffect: { cooldownSeconds: 20, recoveryFood: true },
+  },
+  cinderfall_scavengers_stew: {
+    id: 'cinderfall_scavengers_stew', name: 'Cinderfall Scavenger’s Stew', type: 'consumable',
+    description: 'Redgill and scavenged meat, boiled down into something surprisingly restorative. Restores all health when eaten manually.',
+    stackable: true, sellValue: 22,
+    consumableEffect: { cooldownSeconds: 20, recoveryFood: true },
+  },
+  molten_hound_roast: {
+    id: 'molten_hound_roast', name: 'Molten Hound Roast', type: 'consumable',
+    description: 'Stonescale eel and magma hound meat, roasted together over the Scar’s own heat. Restores all health when eaten manually.',
+    stackable: true, sellValue: 38,
+    consumableEffect: { cooldownSeconds: 20, recoveryFood: true },
+  },
+  cinderheart_ember_roast: {
+    id: 'cinderheart_ember_roast', name: 'Cinderheart Ember Roast', type: 'consumable',
+    description: 'Emberfin snapper and behemoth flank, slow-roasted at the world’s molten heart. Restores all health when eaten manually.',
+    stackable: true, sellValue: 60,
+    consumableEffect: { cooldownSeconds: 20, recoveryFood: true },
   },
 
   // ── Tailoring bags — permanent inventory capacity, consumed on use (see

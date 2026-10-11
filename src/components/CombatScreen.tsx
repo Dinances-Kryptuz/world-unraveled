@@ -268,7 +268,8 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
       consumableState.offensiveChargesConsumed > 0 ||
       consumableState.defensiveChargesConsumed > 0 ||
       consumableState.healingUsed > 0 ||
-      consumableState.manaUsed > 0;
+      consumableState.manaUsed > 0 ||
+      consumableState.autoEatUsed > 0;
     if (kills.length === 0 && !hasQuestSignals && !hasBuffTriggers && !hasConsumableUsage) return;
     pendingKillsRef.current = [];
     pendingQuestSignalsRef.current = { healingDone: 0, abilityUseCounts: {} };
@@ -283,18 +284,26 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
         completedEncounters: kills.length,
       });
     }
-    if (hasConsumableUsage && currentCharacterForBuffs.consumableAutomation) {
+    if (hasConsumableUsage) {
       const usage = {
         offensiveChargesConsumed: consumableState.offensiveChargesConsumed,
         defensiveChargesConsumed: consumableState.defensiveChargesConsumed,
         healingUsed: consumableState.healingUsed,
         manaUsed: consumableState.manaUsed,
       };
+      const autoEatUsed = consumableState.autoEatUsed;
+      const autoEatItemId = consumableState.autoEat?.itemId;
       consumableState.offensiveChargesConsumed = 0;
       consumableState.defensiveChargesConsumed = 0;
       consumableState.healingUsed = 0;
       consumableState.manaUsed = 0;
-      void applyConsumableAutomationUsage(currentUser.uid, currentCharacterForBuffs.consumableAutomation, usage);
+      consumableState.autoEatUsed = 0;
+      void applyConsumableAutomationUsage(
+        currentUser.uid,
+        currentCharacterForBuffs.consumableAutomation,
+        usage,
+        autoEatUsed > 0 && autoEatItemId ? { used: autoEatUsed, itemId: autoEatItemId } : undefined
+      );
     }
 
     const xpGained = Math.round(kills.reduce((sum, k) => sum + k.xpGained, 0));
@@ -468,6 +477,16 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
     if (remainingCooldownSeconds(currentCharacter, itemId, effect.cooldownSeconds, new Date()) > 0) return;
 
     const player = state.party.find((p) => p.isPlayer)!;
+    if (effect.recoveryFood) {
+      // Cooking overhaul Tier 1 — Recovery Food's manual use: heals to
+      // FULL and resets the attack timer to 0 (a free action), the one
+      // consumable use with any effect on actionReadyIn. Open-world only —
+      // DungeonScreen's ConsumablesBar never lists a recoveryFood item at
+      // all (see its allowRecoveryFood={false}), so this handler is never
+      // reached from a dungeon/raid.
+      player.hp = player.maxHp;
+      player.actionReadyIn = 0;
+    }
     if (effect.healAmount) {
       player.hp = Math.min(player.maxHp, player.hp + effect.healAmount);
     }
@@ -527,6 +546,7 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
             character={character}
             inventoryItems={inventory?.items ?? {}}
             allowMana={true}
+            allowRecoveryFood={true}
             onUse={handleUseConsumable}
             onEquip={handleEquipConsumable}
           />
