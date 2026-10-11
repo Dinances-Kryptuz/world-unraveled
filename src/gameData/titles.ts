@@ -1,4 +1,4 @@
-import { MATERIALS, LEATHER_MATERIALS } from './materials';
+import { MATERIALS, LEATHER_MATERIALS, CLOTH_MATERIALS, WOOD_MATERIALS } from './materials';
 import { ZONES } from './zones';
 
 // A player-selectable cosmetic title — purely display, no stat/combat/
@@ -31,6 +31,24 @@ function generateLeatherMaterialTitles(): TitleDef[] {
   }));
 }
 
+// Same pattern, mirroring achievements.ts's generateClothMasteryAchievements
+// exactly, over CLOTH_MATERIALS instead of LEATHER_MATERIALS.
+function generateClothMaterialTitles(): TitleDef[] {
+  return CLOTH_MATERIALS.map((material) => ({
+    id: `mastery_${material.id}`,
+    name: `Master of ${material.name}`,
+  }));
+}
+
+// Same pattern, mirroring achievements.ts's generateWoodMasteryAchievements
+// exactly, over WOOD_MATERIALS instead of CLOTH_MATERIALS.
+function generateWoodMaterialTitles(): TitleDef[] {
+  return WOOD_MATERIALS.map((material) => ({
+    id: `mastery_${material.id}`,
+    name: `Master of ${material.name}`,
+  }));
+}
+
 // Same pattern, mirroring achievements.ts's generateForagerAchievements/
 // generateAlchemistAchievements (same ids, same names) over the real ZONES
 // registry — a future zone only needs registering in gameData/zones.ts to
@@ -43,15 +61,29 @@ function generateAlchemistTitles(): TitleDef[] {
   return Object.values(ZONES).map((zone) => ({ id: `alchemist_${zone.id}`, name: `Master Alchemist of ${zone.name}` }));
 }
 
+// Enchanting overhaul's Phase E7 scroll-crafting zone-Mastery — mirrors
+// achievements.ts's generateEnchanterAchievements exactly (same ids, same
+// names), distinct from 'master_enchanter_armaments' above (the combined
+// Wand/Staff/Book equipment track).
+function generateEnchanterTitles(): TitleDef[] {
+  return Object.values(ZONES).map((zone) => ({ id: `enchanter_${zone.id}`, name: `Master Enchanter of ${zone.name}` }));
+}
+
 export const TITLES: TitleDef[] = [
   ...generateMaterialTitles(),
   { id: 'master_blacksmith', name: 'Master Blacksmith' },
   ...generateLeatherMaterialTitles(),
   { id: 'master_leatherworker', name: 'Master Leatherworker' },
+  ...generateClothMaterialTitles(),
+  { id: 'master_tailor', name: 'Master Tailor' },
+  ...generateWoodMaterialTitles(),
+  { id: 'master_enchanter_armaments', name: 'Master of Armaments' },
   ...generateForagerTitles(),
   { id: 'grandmaster_forager', name: 'Grandmaster Forager' },
   ...generateAlchemistTitles(),
   { id: 'grandmaster_alchemist', name: 'Grandmaster Alchemist' },
+  ...generateEnchanterTitles(),
+  { id: 'grandmaster_enchanter', name: 'Grandmaster Enchanter' },
 ];
 
 const TITLES_BY_ID: Record<string, TitleDef> = Object.fromEntries(TITLES.map((t) => [t.id, t]));

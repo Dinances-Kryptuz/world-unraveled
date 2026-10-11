@@ -10,6 +10,7 @@ import {
   setEquippedConsumable,
   applyConsumableAutomationUsage,
 } from '../firebase/consumables';
+import { consumeEnchantCharges } from '../firebase/enchanting';
 import { DUNGEONS } from '../gameData/dungeons';
 import { MONSTERS } from '../gameData/monsters';
 import { notify } from '../utils/notifications';
@@ -25,8 +26,11 @@ import {
 import { resolveActiveCompanionSetups, type CompanionCombatSetup } from '../gameData/companions';
 import { maxHp, resolveCurrentHp, ATTACK_INTERVAL_SECONDS } from '../gameData/combatFormulas';
 import { getEquipmentStatBonuses } from '../gameData/equipmentStats';
+import { buildActiveEnchantTotals } from '../gameData/enchanting';
 import { characterXpForLevelV2, MAX_CHARACTER_LEVEL } from '../gameData/xpTables';
 import { checkAndUnlockNextSlot, resolveActiveAltSetups } from '../firebase/characterSlots';
+import { equippedItemId } from '../gameData/equipmentStats';
+import { shirtBonusForItemId, shirtBonusPct } from '../gameData/shirts';
 import type { QuestEvent } from '../gameData/questEngine';
 import {
   createEncounterState,
@@ -110,11 +114,25 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
     offensive_action: 0,
     damage_taken: 0,
   });
+  // Enchanting overhaul's charge counters — see CombatScreen.tsx's matching
+  // pendingEnchantTriggersRef comment for why this is a separate tally from
+  // pendingBuffTriggersRef above.
+  const pendingEnchantTriggersRef = useRef<{ offensive_action: number; damage_taken: number }>({
+    offensive_action: 0,
+    damage_taken: 0,
+  });
   // Herbalism/Alchemy overhaul's Part 8 automation — see CombatScreen.tsx's
   // matching comment; built once per run (the dungeonId setup effect below)
   // and mutated in place through every tick/manual-use via ctx.
   const consumableStateRef = useRef<ConsumableAutomationRuntimeState>(emptyConsumableAutomationState());
   const retreatedRef = useRef(false);
+  // Dungeons never write to Character.currentActivity (see this component's
+  // own doc comment above), so there's no CurrentActivity.equippedShirtItemId
+  // snapshot to read here — this ref plays the same role, captured once at
+  // run entry (the dungeonId setup effect below) rather than read live every
+  // tick, so re-equipping a shirt mid-run (if the player even can) can't
+  // retroactively change a run already in progress.
+  const goldFindPctRef = useRef(0);
 
   const characterRef = useRef<Character | null>(character);
   const userRef = useRef<User | null>(user);
@@ -190,8 +208,9 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
     const talentTotals = c.spec ? evaluateTalents(c.spec, c.talentPicks).totals : EMPTY_TALENT_TOTALS;
     const buffTotals = evaluateActiveBuffs(c.activeBuffs, new Date());
     const extraDamageTakenPct = getExtraDamageTakenPct(c.spec, c.talentPicks);
-    const equipmentBonuses = getEquipmentStatBonuses(c.equipment, c.enchantments);
-    const charMaxHp = maxHp(c.class, c.level, equipmentBonuses, talentTotals.hpMultPct);
+    const equipmentBonuses = getEquipmentStatBonuses(c.equipment, c.enchantments, c.enchantmentCharges);
+    const enchantTotals = buildActiveEnchantTotals(c.enchantments, c.enchantmentCharges);
+    const charMaxHp = maxHp(c.class, c.level, equipmentBonuses, talentTotals.hpMultPct, enchantTotals.flatHpBonus);
     const currentHp = resolveCurrentHp(c.currentHp, charMaxHp, c.hpCheckpointAt, new Date());
     const companions = [...resolveActiveCompanionSetups(c), ...altSetupsRef.current];
     return {
@@ -210,6 +229,7 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
       savedAbilityConditions: c.abilityConditions,
       disabledAbilityIds: c.disabledAbilityIds,
       companions,
+      ...enchantTotals,
       // A dungeon is fixed-size group content (REQUIRED_DUNGEON_PARTY_SIZE,
       // enforced before the player can even enter — see ZoneScreen.tsx) —
       // scale the monster's HP by the full party size so a 5-person group
@@ -234,12 +254,14 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
     pendingKillsRef.current = [];
     pendingQuestSignalsRef.current = { healingDone: 0, abilityUseCounts: {} };
     pendingBuffTriggersRef.current = { offensive_action: 0, damage_taken: 0 };
+    pendingEnchantTriggersRef.current = { offensive_action: 0, damage_taken: 0 };
     stageIndexRef.current = 0;
     fullClearsRef.current = 0;
     pendingDungeonClearsRef.current = 0;
     currentMonsterRef.current = MONSTERS[dungeon.stages[0]];
     combatStateRef.current = null;
     consumableStateRef.current = buildConsumableAutomationState(character, inventory ?? { items: {} }, new Date());
+    goldFindPctRef.current = shirtBonusPct(shirtBonusForItemId(equippedItemId(character.equipment.shirt)), 'gold_find');
     let cancelled = false;
     void (async () => {
       altSetupsRef.current = user ? await resolveActiveAltSetups(user.uid, character) : [];
@@ -266,14 +288,22 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
         encounterSize: currentEncounterSize(),
         monsterHpMultiplier: currentMonsterHpMultiplier(companionCount),
         consumableState: consumableStateRef.current,
+        goldFindPct: goldFindPctRef.current,
       };
       const result = advanceCombat(combatStateRef.current, ctx, 1);
       pendingKillsRef.current.push(...result.kills);
       notifyKills(result.kills);
       mergeQuestSignals(pendingQuestSignalsRef.current, result.questSignals);
       for (const event of result.events) {
-        if (event.kind === 'damage_out') pendingBuffTriggersRef.current.offensive_action++;
-        else if (event.kind === 'damage_in') pendingBuffTriggersRef.current.damage_taken++;
+        if (event.kind === 'damage_out') {
+          pendingBuffTriggersRef.current.offensive_action++;
+          pendingEnchantTriggersRef.current.offensive_action++;
+        } else if (event.kind === 'damage_in') {
+          pendingBuffTriggersRef.current.damage_taken++;
+          pendingEnchantTriggersRef.current.damage_taken++;
+        } else if (event.kind === 'miss_out') {
+          pendingEnchantTriggersRef.current.offensive_action++;
+        }
       }
       const extra = pendingLogRef.current;
       pendingLogRef.current = [];
@@ -307,9 +337,11 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
     const kills = pendingKillsRef.current;
     const questSignals = pendingQuestSignalsRef.current;
     const buffTriggers = pendingBuffTriggersRef.current;
+    const enchantTriggers = pendingEnchantTriggersRef.current;
     const consumableState = consumableStateRef.current;
     const hasQuestSignals = questSignals.healingDone > 0 || Object.keys(questSignals.abilityUseCounts).length > 0;
     const hasBuffTriggers = buffTriggers.offensive_action > 0 || buffTriggers.damage_taken > 0;
+    const hasEnchantTriggers = kills.length > 0 || enchantTriggers.offensive_action > 0 || enchantTriggers.damage_taken > 0;
     const hasConsumableUsage =
       consumableState.offensiveChargesConsumed > 0 ||
       consumableState.defensiveChargesConsumed > 0 ||
@@ -319,10 +351,18 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
     pendingKillsRef.current = [];
     pendingQuestSignalsRef.current = { healingDone: 0, abilityUseCounts: {} };
     pendingBuffTriggersRef.current = { offensive_action: 0, damage_taken: 0 };
+    pendingEnchantTriggersRef.current = { offensive_action: 0, damage_taken: 0 };
     const dungeonClearsGained = pendingDungeonClearsRef.current;
     pendingDungeonClearsRef.current = 0;
     const currentCharacterForBuffs = characterRef.current ?? character;
     if (hasBuffTriggers) void consumeBuffCharges(currentUser.uid, currentCharacterForBuffs, buffTriggers);
+    if (hasEnchantTriggers) {
+      void consumeEnchantCharges(currentUser.uid, currentCharacterForBuffs, {
+        offensive_action: enchantTriggers.offensive_action,
+        damage_taken: enchantTriggers.damage_taken,
+        completedEncounters: kills.length,
+      });
+    }
     if (hasConsumableUsage && currentCharacterForBuffs.consumableAutomation) {
       const usage = {
         offensiveChargesConsumed: consumableState.offensiveChargesConsumed,
@@ -373,9 +413,10 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
           newLevel++;
         }
         if (newLevel !== fresh.level) {
-          const equipBonuses = getEquipmentStatBonuses(fresh.equipment, fresh.enchantments);
+          const equipBonuses = getEquipmentStatBonuses(fresh.equipment, fresh.enchantments, fresh.enchantmentCharges);
           const freshTalentTotals = fresh.spec ? evaluateTalents(fresh.spec, fresh.talentPicks).totals : EMPTY_TALENT_TOTALS;
-          const restoredHp = maxHp(fresh.class, newLevel, equipBonuses, freshTalentTotals.hpMultPct);
+          const freshEnchantTotals = buildActiveEnchantTotals(fresh.enchantments, fresh.enchantmentCharges);
+          const restoredHp = maxHp(fresh.class, newLevel, equipBonuses, freshTalentTotals.hpMultPct, freshEnchantTotals.flatHpBonus);
           await setCharacterLevel(currentUser.uid, newLevel, restoredHp);
           player.hp = restoredHp;
           player.maxHp = restoredHp;
@@ -434,6 +475,7 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
       encounterSize: currentEncounterSize(),
       monsterHpMultiplier: currentMonsterHpMultiplier(state.party.length - 1),
       consumableState: consumableStateRef.current,
+      goldFindPct: goldFindPctRef.current,
     };
     const result = tryManualUseAbility(state, 'player', abilityId, ctx);
     if (!result) return;
@@ -441,8 +483,15 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
     notifyKills(result.kills);
     mergeQuestSignals(pendingQuestSignalsRef.current, result.questSignals);
     for (const event of result.events) {
-      if (event.kind === 'damage_out') pendingBuffTriggersRef.current.offensive_action++;
-      else if (event.kind === 'damage_in') pendingBuffTriggersRef.current.damage_taken++;
+      if (event.kind === 'damage_out') {
+        pendingBuffTriggersRef.current.offensive_action++;
+        pendingEnchantTriggersRef.current.offensive_action++;
+      } else if (event.kind === 'damage_in') {
+        pendingBuffTriggersRef.current.damage_taken++;
+        pendingEnchantTriggersRef.current.damage_taken++;
+      } else if (event.kind === 'miss_out') {
+        pendingEnchantTriggersRef.current.offensive_action++;
+      }
     }
     if (result.events.length > 0) {
       setLog((prev) => [...result.events, ...prev].slice(0, MAX_LOG_LINES));

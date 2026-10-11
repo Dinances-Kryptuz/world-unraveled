@@ -26,83 +26,626 @@ import { TRAINER_ZONE_BY_RANK } from './professionTrainers';
 // cost was already paid once, at craft time, matching a classic MMO's
 // enchanting-vellum workflow and the "far less daunting, more AFK" goal
 // this redesign was built for.
+//
+// Which of 3 charge-consumption rules this enchant follows (Enchanting
+// overhaul's charge model — see Character.enchantmentCharges's doc
+// comment) — 'passive' for every enchant below right now (plain always-on
+// stat bonuses, consuming 1 charge per completed combat encounter); the
+// full 6-zone catalog (Phase E6) adds real 'offensive' (1 charge per
+// eligible outgoing attack, proc or not) and 'defensive' (1 charge only on
+// a successful incoming hit) enchants alongside more 'passive' ones.
+export type EnchantCategory = 'offensive' | 'defensive' | 'passive';
+
+// Every enchant scroll always grants exactly this many charges when used —
+// never more, never fewer, regardless of Mastery (gameData/enchanting.ts's
+// scroll-crafting Mastery track, Phase E7, only ever affects crafting
+// speed/ingredient-preservation, NEVER this number) — per the design
+// brief's explicit, repeated "always exactly 100 charges" rule.
+export const ENCHANT_SCROLL_CHARGES = 100;
+
+// Mirrors combatEngine/types.ts's EnchantProcKind/EnchantWeaponProc exactly
+// — re-declared here (rather than imported) so gameData/ stays independent
+// of combatEngine/ the same way every other gameData module already is;
+// firebase/enchanting.ts's buildActiveEnchantTotals (Phase E6-4) maps an
+// EnchantProcDef 1:1 onto an EnchantWeaponProc when it builds the combat
+// engine's input.
+export type EnchantProcKind = 'fiery_weapon' | 'lifestealing' | 'icy_chill' | 'crusader';
+
+export interface EnchantProcDef {
+  kind: EnchantProcKind;
+  chancePct: number;
+  power: number; // % of the triggering hit's damage — see EnchantWeaponProc.power's doc comment. Unused by crusader/icy_chill.
+}
+
 export interface EnchantDef {
   id: string;
   name: string;
   description: string;
   slot: EquipmentSlot;
+  category: EnchantCategory;
   statBonuses: Partial<Record<BaseStat, number>>;
   // The enchant_scroll item (items.ts) that applies this enchant when used.
   scrollItemId: string;
+  // ── Phase E6 catalog fields — all optional; absent behaves exactly like
+  // statBonuses: {} already does (zero effect), so every pre-catalog
+  // enchant (now none — see ENCHANTS's doc comment) would have needed no
+  // changes. Each maps 1:1 onto a CasterProfile/EncounterSetupInput field
+  // of the same name (combatEngine/engine.ts, combatEngine/types.ts),
+  // summed across every charged slot by buildActiveEnchantTotals.
+  flatHpBonus?: number;
+  flatManaBonus?: number;
+  flatArmorBonus?: number; // the "Defense" family — this engine's closest existing lever to a flat Defense stat
+  hastePct?: number;
+  flatDamageBonus?: number; // Spell Power / Striking / Impact family
+  healingPowerFlatBonus?: number;
+  flatDamageReduction?: number; // Absorption family — flat incoming-damage reduction, minimum 1
+  fireResistancePct?: number;
+  shadowResistancePct?: number;
+  // frostResistancePct is deliberately NOT modeled — defined in the
+  // catalog's data (name/description/materials) but mechanically inert, no
+  // frost damage school exists in this combat engine. See
+  // CasterProfile.fireResistancePct's doc comment.
+  beastDamageBonusPct?: number;
+  demonDamageBonusPct?: number; // defined but never fires — no monster is tagged 'demon' yet
+  // Weapon-slot proc enchants (Fiery Weapon/Lifestealing/Crusader and their
+  // Ember-tier upgrades) — only ever set on a slot: 'weapon' EnchantDef.
+  proc?: EnchantProcDef;
 }
 
-// Weapon/Chest/Gloves/Legs/Boots/Ring — the 6 of the design brief's 7
-// requested slots (Weapon/Boots/Bracers/Chest/Cloak/Gloves/Shield) that
-// actually exist in this game's itemization. Bracers/Cloak/Shield aren't
-// implemented as equipment slots at all yet (see EquipmentSlot in
-// types.ts) — adding them is an itemization expansion outside this
-// profession system's scope, not an Enchanting limitation.
+// Weapon/Chest/Gloves/Legs/Boots/Ring/Cape — the equipment slots the real
+// 6-zone catalog (Phase E6) actually targets, per the design brief's exact
+// recipe tables. The pre-catalog placeholder ENCHANTS (12 simple stat
+// enchants that stood in during Phases E1-E5) have been removed wholesale;
+// this registry is populated below by the full catalog.
 export const ENCHANTS: Record<string, EnchantDef> = {
-  enchant_weapon_minor_might: {
-    id: 'enchant_weapon_minor_might', name: 'Enchant Weapon: Minor Might',
-    description: '+4 Strength', slot: 'weapon', statBonuses: { STR: 4 }, scrollItemId: 'scroll_weapon_minor_might',
+  enchant_minor_health: {
+    id: 'enchant_minor_health', name: 'Enchant Chest: Minor Health',
+    description: 'Use on an equipped chest item to apply the Minor Health enchant.', slot: 'chest', category: 'passive',
+    statBonuses: {}, scrollItemId: 'scroll_minor_health',
+    flatHpBonus: 10,
   },
-  enchant_weapon_greater_might: {
-    id: 'enchant_weapon_greater_might', name: 'Enchant Weapon: Greater Might',
-    description: '+10 Strength', slot: 'weapon', statBonuses: { STR: 10 }, scrollItemId: 'scroll_weapon_greater_might',
+  enchant_minor_mana: {
+    id: 'enchant_minor_mana', name: 'Enchant Chest: Minor Mana',
+    description: 'Use on an equipped chest item to apply the Minor Mana enchant.', slot: 'chest', category: 'passive',
+    statBonuses: {}, scrollItemId: 'scroll_minor_mana',
+    flatManaBonus: 10,
   },
-  enchant_weapon_superior_might: {
-    id: 'enchant_weapon_superior_might', name: 'Enchant Weapon: Superior Might',
-    description: '+18 Strength', slot: 'weapon', statBonuses: { STR: 18 }, scrollItemId: 'scroll_weapon_superior_might',
+  enchant_minor_stamina: {
+    id: 'enchant_minor_stamina', name: 'Enchant Bracer: Minor Stamina',
+    description: 'Use on an equipped bracer item to apply the Minor Stamina enchant.', slot: 'bracers', category: 'passive',
+    statBonuses: { STA: 1 }, scrollItemId: 'scroll_minor_stamina',
   },
-
-  enchant_chest_minor_stats: {
-    id: 'enchant_chest_minor_stats', name: 'Enchant Chest: Minor Vigor',
-    description: '+5 Stamina', slot: 'chest', statBonuses: { STA: 5 }, scrollItemId: 'scroll_chest_minor_stats',
+  enchant_minor_strength: {
+    id: 'enchant_minor_strength', name: 'Enchant Gloves: Minor Strength',
+    description: 'Use on an equipped gloves item to apply the Minor Strength enchant.', slot: 'gloves', category: 'passive',
+    statBonuses: { STR: 1 }, scrollItemId: 'scroll_minor_strength',
   },
-  enchant_chest_greater_stats: {
-    id: 'enchant_chest_greater_stats', name: 'Enchant Chest: Greater Vigor',
-    description: '+12 Stamina', slot: 'chest', statBonuses: { STA: 12 }, scrollItemId: 'scroll_chest_greater_stats',
+  enchant_minor_agility: {
+    id: 'enchant_minor_agility', name: 'Enchant Boots: Minor Agility',
+    description: 'Use on an equipped boots item to apply the Minor Agility enchant.', slot: 'boots', category: 'passive',
+    statBonuses: { AGI: 1 }, scrollItemId: 'scroll_minor_agility',
   },
-  enchant_chest_superior_stats: {
-    id: 'enchant_chest_superior_stats', name: 'Enchant Chest: Superior Vigor',
-    description: '+20 Stamina', slot: 'chest', statBonuses: { STA: 20 }, scrollItemId: 'scroll_chest_superior_stats',
+  enchant_minor_intellect: {
+    id: 'enchant_minor_intellect', name: 'Enchant Chest: Minor Intellect',
+    description: 'Use on an equipped chest item to apply the Minor Intellect enchant.', slot: 'chest', category: 'passive',
+    statBonuses: { INT: 1 }, scrollItemId: 'scroll_minor_intellect',
   },
-
-  enchant_gloves_minor_focus: {
-    id: 'enchant_gloves_minor_focus', name: 'Enchant Gloves: Minor Focus',
-    description: '+4 Intellect', slot: 'gloves', statBonuses: { INT: 4 }, scrollItemId: 'scroll_gloves_minor_focus',
+  enchant_minor_spirit: {
+    id: 'enchant_minor_spirit', name: 'Enchant Chest: Minor Spirit',
+    description: 'Use on an equipped chest item to apply the Minor Spirit enchant.', slot: 'chest', category: 'passive',
+    statBonuses: { SPI: 1 }, scrollItemId: 'scroll_minor_spirit',
   },
-  enchant_gloves_greater_focus: {
-    id: 'enchant_gloves_greater_focus', name: 'Enchant Gloves: Greater Focus',
-    description: '+9 Intellect', slot: 'gloves', statBonuses: { INT: 9 }, scrollItemId: 'scroll_gloves_greater_focus',
+  enchant_minor_defense: {
+    id: 'enchant_minor_defense', name: 'Enchant Cloak: Minor Defense',
+    description: 'Use on an equipped cloak item to apply the Minor Defense enchant.', slot: 'cape', category: 'passive',
+    statBonuses: {}, scrollItemId: 'scroll_minor_defense',
+    flatArmorBonus: 2,
   },
-
-  enchant_legs_minor_vitality: {
-    id: 'enchant_legs_minor_vitality', name: 'Enchant Legs: Minor Vitality',
-    description: '+6 Stamina', slot: 'legs', statBonuses: { STA: 6 }, scrollItemId: 'scroll_legs_minor_vitality',
+  enchant_minor_absorption: {
+    id: 'enchant_minor_absorption', name: 'Enchant Chest: Minor Absorption',
+    description: 'Use on an equipped chest item to apply the Minor Absorption enchant.', slot: 'chest', category: 'defensive',
+    statBonuses: {}, scrollItemId: 'scroll_minor_absorption',
+    flatDamageReduction: 1,
   },
-  enchant_legs_greater_vitality: {
-    id: 'enchant_legs_greater_vitality', name: 'Enchant Legs: Greater Vitality',
-    description: '+14 Stamina', slot: 'legs', statBonuses: { STA: 14 }, scrollItemId: 'scroll_legs_greater_vitality',
+  enchant_minor_striking: {
+    id: 'enchant_minor_striking', name: 'Enchant Weapon: Minor Striking',
+    description: 'Use on an equipped weapon item to apply the Minor Striking enchant.', slot: 'weapon', category: 'offensive',
+    statBonuses: {}, scrollItemId: 'scroll_minor_striking',
+    flatDamageBonus: 1,
   },
-
-  enchant_boots_minor_spirit: {
-    id: 'enchant_boots_minor_spirit', name: 'Enchant Boots: Minor Spirit',
-    description: '+4 Spirit', slot: 'boots', statBonuses: { SPI: 4 }, scrollItemId: 'scroll_boots_minor_spirit',
+  enchant_minor_impact: {
+    id: 'enchant_minor_impact', name: 'Enchant Weapon: Minor Impact',
+    description: 'Use on an equipped weapon item to apply the Minor Impact enchant.', slot: 'weapon', category: 'offensive',
+    statBonuses: {}, scrollItemId: 'scroll_minor_impact',
+    flatDamageBonus: 2,
   },
-  enchant_boots_greater_spirit: {
-    id: 'enchant_boots_greater_spirit', name: 'Enchant Boots: Greater Spirit',
-    description: '+9 Spirit', slot: 'boots', statBonuses: { SPI: 9 }, scrollItemId: 'scroll_boots_greater_spirit',
+  enchant_minor_beastslayer: {
+    id: 'enchant_minor_beastslayer', name: 'Enchant Weapon: Minor Beastslayer',
+    description: 'Use on an equipped weapon item to apply the Minor Beastslayer enchant.', slot: 'weapon', category: 'offensive',
+    statBonuses: {}, scrollItemId: 'scroll_minor_beastslayer',
+    beastDamageBonusPct: 3,
   },
-
-  enchant_ring_minor_power: {
-    id: 'enchant_ring_minor_power', name: 'Enchant Ring: Minor Power',
-    description: '+3 Strength, +3 Intellect', slot: 'ring', statBonuses: { STR: 3, INT: 3 }, scrollItemId: 'scroll_ring_minor_power',
+  enchant_lesser_health: {
+    id: 'enchant_lesser_health', name: 'Enchant Chest: Lesser Health',
+    description: 'Use on an equipped chest item to apply the Lesser Health enchant.', slot: 'chest', category: 'passive',
+    statBonuses: {}, scrollItemId: 'scroll_lesser_health',
+    flatHpBonus: 25,
   },
-  enchant_ring_greater_power: {
-    id: 'enchant_ring_greater_power', name: 'Enchant Ring: Greater Power',
-    description: '+7 Strength, +7 Intellect', slot: 'ring', statBonuses: { STR: 7, INT: 7 }, scrollItemId: 'scroll_ring_greater_power',
+  enchant_lesser_mana: {
+    id: 'enchant_lesser_mana', name: 'Enchant Chest: Lesser Mana',
+    description: 'Use on an equipped chest item to apply the Lesser Mana enchant.', slot: 'chest', category: 'passive',
+    statBonuses: {}, scrollItemId: 'scroll_lesser_mana',
+    flatManaBonus: 25,
+  },
+  enchant_lesser_stamina: {
+    id: 'enchant_lesser_stamina', name: 'Enchant Bracer: Lesser Stamina',
+    description: 'Use on an equipped bracer item to apply the Lesser Stamina enchant.', slot: 'bracers', category: 'passive',
+    statBonuses: { STA: 3 }, scrollItemId: 'scroll_lesser_stamina',
+  },
+  enchant_lesser_strength: {
+    id: 'enchant_lesser_strength', name: 'Enchant Gloves: Lesser Strength',
+    description: 'Use on an equipped gloves item to apply the Lesser Strength enchant.', slot: 'gloves', category: 'passive',
+    statBonuses: { STR: 3 }, scrollItemId: 'scroll_lesser_strength',
+  },
+  enchant_lesser_agility: {
+    id: 'enchant_lesser_agility', name: 'Enchant Boots: Lesser Agility',
+    description: 'Use on an equipped boots item to apply the Lesser Agility enchant.', slot: 'boots', category: 'passive',
+    statBonuses: { AGI: 3 }, scrollItemId: 'scroll_lesser_agility',
+  },
+  enchant_lesser_intellect: {
+    id: 'enchant_lesser_intellect', name: 'Enchant Chest: Lesser Intellect',
+    description: 'Use on an equipped chest item to apply the Lesser Intellect enchant.', slot: 'chest', category: 'passive',
+    statBonuses: { INT: 3 }, scrollItemId: 'scroll_lesser_intellect',
+  },
+  enchant_lesser_spirit: {
+    id: 'enchant_lesser_spirit', name: 'Enchant Chest: Lesser Spirit',
+    description: 'Use on an equipped chest item to apply the Lesser Spirit enchant.', slot: 'chest', category: 'passive',
+    statBonuses: { SPI: 3 }, scrollItemId: 'scroll_lesser_spirit',
+  },
+  enchant_lesser_defense: {
+    id: 'enchant_lesser_defense', name: 'Enchant Cloak: Lesser Defense',
+    description: 'Use on an equipped cloak item to apply the Lesser Defense enchant.', slot: 'cape', category: 'passive',
+    statBonuses: {}, scrollItemId: 'scroll_lesser_defense',
+    flatArmorBonus: 5,
+  },
+  enchant_lesser_absorption: {
+    id: 'enchant_lesser_absorption', name: 'Enchant Chest: Lesser Absorption',
+    description: 'Use on an equipped chest item to apply the Lesser Absorption enchant.', slot: 'chest', category: 'defensive',
+    statBonuses: {}, scrollItemId: 'scroll_lesser_absorption',
+    flatDamageReduction: 2,
+  },
+  enchant_lesser_striking: {
+    id: 'enchant_lesser_striking', name: 'Enchant Weapon: Lesser Striking',
+    description: 'Use on an equipped weapon item to apply the Lesser Striking enchant.', slot: 'weapon', category: 'offensive',
+    statBonuses: {}, scrollItemId: 'scroll_lesser_striking',
+    flatDamageBonus: 3,
+  },
+  enchant_lesser_impact: {
+    id: 'enchant_lesser_impact', name: 'Enchant Weapon: Lesser Impact',
+    description: 'Use on an equipped weapon item to apply the Lesser Impact enchant.', slot: 'weapon', category: 'offensive',
+    statBonuses: {}, scrollItemId: 'scroll_lesser_impact',
+    flatDamageBonus: 5,
+  },
+  enchant_lesser_beastslayer: {
+    id: 'enchant_lesser_beastslayer', name: 'Enchant Weapon: Lesser Beastslayer',
+    description: 'Use on an equipped weapon item to apply the Lesser Beastslayer enchant.', slot: 'weapon', category: 'offensive',
+    statBonuses: {}, scrollItemId: 'scroll_lesser_beastslayer',
+    beastDamageBonusPct: 5,
+  },
+  enchant_lesser_elemental_resistance: {
+    id: 'enchant_lesser_elemental_resistance', name: 'Enchant Cloak: Lesser Elemental Resistance',
+    description: 'Use on an equipped cloak item to apply the Lesser Elemental Resistance enchant.', slot: 'cape', category: 'passive',
+    statBonuses: {}, scrollItemId: 'scroll_lesser_elemental_resistance',
+    fireResistancePct: 3,
+    shadowResistancePct: 3,
+  },
+  enchant_health_z3: {
+    id: 'enchant_health_z3', name: 'Enchant Chest: Health',
+    description: 'Use on an equipped chest item to apply the Health enchant.', slot: 'chest', category: 'passive',
+    statBonuses: {}, scrollItemId: 'scroll_health_z3',
+    flatHpBonus: 50,
+  },
+  enchant_mana_z3: {
+    id: 'enchant_mana_z3', name: 'Enchant Chest: Mana',
+    description: 'Use on an equipped chest item to apply the Mana enchant.', slot: 'chest', category: 'passive',
+    statBonuses: {}, scrollItemId: 'scroll_mana_z3',
+    flatManaBonus: 50,
+  },
+  enchant_stamina_z3: {
+    id: 'enchant_stamina_z3', name: 'Enchant Bracer: Stamina',
+    description: 'Use on an equipped bracer item to apply the Stamina enchant.', slot: 'bracers', category: 'passive',
+    statBonuses: { STA: 5 }, scrollItemId: 'scroll_stamina_z3',
+  },
+  enchant_strength_z3: {
+    id: 'enchant_strength_z3', name: 'Enchant Gloves: Strength',
+    description: 'Use on an equipped gloves item to apply the Strength enchant.', slot: 'gloves', category: 'passive',
+    statBonuses: { STR: 5 }, scrollItemId: 'scroll_strength_z3',
+  },
+  enchant_agility_z3: {
+    id: 'enchant_agility_z3', name: 'Enchant Boots: Agility',
+    description: 'Use on an equipped boots item to apply the Agility enchant.', slot: 'boots', category: 'passive',
+    statBonuses: { AGI: 5 }, scrollItemId: 'scroll_agility_z3',
+  },
+  enchant_intellect_z3: {
+    id: 'enchant_intellect_z3', name: 'Enchant Chest: Intellect',
+    description: 'Use on an equipped chest item to apply the Intellect enchant.', slot: 'chest', category: 'passive',
+    statBonuses: { INT: 5 }, scrollItemId: 'scroll_intellect_z3',
+  },
+  enchant_spirit_z3: {
+    id: 'enchant_spirit_z3', name: 'Enchant Chest: Spirit',
+    description: 'Use on an equipped chest item to apply the Spirit enchant.', slot: 'chest', category: 'passive',
+    statBonuses: { SPI: 5 }, scrollItemId: 'scroll_spirit_z3',
+  },
+  enchant_greater_defense_z3: {
+    id: 'enchant_greater_defense_z3', name: 'Enchant Cloak: Greater Defense',
+    description: 'Use on an equipped cloak item to apply the Greater Defense enchant.', slot: 'cape', category: 'passive',
+    statBonuses: {}, scrollItemId: 'scroll_greater_defense_z3',
+    flatArmorBonus: 10,
+  },
+  enchant_striking_z3: {
+    id: 'enchant_striking_z3', name: 'Enchant Weapon: Striking',
+    description: 'Use on an equipped weapon item to apply the Striking enchant.', slot: 'weapon', category: 'offensive',
+    statBonuses: {}, scrollItemId: 'scroll_striking_z3',
+    flatDamageBonus: 5,
+  },
+  enchant_impact_z3: {
+    id: 'enchant_impact_z3', name: 'Enchant Weapon: Impact',
+    description: 'Use on an equipped weapon item to apply the Impact enchant.', slot: 'weapon', category: 'offensive',
+    statBonuses: {}, scrollItemId: 'scroll_impact_z3',
+    flatDamageBonus: 7,
+  },
+  enchant_greater_beastslayer_z3: {
+    id: 'enchant_greater_beastslayer_z3', name: 'Enchant Weapon: Greater Beastslayer',
+    description: 'Use on an equipped weapon item to apply the Greater Beastslayer enchant.', slot: 'weapon', category: 'offensive',
+    statBonuses: {}, scrollItemId: 'scroll_greater_beastslayer_z3',
+    beastDamageBonusPct: 8,
+  },
+  enchant_minor_haste_z3: {
+    id: 'enchant_minor_haste_z3', name: 'Enchant Gloves: Minor Haste',
+    description: 'Use on an equipped gloves item to apply the Minor Haste enchant.', slot: 'gloves', category: 'offensive',
+    statBonuses: {}, scrollItemId: 'scroll_minor_haste_z3',
+    hastePct: 3,
+  },
+  enchant_fire_resistance_z3: {
+    id: 'enchant_fire_resistance_z3', name: 'Enchant Cloak: Fire Resistance',
+    description: 'Use on an equipped cloak item to apply the Fire Resistance enchant.', slot: 'cape', category: 'passive',
+    statBonuses: {}, scrollItemId: 'scroll_fire_resistance_z3',
+    fireResistancePct: 5,
+  },
+  enchant_frost_resistance_z3: {
+    id: 'enchant_frost_resistance_z3', name: 'Enchant Cloak: Frost Resistance',
+    description: 'Use on an equipped cloak item to apply the Frost Resistance enchant.', slot: 'cape', category: 'passive',
+    statBonuses: {}, scrollItemId: 'scroll_frost_resistance_z3',
+  },
+  enchant_shadow_resistance_z3: {
+    id: 'enchant_shadow_resistance_z3', name: 'Enchant Cloak: Shadow Resistance',
+    description: 'Use on an equipped cloak item to apply the Shadow Resistance enchant.', slot: 'cape', category: 'passive',
+    statBonuses: {}, scrollItemId: 'scroll_shadow_resistance_z3',
+    shadowResistancePct: 5,
+  },
+  enchant_greater_health_z4: {
+    id: 'enchant_greater_health_z4', name: 'Enchant Chest: Greater Health',
+    description: 'Use on an equipped chest item to apply the Greater Health enchant.', slot: 'chest', category: 'passive',
+    statBonuses: {}, scrollItemId: 'scroll_greater_health_z4',
+    flatHpBonus: 80,
+  },
+  enchant_greater_mana_z4: {
+    id: 'enchant_greater_mana_z4', name: 'Enchant Chest: Greater Mana',
+    description: 'Use on an equipped chest item to apply the Greater Mana enchant.', slot: 'chest', category: 'passive',
+    statBonuses: {}, scrollItemId: 'scroll_greater_mana_z4',
+    flatManaBonus: 80,
+  },
+  enchant_greater_stamina_z4: {
+    id: 'enchant_greater_stamina_z4', name: 'Enchant Bracer: Greater Stamina',
+    description: 'Use on an equipped bracer item to apply the Greater Stamina enchant.', slot: 'bracers', category: 'passive',
+    statBonuses: { STA: 7 }, scrollItemId: 'scroll_greater_stamina_z4',
+  },
+  enchant_greater_strength_z4: {
+    id: 'enchant_greater_strength_z4', name: 'Enchant Gloves: Greater Strength',
+    description: 'Use on an equipped gloves item to apply the Greater Strength enchant.', slot: 'gloves', category: 'passive',
+    statBonuses: { STR: 7 }, scrollItemId: 'scroll_greater_strength_z4',
+  },
+  enchant_greater_agility_z4: {
+    id: 'enchant_greater_agility_z4', name: 'Enchant Boots: Greater Agility',
+    description: 'Use on an equipped boots item to apply the Greater Agility enchant.', slot: 'boots', category: 'passive',
+    statBonuses: { AGI: 7 }, scrollItemId: 'scroll_greater_agility_z4',
+  },
+  enchant_greater_intellect_z4: {
+    id: 'enchant_greater_intellect_z4', name: 'Enchant Chest: Greater Intellect',
+    description: 'Use on an equipped chest item to apply the Greater Intellect enchant.', slot: 'chest', category: 'passive',
+    statBonuses: { INT: 7 }, scrollItemId: 'scroll_greater_intellect_z4',
+  },
+  enchant_greater_spirit_z4: {
+    id: 'enchant_greater_spirit_z4', name: 'Enchant Chest: Greater Spirit',
+    description: 'Use on an equipped chest item to apply the Greater Spirit enchant.', slot: 'chest', category: 'passive',
+    statBonuses: { SPI: 7 }, scrollItemId: 'scroll_greater_spirit_z4',
+  },
+  enchant_superior_defense_z4: {
+    id: 'enchant_superior_defense_z4', name: 'Enchant Cloak: Superior Defense',
+    description: 'Use on an equipped cloak item to apply the Superior Defense enchant.', slot: 'cape', category: 'passive',
+    statBonuses: {}, scrollItemId: 'scroll_superior_defense_z4',
+    flatArmorBonus: 15,
+  },
+  enchant_greater_striking_z4: {
+    id: 'enchant_greater_striking_z4', name: 'Enchant Weapon: Greater Striking',
+    description: 'Use on an equipped weapon item to apply the Greater Striking enchant.', slot: 'weapon', category: 'offensive',
+    statBonuses: {}, scrollItemId: 'scroll_greater_striking_z4',
+    flatDamageBonus: 7,
+  },
+  enchant_greater_impact_z4: {
+    id: 'enchant_greater_impact_z4', name: 'Enchant Weapon: Greater Impact',
+    description: 'Use on an equipped weapon item to apply the Greater Impact enchant.', slot: 'weapon', category: 'offensive',
+    statBonuses: {}, scrollItemId: 'scroll_greater_impact_z4',
+    flatDamageBonus: 10,
+  },
+  enchant_greater_haste_z4: {
+    id: 'enchant_greater_haste_z4', name: 'Enchant Gloves: Greater Haste',
+    description: 'Use on an equipped gloves item to apply the Greater Haste enchant.', slot: 'gloves', category: 'offensive',
+    statBonuses: {}, scrollItemId: 'scroll_greater_haste_z4',
+    hastePct: 5,
+  },
+  enchant_greater_fire_resistance_z4: {
+    id: 'enchant_greater_fire_resistance_z4', name: 'Enchant Cloak: Greater Fire Resistance',
+    description: 'Use on an equipped cloak item to apply the Greater Fire Resistance enchant.', slot: 'cape', category: 'passive',
+    statBonuses: {}, scrollItemId: 'scroll_greater_fire_resistance_z4',
+    fireResistancePct: 8,
+  },
+  enchant_greater_frost_resistance_z4: {
+    id: 'enchant_greater_frost_resistance_z4', name: 'Enchant Cloak: Greater Frost Resistance',
+    description: 'Use on an equipped cloak item to apply the Greater Frost Resistance enchant.', slot: 'cape', category: 'passive',
+    statBonuses: {}, scrollItemId: 'scroll_greater_frost_resistance_z4',
+  },
+  enchant_greater_shadow_resistance_z4: {
+    id: 'enchant_greater_shadow_resistance_z4', name: 'Enchant Cloak: Greater Shadow Resistance',
+    description: 'Use on an equipped cloak item to apply the Greater Shadow Resistance enchant.', slot: 'cape', category: 'passive',
+    statBonuses: {}, scrollItemId: 'scroll_greater_shadow_resistance_z4',
+    shadowResistancePct: 8,
+  },
+  enchant_demonslaying_z4: {
+    id: 'enchant_demonslaying_z4', name: 'Enchant Weapon: Demonslaying',
+    description: 'Use on an equipped weapon item to apply the Demonslaying enchant.', slot: 'weapon', category: 'offensive',
+    statBonuses: {}, scrollItemId: 'scroll_demonslaying_z4',
+    demonDamageBonusPct: 12,
+  },
+  enchant_superior_health_z5: {
+    id: 'enchant_superior_health_z5', name: 'Enchant Chest: Superior Health',
+    description: 'Use on an equipped chest item to apply the Superior Health enchant.', slot: 'chest', category: 'passive',
+    statBonuses: {}, scrollItemId: 'scroll_superior_health_z5',
+    flatHpBonus: 120,
+  },
+  enchant_superior_mana_z5: {
+    id: 'enchant_superior_mana_z5', name: 'Enchant Chest: Superior Mana',
+    description: 'Use on an equipped chest item to apply the Superior Mana enchant.', slot: 'chest', category: 'passive',
+    statBonuses: {}, scrollItemId: 'scroll_superior_mana_z5',
+    flatManaBonus: 120,
+  },
+  enchant_superior_stamina_z5: {
+    id: 'enchant_superior_stamina_z5', name: 'Enchant Bracer: Superior Stamina',
+    description: 'Use on an equipped bracer item to apply the Superior Stamina enchant.', slot: 'bracers', category: 'passive',
+    statBonuses: { STA: 10 }, scrollItemId: 'scroll_superior_stamina_z5',
+  },
+  enchant_superior_strength_z5: {
+    id: 'enchant_superior_strength_z5', name: 'Enchant Gloves: Superior Strength',
+    description: 'Use on an equipped gloves item to apply the Superior Strength enchant.', slot: 'gloves', category: 'passive',
+    statBonuses: { STR: 10 }, scrollItemId: 'scroll_superior_strength_z5',
+  },
+  enchant_superior_agility_z5: {
+    id: 'enchant_superior_agility_z5', name: 'Enchant Boots: Superior Agility',
+    description: 'Use on an equipped boots item to apply the Superior Agility enchant.', slot: 'boots', category: 'passive',
+    statBonuses: { AGI: 10 }, scrollItemId: 'scroll_superior_agility_z5',
+  },
+  enchant_superior_intellect_z5: {
+    id: 'enchant_superior_intellect_z5', name: 'Enchant Chest: Superior Intellect',
+    description: 'Use on an equipped chest item to apply the Superior Intellect enchant.', slot: 'chest', category: 'passive',
+    statBonuses: { INT: 10 }, scrollItemId: 'scroll_superior_intellect_z5',
+  },
+  enchant_superior_spirit_z5: {
+    id: 'enchant_superior_spirit_z5', name: 'Enchant Chest: Superior Spirit',
+    description: 'Use on an equipped chest item to apply the Superior Spirit enchant.', slot: 'chest', category: 'passive',
+    statBonuses: { SPI: 10 }, scrollItemId: 'scroll_superior_spirit_z5',
+  },
+  enchant_greater_stats_z5: {
+    id: 'enchant_greater_stats_z5', name: 'Enchant Chest: Greater Stats',
+    description: 'Use on an equipped chest item to apply the Greater Stats enchant.', slot: 'chest', category: 'passive',
+    statBonuses: { STR: 3, STA: 3, AGI: 3, INT: 3, SPI: 3 }, scrollItemId: 'scroll_greater_stats_z5',
+  },
+  enchant_superior_defense_z5: {
+    id: 'enchant_superior_defense_z5', name: 'Enchant Cloak: Superior Defense',
+    description: 'Use on an equipped cloak item to apply the Superior Defense enchant.', slot: 'cape', category: 'passive',
+    statBonuses: {}, scrollItemId: 'scroll_superior_defense_z5',
+    flatArmorBonus: 20,
+  },
+  enchant_superior_striking_z5: {
+    id: 'enchant_superior_striking_z5', name: 'Enchant Weapon: Superior Striking',
+    description: 'Use on an equipped weapon item to apply the Superior Striking enchant.', slot: 'weapon', category: 'offensive',
+    statBonuses: {}, scrollItemId: 'scroll_superior_striking_z5',
+    flatDamageBonus: 10,
+  },
+  enchant_superior_impact_z5: {
+    id: 'enchant_superior_impact_z5', name: 'Enchant Weapon: Superior Impact',
+    description: 'Use on an equipped weapon item to apply the Superior Impact enchant.', slot: 'weapon', category: 'offensive',
+    statBonuses: {}, scrollItemId: 'scroll_superior_impact_z5',
+    flatDamageBonus: 14,
+  },
+  enchant_greater_haste_z5: {
+    id: 'enchant_greater_haste_z5', name: 'Enchant Gloves: Greater Haste',
+    description: 'Use on an equipped gloves item to apply the Greater Haste enchant.', slot: 'gloves', category: 'offensive',
+    statBonuses: {}, scrollItemId: 'scroll_greater_haste_z5',
+    hastePct: 7,
+  },
+  enchant_greater_fire_resistance_z5: {
+    id: 'enchant_greater_fire_resistance_z5', name: 'Enchant Cloak: Greater Fire Resistance',
+    description: 'Use on an equipped cloak item to apply the Greater Fire Resistance enchant.', slot: 'cape', category: 'passive',
+    statBonuses: {}, scrollItemId: 'scroll_greater_fire_resistance_z5',
+    fireResistancePct: 12,
+  },
+  enchant_greater_frost_resistance_z5: {
+    id: 'enchant_greater_frost_resistance_z5', name: 'Enchant Cloak: Greater Frost Resistance',
+    description: 'Use on an equipped cloak item to apply the Greater Frost Resistance enchant.', slot: 'cape', category: 'passive',
+    statBonuses: {}, scrollItemId: 'scroll_greater_frost_resistance_z5',
+  },
+  enchant_greater_shadow_resistance_z5: {
+    id: 'enchant_greater_shadow_resistance_z5', name: 'Enchant Cloak: Greater Shadow Resistance',
+    description: 'Use on an equipped cloak item to apply the Greater Shadow Resistance enchant.', slot: 'cape', category: 'passive',
+    statBonuses: {}, scrollItemId: 'scroll_greater_shadow_resistance_z5',
+    shadowResistancePct: 12,
+  },
+  enchant_fiery_weapon_z5: {
+    id: 'enchant_fiery_weapon_z5', name: 'Enchant Weapon: Fiery Weapon',
+    description: 'Use on an equipped weapon item to apply the Fiery Weapon enchant.', slot: 'weapon', category: 'offensive',
+    statBonuses: {}, scrollItemId: 'scroll_fiery_weapon_z5',
+    proc: { kind: 'fiery_weapon', chancePct: 20, power: 15 },
+  },
+  enchant_icy_chill_z5: {
+    id: 'enchant_icy_chill_z5', name: 'Enchant Weapon: Icy Chill',
+    description: 'Use on an equipped weapon item to apply the Icy Chill enchant.', slot: 'weapon', category: 'offensive',
+    statBonuses: {}, scrollItemId: 'scroll_icy_chill_z5',
+    proc: { kind: 'icy_chill', chancePct: 20, power: 0 },
+  },
+  enchant_lifestealing_z5: {
+    id: 'enchant_lifestealing_z5', name: 'Enchant Weapon: Lifestealing',
+    description: 'Use on an equipped weapon item to apply the Lifestealing enchant.', slot: 'weapon', category: 'offensive',
+    statBonuses: {}, scrollItemId: 'scroll_lifestealing_z5',
+    proc: { kind: 'lifestealing', chancePct: 15, power: 10 },
+  },
+  enchant_ember_health: {
+    id: 'enchant_ember_health', name: 'Enchant Chest: Ember Health',
+    description: 'Use on an equipped chest item to apply the Ember Health enchant.', slot: 'chest', category: 'passive',
+    statBonuses: {}, scrollItemId: 'scroll_ember_health',
+    flatHpBonus: 180,
+  },
+  enchant_ember_mana: {
+    id: 'enchant_ember_mana', name: 'Enchant Chest: Ember Mana',
+    description: 'Use on an equipped chest item to apply the Ember Mana enchant.', slot: 'chest', category: 'passive',
+    statBonuses: {}, scrollItemId: 'scroll_ember_mana',
+    flatManaBonus: 180,
+  },
+  enchant_ember_stamina: {
+    id: 'enchant_ember_stamina', name: 'Enchant Bracer: Ember Stamina',
+    description: 'Use on an equipped bracer item to apply the Ember Stamina enchant.', slot: 'bracers', category: 'passive',
+    statBonuses: { STA: 14 }, scrollItemId: 'scroll_ember_stamina',
+  },
+  enchant_ember_strength: {
+    id: 'enchant_ember_strength', name: 'Enchant Gloves: Ember Strength',
+    description: 'Use on an equipped gloves item to apply the Ember Strength enchant.', slot: 'gloves', category: 'passive',
+    statBonuses: { STR: 14 }, scrollItemId: 'scroll_ember_strength',
+  },
+  enchant_ember_agility: {
+    id: 'enchant_ember_agility', name: 'Enchant Boots: Ember Agility',
+    description: 'Use on an equipped boots item to apply the Ember Agility enchant.', slot: 'boots', category: 'passive',
+    statBonuses: { AGI: 14 }, scrollItemId: 'scroll_ember_agility',
+  },
+  enchant_ember_intellect: {
+    id: 'enchant_ember_intellect', name: 'Enchant Chest: Ember Intellect',
+    description: 'Use on an equipped chest item to apply the Ember Intellect enchant.', slot: 'chest', category: 'passive',
+    statBonuses: { INT: 14 }, scrollItemId: 'scroll_ember_intellect',
+  },
+  enchant_ember_spirit: {
+    id: 'enchant_ember_spirit', name: 'Enchant Chest: Ember Spirit',
+    description: 'Use on an equipped chest item to apply the Ember Spirit enchant.', slot: 'chest', category: 'passive',
+    statBonuses: { SPI: 14 }, scrollItemId: 'scroll_ember_spirit',
+  },
+  enchant_ember_stats: {
+    id: 'enchant_ember_stats', name: 'Enchant Chest: Ember Stats',
+    description: 'Use on an equipped chest item to apply the Ember Stats enchant.', slot: 'chest', category: 'passive',
+    statBonuses: { STR: 5, STA: 5, AGI: 5, INT: 5, SPI: 5 }, scrollItemId: 'scroll_ember_stats',
+  },
+  enchant_ember_defense: {
+    id: 'enchant_ember_defense', name: 'Enchant Cloak: Ember Defense',
+    description: 'Use on an equipped cloak item to apply the Ember Defense enchant.', slot: 'cape', category: 'passive',
+    statBonuses: {}, scrollItemId: 'scroll_ember_defense',
+    flatArmorBonus: 30,
+  },
+  enchant_ember_striking: {
+    id: 'enchant_ember_striking', name: 'Enchant Weapon: Ember Striking',
+    description: 'Use on an equipped weapon item to apply the Ember Striking enchant.', slot: 'weapon', category: 'offensive',
+    statBonuses: {}, scrollItemId: 'scroll_ember_striking',
+    flatDamageBonus: 14,
+  },
+  enchant_ember_impact: {
+    id: 'enchant_ember_impact', name: 'Enchant Weapon: Ember Impact',
+    description: 'Use on an equipped weapon item to apply the Ember Impact enchant.', slot: 'weapon', category: 'offensive',
+    statBonuses: {}, scrollItemId: 'scroll_ember_impact',
+    flatDamageBonus: 20,
+  },
+  enchant_ember_haste: {
+    id: 'enchant_ember_haste', name: 'Enchant Gloves: Ember Haste',
+    description: 'Use on an equipped gloves item to apply the Ember Haste enchant.', slot: 'gloves', category: 'offensive',
+    statBonuses: {}, scrollItemId: 'scroll_ember_haste',
+    hastePct: 10,
+  },
+  enchant_ember_fire_resistance: {
+    id: 'enchant_ember_fire_resistance', name: 'Enchant Cloak: Ember Fire Resistance',
+    description: 'Use on an equipped cloak item to apply the Ember Fire Resistance enchant.', slot: 'cape', category: 'passive',
+    statBonuses: {}, scrollItemId: 'scroll_ember_fire_resistance',
+    fireResistancePct: 15,
+  },
+  enchant_ember_frost_resistance: {
+    id: 'enchant_ember_frost_resistance', name: 'Enchant Cloak: Ember Frost Resistance',
+    description: 'Use on an equipped cloak item to apply the Ember Frost Resistance enchant.', slot: 'cape', category: 'passive',
+    statBonuses: {}, scrollItemId: 'scroll_ember_frost_resistance',
+  },
+  enchant_ember_shadow_resistance: {
+    id: 'enchant_ember_shadow_resistance', name: 'Enchant Cloak: Ember Shadow Resistance',
+    description: 'Use on an equipped cloak item to apply the Ember Shadow Resistance enchant.', slot: 'cape', category: 'passive',
+    statBonuses: {}, scrollItemId: 'scroll_ember_shadow_resistance',
+    shadowResistancePct: 15,
+  },
+  enchant_ember_fiery_weapon: {
+    id: 'enchant_ember_fiery_weapon', name: 'Enchant Weapon: Ember Fiery Weapon',
+    description: 'Use on an equipped weapon item to apply the Ember Fiery Weapon enchant.', slot: 'weapon', category: 'offensive',
+    statBonuses: {}, scrollItemId: 'scroll_ember_fiery_weapon',
+    proc: { kind: 'fiery_weapon', chancePct: 25, power: 20 },
+  },
+  enchant_ember_icy_chill: {
+    id: 'enchant_ember_icy_chill', name: 'Enchant Weapon: Ember Icy Chill',
+    description: 'Use on an equipped weapon item to apply the Ember Icy Chill enchant.', slot: 'weapon', category: 'offensive',
+    statBonuses: {}, scrollItemId: 'scroll_ember_icy_chill',
+    proc: { kind: 'icy_chill', chancePct: 25, power: 0 },
+  },
+  enchant_ember_lifestealing: {
+    id: 'enchant_ember_lifestealing', name: 'Enchant Weapon: Ember Lifestealing',
+    description: 'Use on an equipped weapon item to apply the Ember Lifestealing enchant.', slot: 'weapon', category: 'offensive',
+    statBonuses: {}, scrollItemId: 'scroll_ember_lifestealing',
+    proc: { kind: 'lifestealing', chancePct: 20, power: 15 },
+  },
+  enchant_crusader: {
+    id: 'enchant_crusader', name: 'Enchant Weapon: Crusader',
+    description: 'Use on an equipped weapon item to apply the Crusader enchant.', slot: 'weapon', category: 'offensive',
+    statBonuses: {}, scrollItemId: 'scroll_crusader',
+    proc: { kind: 'crusader', chancePct: 15, power: 0 },
+  },
+  enchant_spellpower: {
+    id: 'enchant_spellpower', name: 'Enchant Weapon: Spellpower',
+    description: 'Use on an equipped weapon item to apply the Spellpower enchant.', slot: 'weapon', category: 'passive',
+    statBonuses: {}, scrollItemId: 'scroll_spellpower',
+    flatDamageBonus: 20,
+  },
+  enchant_healing_power: {
+    id: 'enchant_healing_power', name: 'Enchant Weapon: Healing Power',
+    description: 'Use on an equipped weapon item to apply the Healing Power enchant.', slot: 'weapon', category: 'passive',
+    statBonuses: {}, scrollItemId: 'scroll_healing_power',
+    healingPowerFlatBonus: 20,
+  },
+  enchant_mighty_intellect: {
+    id: 'enchant_mighty_intellect', name: 'Enchant Weapon: Mighty Intellect',
+    description: 'Use on an equipped weapon item to apply the Mighty Intellect enchant.', slot: 'weapon', category: 'passive',
+    statBonuses: { INT: 20 }, scrollItemId: 'scroll_mighty_intellect',
+  },
+  enchant_mighty_spirit: {
+    id: 'enchant_mighty_spirit', name: 'Enchant Weapon: Mighty Spirit',
+    description: 'Use on an equipped weapon item to apply the Mighty Spirit enchant.', slot: 'weapon', category: 'passive',
+    statBonuses: { SPI: 20 }, scrollItemId: 'scroll_mighty_spirit',
+  },
+  enchant_mighty_strength: {
+    id: 'enchant_mighty_strength', name: 'Enchant Weapon: Mighty Strength',
+    description: 'Use on an equipped weapon item to apply the Mighty Strength enchant.', slot: 'weapon', category: 'passive',
+    statBonuses: { STR: 20 }, scrollItemId: 'scroll_mighty_strength',
+  },
+  enchant_mighty_agility: {
+    id: 'enchant_mighty_agility', name: 'Enchant Weapon: Mighty Agility',
+    description: 'Use on an equipped weapon item to apply the Mighty Agility enchant.', slot: 'weapon', category: 'passive',
+    statBonuses: { AGI: 20 }, scrollItemId: 'scroll_mighty_agility',
   },
 };
 
@@ -110,14 +653,122 @@ export function enchantsForSlot(slot: EquipmentSlot): EnchantDef[] {
   return Object.values(ENCHANTS).filter((e) => e.slot === slot);
 }
 
+// Everything buildActiveEnchantTotals sums, for the combat engine's
+// EncounterSetupInput/OfflineCombatInput (Phase E6) — field names match
+// EncounterSetupInput/CasterProfile 1:1 (combatEngine/engine.ts,
+// combatEngine/types.ts) so callers can simply spread this object in.
+export interface EnchantTotals {
+  hastePct: number;
+  flatDamageBonus: number;
+  healingPowerFlatBonus: number;
+  flatHpBonus: number;
+  flatManaBonus: number;
+  flatArmorBonus: number;
+  beastDamageBonusPct: number;
+  demonDamageBonusPct: number;
+  flatDamageReduction: number;
+  fireResistancePct: number;
+  shadowResistancePct: number;
+  weaponProc?: EnchantProcDef;
+}
+
+// Sums every currently-charged (enchantmentCharges[slot] !== 0 — same
+// "absence means not yet migrated, treat as active" convention as
+// getEquipmentStatBonuses) enchant's non-statBonuses effect fields across
+// every equipped slot. The STR/STA/AGI/INT/SPI-style statBonuses (including
+// weapon-slot Mighty Stat enchants) keep flowing through the pre-existing
+// getEquipmentStatBonuses pipeline (gameData/equipmentStats.ts) unchanged —
+// this only covers the new non-stat fields that pipeline has no slot for.
+// Resolved once per encounter setup (CombatScreen/DungeonScreen/
+// WelcomeBackScreen/offline combat), the same static-per-encounter posture
+// every other bonus already baked into EncounterSetupInput uses.
+export function buildActiveEnchantTotals(
+  enchantments: Partial<Record<EquipmentSlot, string>> = {},
+  enchantmentCharges: Partial<Record<EquipmentSlot, number>> = {}
+): EnchantTotals {
+  const totals: EnchantTotals = {
+    hastePct: 0,
+    flatDamageBonus: 0,
+    healingPowerFlatBonus: 0,
+    flatHpBonus: 0,
+    flatManaBonus: 0,
+    flatArmorBonus: 0,
+    beastDamageBonusPct: 0,
+    demonDamageBonusPct: 0,
+    flatDamageReduction: 0,
+    fireResistancePct: 0,
+    shadowResistancePct: 0,
+  };
+  for (const [slot, enchantId] of Object.entries(enchantments) as [EquipmentSlot, string | undefined][]) {
+    if (!enchantId) continue;
+    if (enchantmentCharges[slot] === 0) continue;
+    const enchant = ENCHANTS[enchantId];
+    if (!enchant) continue;
+    totals.hastePct += enchant.hastePct ?? 0;
+    totals.flatDamageBonus += enchant.flatDamageBonus ?? 0;
+    totals.healingPowerFlatBonus += enchant.healingPowerFlatBonus ?? 0;
+    totals.flatHpBonus += enchant.flatHpBonus ?? 0;
+    totals.flatManaBonus += enchant.flatManaBonus ?? 0;
+    totals.flatArmorBonus += enchant.flatArmorBonus ?? 0;
+    totals.beastDamageBonusPct += enchant.beastDamageBonusPct ?? 0;
+    totals.demonDamageBonusPct += enchant.demonDamageBonusPct ?? 0;
+    totals.flatDamageReduction += enchant.flatDamageReduction ?? 0;
+    totals.fireResistancePct += enchant.fireResistancePct ?? 0;
+    totals.shadowResistancePct += enchant.shadowResistancePct ?? 0;
+    // Only the weapon slot can carry a proc, and only one weapon slot
+    // exists — no summing-across-slots question the way the other fields
+    // have (every slot holds at most one enchant, same as statBonuses).
+    if (enchant.proc) totals.weaponProc = enchant.proc;
+  }
+  return totals;
+}
+
 // ── Disenchanting ──────────────────────────────────────────────────────
 // Deliberately formulas over the item's own data (stat total for the reward
-// tier below, origin zone for the skill gate above) rather than static
+// category below, origin zone for the skill gate above) rather than static
 // per-item fields — "any item can be disenchanted" (per the design brief)
 // would otherwise mean hand-tagging 200+ existing items. Tools are excluded
 // (equipSlot === 'tool') — they're profession gear, not armor/weapons/
 // jewelry.
-export type DisenchantTier = 'dust' | 'essence' | 'crystal';
+//
+// Widened (Enchanting overhaul) from 3 generic tiers to a 2-axis system:
+// WHICH ZONE's material family (dust/essence/shard all come in one of 6
+// zone-specific flavors, see items.ts's "Enchanting materials" section) ×
+// WHICH CATEGORY within that family (dust/lesser essence/greater essence/
+// shard). The original 3-tier DisenchantTier type/ZONE_TIER_DISENCHANT_TIER
+// mapping is gone (both axes below now fully replace what it only
+// approximated). Material item ids/names match the design brief's exact
+// Classic-WoW-derived naming (Strange Dust, Soul Dust, Vision Dust, Dream
+// Dust, Illusion Dust/Brilliant Shards, Ember Shards) rather than invented
+// names, per zone.
+export type DisenchantCategory = 'dust' | 'lesser_essence' | 'greater_essence' | 'shard';
+
+// Zone tier (1-6, via ZONE_TIER) -> which actual item each category yields
+// in that zone's family. Zones 1-4 have no shard tier at all (per spec,
+// shards ("S"/Brilliant Shards) only start appearing at zone 5); zone 6
+// collapses lesser/greater essence into one tier (Ember Essence) per the
+// design brief's explicit zone-6 note.
+const ZONE_DISENCHANT_MATERIALS: Record<number, Partial<Record<DisenchantCategory, string>>> = {
+  1: { dust: 'strange_dust', lesser_essence: 'lesser_magic_essence', greater_essence: 'greater_magic_essence' },
+  2: { dust: 'soul_dust', lesser_essence: 'lesser_astral_essence', greater_essence: 'greater_astral_essence' },
+  3: { dust: 'vision_dust', lesser_essence: 'lesser_mystic_essence', greater_essence: 'greater_mystic_essence' },
+  4: { dust: 'dream_dust', lesser_essence: 'lesser_nether_essence', greater_essence: 'greater_nether_essence' },
+  5: {
+    dust: 'illusion_dust', lesser_essence: 'lesser_eternal_essence',
+    greater_essence: 'greater_eternal_essence', shard: 'brilliant_shard',
+  },
+  6: { dust: 'ember_dust', lesser_essence: 'ember_essence', greater_essence: 'ember_essence', shard: 'ember_shards' },
+};
+
+// Per-category yield range, independent of zone — a rarer category always
+// yields fewer units per item, same escalating-scarcity shape the original
+// 3-tier table had (dust > essence > crystal).
+const CATEGORY_YIELD_RANGE: Record<DisenchantCategory, { min: number; max: number }> = {
+  dust: { min: 2, max: 4 },
+  lesser_essence: { min: 1, max: 3 },
+  greater_essence: { min: 1, max: 2 },
+  shard: { min: 1, max: 1 },
+};
 
 function statTotal(item: ItemDef): number {
   return Object.values(item.statBonuses ?? {}).reduce((sum, v) => sum + (v ?? 0), 0);
@@ -127,46 +778,44 @@ export function isDisenchantable(item: ItemDef): boolean {
   return item.type === 'equipment' && item.equipSlot !== undefined && item.equipSlot !== 'tool';
 }
 
-// Every result item id of a Recipe.materialId-tagged recipe — the
-// consolidated, randomized-stat armor/jewelry set (see types.ts's Recipe
-// comment). Computed once from recipe data rather than hand-maintained, so
-// this never drifts out of sync with which items are actually randomized.
-let randomizedArmorItemIds: Set<string> | null = null;
-function isRandomizedArmorItem(itemId: string): boolean {
-  if (!randomizedArmorItemIds) {
-    randomizedArmorItemIds = new Set(
+// Result item id -> Recipe.rarity, for every Recipe.materialId-tagged
+// recipe (the consolidated, randomized-stat armor/jewelry set — see
+// types.ts's Recipe comment). Computed once from recipe data rather than
+// hand-maintained, so this never drifts out of sync with which items are
+// actually randomized, or with a recipe's own rarity tuning.
+let randomizedArmorRarityByItemId: Map<string, 'common' | 'uncommon' | 'rare'> | null = null;
+function randomizedArmorRarity(itemId: string): 'common' | 'uncommon' | 'rare' | undefined {
+  if (!randomizedArmorRarityByItemId) {
+    randomizedArmorRarityByItemId = new Map(
       Object.values(RECIPES)
         .filter((r) => r.materialId)
-        .map((r) => r.resultItemId)
+        .map((r) => [r.resultItemId, r.rarity])
     );
   }
-  return randomizedArmorItemIds.has(itemId);
+  return randomizedArmorRarityByItemId.get(itemId);
 }
 
-// Zone tier (1-6) -> disenchant reward tier, mirroring
-// ZONE_TIER_DISENCHANT_SKILL's "2 zones per bracket" shape below.
-const ZONE_TIER_DISENCHANT_TIER: Record<number, DisenchantTier> = {
-  1: 'dust', 2: 'dust', 3: 'essence', 4: 'essence', 5: 'crystal', 6: 'crystal',
-};
-
+// Which DisenchantCategory a given item falls into, independent of zone.
 // Randomized-stat armor (gameData/equipmentRolls.ts) has no fixed
-// statBonuses to sum — its stats vary per roll — so its disenchant reward
-// must depend on tier/material cost instead (the requirement: two
-// different rolls of the same base item disenchant into the same
-// materials). It reuses originZoneId's existing recipe-tier signal (the
-// same one disenchantRequiredSkill already derives from) rather than
-// statTotal. Every other item (weapons, pre-overhaul "Sacred" legacy
-// items, monster-drop jewelry) keeps the original statTotal-based rule
-// completely unchanged.
-export function disenchantTier(item: ItemDef): DisenchantTier {
-  if (isRandomizedArmorItem(item.id)) {
-    const zoneTier = ZONE_TIER[originZoneId(item)] ?? 1;
-    return ZONE_TIER_DISENCHANT_TIER[zoneTier] ?? 'dust';
+// statBonuses to sum — its stats vary per roll — so it uses the recipe's
+// own authored rarity instead (previously unused by disenchanting at all):
+// common->dust, uncommon->lesser essence, rare->greater essence/shard when
+// that zone has a shard tier, else greater essence. Every other item
+// (weapons, pre-overhaul "Sacred" legacy items, monster-drop jewelry) keeps
+// the original statTotal-based thresholds, now mapped onto 4 categories
+// instead of 3 (same cutoffs, shard only when the zone's family has one).
+function disenchantCategory(item: ItemDef, zoneTier: number): DisenchantCategory {
+  const hasShard = !!ZONE_DISENCHANT_MATERIALS[zoneTier]?.shard;
+  const rarity = randomizedArmorRarity(item.id);
+  if (rarity) {
+    if (rarity === 'rare') return hasShard ? 'shard' : 'greater_essence';
+    if (rarity === 'uncommon') return 'lesser_essence';
+    return 'dust';
   }
   const total = statTotal(item);
-  if (total < 10) return 'dust';
-  if (total < 20) return 'essence';
-  return 'crystal';
+  if (total >= 20) return hasShard ? 'shard' : 'greater_essence';
+  if (total >= 10) return 'lesser_essence';
+  return 'dust';
 }
 
 // The Enchanting skill required to disenchant gear scales with the ZONE the
@@ -230,17 +879,16 @@ export function disenchantXpAward(item: ItemDef): number {
   return Math.max(1, Math.round(3 + disenchantRequiredSkill(item) * 2.1));
 }
 
-const DISENCHANT_YIELD: Record<DisenchantTier, { itemId: string; min: number; max: number }> = {
-  dust: { itemId: 'arcane_dust', min: 2, max: 4 },
-  essence: { itemId: 'arcane_essence', min: 1, max: 3 },
-  crystal: { itemId: 'arcane_crystal', min: 1, max: 2 },
-};
-
 // The deterministic {itemId, min, max} range disenchanting this item rolls
 // from, per unit disenchanted — resolveDisenchantOffline (craftingEngine.ts)
 // rolls its own random quantity in that range once per item inside its
 // batch loop (a single stack-wide roll wouldn't reflect "N independent
-// disenchants" the way a real batch should).
+// disenchants" the way a real batch should). Combines both axes: zone tier
+// picks the material FAMILY, disenchantCategory picks which member of that
+// family.
 export function disenchantYieldRange(item: ItemDef): { itemId: string; min: number; max: number } {
-  return DISENCHANT_YIELD[disenchantTier(item)];
+  const zoneTier = ZONE_TIER[originZoneId(item)] ?? 1;
+  const category = disenchantCategory(item, zoneTier);
+  const itemId = ZONE_DISENCHANT_MATERIALS[zoneTier]?.[category] ?? 'strange_dust';
+  return { itemId, ...CATEGORY_YIELD_RANGE[category] };
 }

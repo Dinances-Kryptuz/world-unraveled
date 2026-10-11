@@ -217,6 +217,19 @@ export interface HerbalismOverride {
   zoneMasteryStartingXp: number;
 }
 
+// Tailoring overhaul's profession shirts — a SNAPSHOT (see
+// CurrentActivity.equippedShirtItemId's doc comment) of whichever shirt
+// bonuses are relevant to gathering, resolved by the caller from
+// ITEMS[equippedShirtItemId]?.shirtBonus before this function ever runs.
+// Every field folds additively into the existing per-action math — a
+// character with no shirt equipped (or an unrelated shirt type) passes
+// this as undefined/all-zero and nothing changes from before shirts existed.
+export interface GatheringShirtBonuses {
+  gatheringSpeedPct?: number; // Shirt of the Gatherer
+  professionXpPct?: number; // Shirt of Learning
+  masteryXpPct?: number; // Shirt of Mastery
+}
+
 // Belt-and-suspenders only, same role as offlineCombat.ts's MAX_TICKS and
 // masteryEngine.ts's own MAX_BATCH_ITERATIONS.
 const MAX_BATCH_ITERATIONS = 2000;
@@ -239,7 +252,8 @@ export function resolveGatheringOffline(
   startingMasteryXp: number,
   skillCap: number,
   toolBonusPct = 0,
-  herbalismOverride?: HerbalismOverride
+  herbalismOverride?: HerbalismOverride,
+  shirtBonuses?: GatheringShirtBonuses
 ): GatheringOfflineResult {
   const progress = resolveElapsedProgress(startedAt, now);
   let remainingSeconds = progress.effectiveHours * 3600;
@@ -268,7 +282,8 @@ export function resolveGatheringOffline(
 
   while (remainingSeconds > 0 && iterations < MAX_BATCH_ITERATIONS) {
     iterations++;
-    const speedMult = gatheringMasterySpeedMultiplier(masteryLevel) * (1 + toolBonusPct / 100);
+    const speedMult =
+      gatheringMasterySpeedMultiplier(masteryLevel) * (1 + (toolBonusPct + (shirtBonuses?.gatheringSpeedPct ?? 0)) / 100);
     const secondsPerAction = resource.secondsPerAction / speedMult;
     const actionsForFullTime = Math.floor(remainingSeconds / secondsPerAction);
     if (actionsForFullTime <= 0) break;
@@ -278,8 +293,10 @@ export function resolveGatheringOffline(
     // Never zero — even a thoroughly outdated (grey) resource still teaches
     // something, per the design brief's explicit "Copper Ore GRAY +1 Mining
     // XP, never 0" requirement.
-    const xpPerAction = Math.max(1, Math.round(resource.baseXp * xpPct)) * catchChance;
-    const masteryXpPerAction = resource.baseXp * catchChance; // unthrottled by color, same as Smithing's shipped Mastery
+    const xpPerAction =
+      Math.max(1, Math.round(resource.baseXp * xpPct)) * catchChance * (1 + (shirtBonuses?.professionXpPct ?? 0) / 100);
+    const masteryXpPerAction =
+      resource.baseXp * catchChance * (1 + (shirtBonuses?.masteryXpPct ?? 0) / 100); // unthrottled by color, same as Smithing's shipped Mastery
 
     // Both branches re-check the LIVE skill/skillXp every iteration (not a
     // snapshot from before the loop started) — a long offline catch-up can

@@ -2,8 +2,9 @@ import { doc, updateDoc, increment } from 'firebase/firestore';
 import { db } from './config';
 import { getInventory, grantInventoryItems } from './inventory';
 import { ITEMS } from '../gameData/items';
-import { ENCHANTS } from '../gameData/enchanting';
+import { ENCHANTS, ENCHANT_SCROLL_CHARGES } from '../gameData/enchanting';
 import type { EquipmentSlot } from '../gameData/types';
+import type { Character } from '../types/character';
 
 export interface EnchantActionResult {
   success: boolean;
@@ -27,6 +28,12 @@ export async function useEnchantScroll(uid: string, scrollItemId: string): Promi
 
   await updateDoc(doc(db, 'characters', uid), {
     [`enchantments.${enchant.slot}`]: enchant.id,
+    // Enchanting overhaul's charge model — ALWAYS exactly 100, a flat
+    // overwrite never an increment, so replacing a slot's enchant (even
+    // with the same one) discards whatever charges were left rather than
+    // refunding or combining them — see Character.enchantmentCharges's
+    // doc comment and ENCHANT_SCROLL_CHARGES below.
+    [`enchantmentCharges.${enchant.slot}`]: ENCHANT_SCROLL_CHARGES,
   });
   await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), {
     [`items.${scrollItemId}`]: increment(-1),
@@ -37,7 +44,51 @@ export async function useEnchantScroll(uid: string, scrollItemId: string): Promi
 export async function removeEnchant(uid: string, slot: EquipmentSlot): Promise<void> {
   await updateDoc(doc(db, 'characters', uid), {
     [`enchantments.${slot}`]: null,
+    [`enchantmentCharges.${slot}`]: null,
   });
+}
+
+// Decrements active enchants' charges by how many matching combat events
+// occurred since the last call — same "count events from the tick batch,
+// write once" shape as firebase/consumables.ts's consumeBuffCharges, with
+// a THIRD trigger (completedEncounters, driven by kill count) for passive
+// stat enchants rather than a per-attack event. Charges never go below 0
+// and an exhausted enchant stays equipped (unlike a depleted buff, which
+// is removed outright) — getEquipmentStatBonuses already stops crediting
+// its stat bonus the moment charges hit 0, so no further gating is needed
+// here. offensive_action counts BOTH landed and missed player attacks
+// (CombatScreen/DungeonScreen's own damage_out + miss_out tally) since an
+// offensive enchant's charge is spent per eligible outgoing attack
+// regardless of whether it lands or its own proc fires; damage_taken
+// counts only landed incoming hits (damage_in), so an avoided attack
+// never costs a defensive enchant a charge.
+export async function consumeEnchantCharges(
+  uid: string,
+  character: Character,
+  triggerCounts: { offensive_action: number; damage_taken: number; completedEncounters: number }
+): Promise<void> {
+  const update: Record<string, unknown> = {};
+  for (const [slot, enchantId] of Object.entries(character.enchantments) as [EquipmentSlot, string | undefined][]) {
+    if (!enchantId) continue;
+    const enchant = ENCHANTS[enchantId];
+    if (!enchant) continue;
+    const currentCharges = character.enchantmentCharges?.[slot];
+    // Not yet migrated to the charge model (see Character.enchantmentCharges's
+    // doc comment) — nothing to decrement until it's next (re-)applied.
+    if (currentCharges === undefined) continue;
+    const count =
+      enchant.category === 'offensive'
+        ? triggerCounts.offensive_action
+        : enchant.category === 'defensive'
+          ? triggerCounts.damage_taken
+          : triggerCounts.completedEncounters;
+    if (count <= 0) continue;
+    const remaining = Math.max(0, currentCharges - count);
+    if (remaining !== currentCharges) update[`enchantmentCharges.${slot}`] = remaining;
+  }
+  if (Object.keys(update).length > 0) {
+    await updateDoc(doc(db, 'characters', uid), update);
+  }
 }
 
 // One autosave cycle's worth of a 'disenchanting' activity (see

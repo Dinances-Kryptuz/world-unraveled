@@ -68,6 +68,16 @@ export interface CurrentActivity {
   // decrement, so two different rolls of the same base item are never
   // conflated (see firebase/enchanting.ts's applyDisenchantResult).
   disenchantInstanceId?: string;
+  // Tailoring overhaul's profession shirts — a SNAPSHOT of whichever shirt
+  // (if any) was equipped the moment this activity started (see
+  // firebase/character.ts's startActivity), read by every resolver
+  // instead of the character's current equipment.shirt. This is what makes
+  // "finish 8 offline hours, then swap shirts" not retroactively change
+  // the bonus already earned: the activity's own bonus is fixed for its
+  // entire duration, same posture as talents/buffs/equipment being
+  // snapshotted once at encounter/batch setup everywhere else in this
+  // codebase. Absent/null means no shirt was equipped when it started.
+  equippedShirtItemId?: string | null;
 }
 
 // A named snapshot of an equipped-ability loadout + its conditions (Phase 7)
@@ -142,12 +152,37 @@ export interface Character {
   // convention as materialMastery.
   herbalismZoneMastery?: ZoneMasteryState;
   alchemyZoneMastery?: ZoneMasteryState;
+  // Enchanting overhaul's Phase E7 scroll-crafting zone-Mastery — a THIRD,
+  // independent zone-Mastery axis (same ZoneMasteryState shape), distinct
+  // from the combined Wand/Staff/Book equipment-Mastery track
+  // (materialMastery, keyed by WOOD_MATERIALS id) per the design brief's
+  // explicit "separate scroll-crafting Mastery per zone" ask. Drives
+  // crafting-speed/material-preservation milestones only (gameData/
+  // enchantingMastery.ts) — never charges, never bonus output.
+  enchantingZoneMastery?: ZoneMasteryState;
   // Enchantment id per equipment slot — bound to the SLOT, not a unique item
   // instance (this engine doesn't instance equipment; see gameData/
   // enchanting.ts's doc comment for why). Re-enchanting a slot overwrites
   // whatever was there; unequipping does not clear it, matching "enchants
   // persist on the item" as closely as a non-instanced item model allows.
   enchantments: Partial<Record<EquipmentSlot, string>>;
+  // Enchanting overhaul's charge model — remaining charges for whichever
+  // enchant currently occupies that slot (enchantments[slot] above).
+  // Crafting/using an enchant scroll (firebase/enchanting.ts's
+  // useEnchantScroll) always SETS this to exactly 100, never increments or
+  // combines it with whatever was left on the enchant it replaces — "never
+  // refunding/combining" per the design brief. An offensive enchant loses 1
+  // charge per eligible outgoing attack regardless of whether its chance-
+  // based proc actually fires; a defensive enchant loses 1 only on a
+  // successful (non-avoided) incoming hit; a passive stat enchant loses 1
+  // per completed combat encounter (see combatEngine's kill-count-driven
+  // consumption, not per attack) — see gameData/enchanting.ts's
+  // EnchantDef.category. A slot present in `enchantments` but ABSENT here
+  // means "not yet migrated to the charge model" and is treated as still
+  // fully active (getEquipmentStatBonuses's "absence is the old/default
+  // state" convention) rather than silently losing its bonus; reaching 0
+  // (present, but zero) is what actually turns an enchant off.
+  enchantmentCharges: Partial<Record<EquipmentSlot, number>>;
   // Recipe ids learned via a 'recipe' item (Recipe.learnedAutomatically ===
   // false) — see firebase/professions.ts's learnRecipe. A recipe with
   // learnedAutomatically === true never appears here; meeting its

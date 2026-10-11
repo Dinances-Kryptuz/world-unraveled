@@ -122,6 +122,78 @@ export const ARMOR_STAT_RANGES: Record<string, { min: number; max: number }> = {
   emberscar_leather_boots: { min: 7, max: 10 },
   emberscar_leather_shoulders: { min: 6, max: 9 },
   emberscar_leather_belt: { min: 6, max: 9 },
+
+  // ── Tailoring (6 tiers × 6 armor pieces + 6 capes) — ranges copied 1:1
+  // from the Blacksmithing analog piece of the same tier (helm/chestplate/
+  // gauntlets/legplates/greaves; Shoulders AND Cape mirror Gauntlets').
+  tailored_linen_helm: { min: 2, max: 4 },
+  tailored_linen_robe: { min: 3, max: 5 },
+  tailored_linen_gloves: { min: 1, max: 3 },
+  tailored_linen_leggings: { min: 2, max: 5 },
+  tailored_linen_boots: { min: 1, max: 4 },
+  tailored_linen_shoulders: { min: 1, max: 3 },
+  wool_robe_helm: { min: 3, max: 5 },
+  wool_robe: { min: 4, max: 8 },
+  wool_gloves: { min: 2, max: 5 },
+  wool_leggings: { min: 4, max: 7 },
+  wool_boots: { min: 2, max: 5 },
+  wool_shoulders: { min: 2, max: 5 },
+  silk_robe_helm: { min: 4, max: 7 },
+  silk_robe: { min: 6, max: 10 },
+  silk_gloves: { min: 3, max: 6 },
+  silk_leggings: { min: 5, max: 9 },
+  silk_boots: { min: 4, max: 7 },
+  silk_shoulders: { min: 3, max: 6 },
+  mageweave_robe_helm: { min: 5, max: 9 },
+  mageweave_robe: { min: 8, max: 12 },
+  mageweave_gloves: { min: 4, max: 7 },
+  mageweave_leggings: { min: 7, max: 11 },
+  mageweave_boots: { min: 4, max: 8 },
+  mageweave_shoulders: { min: 4, max: 7 },
+  runecloth_robe_helm: { min: 7, max: 10 },
+  runecloth_robe: { min: 10, max: 14 },
+  runecloth_gloves: { min: 5, max: 8 },
+  runecloth_leggings: { min: 9, max: 13 },
+  runecloth_boots: { min: 5, max: 9 },
+  runecloth_shoulders: { min: 5, max: 8 },
+  ember_robe_helm: { min: 8, max: 12 },
+  ember_robe: { min: 12, max: 16 },
+  ember_gloves: { min: 6, max: 9 },
+  ember_leggings: { min: 10, max: 15 },
+  ember_boots: { min: 7, max: 10 },
+  ember_shoulders: { min: 6, max: 9 },
+  cape_of_linen: { min: 1, max: 3 },
+  cape_of_wool: { min: 2, max: 5 },
+  cape_of_silk: { min: 3, max: 6 },
+  cape_of_mageweave: { min: 4, max: 7 },
+  cape_of_runecloth: { min: 5, max: 8 },
+  cape_of_ember: { min: 6, max: 9 },
+
+  // ── Enchanting (6 zones x Wand/Staff/Book) — Wand/Book reuse the same
+  // "helm"-tier budget as Blacksmithing/Tailoring's own lightest accessory
+  // slot at each zone; Staff is roughly double both numbers, "a bigger
+  // stat budget to compensate for 2 slots" per the design brief (this
+  // engine has no actual 1h/2h slot exclusivity to compensate for — see
+  // types.ts's EquipmentSlot comment — so this is purely an itemization
+  // choice, not an engine rule).
+  rough_wand: { min: 2, max: 4 },
+  rough_staff: { min: 4, max: 8 },
+  rough_tome: { min: 2, max: 4 },
+  aged_wand: { min: 3, max: 5 },
+  aged_staff: { min: 6, max: 10 },
+  aged_tome: { min: 3, max: 5 },
+  heartwood_wand: { min: 4, max: 7 },
+  heartwood_staff: { min: 8, max: 14 },
+  heartwood_tome: { min: 4, max: 7 },
+  ironwood_wand: { min: 5, max: 9 },
+  ironwood_staff: { min: 10, max: 18 },
+  ironwood_tome: { min: 5, max: 9 },
+  charwood_wand: { min: 7, max: 10 },
+  charwood_staff: { min: 14, max: 20 },
+  charwood_tome: { min: 7, max: 10 },
+  emberwood_wand: { min: 8, max: 12 },
+  emberwood_staff: { min: 16, max: 24 },
+  emberwood_tome: { min: 8, max: 12 },
 };
 
 // Mastery XP = (bars the recipe originally requires) × this constant —
@@ -164,6 +236,23 @@ export const MATERIAL_MASTERY_XP_THRESHOLDS: Record<string, number> = {
   thick_leather: 141922,
   rugged_leather: 139083,
   emberscar_leather: 129984,
+  // Tailoring's 6 tiers reuse the exact same craftSeconds/best-recipe-bar-
+  // count trick as Leatherworking above — same 6 Blacksmithing values.
+  linen_cloth: 173854,
+  wool_cloth: 163627,
+  silk_cloth: 144878,
+  mageweave_cloth: 141922,
+  runecloth: 139083,
+  ember_cloth: 129984,
+  // Enchanting's 6 zones reuse the exact same craftSeconds/best-recipe-bar-
+  // count trick as Leatherworking/Tailoring above — same 6 Blacksmithing
+  // values, now covering the ONE combined Wand/Staff/Book track per zone.
+  simple_wood: 173854,
+  star_wood: 163627,
+  mystic_wood: 144878,
+  enchanted_hardwood: 141922,
+  ancient_runewood: 139083,
+  emberheart_wood: 129984,
 };
 
 // A material with no recipe tagged to it (shouldn't happen for any

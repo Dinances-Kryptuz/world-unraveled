@@ -5,11 +5,12 @@ import { ALL_PROFESSION_IDS } from './professionTiers';
 import { COMPANIONS } from './companions';
 import { DUNGEONS } from './dungeons';
 import { MAX_CHARACTER_SLOTS } from './characterSlots';
-import { MATERIALS, LEATHER_MATERIALS } from './materials';
+import { MATERIALS, LEATHER_MATERIALS, CLOTH_MATERIALS, WOOD_MATERIALS } from './materials';
 import { MATERIAL_MASTERY_XP_THRESHOLDS } from './equipmentRolls';
 import { ZONES } from './zones';
 import { HERBALISM_ZONE_MASTERY_THRESHOLD } from './gatheringEngine';
 import { ALCHEMY_ZONE_MASTERY_THRESHOLD } from './alchemyMastery';
+import { ENCHANTING_ZONE_MASTERY_THRESHOLD } from './enchantingMastery';
 
 // Snapshot-checked, not event-driven: each check() reads CURRENT persisted
 // state and either is or isn't true right now. "Unlocked" is still
@@ -91,6 +92,45 @@ const MASTER_LEATHERWORKER_ACHIEVEMENT: AchievementDef = {
   check: (c) => LEATHER_MATERIALS.every((m) => isMaterialMastered(c, m.id)),
 };
 
+// Mirrors generateLeatherMasteryAchievements/MASTER_LEATHERWORKER_ACHIEVEMENT
+// exactly, over CLOTH_MATERIALS instead of LEATHER_MATERIALS — same
+// isMaterialMastered check (MATERIAL_MASTERY_XP_THRESHOLDS already has
+// entries for all 6 cloth materialIds, see equipmentRolls.ts).
+function generateClothMasteryAchievements(): AchievementDef[] {
+  return CLOTH_MATERIALS.map((material) => ({
+    id: `mastery_${material.id}`,
+    name: `Master of ${material.name}`,
+    description: `Reach 100% ${material.name} Mastery.`,
+    check: (c: Character) => isMaterialMastered(c, material.id),
+  }));
+}
+
+const MASTER_TAILOR_ACHIEVEMENT: AchievementDef = {
+  id: 'master_tailor',
+  name: 'Master Tailor',
+  description: 'Reach 100% Mastery in every Tailoring material.',
+  check: (c) => CLOTH_MATERIALS.every((m) => isMaterialMastered(c, m.id)),
+};
+
+// Mirrors generateClothMasteryAchievements/MASTER_TAILOR_ACHIEVEMENT
+// exactly, over WOOD_MATERIALS — Enchanting's combined Wand/Staff/Book
+// equipment-Mastery track (one per zone, not per piece).
+function generateWoodMasteryAchievements(): AchievementDef[] {
+  return WOOD_MATERIALS.map((material) => ({
+    id: `mastery_${material.id}`,
+    name: `Master of ${material.name}`,
+    description: `Reach 100% ${material.name} Mastery.`,
+    check: (c: Character) => isMaterialMastered(c, material.id),
+  }));
+}
+
+const MASTER_ENCHANTER_EQUIPMENT_ACHIEVEMENT: AchievementDef = {
+  id: 'master_enchanter_armaments',
+  name: 'Master of Armaments',
+  description: 'Reach 100% Mastery in every Enchanting equipment material.',
+  check: (c) => WOOD_MATERIALS.every((m) => isMaterialMastered(c, m.id)),
+};
+
 export function isHerbalismZoneMastered(character: Character, zoneId: string): boolean {
   const xp = character.herbalismZoneMastery?.[zoneId]?.xp ?? 0;
   return xp >= HERBALISM_ZONE_MASTERY_THRESHOLD;
@@ -99,6 +139,15 @@ export function isHerbalismZoneMastered(character: Character, zoneId: string): b
 export function isAlchemyZoneMastered(character: Character, zoneId: string): boolean {
   const xp = character.alchemyZoneMastery?.[zoneId]?.xp ?? 0;
   return xp >= ALCHEMY_ZONE_MASTERY_THRESHOLD;
+}
+
+// Enchanting overhaul's Phase E7 scroll-crafting zone-Mastery — separate
+// from isMaterialMastered/MASTER_ENCHANTER_EQUIPMENT_ACHIEVEMENT above
+// (the combined Wand/Staff/Book equipment track), per the design brief's
+// explicit "separate scroll-crafting Mastery per zone" ask.
+export function isEnchantingZoneMastered(character: Character, zoneId: string): boolean {
+  const xp = character.enchantingZoneMastery?.[zoneId]?.xp ?? 0;
+  return xp >= ENCHANTING_ZONE_MASTERY_THRESHOLD;
 }
 
 // One "Master Forager of {zone.name}" achievement per gameData/zones.ts
@@ -137,15 +186,40 @@ const GRANDMASTER_ALCHEMIST_ACHIEVEMENT: AchievementDef = {
   check: (c) => Object.values(ZONES).every((z) => isAlchemyZoneMastered(c, z.id)),
 };
 
+// Enchanting overhaul's Phase E7 scroll-crafting zone-Mastery — "Enchanter"
+// (not "Alchemist"/"Blacksmith") to read distinctly from the equipment-side
+// MASTER_ENCHANTER_EQUIPMENT_ACHIEVEMENT ("Master of Armaments") above.
+function generateEnchanterAchievements(): AchievementDef[] {
+  return Object.values(ZONES).map((zone) => ({
+    id: `enchanter_${zone.id}`,
+    name: `Master Enchanter of ${zone.name}`,
+    description: `Reach 100% scroll-crafting Mastery in ${zone.name}.`,
+    check: (c: Character) => isEnchantingZoneMastered(c, zone.id),
+  }));
+}
+
+const GRANDMASTER_ENCHANTER_ACHIEVEMENT: AchievementDef = {
+  id: 'grandmaster_enchanter',
+  name: 'Grandmaster Enchanter',
+  description: 'Reach 100% scroll-crafting Mastery in every zone.',
+  check: (c) => Object.values(ZONES).every((z) => isEnchantingZoneMastered(c, z.id)),
+};
+
 export const ACHIEVEMENTS: AchievementDef[] = [
   ...generateMasteryAchievements(),
   MASTER_BLACKSMITH_ACHIEVEMENT,
   ...generateLeatherMasteryAchievements(),
   MASTER_LEATHERWORKER_ACHIEVEMENT,
+  ...generateClothMasteryAchievements(),
+  MASTER_TAILOR_ACHIEVEMENT,
+  ...generateWoodMasteryAchievements(),
+  MASTER_ENCHANTER_EQUIPMENT_ACHIEVEMENT,
   ...generateForagerAchievements(),
   GRANDMASTER_FORAGER_ACHIEVEMENT,
   ...generateAlchemistAchievements(),
   GRANDMASTER_ALCHEMIST_ACHIEVEMENT,
+  ...generateEnchanterAchievements(),
+  GRANDMASTER_ENCHANTER_ACHIEVEMENT,
   { id: 'first_steps', name: 'First Steps', description: 'Reach character level 5.', check: (c) => c.level >= 5 },
   { id: 'adventurer', name: 'Adventurer', description: 'Reach character level 25.', check: (c) => c.level >= 25 },
   { id: 'veteran', name: 'Veteran', description: 'Reach character level 40.', check: (c) => c.level >= 40 },

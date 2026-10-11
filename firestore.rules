@@ -195,6 +195,7 @@ service cloud.firestore {
       && isValidEquipment(after.equipment)
       && isValidProfessions(after.professions)
       && isValidEnchantments(after)
+      && isValidEnchantmentCharges(after)
       && isValidLearnedRecipeIds(after)
       && isValidBagSlots(after)
       && isValidBankSlots(after)
@@ -218,6 +219,7 @@ service cloud.firestore {
       && isValidMaterialMastery(after)
       && isValidHerbalismZoneMastery(after)
       && isValidAlchemyZoneMastery(after)
+      && isValidEnchantingZoneMastery(after)
       && isValidConsumableAutomation(after)
       && isValidUnlockedTitleIds(after)
       && isValidEquippedTitleId(after)
@@ -276,6 +278,15 @@ service cloud.firestore {
   // that writes this field.
   function isValidAlchemyZoneMastery(after) {
     return !('alchemyZoneMastery' in after) || (after.alchemyZoneMastery is map && after.alchemyZoneMastery.size() <= 6);
+  }
+
+  // Enchanting overhaul's Phase E7 scroll-crafting zone-Mastery — same
+  // shape-only treatment, a THIRD independent 6-zone-bar axis (distinct
+  // from materialMastery's WOOD_MATERIALS-keyed equipment track). Full
+  // validation happens in firebase/character.ts's
+  // applyCraftingProfessionResult, the only path that writes this field.
+  function isValidEnchantingZoneMastery(after) {
+    return !('enchantingZoneMastery' in after) || (after.enchantingZoneMastery is map && after.enchantingZoneMastery.size() <= 6);
   }
 
   // Herbalism/Alchemy overhaul's Part 8 automation settings — a player-
@@ -407,6 +418,14 @@ service cloud.firestore {
   // write these fields.
   function isValidEnchantments(after) {
     return !('enchantments' in after) || (after.enchantments is map && after.enchantments.size() <= 8);
+  }
+
+  // Enchanting overhaul's charge model — same ownership-scoped posture as
+  // isValidEnchantments above (full validation of "always exactly 100 on
+  // use, never more" happens in firebase/enchanting.ts, the only path that
+  // writes this field).
+  function isValidEnchantmentCharges(after) {
+    return !('enchantmentCharges' in after) || (after.enchantmentCharges is map && after.enchantmentCharges.size() <= 8);
   }
 
   function isValidLearnedRecipeIds(after) {
@@ -600,6 +619,7 @@ service cloud.firestore {
       && (a.targetId == null || a.targetId is string)
       && (a.zoneId == null || a.zoneId is string)
       && (a.startedAt == null || a.startedAt is timestamp)
-      && (!('disenchantQuantity' in a) || a.disenchantQuantity is int);
+      && (!('disenchantQuantity' in a) || a.disenchantQuantity is int)
+      && (!('equippedShirtItemId' in a) || a.equippedShirtItemId == null || a.equippedShirtItemId is string);
   }
 }

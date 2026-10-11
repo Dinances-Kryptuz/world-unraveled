@@ -10,11 +10,11 @@ import { craftingColorTier, CRAFTING_COLOR_XP_PCT } from '../../gameData/craftin
 import { canUseRecipe } from '../../firebase/professions';
 import { useEnchantScroll, removeEnchant } from '../../firebase/enchanting';
 import { subscribeToInventory } from '../../firebase/inventory';
-import { ENCHANTS, isDisenchantable, disenchantRequiredSkill, disenchantTier } from '../../gameData/enchanting';
+import { ENCHANTS, isDisenchantable, disenchantRequiredSkill, disenchantYieldRange } from '../../gameData/enchanting';
 import { ITEMS } from '../../gameData/items';
 import { equippedItemId } from '../../gameData/equipmentStats';
 import { describeItemStats } from '../../gameData/equipmentStats';
-import { MATERIALS, LEATHER_MATERIALS, type MaterialDef } from '../../gameData/materials';
+import { MATERIALS, LEATHER_MATERIALS, CLOTH_MATERIALS, WOOD_MATERIALS, type MaterialDef } from '../../gameData/materials';
 import {
   materialMasteryPercent,
   materialMasterySpeedMultiplier,
@@ -30,7 +30,7 @@ import type { Inventory } from '../../types/character';
 // The 6 equipment slots any enchant actually targets (ENCHANTS' own slot
 // values — see gameData/enchanting.ts) in a sensible display order, used by
 // the Active Enchants list.
-const ENCHANT_SLOTS: EquipmentSlot[] = ['weapon', 'chest', 'gloves', 'legs', 'boots', 'ring'];
+const ENCHANT_SLOTS: EquipmentSlot[] = ['weapon', 'chest', 'bracers', 'gloves', 'legs', 'boots', 'ring', 'cape'];
 
 // Smithing's full-armor recipe ids are prefixed by their metal/jewelry tier
 // (see recipes.ts's Recipe.materialId and items.ts's generated Blacksmithing
@@ -72,6 +72,53 @@ const LEATHERWORKING_TIER_LABELS: Record<string, string> = {
   emberscar_leather: 'Emberscar Leather',
 };
 
+// Same grouping pattern again for Tailoring's own 84-recipe buildout (36
+// cloth armor + 6 capes + 42 shirts) — the armor/shirt recipe ids are
+// prefixed by the cloth tier's own slug (tailored_linen_helm,
+// wool_shirt_of_mastery, etc.), close to but not identical to
+// CLOTH_MATERIALS' own ids (runecloth/ember_cloth vs. this slug's
+// runecloth/ember — see materials.ts's doc comment on why item/recipe-id
+// prefixes and Mastery material ids are independent namespaces). Capes
+// (cape_of_linen, etc.) and the 4 bag recipes don't match any tier prefix
+// and fall into the existing "Other" bucket, same as Smithing's repair
+// recipes.
+const TAILORING_TIER_ORDER = ['tailored_linen', 'wool', 'silk', 'mageweave', 'runecloth', 'ember'];
+const TAILORING_TIER_LABELS: Record<string, string> = {
+  tailored_linen: 'Linen',
+  wool: 'Wool',
+  silk: 'Silk',
+  mageweave: 'Mageweave',
+  runecloth: 'Runecloth',
+  ember: 'Ember',
+};
+
+// Enchanting overhaul's Wand/Staff/Book buildout (6 zones x 3 types) — same
+// grouping pattern again, this time scoped to JUST those 18 recipes (see
+// renderEnchantingPanel's own recipesForProfession.filter) so scroll_*
+// recipes stay in their own separate "Craft Scrolls" list instead of
+// landing in an "Other" bucket here.
+const ENCHANTING_EQUIPMENT_TIER_ORDER = ['rough', 'aged', 'heartwood', 'ironwood', 'charwood', 'emberwood'];
+const ENCHANTING_EQUIPMENT_TIER_LABELS: Record<string, string> = {
+  rough: 'Rough',
+  aged: 'Aged',
+  heartwood: 'Heartwood',
+  ironwood: 'Ironwood',
+  charwood: 'Charwood',
+  emberwood: 'Emberwood',
+};
+// The combined Wand/Staff/Book Mastery track's bar label per the design
+// brief's explicit naming ask — distinct from the material's own "Master
+// of {name}" title/achievement wording (renderMaterialMasteryPanel's
+// labelOverride only touches the bar header, nothing else).
+const ENCHANTING_ARMAMENTS_LABELS: Record<string, string> = {
+  simple_wood: 'Enchanted Armaments I',
+  star_wood: 'Enchanted Armaments II',
+  mystic_wood: 'Enchanted Armaments III',
+  enchanted_hardwood: 'Enchanted Armaments IV',
+  ancient_runewood: 'Enchanted Armaments V',
+  emberheart_wood: 'Ember Armaments',
+};
+
 // A single profession's own page — one per sidebar nav item (see
 // Sidebar.tsx), replacing the old three-category pages (Gathering/Fishing/
 // Crafting) that stacked every known crafting profession's full recipe list
@@ -103,19 +150,34 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
 
   async function handleGather(nodeId: string) {
     if (!user) return;
-    await startActivity(user.uid, { type: 'gathering', targetId: nodeId, zoneId: zone.id });
+    await startActivity(user.uid, {
+      type: 'gathering',
+      targetId: nodeId,
+      zoneId: zone.id,
+      equippedShirtItemId: equippedItemId(character?.equipment.shirt),
+    });
     await refetch();
   }
 
   async function handleFish(holeId: string) {
     if (!user) return;
-    await startActivity(user.uid, { type: 'fishing', targetId: holeId, zoneId: zone.id });
+    await startActivity(user.uid, {
+      type: 'fishing',
+      targetId: holeId,
+      zoneId: zone.id,
+      equippedShirtItemId: equippedItemId(character?.equipment.shirt),
+    });
     await refetch();
   }
 
   async function handleCraft(recipeId: string) {
     if (!user) return;
-    await startActivity(user.uid, { type: 'crafting', targetId: recipeId, zoneId });
+    await startActivity(user.uid, {
+      type: 'crafting',
+      targetId: recipeId,
+      zoneId,
+      equippedShirtItemId: equippedItemId(character?.equipment.shirt),
+    });
     await refetch();
   }
 
@@ -133,7 +195,14 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
 
   async function handleStartDisenchanting(itemId: string, quantity: number, instanceId?: string) {
     if (!user) return;
-    await startActivity(user.uid, { type: 'disenchanting', targetId: itemId, zoneId, quantity, instanceId });
+    await startActivity(user.uid, {
+      type: 'disenchanting',
+      targetId: itemId,
+      zoneId,
+      quantity,
+      instanceId,
+      equippedShirtItemId: equippedItemId(character?.equipment.shirt),
+    });
     await refetch();
   }
 
@@ -210,10 +279,14 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
   // Generalized (tierOrder/tierLabels params) so Leatherworking's own
   // 42-recipe, 6-tier buildout reuses the exact same grouping — see the
   // professionId === 'leatherworking' dispatch below.
-  function renderGroupedRecipesByTier(tierOrder: string[], tierLabels: Record<string, string>) {
+  function renderGroupedRecipesByTier(
+    tierOrder: string[],
+    tierLabels: Record<string, string>,
+    recipesToGroup: typeof recipesForProfession = recipesForProfession
+  ) {
     const grouped = new Map<string, typeof recipesForProfession>();
     const ungrouped: typeof recipesForProfession = [];
-    for (const recipe of recipesForProfession) {
+    for (const recipe of recipesToGroup) {
       const slug = tierOrder.find((s) => {
         const stripped = recipe.id.startsWith('sacred_') ? recipe.id.slice('sacred_'.length) : recipe.id;
         return stripped.startsWith(`${s}_`);
@@ -251,7 +324,7 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
   // Generalized (registry param) so Leatherworking's LEATHER_MATERIALS
   // reuses the exact same panel as Blacksmithing's MATERIALS — see the
   // professionId === 'leatherworking' dispatch below.
-  function renderMaterialMasteryPanel(registry: MaterialDef[]) {
+  function renderMaterialMasteryPanel(registry: MaterialDef[], labelOverride?: Record<string, string>) {
     return (
       <details open>
         <summary>Material Mastery</summary>
@@ -264,9 +337,10 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
             const bonusOutput = materialMasteryBonusChance(pct) * 100;
             const achievementId = `mastery_${material.id}`;
             const achieved = char.unlockedAchievementIds.includes(achievementId);
+            const barLabel = labelOverride?.[material.id] ?? `${material.name} Mastery`;
             return (
               <li key={material.id}>
-                <strong>{material.name} Mastery — {pct.toFixed(1)}%</strong>
+                <strong>{barLabel} — {pct.toFixed(1)}%</strong>
                 <div className="profession-xp-bar-track">
                   <div className="profession-xp-bar-fill" style={{ width: `${pct}%` }} />
                 </div>
@@ -314,10 +388,19 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
         .map(([instanceId, inst]) => ({ itemId: inst.itemId, quantity: inst.quantity, instanceId, rolls: inst.rolls })),
     ].sort((a, b) => (ITEMS[a.itemId]?.name ?? a.itemId).localeCompare(ITEMS[b.itemId]?.name ?? b.itemId));
 
+    const equipmentRecipes = recipesForProfession.filter((r) =>
+      ENCHANTING_EQUIPMENT_TIER_ORDER.some((s) => r.id.startsWith(`${s}_`))
+    );
+    const scrollRecipes = recipesForProfession.filter((r) => !equipmentRecipes.includes(r));
+
     return (
       <>
+        <h3>Craft Equipment</h3>
+        {renderGroupedRecipesByTier(ENCHANTING_EQUIPMENT_TIER_ORDER, ENCHANTING_EQUIPMENT_TIER_LABELS, equipmentRecipes)}
+        {renderMaterialMasteryPanel(WOOD_MATERIALS, ENCHANTING_ARMAMENTS_LABELS)}
+
         <h3>Craft Scrolls</h3>
-        {renderRecipeList()}
+        {renderRecipeList(scrollRecipes)}
 
         <h3>Use Scroll</h3>
         {scrollEntries.length === 0 ? (
@@ -351,9 +434,13 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
             const enchant = ENCHANTS[char.enchantments[slot]!];
             const equippedSlotItemId = equippedItemId(char.equipment[slot]);
             const equippedItem = equippedSlotItemId ? ITEMS[equippedSlotItemId] : null;
+            // Absent (not yet migrated to the charge model) reads as "still
+            // active" — see getEquipmentStatBonuses's matching doc comment.
+            const charges = char.enchantmentCharges?.[slot];
             return (
               <li key={slot}>
                 {slot} ({equippedItem ? equippedItem.name : 'empty'}): <em>{enchant.name}</em> ({enchant.description})
+                {charges !== undefined ? ` — ${charges} charges left` : ''}
                 <button onClick={() => handleRemoveEnchant(slot)}>Remove Enchant</button>
               </li>
             );
@@ -390,7 +477,7 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
                   <button
                     onClick={() => handleStartDisenchanting(itemId, qty, instanceId)}
                     disabled={!meetsSkill}
-                    title={`Disenchants into ${disenchantTier(item)} (requires Enchanting ${requiredSkill})`}
+                    title={`Disenchants into ${ITEMS[disenchantYieldRange(item).itemId]?.name ?? 'materials'} (requires Enchanting ${requiredSkill})`}
                   >
                     {meetsSkill ? `Disenchant ${qty}` : `Needs skill ${requiredSkill}`}
                   </button>
@@ -524,6 +611,11 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
               <>
                 {renderGroupedRecipesByTier(LEATHERWORKING_TIER_ORDER, LEATHERWORKING_TIER_LABELS)}
                 {renderMaterialMasteryPanel(LEATHER_MATERIALS)}
+              </>
+            ) : professionId === 'tailoring' ? (
+              <>
+                {renderGroupedRecipesByTier(TAILORING_TIER_ORDER, TAILORING_TIER_LABELS)}
+                {renderMaterialMasteryPanel(CLOTH_MATERIALS)}
               </>
             ) : (
               renderRecipeList()

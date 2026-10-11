@@ -13,6 +13,7 @@ import { resolveSpecDef } from '../gameData/combatProfileWithTalents';
 import { MonsterLootPanel } from './MonsterLootPanel';
 import { MonsterLevelBadge, CombatTypeBadge } from './MonsterLevelBadge';
 import { COMBAT_TYPE_ICONS, COMBAT_TYPE_LABELS } from '../gameData/combatTriangle';
+import { equippedItemId } from '../gameData/equipmentStats';
 
 // The Adventure page: explore the current zone (picked in TopBar, visible
 // from every page — see App.tsx), fight its monsters, and enter its
@@ -35,7 +36,12 @@ export function ZoneScreen({
 
   async function handleFight(monsterId: string) {
     if (!user) return;
-    await startActivity(user.uid, { type: 'combat', targetId: monsterId, zoneId: zone.id });
+    await startActivity(user.uid, {
+      type: 'combat',
+      targetId: monsterId,
+      zoneId: zone.id,
+      equippedShirtItemId: equippedItemId(character?.equipment.shirt),
+    });
     await refetch();
   }
 

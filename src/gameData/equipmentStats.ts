@@ -87,9 +87,19 @@ export function describeItemStats(item: ItemDef): string {
 // gameData/types.ts for why this function doesn't need inventory access to
 // resolve them); everything else falls back to its static
 // ITEMS[itemId].statBonuses exactly as before this field existed.
+// enchantmentCharges (Enchanting overhaul's charge model) is read here too
+// so an enchant that's run out (0 remaining) stops contributing its stat
+// bonus — exactly as if it were removed — without the caller needing its
+// own charge-gating logic. Absence of an entry for a slot that DOES have
+// an active enchant means "not yet migrated to the charge model" and is
+// treated as still active (same "absence is the old/default state"
+// convention as every other optional field in this codebase), so this is
+// purely additive: a character record with no enchantmentCharges at all
+// behaves exactly as before this field existed.
 export function getEquipmentStatBonuses(
   equipment: Record<EquipmentSlot, EquippedItemRef | null>,
-  enchantments: Partial<Record<EquipmentSlot, string>> = {}
+  enchantments: Partial<Record<EquipmentSlot, string>> = {},
+  enchantmentCharges: Partial<Record<EquipmentSlot, number>> = {}
 ): Partial<Record<BaseStat, number>> {
   const totals: Partial<Record<BaseStat, number>> = {};
   const addBonuses = (bonuses: Partial<Record<BaseStat, number>> | undefined) => {
@@ -103,8 +113,9 @@ export function getEquipmentStatBonuses(
     if (!ref) continue;
     addBonuses(ref.rolls ?? ITEMS[ref.itemId]?.statBonuses);
   }
-  for (const enchantId of Object.values(enchantments)) {
+  for (const [slot, enchantId] of Object.entries(enchantments) as [EquipmentSlot, string | undefined][]) {
     if (!enchantId) continue;
+    if (enchantmentCharges[slot] === 0) continue;
     addBonuses(ENCHANTS[enchantId]?.statBonuses);
   }
   return totals;

@@ -46,6 +46,12 @@ import {
   alchemyZoneMasteryXpToNextMilestone,
   alchemyMasteryMilestone,
 } from './alchemyMastery';
+import {
+  ENCHANTING_ZONE_MASTERY_XP_PER_SCROLL,
+  enchantingZoneMasteryPercent,
+  enchantingZoneMasteryXpToNextMilestone,
+  enchantingMasteryMilestone,
+} from './enchantingMastery';
 
 export const CRAFTING_LEVEL_CAP = GATHERING_LEVEL_CAP; // 100, same cap, same curve
 export const craftingXpForNextLevel = gatheringXpForNextLevel;
@@ -78,6 +84,19 @@ export function craftingMasteryIngredientSaveChance(masteryLevel: number): numbe
 // Belt-and-suspenders only, same role as gatheringEngine.ts's own
 // MAX_BATCH_ITERATIONS.
 const MAX_BATCH_ITERATIONS = 2000;
+
+// Mirrors gatheringEngine.ts's GatheringShirtBonuses — the Tailoring
+// profession-shirt snapshot's crafting-side fields. materialPreservePct
+// (Shirt of Preservation) is additive on top of whichever ingredient-save
+// source is already active (including 0, for a materialId/alchemyZoneId
+// recipe where the per-recipe-Mastery save chance is itself always 0) —
+// it's a distinct bonus source, not a replacement for the Mastery one.
+export interface CraftingShirtBonuses {
+  craftingSpeedPct?: number; // Shirt of the Artisan
+  professionXpPct?: number; // Shirt of Learning
+  masteryXpPct?: number; // Shirt of Mastery
+  materialPreservePct?: number; // Shirt of Preservation
+}
 
 // ── Timed crafting (Smithing, Tailoring, Leatherworking, Alchemy, Cooking) ──
 
@@ -138,6 +157,12 @@ export interface CraftingOfflineResult {
   // materialMasteryBatches, just steppped by milestone tier instead of by
   // percent point.
   alchemyZoneMasteryBatches?: { quantity: number; chargesAtCraft: number }[];
+  // Only populated when resolveCraftingOffline is called with
+  // `enchantingZoneMastery` (an enchantingZoneId-tagged scroll recipe) —
+  // same role as alchemyZoneMasteryXpGained/finalAlchemyZoneMasteryXp
+  // above, for Enchanting's own separate scroll-crafting zone-Mastery axis.
+  enchantingZoneMasteryXpGained?: number;
+  finalEnchantingZoneMasteryXp?: number;
 }
 
 // Passed to resolveCraftingOffline only for a Recipe.materialId-tagged
@@ -172,6 +197,16 @@ export interface AlchemyZoneMasteryInput {
   unitsInOwnZonePerCraft: number;
 }
 
+// Passed to resolveCraftingOffline only for an enchantingZoneId-tagged
+// recipe (every Phase E6 scroll recipe) — governs this recipe's OWN
+// craft-time reduction and material-preservation (ingredient-save) chance
+// from its zone's current scroll-crafting Mastery %. No per-ingredient-unit
+// split needed (unlike AlchemyZoneMasteryInput) since no scroll recipe
+// spans two zones — see gameData/enchantingMastery.ts's module comment.
+export interface EnchantingZoneMasteryInput {
+  startingXp: number;
+}
+
 // Always the OFFLINE/batched resolver, even for a single ~20s autosave
 // chunk — same convention gatheringEngine.ts's resolveGatheringOffline
 // established (a small chunk just means the batch loop runs once or
@@ -190,7 +225,9 @@ export function resolveCraftingOffline(
   availableMaterialQuantities: Record<string, number>,
   availableGold = Infinity,
   materialMastery?: MaterialMasteryInput,
-  alchemyZoneMastery?: AlchemyZoneMasteryInput
+  alchemyZoneMastery?: AlchemyZoneMasteryInput,
+  craftingShirtBonuses?: CraftingShirtBonuses,
+  enchantingZoneMastery?: EnchantingZoneMasteryInput
 ): CraftingOfflineResult {
   const progress = resolveElapsedProgress(startedAt, now);
   let remainingSeconds = progress.effectiveHours * 3600;
@@ -207,6 +244,7 @@ export function resolveCraftingOffline(
   let masteryXp = startingMasteryXp;
   let materialXp = materialMastery?.startingXp ?? 0;
   let zoneXp = alchemyZoneMastery?.startingXp ?? 0;
+  let enchantZoneXp = enchantingZoneMastery?.startingXp ?? 0;
   const startColorTier = craftingColorTier(skill, recipe.requiredSkill);
   const bankedCap = craftingBankedXpCapAt(skillCap);
 
@@ -220,6 +258,7 @@ export function resolveCraftingOffline(
   const materialMasteryBatches: { quantity: number; masteryPercentAtCraft: number }[] = [];
   let alchemyZoneMasteryXpGained = 0;
   const alchemyZoneMasteryBatches: { quantity: number; chargesAtCraft: number }[] = [];
+  let enchantingZoneMasteryXpGained = 0;
   let iterations = 0;
   let stoppedForMaterials = false;
 
@@ -228,12 +267,17 @@ export function resolveCraftingOffline(
     const materialPercent = materialMastery ? materialMasteryPercent(materialXp, materialMastery.materialId) : 0;
     const zonePercent = alchemyZoneMastery ? alchemyZoneMasteryPercent(zoneXp) : 0;
     const zoneMilestone = alchemyZoneMastery ? alchemyMasteryMilestone(zonePercent) : undefined;
+    const enchantZonePercent = enchantingZoneMastery ? enchantingZoneMasteryPercent(enchantZoneXp) : 0;
+    const enchantZoneMilestone = enchantingZoneMastery ? enchantingMasteryMilestone(enchantZonePercent) : undefined;
     const speedMult = materialMastery
       ? materialMasterySpeedMultiplier(materialPercent)
       : craftingMasterySpeedMultiplier(masteryLevel);
-    const craftSeconds = zoneMilestone
+    const craftSecondsBeforeShirt = zoneMilestone
       ? recipe.craftSeconds * (1 - zoneMilestone.craftTimeReductionPct / 100)
-      : recipe.craftSeconds / speedMult;
+      : enchantZoneMilestone
+        ? recipe.craftSeconds * (1 - enchantZoneMilestone.craftTimeReductionPct / 100)
+        : recipe.craftSeconds / speedMult;
+    const craftSeconds = craftSecondsBeforeShirt / (1 + (craftingShirtBonuses?.craftingSpeedPct ?? 0) / 100);
     const timeLimitedCrafts = Math.floor(remainingSeconds / craftSeconds);
     // Availability is checked against the FULL material cost (ignoring the
     // save chance) — understating how many crafts are affordable is safe;
@@ -256,17 +300,20 @@ export function resolveCraftingOffline(
     const tier = craftingColorTier(skill, recipe.requiredSkill);
     const xpPct = CRAFTING_COLOR_XP_PCT[tier];
     // Never zero — same "even Gray still teaches something" floor as gathering.
-    const xpPerCraft = Math.max(1, Math.round(recipe.baseXp * xpPct));
+    const xpPerCraft =
+      Math.max(1, Math.round(recipe.baseXp * xpPct)) * (1 + (craftingShirtBonuses?.professionXpPct ?? 0) / 100);
     // Mastery XP per craft: bars-based for a materialId-tagged recipe (per
     // the recipe's ORIGINAL material requirement, unaffected by saveChance
     // below), else the old recipe.baseXp-based figure, unchanged.
-    const masteryXpPerCraft = materialMastery ? materialMastery.barsPerCraft * MASTERY_XP_PER_BAR : recipe.baseXp;
+    const masteryXpPerCraft =
+      (materialMastery ? materialMastery.barsPerCraft * MASTERY_XP_PER_BAR : recipe.baseXp) *
+      (1 + (craftingShirtBonuses?.masteryXpPct ?? 0) / 100);
 
     const skillXpRoom = belowCap ? craftingXpForNextLevel(skill) - skillXp : bankedCap - skillXp;
     const craftsToSkillCapOrLevel =
       belowCap || bankNotFull ? Math.max(1, Math.ceil(skillXpRoom / xpPerCraft)) : Infinity;
     const craftsToMasteryUp =
-      !materialMastery && !alchemyZoneMastery && masteryLevel < RECIPE_MASTERY_MAX_LEVEL
+      !materialMastery && !alchemyZoneMastery && !enchantingZoneMastery && masteryLevel < RECIPE_MASTERY_MAX_LEVEL
         ? Math.max(1, Math.ceil((recipeMasteryXpForNextLevel(masteryLevel) - masteryXp) / masteryXpPerCraft))
         : Infinity;
     // Caps each iteration so material-Mastery percent moves at most ~1 point
@@ -281,8 +328,20 @@ export function resolveCraftingOffline(
     // tier change is never applied retroactively to items already crafted
     // earlier in a long offline window.
     const zoneXpPerCraft = alchemyZoneMastery
-      ? alchemyZoneMastery.unitsInOwnZonePerCraft * ALCHEMY_ZONE_MASTERY_XP_PER_HERB_UNIT
+      ? alchemyZoneMastery.unitsInOwnZonePerCraft *
+        ALCHEMY_ZONE_MASTERY_XP_PER_HERB_UNIT *
+        (1 + (craftingShirtBonuses?.masteryXpPct ?? 0) / 100)
       : 0;
+    // Enchanting's own zone-Mastery axis — flat XP per craft (no per-
+    // ingredient-unit split, see EnchantingZoneMasteryInput's doc comment),
+    // stepped by milestone tier same as Alchemy zone Mastery above.
+    const enchantZoneXpPerCraft = enchantingZoneMastery
+      ? ENCHANTING_ZONE_MASTERY_XP_PER_SCROLL * (1 + (craftingShirtBonuses?.masteryXpPct ?? 0) / 100)
+      : 0;
+    const craftsToNextEnchantMilestone =
+      enchantingZoneMastery && enchantZoneXpPerCraft > 0
+        ? Math.max(1, Math.ceil(enchantingZoneMasteryXpToNextMilestone(enchantZoneXp) / enchantZoneXpPerCraft))
+        : Infinity;
     const craftsToNextMilestone =
       alchemyZoneMastery && zoneXpPerCraft > 0
         ? Math.max(1, Math.ceil(alchemyZoneMasteryXpToNextMilestone(zoneXp) / zoneXpPerCraft))
@@ -293,16 +352,29 @@ export function resolveCraftingOffline(
       craftsToSkillCapOrLevel,
       craftsToMasteryUp,
       craftsToNextMasteryPercentPoint,
-      craftsToNextMilestone
+      craftsToNextMilestone,
+      craftsToNextEnchantMilestone
     );
     const bonusChance = materialMastery
       ? materialMasteryBonusChance(materialPercent)
-      : alchemyZoneMastery
-        ? 0 // Alchemy zone Mastery's 3 bonuses are charges/speed only — no bonus-output chance in this design.
+      : alchemyZoneMastery || enchantingZoneMastery
+        ? 0 // Zone-Mastery axes' bonuses are charges/speed/preserve only — never bonus output.
         : craftingMasteryBonusChance(masteryLevel);
     // Ingredient-save is strictly a per-recipe-Mastery bonus — 0 whenever
-    // EITHER new Mastery axis is active (neither design includes it).
-    const saveChance = materialMastery || alchemyZoneMastery ? 0 : craftingMasteryIngredientSaveChance(masteryLevel);
+    // materialMastery/alchemyZoneMastery is active (neither design includes
+    // it); Enchanting's OWN zone Mastery is the one axis that DOES grant a
+    // save chance, from its own milestone table (per the design brief's
+    // explicit "crafting speed + material-preservation chance"). The Shirt
+    // of Preservation's materialPreservePct is a separate bonus source and
+    // always applies on top, regardless of which Mastery axis (if any)
+    // governs this recipe.
+    const saveChance =
+      (materialMastery || alchemyZoneMastery
+        ? 0
+        : enchantZoneMilestone
+          ? enchantZoneMilestone.materialPreserveChancePct / 100
+          : craftingMasteryIngredientSaveChance(masteryLevel)) +
+      (craftingShirtBonuses?.materialPreservePct ?? 0) / 100;
 
     const quantityThisBatch = craftAttempts * (1 + bonusChance);
     itemsCrafted += quantityThisBatch;
@@ -328,6 +400,10 @@ export function resolveCraftingOffline(
       const zoneXpThisBatch = craftAttempts * zoneXpPerCraft;
       alchemyZoneMasteryXpGained += zoneXpThisBatch;
       zoneXp += zoneXpThisBatch;
+    } else if (enchantingZoneMastery) {
+      const enchantZoneXpThisBatch = craftAttempts * enchantZoneXpPerCraft;
+      enchantingZoneMasteryXpGained += enchantZoneXpThisBatch;
+      enchantZoneXp += enchantZoneXpThisBatch;
     } else {
       masteryXpGained += craftAttempts * masteryXpPerCraft;
       masteryXp += craftAttempts * masteryXpPerCraft;
@@ -337,7 +413,7 @@ export function resolveCraftingOffline(
       skillXp -= craftingXpForNextLevel(skill);
       skill++;
     }
-    if (!materialMastery && !alchemyZoneMastery) {
+    if (!materialMastery && !alchemyZoneMastery && !enchantingZoneMastery) {
       while (masteryLevel < RECIPE_MASTERY_MAX_LEVEL && masteryXp >= recipeMasteryXpForNextLevel(masteryLevel)) {
         masteryXp -= recipeMasteryXpForNextLevel(masteryLevel);
         masteryLevel++;
@@ -377,6 +453,9 @@ export function resolveCraftingOffline(
       : {}),
     ...(alchemyZoneMastery
       ? { alchemyZoneMasteryXpGained, finalAlchemyZoneMasteryXp: zoneXp, alchemyZoneMasteryBatches }
+      : {}),
+    ...(enchantingZoneMastery
+      ? { enchantingZoneMasteryXpGained, finalEnchantingZoneMasteryXp: enchantZoneXp }
       : {}),
   };
 }
@@ -448,7 +527,12 @@ export function resolveDisenchantOffline(
   maxQuantity: number,
   startingSkill: number,
   startingSkillXp: number,
-  skillCap: number
+  skillCap: number,
+  // Tailoring overhaul's Shirt of Salvaging — a flat % bonus to
+  // disenchant yield, built by the caller from CurrentActivity.
+  // equippedShirtItemId (gameData/shirts.ts's shirtBonusPct), same
+  // activity-start-snapshot convention as every other shirt bonus.
+  salvageBonusPct = 0
 ): DisenchantOfflineResult {
   const progress = resolveElapsedProgress(startedAt, now);
   let remainingSeconds = progress.effectiveHours * 3600;
@@ -467,7 +551,8 @@ export function resolveDisenchantOffline(
     professionXpGained += result.professionXpGained;
     skill = result.finalSkill;
     skillXp = result.finalSkillXp;
-    yieldQuantity += yieldMin + Math.floor(Math.random() * (yieldMax - yieldMin + 1));
+    const baseYield = yieldMin + Math.floor(Math.random() * (yieldMax - yieldMin + 1));
+    yieldQuantity += baseYield * (1 + salvageBonusPct / 100);
   }
 
   return {

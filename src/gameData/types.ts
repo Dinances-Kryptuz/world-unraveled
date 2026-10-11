@@ -213,6 +213,18 @@ export interface Monster {
   // thematically fire- or shadow-coded (see combatEngine/engine.ts's
   // resistance pipeline) — not retrofitted onto the whole roster.
   damageSchool?: DamageSchool;
+  // Enchanting overhaul's Beastslayer/Demonslaying-family weapon enchants —
+  // absent (every monster not explicitly tagged) means "no creature family"
+  // and never triggers either bonus, same zero-behavior-change-by-default
+  // posture as damageSchool above. Tagged now only on monsters already
+  // thematically beast-coded (wolves, boars, etc. — see monsters.ts);
+  // 'demon' exists in the type for the matching Demonslaying enchant but is
+  // deliberately left untagged for now — this roster has no demon-themed
+  // monster yet, so authoring Demonslaying's data now without any real
+  // target would be guesswork, not a tagging decision (see the
+  // AskUserQuestion resolution in this session's history: "add
+  // Monster.creatureType, tag beasts now [only]").
+  creatureType?: 'beast' | 'demon';
 }
 
 export type DamageSchool = 'physical' | 'fire' | 'shadow';
@@ -357,6 +369,13 @@ export interface ItemDef {
   // enchanting.ts ENCHANTS entry this scroll applies when used (see
   // firebase/enchanting.ts's useEnchantScroll).
   scrollEnchantId?: string;
+  // Only present on equipSlot === 'shirt' items — a fixed, predictable
+  // profession-utility bonus (NOT a randomized combat stat roll, unlike
+  // every other equipment slot). Exactly one shirt can be equipped at a
+  // time, so this never stacks with anything — see equipmentStats.ts for
+  // where it's read. Tailoring overhaul; see gameData/shirts.ts's
+  // ShirtBonusType doc comment for what each type actually does.
+  shirtBonus?: { type: import('./shirts').ShirtBonusType; pct: number };
   // Set on a boss/dungeon drop's "_damaged" variant — purely descriptive
   // (an item is actually unequippable because it has no equipSlot at all;
   // see items.ts's damaged-item convention). Points at the real item a
@@ -409,6 +428,14 @@ export interface Recipe {
   // "whose 25/60/90% milestone table governs this recipe's own charges and
   // speed." Absent for every other profession's recipes.
   alchemyZoneId?: string;
+  // Which zone (gameData/zones.ts ZONE id) this Enchanting scroll recipe's
+  // crafting-speed/material-preservation Mastery milestones are looked up
+  // against — set on every Phase E6 scroll recipe (gameData/recipes.ts),
+  // always that recipe's own zone (no scroll recipe spans two zones, unlike
+  // Alchemy's one cross-zone recipe) — see gameData/enchantingMastery.ts.
+  // Absent for the Wand/Staff/Book equipment recipes (materialId-tagged
+  // instead) and every other profession's recipes.
+  enchantingZoneId?: string;
   // Gold consumed per item crafted, in addition to materials — undefined/0
   // for the overwhelming majority of recipes (materials alone). Currently
   // only set on the Blacksmith repair recipes (see the "Blacksmith

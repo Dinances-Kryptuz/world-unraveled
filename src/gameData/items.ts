@@ -342,6 +342,713 @@ export const ITEMS: Record<string, ItemDef> = {
     stackable: true, equipSlot: 'belt', statBonuses: { STA: 8, STR: 7 }, sellValue: 57,
   },
 
+  // ── Tailoring overhaul — 36 cloth armor items (6 tiers x 6 pieces) + 6
+  // capes, replacing the old ad-hoc linen/heavy/ashwoven/charred/ashenweave
+  // roster (frozen untouched, same convention as every other retired-content
+  // block). INT+STA (not STR+STA like Blacksmithing/Leatherworking) since
+  // cloth's primary audience is Priest/Mage — still wearable (off-stat) by
+  // Warrior/Paladin, exactly like the real layered-armor convention.
+  // tailored_linen_* ids are disambiguated from the old, frozen plain
+  // linen_robe/linen_gloves/linen_boots item ids (zone 1 kept the same
+  // cloth material name, so the new armor needed its own item-id prefix —
+  // same disambiguation pattern as Skinning's skinned_light_leather).
+  tailored_linen_helm: {
+    id: 'tailored_linen_helm', name: 'Linen Hood', type: 'equipment',
+    description: 'A linen hood, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'helmet', armorType: 'cloth', statBonuses: { INT: 3, STA: 3 }, sellValue: 18,
+  },
+  tailored_linen_robe: {
+    id: 'tailored_linen_robe', name: 'Linen Robe', type: 'equipment',
+    description: 'A linen robe, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'chest', armorType: 'cloth', statBonuses: { INT: 4, STA: 4 }, sellValue: 24,
+  },
+  tailored_linen_gloves: {
+    id: 'tailored_linen_gloves', name: 'Linen Gloves', type: 'equipment',
+    description: 'A linen gloves, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'gloves', armorType: 'cloth', statBonuses: { INT: 2, STA: 2 }, sellValue: 12,
+  },
+  tailored_linen_leggings: {
+    id: 'tailored_linen_leggings', name: 'Linen Leggings', type: 'equipment',
+    description: 'A linen leggings, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'legs', armorType: 'cloth', statBonuses: { INT: 4, STA: 3 }, sellValue: 21,
+  },
+  tailored_linen_boots: {
+    id: 'tailored_linen_boots', name: 'Linen Boots', type: 'equipment',
+    description: 'A linen boots, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'boots', armorType: 'cloth', statBonuses: { INT: 3, STA: 2 }, sellValue: 15,
+  },
+  tailored_linen_shoulders: {
+    id: 'tailored_linen_shoulders', name: 'Linen Shoulders', type: 'equipment',
+    description: 'A linen shoulders, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'shoulders', armorType: 'cloth', statBonuses: { INT: 2, STA: 2 }, sellValue: 12,
+  },
+  wool_robe_helm: {
+    id: 'wool_robe_helm', name: 'Wool Hood', type: 'equipment',
+    description: 'A wool hood, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'helmet', armorType: 'cloth', statBonuses: { INT: 4, STA: 4 }, sellValue: 26,
+  },
+  wool_robe: {
+    id: 'wool_robe', name: 'Wool Robe', type: 'equipment',
+    description: 'A wool robe, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'chest', armorType: 'cloth', statBonuses: { INT: 7, STA: 5 }, sellValue: 38,
+  },
+  wool_gloves: {
+    id: 'wool_gloves', name: 'Wool Gloves', type: 'equipment',
+    description: 'A wool gloves, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'gloves', armorType: 'cloth', statBonuses: { INT: 4, STA: 3 }, sellValue: 22,
+  },
+  wool_leggings: {
+    id: 'wool_leggings', name: 'Wool Leggings', type: 'equipment',
+    description: 'A wool leggings, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'legs', armorType: 'cloth', statBonuses: { INT: 6, STA: 5 }, sellValue: 35,
+  },
+  wool_boots: {
+    id: 'wool_boots', name: 'Wool Boots', type: 'equipment',
+    description: 'A wool boots, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'boots', armorType: 'cloth', statBonuses: { INT: 4, STA: 3 }, sellValue: 22,
+  },
+  wool_shoulders: {
+    id: 'wool_shoulders', name: 'Wool Shoulders', type: 'equipment',
+    description: 'A wool shoulders, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'shoulders', armorType: 'cloth', statBonuses: { INT: 4, STA: 3 }, sellValue: 22,
+  },
+  silk_robe_helm: {
+    id: 'silk_robe_helm', name: 'Silk Hood', type: 'equipment',
+    description: 'A silk hood, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'helmet', armorType: 'cloth', statBonuses: { INT: 6, STA: 5 }, sellValue: 37,
+  },
+  silk_robe: {
+    id: 'silk_robe', name: 'Silk Robe', type: 'equipment',
+    description: 'A silk robe, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'chest', armorType: 'cloth', statBonuses: { INT: 9, STA: 7 }, sellValue: 54,
+  },
+  silk_gloves: {
+    id: 'silk_gloves', name: 'Silk Gloves', type: 'equipment',
+    description: 'A silk gloves, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'gloves', armorType: 'cloth', statBonuses: { INT: 5, STA: 4 }, sellValue: 31,
+  },
+  silk_leggings: {
+    id: 'silk_leggings', name: 'Silk Leggings', type: 'equipment',
+    description: 'A silk leggings, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'legs', armorType: 'cloth', statBonuses: { INT: 8, STA: 6 }, sellValue: 48,
+  },
+  silk_boots: {
+    id: 'silk_boots', name: 'Silk Boots', type: 'equipment',
+    description: 'A silk boots, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'boots', armorType: 'cloth', statBonuses: { INT: 6, STA: 5 }, sellValue: 34,
+  },
+  silk_shoulders: {
+    id: 'silk_shoulders', name: 'Silk Shoulders', type: 'equipment',
+    description: 'A silk shoulders, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'shoulders', armorType: 'cloth', statBonuses: { INT: 5, STA: 4 }, sellValue: 31,
+  },
+  mageweave_robe_helm: {
+    id: 'mageweave_robe_helm', name: 'Mageweave Hood', type: 'equipment',
+    description: 'A mageweave hood, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'helmet', armorType: 'cloth', statBonuses: { INT: 8, STA: 6 }, sellValue: 49,
+  },
+  mageweave_robe: {
+    id: 'mageweave_robe', name: 'Mageweave Robe', type: 'equipment',
+    description: 'A mageweave robe, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'chest', armorType: 'cloth', statBonuses: { INT: 11, STA: 9 }, sellValue: 70,
+  },
+  mageweave_gloves: {
+    id: 'mageweave_gloves', name: 'Mageweave Gloves', type: 'equipment',
+    description: 'A mageweave gloves, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'gloves', armorType: 'cloth', statBonuses: { INT: 6, STA: 5 }, sellValue: 39,
+  },
+  mageweave_leggings: {
+    id: 'mageweave_leggings', name: 'Mageweave Leggings', type: 'equipment',
+    description: 'A mageweave leggings, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'legs', armorType: 'cloth', statBonuses: { INT: 10, STA: 8 }, sellValue: 63,
+  },
+  mageweave_boots: {
+    id: 'mageweave_boots', name: 'Mageweave Boots', type: 'equipment',
+    description: 'A mageweave boots, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'boots', armorType: 'cloth', statBonuses: { INT: 7, STA: 5 }, sellValue: 42,
+  },
+  mageweave_shoulders: {
+    id: 'mageweave_shoulders', name: 'Mageweave Shoulders', type: 'equipment',
+    description: 'A mageweave shoulders, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'shoulders', armorType: 'cloth', statBonuses: { INT: 6, STA: 5 }, sellValue: 39,
+  },
+  runecloth_robe_helm: {
+    id: 'runecloth_robe_helm', name: 'Runecloth Hood', type: 'equipment',
+    description: 'A runecloth hood, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'helmet', armorType: 'cloth', statBonuses: { INT: 9, STA: 8 }, sellValue: 61,
+  },
+  runecloth_robe: {
+    id: 'runecloth_robe', name: 'Runecloth Robe', type: 'equipment',
+    description: 'A runecloth robe, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'chest', armorType: 'cloth', statBonuses: { INT: 13, STA: 11 }, sellValue: 86,
+  },
+  runecloth_gloves: {
+    id: 'runecloth_gloves', name: 'Runecloth Gloves', type: 'equipment',
+    description: 'A runecloth gloves, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'gloves', armorType: 'cloth', statBonuses: { INT: 7, STA: 6 }, sellValue: 47,
+  },
+  runecloth_leggings: {
+    id: 'runecloth_leggings', name: 'Runecloth Leggings', type: 'equipment',
+    description: 'A runecloth leggings, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'legs', armorType: 'cloth', statBonuses: { INT: 12, STA: 10 }, sellValue: 79,
+  },
+  runecloth_boots: {
+    id: 'runecloth_boots', name: 'Runecloth Boots', type: 'equipment',
+    description: 'A runecloth boots, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'boots', armorType: 'cloth', statBonuses: { INT: 8, STA: 6 }, sellValue: 50,
+  },
+  runecloth_shoulders: {
+    id: 'runecloth_shoulders', name: 'Runecloth Shoulders', type: 'equipment',
+    description: 'A runecloth shoulders, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'shoulders', armorType: 'cloth', statBonuses: { INT: 7, STA: 6 }, sellValue: 47,
+  },
+  ember_robe_helm: {
+    id: 'ember_robe_helm', name: 'Ember Hood', type: 'equipment',
+    description: 'A ember hood, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'helmet', armorType: 'cloth', statBonuses: { INT: 11, STA: 9 }, sellValue: 76,
+  },
+  ember_robe: {
+    id: 'ember_robe', name: 'Ember Robe', type: 'equipment',
+    description: 'A ember robe, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'chest', armorType: 'cloth', statBonuses: { INT: 15, STA: 13 }, sellValue: 106,
+  },
+  ember_gloves: {
+    id: 'ember_gloves', name: 'Ember Gloves', type: 'equipment',
+    description: 'A ember gloves, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'gloves', armorType: 'cloth', statBonuses: { INT: 8, STA: 7 }, sellValue: 57,
+  },
+  ember_leggings: {
+    id: 'ember_leggings', name: 'Ember Leggings', type: 'equipment',
+    description: 'A ember leggings, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'legs', armorType: 'cloth', statBonuses: { INT: 14, STA: 11 }, sellValue: 95,
+  },
+  ember_boots: {
+    id: 'ember_boots', name: 'Ember Boots', type: 'equipment',
+    description: 'A ember boots, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'boots', armorType: 'cloth', statBonuses: { INT: 9, STA: 8 }, sellValue: 65,
+  },
+  ember_shoulders: {
+    id: 'ember_shoulders', name: 'Ember Shoulders', type: 'equipment',
+    description: 'A ember shoulders, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'shoulders', armorType: 'cloth', statBonuses: { INT: 8, STA: 7 }, sellValue: 57,
+  },
+  // ── Capes (zones 1-6) — universal (cloth is already allowed for every
+  // class), 2 random stats, same materialId as that tier's armor so they
+  // feed the SAME cloth mastery bar (no separate cape mastery).
+  cape_of_linen: {
+    id: 'cape_of_linen', name: 'Cape of Linen', type: 'equipment',
+    description: 'A plain linen cape, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'cape', armorType: 'cloth', statBonuses: { INT: 2, STA: 2 }, sellValue: 12,
+  },
+  cape_of_wool: {
+    id: 'cape_of_wool', name: 'Cape of Wool', type: 'equipment',
+    description: 'A woolen cape, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'cape', armorType: 'cloth', statBonuses: { INT: 4, STA: 3 }, sellValue: 22,
+  },
+  cape_of_silk: {
+    id: 'cape_of_silk', name: 'Cape of Silk', type: 'equipment',
+    description: 'A fine silk cape, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'cape', armorType: 'cloth', statBonuses: { INT: 5, STA: 4 }, sellValue: 31,
+  },
+  cape_of_mageweave: {
+    id: 'cape_of_mageweave', name: 'Cape of Mageweave', type: 'equipment',
+    description: 'A mageweave cape, humming faintly with old magic.',
+    stackable: true, equipSlot: 'cape', armorType: 'cloth', statBonuses: { INT: 6, STA: 5 }, sellValue: 39,
+  },
+  cape_of_runecloth: {
+    id: 'cape_of_runecloth', name: 'Cape of Runecloth', type: 'equipment',
+    description: 'A runecloth cape, its stitched runes still faintly warm.',
+    stackable: true, equipSlot: 'cape', armorType: 'cloth', statBonuses: { INT: 7, STA: 6 }, sellValue: 47,
+  },
+  cape_of_ember: {
+    id: 'cape_of_ember', name: 'Cape of Ember', type: 'equipment',
+    description: "An ember cloth cape, scorched but never burnt through.",
+    stackable: true, equipSlot: 'cape', armorType: 'cloth', statBonuses: { INT: 8, STA: 7 }, sellValue: 57,
+  },
+  // ── Linen tier shirts (zone, requiredSkill 1) ──────────
+  linen_shirt_of_mastery: {
+    id: 'linen_shirt_of_mastery', name: 'Linen Shirt of Mastery', type: 'equipment',
+    description: 'A tailored shirt. +1% profession material mastery XP.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'mastery_xp', pct: 1 }, sellValue: 12,
+  },
+  linen_shirt_of_the_gatherer: {
+    id: 'linen_shirt_of_the_gatherer', name: 'Linen Shirt of the Gatherer', type: 'equipment',
+    description: 'A tailored shirt. +1% gathering speed.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'gathering_speed', pct: 1 }, sellValue: 12,
+  },
+  linen_shirt_of_the_artisan: {
+    id: 'linen_shirt_of_the_artisan', name: 'Linen Shirt of the Artisan', type: 'equipment',
+    description: 'A tailored shirt. +1% crafting speed.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'crafting_speed', pct: 1 }, sellValue: 12,
+  },
+  linen_shirt_of_learning: {
+    id: 'linen_shirt_of_learning', name: 'Linen Shirt of Learning', type: 'equipment',
+    description: 'A tailored shirt. +1% profession XP.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'profession_xp', pct: 1 }, sellValue: 12,
+  },
+  linen_shirt_of_fortune: {
+    id: 'linen_shirt_of_fortune', name: 'Linen Shirt of Fortune', type: 'equipment',
+    description: 'A tailored shirt. +1% gold earned from monster kills.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'gold_find', pct: 1 }, sellValue: 12,
+  },
+  linen_shirt_of_salvaging: {
+    id: 'linen_shirt_of_salvaging', name: 'Linen Shirt of Salvaging', type: 'equipment',
+    description: 'A tailored shirt. +1% chance of bonus disenchanting materials.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'salvage_bonus', pct: 1 }, sellValue: 12,
+  },
+  linen_shirt_of_preservation: {
+    id: 'linen_shirt_of_preservation', name: 'Linen Shirt of Preservation', type: 'equipment',
+    description: 'A tailored shirt. +1% chance to preserve one eligible crafting material.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'material_preserve', pct: 1 }, sellValue: 12,
+  },
+
+  // ── Wool tier shirts (zone, requiredSkill 18) ──────────
+  wool_shirt_of_mastery: {
+    id: 'wool_shirt_of_mastery', name: 'Wool Shirt of Mastery', type: 'equipment',
+    description: 'A tailored shirt. +2% profession material mastery XP.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'mastery_xp', pct: 2 }, sellValue: 22,
+  },
+  wool_shirt_of_the_gatherer: {
+    id: 'wool_shirt_of_the_gatherer', name: 'Wool Shirt of the Gatherer', type: 'equipment',
+    description: 'A tailored shirt. +2% gathering speed.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'gathering_speed', pct: 2 }, sellValue: 22,
+  },
+  wool_shirt_of_the_artisan: {
+    id: 'wool_shirt_of_the_artisan', name: 'Wool Shirt of the Artisan', type: 'equipment',
+    description: 'A tailored shirt. +2% crafting speed.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'crafting_speed', pct: 2 }, sellValue: 22,
+  },
+  wool_shirt_of_learning: {
+    id: 'wool_shirt_of_learning', name: 'Wool Shirt of Learning', type: 'equipment',
+    description: 'A tailored shirt. +2% profession XP.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'profession_xp', pct: 2 }, sellValue: 22,
+  },
+  wool_shirt_of_fortune: {
+    id: 'wool_shirt_of_fortune', name: 'Wool Shirt of Fortune', type: 'equipment',
+    description: 'A tailored shirt. +2% gold earned from monster kills.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'gold_find', pct: 2 }, sellValue: 22,
+  },
+  wool_shirt_of_salvaging: {
+    id: 'wool_shirt_of_salvaging', name: 'Wool Shirt of Salvaging', type: 'equipment',
+    description: 'A tailored shirt. +2% chance of bonus disenchanting materials.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'salvage_bonus', pct: 2 }, sellValue: 22,
+  },
+  wool_shirt_of_preservation: {
+    id: 'wool_shirt_of_preservation', name: 'Wool Shirt of Preservation', type: 'equipment',
+    description: 'A tailored shirt. +2% chance to preserve one eligible crafting material.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'material_preserve', pct: 2 }, sellValue: 22,
+  },
+
+  // ── Silk tier shirts (zone, requiredSkill 35) ──────────
+  silk_shirt_of_mastery: {
+    id: 'silk_shirt_of_mastery', name: 'Silk Shirt of Mastery', type: 'equipment',
+    description: 'A tailored shirt. +4% profession material mastery XP.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'mastery_xp', pct: 4 }, sellValue: 31,
+  },
+  silk_shirt_of_the_gatherer: {
+    id: 'silk_shirt_of_the_gatherer', name: 'Silk Shirt of the Gatherer', type: 'equipment',
+    description: 'A tailored shirt. +4% gathering speed.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'gathering_speed', pct: 4 }, sellValue: 31,
+  },
+  silk_shirt_of_the_artisan: {
+    id: 'silk_shirt_of_the_artisan', name: 'Silk Shirt of the Artisan', type: 'equipment',
+    description: 'A tailored shirt. +4% crafting speed.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'crafting_speed', pct: 4 }, sellValue: 31,
+  },
+  silk_shirt_of_learning: {
+    id: 'silk_shirt_of_learning', name: 'Silk Shirt of Learning', type: 'equipment',
+    description: 'A tailored shirt. +4% profession XP.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'profession_xp', pct: 4 }, sellValue: 31,
+  },
+  silk_shirt_of_fortune: {
+    id: 'silk_shirt_of_fortune', name: 'Silk Shirt of Fortune', type: 'equipment',
+    description: 'A tailored shirt. +4% gold earned from monster kills.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'gold_find', pct: 4 }, sellValue: 31,
+  },
+  silk_shirt_of_salvaging: {
+    id: 'silk_shirt_of_salvaging', name: 'Silk Shirt of Salvaging', type: 'equipment',
+    description: 'A tailored shirt. +4% chance of bonus disenchanting materials.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'salvage_bonus', pct: 4 }, sellValue: 31,
+  },
+  silk_shirt_of_preservation: {
+    id: 'silk_shirt_of_preservation', name: 'Silk Shirt of Preservation', type: 'equipment',
+    description: 'A tailored shirt. +4% chance to preserve one eligible crafting material.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'material_preserve', pct: 4 }, sellValue: 31,
+  },
+
+  // ── Mageweave tier shirts (zone, requiredSkill 52) ──────────
+  mageweave_shirt_of_mastery: {
+    id: 'mageweave_shirt_of_mastery', name: 'Mageweave Shirt of Mastery', type: 'equipment',
+    description: 'A tailored shirt. +6% profession material mastery XP.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'mastery_xp', pct: 6 }, sellValue: 39,
+  },
+  mageweave_shirt_of_the_gatherer: {
+    id: 'mageweave_shirt_of_the_gatherer', name: 'Mageweave Shirt of the Gatherer', type: 'equipment',
+    description: 'A tailored shirt. +6% gathering speed.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'gathering_speed', pct: 6 }, sellValue: 39,
+  },
+  mageweave_shirt_of_the_artisan: {
+    id: 'mageweave_shirt_of_the_artisan', name: 'Mageweave Shirt of the Artisan', type: 'equipment',
+    description: 'A tailored shirt. +6% crafting speed.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'crafting_speed', pct: 6 }, sellValue: 39,
+  },
+  mageweave_shirt_of_learning: {
+    id: 'mageweave_shirt_of_learning', name: 'Mageweave Shirt of Learning', type: 'equipment',
+    description: 'A tailored shirt. +6% profession XP.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'profession_xp', pct: 6 }, sellValue: 39,
+  },
+  mageweave_shirt_of_fortune: {
+    id: 'mageweave_shirt_of_fortune', name: 'Mageweave Shirt of Fortune', type: 'equipment',
+    description: 'A tailored shirt. +6% gold earned from monster kills.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'gold_find', pct: 6 }, sellValue: 39,
+  },
+  mageweave_shirt_of_salvaging: {
+    id: 'mageweave_shirt_of_salvaging', name: 'Mageweave Shirt of Salvaging', type: 'equipment',
+    description: 'A tailored shirt. +6% chance of bonus disenchanting materials.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'salvage_bonus', pct: 6 }, sellValue: 39,
+  },
+  mageweave_shirt_of_preservation: {
+    id: 'mageweave_shirt_of_preservation', name: 'Mageweave Shirt of Preservation', type: 'equipment',
+    description: 'A tailored shirt. +6% chance to preserve one eligible crafting material.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'material_preserve', pct: 6 }, sellValue: 39,
+  },
+
+  // ── Runecloth tier shirts (zone, requiredSkill 69) ──────────
+  runecloth_shirt_of_mastery: {
+    id: 'runecloth_shirt_of_mastery', name: 'Runecloth Shirt of Mastery', type: 'equipment',
+    description: 'A tailored shirt. +8% profession material mastery XP.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'mastery_xp', pct: 8 }, sellValue: 47,
+  },
+  runecloth_shirt_of_the_gatherer: {
+    id: 'runecloth_shirt_of_the_gatherer', name: 'Runecloth Shirt of the Gatherer', type: 'equipment',
+    description: 'A tailored shirt. +8% gathering speed.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'gathering_speed', pct: 8 }, sellValue: 47,
+  },
+  runecloth_shirt_of_the_artisan: {
+    id: 'runecloth_shirt_of_the_artisan', name: 'Runecloth Shirt of the Artisan', type: 'equipment',
+    description: 'A tailored shirt. +8% crafting speed.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'crafting_speed', pct: 8 }, sellValue: 47,
+  },
+  runecloth_shirt_of_learning: {
+    id: 'runecloth_shirt_of_learning', name: 'Runecloth Shirt of Learning', type: 'equipment',
+    description: 'A tailored shirt. +8% profession XP.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'profession_xp', pct: 8 }, sellValue: 47,
+  },
+  runecloth_shirt_of_fortune: {
+    id: 'runecloth_shirt_of_fortune', name: 'Runecloth Shirt of Fortune', type: 'equipment',
+    description: 'A tailored shirt. +8% gold earned from monster kills.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'gold_find', pct: 8 }, sellValue: 47,
+  },
+  runecloth_shirt_of_salvaging: {
+    id: 'runecloth_shirt_of_salvaging', name: 'Runecloth Shirt of Salvaging', type: 'equipment',
+    description: 'A tailored shirt. +8% chance of bonus disenchanting materials.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'salvage_bonus', pct: 8 }, sellValue: 47,
+  },
+  runecloth_shirt_of_preservation: {
+    id: 'runecloth_shirt_of_preservation', name: 'Runecloth Shirt of Preservation', type: 'equipment',
+    description: 'A tailored shirt. +8% chance to preserve one eligible crafting material.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'material_preserve', pct: 8 }, sellValue: 47,
+  },
+
+  // ── Ember tier shirts (zone, requiredSkill 86) ──────────
+  ember_shirt_of_mastery: {
+    id: 'ember_shirt_of_mastery', name: 'Ember Shirt of Mastery', type: 'equipment',
+    description: 'A tailored shirt. +10% profession material mastery XP.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'mastery_xp', pct: 10 }, sellValue: 57,
+  },
+  ember_shirt_of_the_gatherer: {
+    id: 'ember_shirt_of_the_gatherer', name: 'Ember Shirt of the Gatherer', type: 'equipment',
+    description: 'A tailored shirt. +10% gathering speed.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'gathering_speed', pct: 10 }, sellValue: 57,
+  },
+  ember_shirt_of_the_artisan: {
+    id: 'ember_shirt_of_the_artisan', name: 'Ember Shirt of the Artisan', type: 'equipment',
+    description: 'A tailored shirt. +10% crafting speed.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'crafting_speed', pct: 10 }, sellValue: 57,
+  },
+  ember_shirt_of_learning: {
+    id: 'ember_shirt_of_learning', name: 'Ember Shirt of Learning', type: 'equipment',
+    description: 'A tailored shirt. +10% profession XP.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'profession_xp', pct: 10 }, sellValue: 57,
+  },
+  ember_shirt_of_fortune: {
+    id: 'ember_shirt_of_fortune', name: 'Ember Shirt of Fortune', type: 'equipment',
+    description: 'A tailored shirt. +10% gold earned from monster kills.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'gold_find', pct: 10 }, sellValue: 57,
+  },
+  ember_shirt_of_salvaging: {
+    id: 'ember_shirt_of_salvaging', name: 'Ember Shirt of Salvaging', type: 'equipment',
+    description: 'A tailored shirt. +10% chance of bonus disenchanting materials.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'salvage_bonus', pct: 10 }, sellValue: 57,
+  },
+  ember_shirt_of_preservation: {
+    id: 'ember_shirt_of_preservation', name: 'Ember Shirt of Preservation', type: 'equipment',
+    description: 'A tailored shirt. +10% chance to preserve one eligible crafting material.',
+    stackable: true, equipSlot: 'shirt', shirtBonus: { type: 'material_preserve', pct: 10 }, sellValue: 57,
+  },
+  formula_linen_shirt_of_mastery: {
+    id: 'formula_linen_shirt_of_mastery', name: 'Formula: Linen Shirt of Mastery', type: 'recipe',
+    description: 'Teaches the recipe for a Linen Shirt of Mastery.',
+    stackable: true, teachesRecipeId: 'linen_shirt_of_mastery', sellValue: 0,
+  },
+  formula_linen_shirt_of_the_gatherer: {
+    id: 'formula_linen_shirt_of_the_gatherer', name: 'Formula: Linen Shirt of the Gatherer', type: 'recipe',
+    description: 'Teaches the recipe for a Linen Shirt of the Gatherer.',
+    stackable: true, teachesRecipeId: 'linen_shirt_of_the_gatherer', sellValue: 0,
+  },
+  formula_linen_shirt_of_the_artisan: {
+    id: 'formula_linen_shirt_of_the_artisan', name: 'Formula: Linen Shirt of the Artisan', type: 'recipe',
+    description: 'Teaches the recipe for a Linen Shirt of the Artisan.',
+    stackable: true, teachesRecipeId: 'linen_shirt_of_the_artisan', sellValue: 0,
+  },
+  formula_linen_shirt_of_learning: {
+    id: 'formula_linen_shirt_of_learning', name: 'Formula: Linen Shirt of Learning', type: 'recipe',
+    description: 'Teaches the recipe for a Linen Shirt of Learning.',
+    stackable: true, teachesRecipeId: 'linen_shirt_of_learning', sellValue: 0,
+  },
+  formula_linen_shirt_of_fortune: {
+    id: 'formula_linen_shirt_of_fortune', name: 'Formula: Linen Shirt of Fortune', type: 'recipe',
+    description: 'Teaches the recipe for a Linen Shirt of Fortune.',
+    stackable: true, teachesRecipeId: 'linen_shirt_of_fortune', sellValue: 0,
+  },
+  formula_linen_shirt_of_salvaging: {
+    id: 'formula_linen_shirt_of_salvaging', name: 'Formula: Linen Shirt of Salvaging', type: 'recipe',
+    description: 'Teaches the recipe for a Linen Shirt of Salvaging.',
+    stackable: true, teachesRecipeId: 'linen_shirt_of_salvaging', sellValue: 0,
+  },
+  formula_linen_shirt_of_preservation: {
+    id: 'formula_linen_shirt_of_preservation', name: 'Formula: Linen Shirt of Preservation', type: 'recipe',
+    description: 'Teaches the recipe for a Linen Shirt of Preservation.',
+    stackable: true, teachesRecipeId: 'linen_shirt_of_preservation', sellValue: 0,
+  },
+  formula_wool_shirt_of_mastery: {
+    id: 'formula_wool_shirt_of_mastery', name: 'Formula: Wool Shirt of Mastery', type: 'recipe',
+    description: 'Teaches the recipe for a Wool Shirt of Mastery.',
+    stackable: true, teachesRecipeId: 'wool_shirt_of_mastery', sellValue: 0,
+  },
+  formula_wool_shirt_of_the_gatherer: {
+    id: 'formula_wool_shirt_of_the_gatherer', name: 'Formula: Wool Shirt of the Gatherer', type: 'recipe',
+    description: 'Teaches the recipe for a Wool Shirt of the Gatherer.',
+    stackable: true, teachesRecipeId: 'wool_shirt_of_the_gatherer', sellValue: 0,
+  },
+  formula_wool_shirt_of_the_artisan: {
+    id: 'formula_wool_shirt_of_the_artisan', name: 'Formula: Wool Shirt of the Artisan', type: 'recipe',
+    description: 'Teaches the recipe for a Wool Shirt of the Artisan.',
+    stackable: true, teachesRecipeId: 'wool_shirt_of_the_artisan', sellValue: 0,
+  },
+  formula_wool_shirt_of_learning: {
+    id: 'formula_wool_shirt_of_learning', name: 'Formula: Wool Shirt of Learning', type: 'recipe',
+    description: 'Teaches the recipe for a Wool Shirt of Learning.',
+    stackable: true, teachesRecipeId: 'wool_shirt_of_learning', sellValue: 0,
+  },
+  formula_wool_shirt_of_fortune: {
+    id: 'formula_wool_shirt_of_fortune', name: 'Formula: Wool Shirt of Fortune', type: 'recipe',
+    description: 'Teaches the recipe for a Wool Shirt of Fortune.',
+    stackable: true, teachesRecipeId: 'wool_shirt_of_fortune', sellValue: 0,
+  },
+  formula_wool_shirt_of_salvaging: {
+    id: 'formula_wool_shirt_of_salvaging', name: 'Formula: Wool Shirt of Salvaging', type: 'recipe',
+    description: 'Teaches the recipe for a Wool Shirt of Salvaging.',
+    stackable: true, teachesRecipeId: 'wool_shirt_of_salvaging', sellValue: 0,
+  },
+  formula_wool_shirt_of_preservation: {
+    id: 'formula_wool_shirt_of_preservation', name: 'Formula: Wool Shirt of Preservation', type: 'recipe',
+    description: 'Teaches the recipe for a Wool Shirt of Preservation.',
+    stackable: true, teachesRecipeId: 'wool_shirt_of_preservation', sellValue: 0,
+  },
+  formula_silk_shirt_of_mastery: {
+    id: 'formula_silk_shirt_of_mastery', name: 'Formula: Silk Shirt of Mastery', type: 'recipe',
+    description: 'Teaches the recipe for a Silk Shirt of Mastery.',
+    stackable: true, teachesRecipeId: 'silk_shirt_of_mastery', sellValue: 0,
+  },
+  formula_silk_shirt_of_the_gatherer: {
+    id: 'formula_silk_shirt_of_the_gatherer', name: 'Formula: Silk Shirt of the Gatherer', type: 'recipe',
+    description: 'Teaches the recipe for a Silk Shirt of the Gatherer.',
+    stackable: true, teachesRecipeId: 'silk_shirt_of_the_gatherer', sellValue: 0,
+  },
+  formula_silk_shirt_of_the_artisan: {
+    id: 'formula_silk_shirt_of_the_artisan', name: 'Formula: Silk Shirt of the Artisan', type: 'recipe',
+    description: 'Teaches the recipe for a Silk Shirt of the Artisan.',
+    stackable: true, teachesRecipeId: 'silk_shirt_of_the_artisan', sellValue: 0,
+  },
+  formula_silk_shirt_of_learning: {
+    id: 'formula_silk_shirt_of_learning', name: 'Formula: Silk Shirt of Learning', type: 'recipe',
+    description: 'Teaches the recipe for a Silk Shirt of Learning.',
+    stackable: true, teachesRecipeId: 'silk_shirt_of_learning', sellValue: 0,
+  },
+  formula_silk_shirt_of_fortune: {
+    id: 'formula_silk_shirt_of_fortune', name: 'Formula: Silk Shirt of Fortune', type: 'recipe',
+    description: 'Teaches the recipe for a Silk Shirt of Fortune.',
+    stackable: true, teachesRecipeId: 'silk_shirt_of_fortune', sellValue: 0,
+  },
+  formula_silk_shirt_of_salvaging: {
+    id: 'formula_silk_shirt_of_salvaging', name: 'Formula: Silk Shirt of Salvaging', type: 'recipe',
+    description: 'Teaches the recipe for a Silk Shirt of Salvaging.',
+    stackable: true, teachesRecipeId: 'silk_shirt_of_salvaging', sellValue: 0,
+  },
+  formula_silk_shirt_of_preservation: {
+    id: 'formula_silk_shirt_of_preservation', name: 'Formula: Silk Shirt of Preservation', type: 'recipe',
+    description: 'Teaches the recipe for a Silk Shirt of Preservation.',
+    stackable: true, teachesRecipeId: 'silk_shirt_of_preservation', sellValue: 0,
+  },
+  formula_mageweave_shirt_of_mastery: {
+    id: 'formula_mageweave_shirt_of_mastery', name: 'Formula: Mageweave Shirt of Mastery', type: 'recipe',
+    description: 'Teaches the recipe for a Mageweave Shirt of Mastery.',
+    stackable: true, teachesRecipeId: 'mageweave_shirt_of_mastery', sellValue: 0,
+  },
+  formula_mageweave_shirt_of_the_gatherer: {
+    id: 'formula_mageweave_shirt_of_the_gatherer', name: 'Formula: Mageweave Shirt of the Gatherer', type: 'recipe',
+    description: 'Teaches the recipe for a Mageweave Shirt of the Gatherer.',
+    stackable: true, teachesRecipeId: 'mageweave_shirt_of_the_gatherer', sellValue: 0,
+  },
+  formula_mageweave_shirt_of_the_artisan: {
+    id: 'formula_mageweave_shirt_of_the_artisan', name: 'Formula: Mageweave Shirt of the Artisan', type: 'recipe',
+    description: 'Teaches the recipe for a Mageweave Shirt of the Artisan.',
+    stackable: true, teachesRecipeId: 'mageweave_shirt_of_the_artisan', sellValue: 0,
+  },
+  formula_mageweave_shirt_of_learning: {
+    id: 'formula_mageweave_shirt_of_learning', name: 'Formula: Mageweave Shirt of Learning', type: 'recipe',
+    description: 'Teaches the recipe for a Mageweave Shirt of Learning.',
+    stackable: true, teachesRecipeId: 'mageweave_shirt_of_learning', sellValue: 0,
+  },
+  formula_mageweave_shirt_of_fortune: {
+    id: 'formula_mageweave_shirt_of_fortune', name: 'Formula: Mageweave Shirt of Fortune', type: 'recipe',
+    description: 'Teaches the recipe for a Mageweave Shirt of Fortune.',
+    stackable: true, teachesRecipeId: 'mageweave_shirt_of_fortune', sellValue: 0,
+  },
+  formula_mageweave_shirt_of_salvaging: {
+    id: 'formula_mageweave_shirt_of_salvaging', name: 'Formula: Mageweave Shirt of Salvaging', type: 'recipe',
+    description: 'Teaches the recipe for a Mageweave Shirt of Salvaging.',
+    stackable: true, teachesRecipeId: 'mageweave_shirt_of_salvaging', sellValue: 0,
+  },
+  formula_mageweave_shirt_of_preservation: {
+    id: 'formula_mageweave_shirt_of_preservation', name: 'Formula: Mageweave Shirt of Preservation', type: 'recipe',
+    description: 'Teaches the recipe for a Mageweave Shirt of Preservation.',
+    stackable: true, teachesRecipeId: 'mageweave_shirt_of_preservation', sellValue: 0,
+  },
+  formula_runecloth_shirt_of_mastery: {
+    id: 'formula_runecloth_shirt_of_mastery', name: 'Formula: Runecloth Shirt of Mastery', type: 'recipe',
+    description: 'Teaches the recipe for a Runecloth Shirt of Mastery.',
+    stackable: true, teachesRecipeId: 'runecloth_shirt_of_mastery', sellValue: 0,
+  },
+  formula_runecloth_shirt_of_the_gatherer: {
+    id: 'formula_runecloth_shirt_of_the_gatherer', name: 'Formula: Runecloth Shirt of the Gatherer', type: 'recipe',
+    description: 'Teaches the recipe for a Runecloth Shirt of the Gatherer.',
+    stackable: true, teachesRecipeId: 'runecloth_shirt_of_the_gatherer', sellValue: 0,
+  },
+  formula_runecloth_shirt_of_the_artisan: {
+    id: 'formula_runecloth_shirt_of_the_artisan', name: 'Formula: Runecloth Shirt of the Artisan', type: 'recipe',
+    description: 'Teaches the recipe for a Runecloth Shirt of the Artisan.',
+    stackable: true, teachesRecipeId: 'runecloth_shirt_of_the_artisan', sellValue: 0,
+  },
+  formula_runecloth_shirt_of_learning: {
+    id: 'formula_runecloth_shirt_of_learning', name: 'Formula: Runecloth Shirt of Learning', type: 'recipe',
+    description: 'Teaches the recipe for a Runecloth Shirt of Learning.',
+    stackable: true, teachesRecipeId: 'runecloth_shirt_of_learning', sellValue: 0,
+  },
+  formula_runecloth_shirt_of_fortune: {
+    id: 'formula_runecloth_shirt_of_fortune', name: 'Formula: Runecloth Shirt of Fortune', type: 'recipe',
+    description: 'Teaches the recipe for a Runecloth Shirt of Fortune.',
+    stackable: true, teachesRecipeId: 'runecloth_shirt_of_fortune', sellValue: 0,
+  },
+  formula_runecloth_shirt_of_salvaging: {
+    id: 'formula_runecloth_shirt_of_salvaging', name: 'Formula: Runecloth Shirt of Salvaging', type: 'recipe',
+    description: 'Teaches the recipe for a Runecloth Shirt of Salvaging.',
+    stackable: true, teachesRecipeId: 'runecloth_shirt_of_salvaging', sellValue: 0,
+  },
+  formula_runecloth_shirt_of_preservation: {
+    id: 'formula_runecloth_shirt_of_preservation', name: 'Formula: Runecloth Shirt of Preservation', type: 'recipe',
+    description: 'Teaches the recipe for a Runecloth Shirt of Preservation.',
+    stackable: true, teachesRecipeId: 'runecloth_shirt_of_preservation', sellValue: 0,
+  },
+  formula_ember_shirt_of_mastery: {
+    id: 'formula_ember_shirt_of_mastery', name: 'Formula: Ember Shirt of Mastery', type: 'recipe',
+    description: 'Teaches the recipe for a Ember Shirt of Mastery.',
+    stackable: true, teachesRecipeId: 'ember_shirt_of_mastery', sellValue: 0,
+  },
+  formula_ember_shirt_of_the_gatherer: {
+    id: 'formula_ember_shirt_of_the_gatherer', name: 'Formula: Ember Shirt of the Gatherer', type: 'recipe',
+    description: 'Teaches the recipe for a Ember Shirt of the Gatherer.',
+    stackable: true, teachesRecipeId: 'ember_shirt_of_the_gatherer', sellValue: 0,
+  },
+  formula_ember_shirt_of_the_artisan: {
+    id: 'formula_ember_shirt_of_the_artisan', name: 'Formula: Ember Shirt of the Artisan', type: 'recipe',
+    description: 'Teaches the recipe for a Ember Shirt of the Artisan.',
+    stackable: true, teachesRecipeId: 'ember_shirt_of_the_artisan', sellValue: 0,
+  },
+  formula_ember_shirt_of_learning: {
+    id: 'formula_ember_shirt_of_learning', name: 'Formula: Ember Shirt of Learning', type: 'recipe',
+    description: 'Teaches the recipe for a Ember Shirt of Learning.',
+    stackable: true, teachesRecipeId: 'ember_shirt_of_learning', sellValue: 0,
+  },
+  formula_ember_shirt_of_fortune: {
+    id: 'formula_ember_shirt_of_fortune', name: 'Formula: Ember Shirt of Fortune', type: 'recipe',
+    description: 'Teaches the recipe for a Ember Shirt of Fortune.',
+    stackable: true, teachesRecipeId: 'ember_shirt_of_fortune', sellValue: 0,
+  },
+  formula_ember_shirt_of_salvaging: {
+    id: 'formula_ember_shirt_of_salvaging', name: 'Formula: Ember Shirt of Salvaging', type: 'recipe',
+    description: 'Teaches the recipe for a Ember Shirt of Salvaging.',
+    stackable: true, teachesRecipeId: 'ember_shirt_of_salvaging', sellValue: 0,
+  },
+  formula_ember_shirt_of_preservation: {
+    id: 'formula_ember_shirt_of_preservation', name: 'Formula: Ember Shirt of Preservation', type: 'recipe',
+    description: 'Teaches the recipe for a Ember Shirt of Preservation.',
+    stackable: true, teachesRecipeId: 'ember_shirt_of_preservation', sellValue: 0,
+  },
+
+  // ── Enchanting overhaul's Phase E6 rare formulas — same dungeon-boss
+  // 5%-drop mechanism as the Tailoring shirt formulas above (see
+  // monsters.ts's molten_herald/pyraxis loot tables), teaching the 9
+  // proc/special enchant scrolls the design brief gates behind "profession
+  // level + rare formula unlocks" (Fiery Weapon/Icy Chill/Lifestealing at
+  // both their zone-5 and Ember-tier zone-6 versions, plus Crusader/
+  // Spellpower/Healing Power) rather than ordinary trainer progression.
+  formula_scroll_fiery_weapon_z5: {
+    id: 'formula_scroll_fiery_weapon_z5', name: 'Formula: Fiery Weapon', type: 'recipe',
+    description: 'Teaches the recipe for Scroll: Fiery Weapon.',
+    stackable: true, teachesRecipeId: 'scroll_fiery_weapon_z5', sellValue: 0,
+  },
+  formula_scroll_icy_chill_z5: {
+    id: 'formula_scroll_icy_chill_z5', name: 'Formula: Icy Chill', type: 'recipe',
+    description: 'Teaches the recipe for Scroll: Icy Chill.',
+    stackable: true, teachesRecipeId: 'scroll_icy_chill_z5', sellValue: 0,
+  },
+  formula_scroll_lifestealing_z5: {
+    id: 'formula_scroll_lifestealing_z5', name: 'Formula: Lifestealing', type: 'recipe',
+    description: 'Teaches the recipe for Scroll: Lifestealing.',
+    stackable: true, teachesRecipeId: 'scroll_lifestealing_z5', sellValue: 0,
+  },
+  formula_scroll_ember_fiery_weapon: {
+    id: 'formula_scroll_ember_fiery_weapon', name: 'Formula: Ember Fiery Weapon', type: 'recipe',
+    description: 'Teaches the recipe for Scroll: Ember Fiery Weapon.',
+    stackable: true, teachesRecipeId: 'scroll_ember_fiery_weapon', sellValue: 0,
+  },
+  formula_scroll_ember_icy_chill: {
+    id: 'formula_scroll_ember_icy_chill', name: 'Formula: Ember Icy Chill', type: 'recipe',
+    description: 'Teaches the recipe for Scroll: Ember Icy Chill.',
+    stackable: true, teachesRecipeId: 'scroll_ember_icy_chill', sellValue: 0,
+  },
+  formula_scroll_ember_lifestealing: {
+    id: 'formula_scroll_ember_lifestealing', name: 'Formula: Ember Lifestealing', type: 'recipe',
+    description: 'Teaches the recipe for Scroll: Ember Lifestealing.',
+    stackable: true, teachesRecipeId: 'scroll_ember_lifestealing', sellValue: 0,
+  },
+  formula_scroll_crusader: {
+    id: 'formula_scroll_crusader', name: 'Formula: Crusader', type: 'recipe',
+    description: 'Teaches the recipe for Scroll: Crusader.',
+    stackable: true, teachesRecipeId: 'scroll_crusader', sellValue: 0,
+  },
+  formula_scroll_spellpower: {
+    id: 'formula_scroll_spellpower', name: 'Formula: Spellpower', type: 'recipe',
+    description: 'Teaches the recipe for Scroll: Spellpower.',
+    stackable: true, teachesRecipeId: 'scroll_spellpower', sellValue: 0,
+  },
+  formula_scroll_healing_power: {
+    id: 'formula_scroll_healing_power', name: 'Formula: Healing Power', type: 'recipe',
+    description: 'Teaches the recipe for Scroll: Healing Power.',
+    stackable: true, teachesRecipeId: 'scroll_healing_power', sellValue: 0,
+  },
   // ── Combat drops (non-leather) ──────────────────────────────────────
   boar_meat: {
     id: 'boar_meat',
@@ -383,6 +1090,64 @@ export const ITEMS: Record<string, ItemDef> = {
     stackable: true,
     sellValue: 2,
   },
+
+  // ── Tailoring overhaul — 5 new cloth tiers (zones 2-6), reusing the exact
+  // monster sources the old coarse_cloth/heavy_cloth/ashwoven_cloth/
+  // charred_cloth/ashenweave_cloth dropped from (see monsters.ts) — only the
+  // item identity/name changes, to the Classic-inspired Wool/Silk/Mageweave/
+  // Runecloth/Ember naming. The 5 old items stay fully intact (frozen, no
+  // longer dropped by anything) for any already-held stock, same convention
+  // as every other retired-content block in this file.
+  wool_cloth: {
+    id: 'wool_cloth', name: 'Wool Cloth', type: 'material',
+    description: 'Thick woven cloth, stripped from a highland bandit.', stackable: true, sellValue: 3,
+  },
+  silk_cloth: {
+    id: 'silk_cloth', name: 'Silk Cloth', type: 'material',
+    description: 'Fine, strong cloth taken from a ridge marauder.', stackable: true, sellValue: 4,
+  },
+  mageweave_cloth: {
+    id: 'mageweave_cloth', name: 'Mageweave Cloth', type: 'material',
+    description: 'Cloth woven through with faint traces of old magic.', stackable: true, sellValue: 5,
+  },
+  runecloth: {
+    id: 'runecloth', name: 'Runecloth', type: 'material',
+    description: "Cultist robes, their stitched runes still faintly warm.", stackable: true, sellValue: 6,
+  },
+  ember_cloth: {
+    id: 'ember_cloth', name: 'Ember Cloth', type: 'material',
+    description: "Cloth from the crater's own fire-cultists, scorched but never burnt through.", stackable: true, sellValue: 7,
+  },
+
+  // ── Tailoring overhaul — 6 vendor-only thread tiers, replacing the old
+  // single simple_thread (frozen, same convention as the cloth retirement
+  // above). A deliberate gold sink: never gathered or dropped, consumed by
+  // every Tailoring recipe alongside cloth.
+  coarse_thread: {
+    id: 'coarse_thread', name: 'Coarse Thread', type: 'material',
+    description: 'Plain thread for stitching cloth together. Sold by vendors, not gathered.', stackable: true, sellValue: 1,
+  },
+  fine_thread: {
+    id: 'fine_thread', name: 'Fine Thread', type: 'material',
+    description: 'Finer thread, holding a seam better than Coarse Thread. Sold by vendors, not gathered.', stackable: true, sellValue: 2,
+  },
+  silken_thread: {
+    id: 'silken_thread', name: 'Silken Thread', type: 'material',
+    description: 'Thread spun fine enough for silk work. Sold by vendors, not gathered.', stackable: true, sellValue: 4,
+  },
+  heavy_silken_thread: {
+    id: 'heavy_silken_thread', name: 'Heavy Silken Thread', type: 'material',
+    description: 'A heavier silken thread, for sturdier stitching. Sold by vendors, not gathered.', stackable: true, sellValue: 7,
+  },
+  rune_thread: {
+    id: 'rune_thread', name: 'Rune Thread', type: 'material',
+    description: 'Thread spun with a faint rune-work shimmer. Sold by vendors, not gathered.', stackable: true, sellValue: 11,
+  },
+  ember_thread: {
+    id: 'ember_thread', name: 'Ember Thread', type: 'material',
+    description: 'Thread that never quite cools. Sold by vendors, not gathered.', stackable: true, sellValue: 16,
+  },
+
   copper_scrap: {
     id: 'copper_scrap',
     name: 'Copper Scrap',
@@ -1681,99 +2446,748 @@ export const ITEMS: Record<string, ItemDef> = {
   },
 
   // ── Enchanting materials — produced by Disenchanting (see
-  // gameData/enchanting.ts), consumed by enchant recipes. Three tiers
-  // scale with the disenchanted item's own level, same convention as
-  // every other material tier in this game.
-  arcane_dust: {
-    id: 'arcane_dust', name: 'Arcane Dust', type: 'material',
-    description: 'A fine, faintly glowing dust left over from disenchanting lesser equipment.',
+  // gameData/enchanting.ts's ZONE_DISENCHANT_MATERIALS), consumed by
+  // enchant-scroll recipes (recipes.ts). Names follow the Enchanting
+  // overhaul's own Classic-WoW-derived material table exactly (Strange
+  // Dust/Magic Essence through Illusion Dust/Eternal Essence for zones
+  // 1-5, Ember Shards for zone 6) rather than this file's earlier,
+  // differently-named first draft. A shard tier (Brilliant Shard) only
+  // exists at zone 5 — the design brief's own recipe catalog never
+  // references a shard before then; zone 6 skips a dust/essence of its
+  // own for CRAFTING (its recipes reuse zone 5's Greater Eternal Essence,
+  // see enchanting.ts's "E6" convention) but still gets its own Ember
+  // Dust/Ember Essence here for DISENCHANTING yield purposes only, per
+  // the brief's "Ember Shards and appropriate high-tier materials."
+  strange_dust: {
+    id: 'strange_dust', name: 'Strange Dust', type: 'material',
+    description: 'A fine, faintly glowing dust left over from disenchanting lesser Greenhollow Fields equipment.',
     stackable: true, sellValue: 3,
   },
-  arcane_essence: {
-    id: 'arcane_essence', name: 'Arcane Essence', type: 'material',
-    description: 'A condensed mote of magical residue, disenchanted from mid-tier equipment.',
+  lesser_magic_essence: {
+    id: 'lesser_magic_essence', name: 'Lesser Magic Essence', type: 'material',
+    description: 'A condensed mote of magical residue, disenchanted from ordinary Greenhollow Fields equipment.',
     stackable: true, sellValue: 9,
   },
-  arcane_crystal: {
-    id: 'arcane_crystal', name: 'Arcane Crystal', type: 'material',
-    description: 'A hardened crystal of pure enchanting power, disenchanted only from the finest equipment.',
-    stackable: true, sellValue: 25,
+  greater_magic_essence: {
+    id: 'greater_magic_essence', name: 'Greater Magic Essence', type: 'material',
+    description: 'A potent mote of magical residue, disenchanted only from Greenhollow Fields’ finest equipment.',
+    stackable: true, sellValue: 16,
+  },
+  soul_dust: {
+    id: 'soul_dust', name: 'Soul Dust', type: 'material',
+    description: 'A fine, faintly glowing dust left over from disenchanting lesser Stonecrag Foothills equipment.',
+    stackable: true, sellValue: 5,
+  },
+  lesser_astral_essence: {
+    id: 'lesser_astral_essence', name: 'Lesser Astral Essence', type: 'material',
+    description: 'A condensed mote of magical residue, disenchanted from ordinary Stonecrag Foothills equipment.',
+    stackable: true, sellValue: 13,
+  },
+  greater_astral_essence: {
+    id: 'greater_astral_essence', name: 'Greater Astral Essence', type: 'material',
+    description: 'A potent mote of magical residue, disenchanted only from Stonecrag Foothills’ finest equipment.',
+    stackable: true, sellValue: 22,
+  },
+  vision_dust: {
+    id: 'vision_dust', name: 'Vision Dust', type: 'material',
+    description: 'A fine, faintly glowing dust left over from disenchanting lesser Emberfall Ridge equipment.',
+    stackable: true, sellValue: 7,
+  },
+  lesser_mystic_essence: {
+    id: 'lesser_mystic_essence', name: 'Lesser Mystic Essence', type: 'material',
+    description: 'A condensed mote of magical residue, disenchanted from ordinary Emberfall Ridge equipment.',
+    stackable: true, sellValue: 18,
+  },
+  greater_mystic_essence: {
+    id: 'greater_mystic_essence', name: 'Greater Mystic Essence', type: 'material',
+    description: 'A potent mote of magical residue, disenchanted only from Emberfall Ridge’s finest equipment.',
+    stackable: true, sellValue: 30,
+  },
+  dream_dust: {
+    id: 'dream_dust', name: 'Dream Dust', type: 'material',
+    description: 'A fine, faintly glowing dust left over from disenchanting lesser Cinderfall Depths equipment.',
+    stackable: true, sellValue: 10,
+  },
+  lesser_nether_essence: {
+    id: 'lesser_nether_essence', name: 'Lesser Nether Essence', type: 'material',
+    description: 'A condensed mote of magical residue, disenchanted from ordinary Cinderfall Depths equipment.',
+    stackable: true, sellValue: 24,
+  },
+  greater_nether_essence: {
+    id: 'greater_nether_essence', name: 'Greater Nether Essence', type: 'material',
+    description: 'A potent mote of magical residue, disenchanted only from Cinderfall Depths’ finest equipment.',
+    stackable: true, sellValue: 40,
+  },
+  illusion_dust: {
+    id: 'illusion_dust', name: 'Illusion Dust', type: 'material',
+    description: 'A fine, faintly glowing dust left over from disenchanting lesser Molten Scar equipment.',
+    stackable: true, sellValue: 14,
+  },
+  lesser_eternal_essence: {
+    id: 'lesser_eternal_essence', name: 'Lesser Eternal Essence', type: 'material',
+    description: 'A condensed mote of magical residue, disenchanted from ordinary Molten Scar equipment.',
+    stackable: true, sellValue: 32,
+  },
+  greater_eternal_essence: {
+    id: 'greater_eternal_essence', name: 'Greater Eternal Essence', type: 'material',
+    description: 'A potent mote of magical residue, disenchanted only from the Molten Scar’s finest equipment.',
+    stackable: true, sellValue: 52,
+  },
+  brilliant_shard: {
+    id: 'brilliant_shard', name: 'Brilliant Shard', type: 'material',
+    description: 'A hardened shard of enchanting power, disenchanted only from the Molten Scar’s rarest equipment.',
+    stackable: true, sellValue: 60,
+  },
+  ember_dust: {
+    id: 'ember_dust', name: 'Ember Dust', type: 'material',
+    description: 'A fine, faintly glowing dust left over from disenchanting lesser Cinderheart Crater equipment.',
+    stackable: true, sellValue: 20,
+  },
+  ember_essence: {
+    id: 'ember_essence', name: 'Ember Essence', type: 'material',
+    description: 'A blazing mote of magical residue, disenchanted from Cinderheart Crater equipment.',
+    stackable: true, sellValue: 48,
+  },
+  ember_shards: {
+    id: 'ember_shards', name: 'Ember Shards', type: 'material',
+    description: 'Searing fragments of enchanting power, disenchanted only from Cinderheart Crater’s rarest equipment.',
+    stackable: true, sellValue: 75,
   },
 
-  // ── Enchanting scrolls — Enchanting's actual crafted output (see
-  // gameData/enchanting.ts's module doc comment and recipes.ts's matching
-  // section). Craft one through the normal timed/offline recipe pipeline,
-  // then use it on an equipped item for a free, instant apply — one per
-  // ENCHANTS entry, named to match.
-  scroll_weapon_minor_might: {
-    id: 'scroll_weapon_minor_might', name: 'Scroll: Minor Might', type: 'enchant_scroll',
-    description: 'Use on an equipped weapon to grant +4 Strength.', stackable: true,
-    scrollEnchantId: 'enchant_weapon_minor_might', sellValue: 3,
+  // ── Enchanting overhaul's magic Wood — vendor-only (see vendors.ts),
+  // NEVER monster-dropped and with no Woodcutting profession gathering it
+  // (per the design brief), one tier per zone. Feeds the combined Wand/
+  // Staff/Book equipment-Mastery track for that zone (gameData/materials.ts's
+  // WOOD_MATERIALS) the same way a cloth tier feeds Tailoring's armor+cape
+  // Mastery — see recipes.ts's matching section.
+  simple_wood: {
+    id: 'simple_wood', name: 'Simple Wood', type: 'material',
+    description: 'A plain, enchanter-grade timber, faintly receptive to magic. Sold by vendors, never found in the wild.',
+    stackable: true, sellValue: 1,
   },
-  scroll_weapon_greater_might: {
-    id: 'scroll_weapon_greater_might', name: 'Scroll: Greater Might', type: 'enchant_scroll',
-    description: 'Use on an equipped weapon to grant +10 Strength.', stackable: true,
-    scrollEnchantId: 'enchant_weapon_greater_might', sellValue: 12,
+  star_wood: {
+    id: 'star_wood', name: 'Star Wood', type: 'material',
+    description: 'Timber seasoned until it holds a charge far better than anything freshly cut. Sold by vendors, never found in the wild.',
+    stackable: true, sellValue: 4,
   },
-  scroll_weapon_superior_might: {
-    id: 'scroll_weapon_superior_might', name: 'Scroll: Superior Might', type: 'enchant_scroll',
-    description: 'Use on an equipped weapon to grant +18 Strength.', stackable: true,
-    scrollEnchantId: 'enchant_weapon_superior_might', sellValue: 40,
+  mystic_wood: {
+    id: 'mystic_wood', name: 'Mystic Wood', type: 'material',
+    description: 'Cut from the dense core of an old trunk, humming faintly even before it’s enchanted. Sold by vendors, never found in the wild.',
+    stackable: true, sellValue: 8,
   },
-  scroll_chest_minor_stats: {
-    id: 'scroll_chest_minor_stats', name: 'Scroll: Minor Vigor', type: 'enchant_scroll',
-    description: 'Use on an equipped chest piece to grant +5 Stamina.', stackable: true,
-    scrollEnchantId: 'enchant_chest_minor_stats', sellValue: 3,
+  enchanted_hardwood: {
+    id: 'enchanted_hardwood', name: 'Enchanted Hardwood', type: 'material',
+    description: 'A timber as dense as its namesake metal, able to hold a far stronger enchantment. Sold by vendors, never found in the wild.',
+    stackable: true, sellValue: 14,
   },
-  scroll_chest_greater_stats: {
-    id: 'scroll_chest_greater_stats', name: 'Scroll: Greater Vigor', type: 'enchant_scroll',
-    description: 'Use on an equipped chest piece to grant +12 Stamina.', stackable: true,
-    scrollEnchantId: 'enchant_chest_greater_stats', sellValue: 12,
+  ancient_runewood: {
+    id: 'ancient_runewood', name: 'Ancient Runewood', type: 'material',
+    description: 'Timber cured near open flame until it’s nearly as hot to the touch as it is magically receptive. Sold by vendors, never found in the wild.',
+    stackable: true, sellValue: 22,
   },
-  scroll_chest_superior_stats: {
-    id: 'scroll_chest_superior_stats', name: 'Scroll: Superior Vigor', type: 'enchant_scroll',
-    description: 'Use on an equipped chest piece to grant +20 Stamina.', stackable: true,
-    scrollEnchantId: 'enchant_chest_superior_stats', sellValue: 40,
+  emberheart_wood: {
+    id: 'emberheart_wood', name: 'Emberheart Wood', type: 'material',
+    description: 'Timber that smolders faintly of its own accord, the finest focus an Enchanter can work with. Sold by vendors, never found in the wild.',
+    stackable: true, sellValue: 32,
   },
-  scroll_gloves_minor_focus: {
-    id: 'scroll_gloves_minor_focus', name: 'Scroll: Minor Focus', type: 'enchant_scroll',
-    description: 'Use on equipped gloves to grant +4 Intellect.', stackable: true,
-    scrollEnchantId: 'enchant_gloves_minor_focus', sellValue: 4,
+
+  // ── Enchanting overhaul's Wand/Staff/Book equipment — 6 zones x 3 types,
+  // all using the EXISTING randomized-2-stat system (equipmentRolls.ts),
+  // same as Blacksmithing/Leatherworking/Tailoring's armor. Wand and Staff
+  // both occupy the 'weapon' slot (this engine enforces no 1h/2h exclusivity
+  // — see types.ts's EquipmentSlot comment); Staff's stat budget is roughly
+  // double Wand's "to compensate for 2 slots" per the design brief, even
+  // though nothing here mechanically reserves a second slot for it. Book
+  // occupies 'offhand' as Enchanting's answer to a shield, and additionally
+  // consumes that zone's cloth tier as a crafting ingredient (recipes.ts) —
+  // the cloth itself contributes no Mastery here (only the recipe's own
+  // materialId, the zone's Wood, does).
+  rough_wand: {
+    id: 'rough_wand', name: 'Rough Wand', type: 'equipment',
+    description: 'A plain Rough Wood wand, freshly carved and enchanted.',
+    stackable: true, equipSlot: 'weapon', sellValue: 5,
   },
-  scroll_gloves_greater_focus: {
-    id: 'scroll_gloves_greater_focus', name: 'Scroll: Greater Focus', type: 'enchant_scroll',
-    description: 'Use on equipped gloves to grant +9 Intellect.', stackable: true,
-    scrollEnchantId: 'enchant_gloves_greater_focus', sellValue: 13,
+  rough_staff: {
+    id: 'rough_staff', name: 'Rough Staff', type: 'equipment',
+    description: 'A plain Rough Wood staff, freshly carved and enchanted.',
+    stackable: true, equipSlot: 'weapon', sellValue: 8,
   },
-  scroll_legs_minor_vitality: {
-    id: 'scroll_legs_minor_vitality', name: 'Scroll: Minor Vitality', type: 'enchant_scroll',
-    description: 'Use on equipped legs to grant +6 Stamina.', stackable: true,
-    scrollEnchantId: 'enchant_legs_minor_vitality', sellValue: 4,
+  rough_tome: {
+    id: 'rough_tome', name: 'Rough Tome', type: 'equipment',
+    description: 'A plain Rough Wood-bound tome, its linen cover freshly enchanted.',
+    stackable: true, equipSlot: 'offhand', sellValue: 5,
   },
-  scroll_legs_greater_vitality: {
-    id: 'scroll_legs_greater_vitality', name: 'Scroll: Greater Vitality', type: 'enchant_scroll',
-    description: 'Use on equipped legs to grant +14 Stamina.', stackable: true,
-    scrollEnchantId: 'enchant_legs_greater_vitality', sellValue: 15,
+  aged_wand: {
+    id: 'aged_wand', name: 'Aged Wand', type: 'equipment',
+    description: 'A wand of seasoned Aged Wood, holding its enchantment far better than green timber.',
+    stackable: true, equipSlot: 'weapon', sellValue: 9,
   },
-  scroll_boots_minor_spirit: {
-    id: 'scroll_boots_minor_spirit', name: 'Scroll: Minor Spirit', type: 'enchant_scroll',
-    description: 'Use on equipped boots to grant +4 Spirit.', stackable: true,
-    scrollEnchantId: 'enchant_boots_minor_spirit', sellValue: 2,
+  aged_staff: {
+    id: 'aged_staff', name: 'Aged Staff', type: 'equipment',
+    description: 'A staff of seasoned Aged Wood, holding its enchantment far better than green timber.',
+    stackable: true, equipSlot: 'weapon', sellValue: 14,
   },
-  scroll_boots_greater_spirit: {
-    id: 'scroll_boots_greater_spirit', name: 'Scroll: Greater Spirit', type: 'enchant_scroll',
-    description: 'Use on equipped boots to grant +9 Spirit.', stackable: true,
-    scrollEnchantId: 'enchant_boots_greater_spirit', sellValue: 11,
+  aged_tome: {
+    id: 'aged_tome', name: 'Aged Tome', type: 'equipment',
+    description: 'An Aged Wood-bound tome, its wool cover enchanted to hold a stronger charge.',
+    stackable: true, equipSlot: 'offhand', sellValue: 9,
   },
-  scroll_ring_minor_power: {
-    id: 'scroll_ring_minor_power', name: 'Scroll: Minor Power', type: 'enchant_scroll',
-    description: 'Use on an equipped ring to grant +3 Strength, +3 Intellect.', stackable: true,
-    scrollEnchantId: 'enchant_ring_minor_power', sellValue: 8,
+  heartwood_wand: {
+    id: 'heartwood_wand', name: 'Heartwood Wand', type: 'equipment',
+    description: 'A wand cut from dense Heartwood, humming even before the enchantment takes.',
+    stackable: true, equipSlot: 'weapon', sellValue: 16,
   },
-  scroll_ring_greater_power: {
-    id: 'scroll_ring_greater_power', name: 'Scroll: Greater Power', type: 'enchant_scroll',
-    description: 'Use on an equipped ring to grant +7 Strength, +7 Intellect.', stackable: true,
-    scrollEnchantId: 'enchant_ring_greater_power', sellValue: 30,
+  heartwood_staff: {
+    id: 'heartwood_staff', name: 'Heartwood Staff', type: 'equipment',
+    description: 'A staff cut from dense Heartwood, humming even before the enchantment takes.',
+    stackable: true, equipSlot: 'weapon', sellValue: 24,
+  },
+  heartwood_tome: {
+    id: 'heartwood_tome', name: 'Heartwood Tome', type: 'equipment',
+    description: 'A Heartwood-bound tome, its silk cover enchanted to hold a stronger charge.',
+    stackable: true, equipSlot: 'offhand', sellValue: 16,
+  },
+  ironwood_wand: {
+    id: 'ironwood_wand', name: 'Ironwood Wand', type: 'equipment',
+    description: 'A wand of dense Ironwood, able to hold a far stronger enchantment than ordinary timber.',
+    stackable: true, equipSlot: 'weapon', sellValue: 26,
+  },
+  ironwood_staff: {
+    id: 'ironwood_staff', name: 'Ironwood Staff', type: 'equipment',
+    description: 'A staff of dense Ironwood, able to hold a far stronger enchantment than ordinary timber.',
+    stackable: true, equipSlot: 'weapon', sellValue: 38,
+  },
+  ironwood_tome: {
+    id: 'ironwood_tome', name: 'Ironwood Tome', type: 'equipment',
+    description: 'An Ironwood-bound tome, its mageweave cover enchanted to hold a stronger charge.',
+    stackable: true, equipSlot: 'offhand', sellValue: 26,
+  },
+  charwood_wand: {
+    id: 'charwood_wand', name: 'Charwood Wand', type: 'equipment',
+    description: 'A wand of fire-cured Charwood, nearly as hot to the touch as it is magically receptive.',
+    stackable: true, equipSlot: 'weapon', sellValue: 40,
+  },
+  charwood_staff: {
+    id: 'charwood_staff', name: 'Charwood Staff', type: 'equipment',
+    description: 'A staff of fire-cured Charwood, nearly as hot to the touch as it is magically receptive.',
+    stackable: true, equipSlot: 'weapon', sellValue: 58,
+  },
+  charwood_tome: {
+    id: 'charwood_tome', name: 'Charwood Tome', type: 'equipment',
+    description: 'A Charwood-bound tome, its runecloth cover enchanted to hold a stronger charge.',
+    stackable: true, equipSlot: 'offhand', sellValue: 40,
+  },
+  emberwood_wand: {
+    id: 'emberwood_wand', name: 'Emberwood Wand', type: 'equipment',
+    description: 'A wand of smoldering Emberwood, the finest focus an Enchanter can work with.',
+    stackable: true, equipSlot: 'weapon', sellValue: 58,
+  },
+  emberwood_staff: {
+    id: 'emberwood_staff', name: 'Emberwood Staff', type: 'equipment',
+    description: 'A staff of smoldering Emberwood, the finest focus an Enchanter can work with.',
+    stackable: true, equipSlot: 'weapon', sellValue: 84,
+  },
+  emberwood_tome: {
+    id: 'emberwood_tome', name: 'Emberwood Tome', type: 'equipment',
+    description: 'An Emberwood-bound tome, its ember cloth cover enchanted to hold the strongest charge an Enchanter can craft.',
+    stackable: true, equipSlot: 'offhand', sellValue: 58,
+  },
+
+  // ── Enchanting scrolls — see gameData/enchanting.ts's module doc comment
+  // and recipes.ts's matching section. The pre-catalog placeholder scrolls
+  // (12 simple stat enchants) that stood in during Phases E1-E5 have been
+  // removed wholesale and replaced by the full 6-zone catalog below (Phase
+  // E6), per the design brief's complete enchantment recipe expansion.
+
+  scroll_minor_health: {
+    id: 'scroll_minor_health', name: 'Scroll: Minor Health', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Minor Health enchant.', stackable: true,
+    scrollEnchantId: 'enchant_minor_health', sellValue: 3,
+  },
+  scroll_minor_mana: {
+    id: 'scroll_minor_mana', name: 'Scroll: Minor Mana', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Minor Mana enchant.', stackable: true,
+    scrollEnchantId: 'enchant_minor_mana', sellValue: 3,
+  },
+  scroll_minor_stamina: {
+    id: 'scroll_minor_stamina', name: 'Scroll: Minor Stamina', type: 'enchant_scroll',
+    description: 'Use on an equipped bracer item to apply the Minor Stamina enchant.', stackable: true,
+    scrollEnchantId: 'enchant_minor_stamina', sellValue: 3,
+  },
+  scroll_minor_strength: {
+    id: 'scroll_minor_strength', name: 'Scroll: Minor Strength', type: 'enchant_scroll',
+    description: 'Use on an equipped gloves item to apply the Minor Strength enchant.', stackable: true,
+    scrollEnchantId: 'enchant_minor_strength', sellValue: 3,
+  },
+  scroll_minor_agility: {
+    id: 'scroll_minor_agility', name: 'Scroll: Minor Agility', type: 'enchant_scroll',
+    description: 'Use on an equipped boots item to apply the Minor Agility enchant.', stackable: true,
+    scrollEnchantId: 'enchant_minor_agility', sellValue: 3,
+  },
+  scroll_minor_intellect: {
+    id: 'scroll_minor_intellect', name: 'Scroll: Minor Intellect', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Minor Intellect enchant.', stackable: true,
+    scrollEnchantId: 'enchant_minor_intellect', sellValue: 3,
+  },
+  scroll_minor_spirit: {
+    id: 'scroll_minor_spirit', name: 'Scroll: Minor Spirit', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Minor Spirit enchant.', stackable: true,
+    scrollEnchantId: 'enchant_minor_spirit', sellValue: 3,
+  },
+  scroll_minor_defense: {
+    id: 'scroll_minor_defense', name: 'Scroll: Minor Defense', type: 'enchant_scroll',
+    description: 'Use on an equipped cloak item to apply the Minor Defense enchant.', stackable: true,
+    scrollEnchantId: 'enchant_minor_defense', sellValue: 3,
+  },
+  scroll_minor_absorption: {
+    id: 'scroll_minor_absorption', name: 'Scroll: Minor Absorption', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Minor Absorption enchant.', stackable: true,
+    scrollEnchantId: 'enchant_minor_absorption', sellValue: 3,
+  },
+  scroll_minor_striking: {
+    id: 'scroll_minor_striking', name: 'Scroll: Minor Striking', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Minor Striking enchant.', stackable: true,
+    scrollEnchantId: 'enchant_minor_striking', sellValue: 3,
+  },
+  scroll_minor_impact: {
+    id: 'scroll_minor_impact', name: 'Scroll: Minor Impact', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Minor Impact enchant.', stackable: true,
+    scrollEnchantId: 'enchant_minor_impact', sellValue: 3,
+  },
+  scroll_minor_beastslayer: {
+    id: 'scroll_minor_beastslayer', name: 'Scroll: Minor Beastslayer', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Minor Beastslayer enchant.', stackable: true,
+    scrollEnchantId: 'enchant_minor_beastslayer', sellValue: 3,
+  },
+  scroll_lesser_health: {
+    id: 'scroll_lesser_health', name: 'Scroll: Lesser Health', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Lesser Health enchant.', stackable: true,
+    scrollEnchantId: 'enchant_lesser_health', sellValue: 6,
+  },
+  scroll_lesser_mana: {
+    id: 'scroll_lesser_mana', name: 'Scroll: Lesser Mana', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Lesser Mana enchant.', stackable: true,
+    scrollEnchantId: 'enchant_lesser_mana', sellValue: 6,
+  },
+  scroll_lesser_stamina: {
+    id: 'scroll_lesser_stamina', name: 'Scroll: Lesser Stamina', type: 'enchant_scroll',
+    description: 'Use on an equipped bracer item to apply the Lesser Stamina enchant.', stackable: true,
+    scrollEnchantId: 'enchant_lesser_stamina', sellValue: 6,
+  },
+  scroll_lesser_strength: {
+    id: 'scroll_lesser_strength', name: 'Scroll: Lesser Strength', type: 'enchant_scroll',
+    description: 'Use on an equipped gloves item to apply the Lesser Strength enchant.', stackable: true,
+    scrollEnchantId: 'enchant_lesser_strength', sellValue: 6,
+  },
+  scroll_lesser_agility: {
+    id: 'scroll_lesser_agility', name: 'Scroll: Lesser Agility', type: 'enchant_scroll',
+    description: 'Use on an equipped boots item to apply the Lesser Agility enchant.', stackable: true,
+    scrollEnchantId: 'enchant_lesser_agility', sellValue: 6,
+  },
+  scroll_lesser_intellect: {
+    id: 'scroll_lesser_intellect', name: 'Scroll: Lesser Intellect', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Lesser Intellect enchant.', stackable: true,
+    scrollEnchantId: 'enchant_lesser_intellect', sellValue: 6,
+  },
+  scroll_lesser_spirit: {
+    id: 'scroll_lesser_spirit', name: 'Scroll: Lesser Spirit', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Lesser Spirit enchant.', stackable: true,
+    scrollEnchantId: 'enchant_lesser_spirit', sellValue: 6,
+  },
+  scroll_lesser_defense: {
+    id: 'scroll_lesser_defense', name: 'Scroll: Lesser Defense', type: 'enchant_scroll',
+    description: 'Use on an equipped cloak item to apply the Lesser Defense enchant.', stackable: true,
+    scrollEnchantId: 'enchant_lesser_defense', sellValue: 6,
+  },
+  scroll_lesser_absorption: {
+    id: 'scroll_lesser_absorption', name: 'Scroll: Lesser Absorption', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Lesser Absorption enchant.', stackable: true,
+    scrollEnchantId: 'enchant_lesser_absorption', sellValue: 6,
+  },
+  scroll_lesser_striking: {
+    id: 'scroll_lesser_striking', name: 'Scroll: Lesser Striking', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Lesser Striking enchant.', stackable: true,
+    scrollEnchantId: 'enchant_lesser_striking', sellValue: 6,
+  },
+  scroll_lesser_impact: {
+    id: 'scroll_lesser_impact', name: 'Scroll: Lesser Impact', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Lesser Impact enchant.', stackable: true,
+    scrollEnchantId: 'enchant_lesser_impact', sellValue: 6,
+  },
+  scroll_lesser_beastslayer: {
+    id: 'scroll_lesser_beastslayer', name: 'Scroll: Lesser Beastslayer', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Lesser Beastslayer enchant.', stackable: true,
+    scrollEnchantId: 'enchant_lesser_beastslayer', sellValue: 6,
+  },
+  scroll_lesser_elemental_resistance: {
+    id: 'scroll_lesser_elemental_resistance', name: 'Scroll: Lesser Elemental Resistance', type: 'enchant_scroll',
+    description: 'Use on an equipped cloak item to apply the Lesser Elemental Resistance enchant.', stackable: true,
+    scrollEnchantId: 'enchant_lesser_elemental_resistance', sellValue: 6,
+  },
+  scroll_health_z3: {
+    id: 'scroll_health_z3', name: 'Scroll: Health', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Health enchant.', stackable: true,
+    scrollEnchantId: 'enchant_health_z3', sellValue: 9,
+  },
+  scroll_mana_z3: {
+    id: 'scroll_mana_z3', name: 'Scroll: Mana', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Mana enchant.', stackable: true,
+    scrollEnchantId: 'enchant_mana_z3', sellValue: 9,
+  },
+  scroll_stamina_z3: {
+    id: 'scroll_stamina_z3', name: 'Scroll: Stamina', type: 'enchant_scroll',
+    description: 'Use on an equipped bracer item to apply the Stamina enchant.', stackable: true,
+    scrollEnchantId: 'enchant_stamina_z3', sellValue: 9,
+  },
+  scroll_strength_z3: {
+    id: 'scroll_strength_z3', name: 'Scroll: Strength', type: 'enchant_scroll',
+    description: 'Use on an equipped gloves item to apply the Strength enchant.', stackable: true,
+    scrollEnchantId: 'enchant_strength_z3', sellValue: 9,
+  },
+  scroll_agility_z3: {
+    id: 'scroll_agility_z3', name: 'Scroll: Agility', type: 'enchant_scroll',
+    description: 'Use on an equipped boots item to apply the Agility enchant.', stackable: true,
+    scrollEnchantId: 'enchant_agility_z3', sellValue: 9,
+  },
+  scroll_intellect_z3: {
+    id: 'scroll_intellect_z3', name: 'Scroll: Intellect', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Intellect enchant.', stackable: true,
+    scrollEnchantId: 'enchant_intellect_z3', sellValue: 9,
+  },
+  scroll_spirit_z3: {
+    id: 'scroll_spirit_z3', name: 'Scroll: Spirit', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Spirit enchant.', stackable: true,
+    scrollEnchantId: 'enchant_spirit_z3', sellValue: 9,
+  },
+  scroll_greater_defense_z3: {
+    id: 'scroll_greater_defense_z3', name: 'Scroll: Greater Defense', type: 'enchant_scroll',
+    description: 'Use on an equipped cloak item to apply the Greater Defense enchant.', stackable: true,
+    scrollEnchantId: 'enchant_greater_defense_z3', sellValue: 9,
+  },
+  scroll_striking_z3: {
+    id: 'scroll_striking_z3', name: 'Scroll: Striking', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Striking enchant.', stackable: true,
+    scrollEnchantId: 'enchant_striking_z3', sellValue: 9,
+  },
+  scroll_impact_z3: {
+    id: 'scroll_impact_z3', name: 'Scroll: Impact', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Impact enchant.', stackable: true,
+    scrollEnchantId: 'enchant_impact_z3', sellValue: 9,
+  },
+  scroll_greater_beastslayer_z3: {
+    id: 'scroll_greater_beastslayer_z3', name: 'Scroll: Greater Beastslayer', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Greater Beastslayer enchant.', stackable: true,
+    scrollEnchantId: 'enchant_greater_beastslayer_z3', sellValue: 9,
+  },
+  scroll_minor_haste_z3: {
+    id: 'scroll_minor_haste_z3', name: 'Scroll: Minor Haste', type: 'enchant_scroll',
+    description: 'Use on an equipped gloves item to apply the Minor Haste enchant.', stackable: true,
+    scrollEnchantId: 'enchant_minor_haste_z3', sellValue: 9,
+  },
+  scroll_fire_resistance_z3: {
+    id: 'scroll_fire_resistance_z3', name: 'Scroll: Fire Resistance', type: 'enchant_scroll',
+    description: 'Use on an equipped cloak item to apply the Fire Resistance enchant.', stackable: true,
+    scrollEnchantId: 'enchant_fire_resistance_z3', sellValue: 9,
+  },
+  scroll_frost_resistance_z3: {
+    id: 'scroll_frost_resistance_z3', name: 'Scroll: Frost Resistance', type: 'enchant_scroll',
+    description: 'Use on an equipped cloak item to apply the Frost Resistance enchant.', stackable: true,
+    scrollEnchantId: 'enchant_frost_resistance_z3', sellValue: 9,
+  },
+  scroll_shadow_resistance_z3: {
+    id: 'scroll_shadow_resistance_z3', name: 'Scroll: Shadow Resistance', type: 'enchant_scroll',
+    description: 'Use on an equipped cloak item to apply the Shadow Resistance enchant.', stackable: true,
+    scrollEnchantId: 'enchant_shadow_resistance_z3', sellValue: 9,
+  },
+  scroll_greater_health_z4: {
+    id: 'scroll_greater_health_z4', name: 'Scroll: Greater Health', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Greater Health enchant.', stackable: true,
+    scrollEnchantId: 'enchant_greater_health_z4', sellValue: 12,
+  },
+  scroll_greater_mana_z4: {
+    id: 'scroll_greater_mana_z4', name: 'Scroll: Greater Mana', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Greater Mana enchant.', stackable: true,
+    scrollEnchantId: 'enchant_greater_mana_z4', sellValue: 12,
+  },
+  scroll_greater_stamina_z4: {
+    id: 'scroll_greater_stamina_z4', name: 'Scroll: Greater Stamina', type: 'enchant_scroll',
+    description: 'Use on an equipped bracer item to apply the Greater Stamina enchant.', stackable: true,
+    scrollEnchantId: 'enchant_greater_stamina_z4', sellValue: 12,
+  },
+  scroll_greater_strength_z4: {
+    id: 'scroll_greater_strength_z4', name: 'Scroll: Greater Strength', type: 'enchant_scroll',
+    description: 'Use on an equipped gloves item to apply the Greater Strength enchant.', stackable: true,
+    scrollEnchantId: 'enchant_greater_strength_z4', sellValue: 12,
+  },
+  scroll_greater_agility_z4: {
+    id: 'scroll_greater_agility_z4', name: 'Scroll: Greater Agility', type: 'enchant_scroll',
+    description: 'Use on an equipped boots item to apply the Greater Agility enchant.', stackable: true,
+    scrollEnchantId: 'enchant_greater_agility_z4', sellValue: 12,
+  },
+  scroll_greater_intellect_z4: {
+    id: 'scroll_greater_intellect_z4', name: 'Scroll: Greater Intellect', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Greater Intellect enchant.', stackable: true,
+    scrollEnchantId: 'enchant_greater_intellect_z4', sellValue: 12,
+  },
+  scroll_greater_spirit_z4: {
+    id: 'scroll_greater_spirit_z4', name: 'Scroll: Greater Spirit', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Greater Spirit enchant.', stackable: true,
+    scrollEnchantId: 'enchant_greater_spirit_z4', sellValue: 12,
+  },
+  scroll_superior_defense_z4: {
+    id: 'scroll_superior_defense_z4', name: 'Scroll: Superior Defense', type: 'enchant_scroll',
+    description: 'Use on an equipped cloak item to apply the Superior Defense enchant.', stackable: true,
+    scrollEnchantId: 'enchant_superior_defense_z4', sellValue: 12,
+  },
+  scroll_greater_striking_z4: {
+    id: 'scroll_greater_striking_z4', name: 'Scroll: Greater Striking', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Greater Striking enchant.', stackable: true,
+    scrollEnchantId: 'enchant_greater_striking_z4', sellValue: 12,
+  },
+  scroll_greater_impact_z4: {
+    id: 'scroll_greater_impact_z4', name: 'Scroll: Greater Impact', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Greater Impact enchant.', stackable: true,
+    scrollEnchantId: 'enchant_greater_impact_z4', sellValue: 12,
+  },
+  scroll_greater_haste_z4: {
+    id: 'scroll_greater_haste_z4', name: 'Scroll: Greater Haste', type: 'enchant_scroll',
+    description: 'Use on an equipped gloves item to apply the Greater Haste enchant.', stackable: true,
+    scrollEnchantId: 'enchant_greater_haste_z4', sellValue: 12,
+  },
+  scroll_greater_fire_resistance_z4: {
+    id: 'scroll_greater_fire_resistance_z4', name: 'Scroll: Greater Fire Resistance', type: 'enchant_scroll',
+    description: 'Use on an equipped cloak item to apply the Greater Fire Resistance enchant.', stackable: true,
+    scrollEnchantId: 'enchant_greater_fire_resistance_z4', sellValue: 12,
+  },
+  scroll_greater_frost_resistance_z4: {
+    id: 'scroll_greater_frost_resistance_z4', name: 'Scroll: Greater Frost Resistance', type: 'enchant_scroll',
+    description: 'Use on an equipped cloak item to apply the Greater Frost Resistance enchant.', stackable: true,
+    scrollEnchantId: 'enchant_greater_frost_resistance_z4', sellValue: 12,
+  },
+  scroll_greater_shadow_resistance_z4: {
+    id: 'scroll_greater_shadow_resistance_z4', name: 'Scroll: Greater Shadow Resistance', type: 'enchant_scroll',
+    description: 'Use on an equipped cloak item to apply the Greater Shadow Resistance enchant.', stackable: true,
+    scrollEnchantId: 'enchant_greater_shadow_resistance_z4', sellValue: 12,
+  },
+  scroll_demonslaying_z4: {
+    id: 'scroll_demonslaying_z4', name: 'Scroll: Demonslaying', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Demonslaying enchant.', stackable: true,
+    scrollEnchantId: 'enchant_demonslaying_z4', sellValue: 12,
+  },
+  scroll_superior_health_z5: {
+    id: 'scroll_superior_health_z5', name: 'Scroll: Superior Health', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Superior Health enchant.', stackable: true,
+    scrollEnchantId: 'enchant_superior_health_z5', sellValue: 15,
+  },
+  scroll_superior_mana_z5: {
+    id: 'scroll_superior_mana_z5', name: 'Scroll: Superior Mana', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Superior Mana enchant.', stackable: true,
+    scrollEnchantId: 'enchant_superior_mana_z5', sellValue: 15,
+  },
+  scroll_superior_stamina_z5: {
+    id: 'scroll_superior_stamina_z5', name: 'Scroll: Superior Stamina', type: 'enchant_scroll',
+    description: 'Use on an equipped bracer item to apply the Superior Stamina enchant.', stackable: true,
+    scrollEnchantId: 'enchant_superior_stamina_z5', sellValue: 15,
+  },
+  scroll_superior_strength_z5: {
+    id: 'scroll_superior_strength_z5', name: 'Scroll: Superior Strength', type: 'enchant_scroll',
+    description: 'Use on an equipped gloves item to apply the Superior Strength enchant.', stackable: true,
+    scrollEnchantId: 'enchant_superior_strength_z5', sellValue: 15,
+  },
+  scroll_superior_agility_z5: {
+    id: 'scroll_superior_agility_z5', name: 'Scroll: Superior Agility', type: 'enchant_scroll',
+    description: 'Use on an equipped boots item to apply the Superior Agility enchant.', stackable: true,
+    scrollEnchantId: 'enchant_superior_agility_z5', sellValue: 15,
+  },
+  scroll_superior_intellect_z5: {
+    id: 'scroll_superior_intellect_z5', name: 'Scroll: Superior Intellect', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Superior Intellect enchant.', stackable: true,
+    scrollEnchantId: 'enchant_superior_intellect_z5', sellValue: 15,
+  },
+  scroll_superior_spirit_z5: {
+    id: 'scroll_superior_spirit_z5', name: 'Scroll: Superior Spirit', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Superior Spirit enchant.', stackable: true,
+    scrollEnchantId: 'enchant_superior_spirit_z5', sellValue: 15,
+  },
+  scroll_greater_stats_z5: {
+    id: 'scroll_greater_stats_z5', name: 'Scroll: Greater Stats', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Greater Stats enchant.', stackable: true,
+    scrollEnchantId: 'enchant_greater_stats_z5', sellValue: 15,
+  },
+  scroll_superior_defense_z5: {
+    id: 'scroll_superior_defense_z5', name: 'Scroll: Superior Defense', type: 'enchant_scroll',
+    description: 'Use on an equipped cloak item to apply the Superior Defense enchant.', stackable: true,
+    scrollEnchantId: 'enchant_superior_defense_z5', sellValue: 15,
+  },
+  scroll_superior_striking_z5: {
+    id: 'scroll_superior_striking_z5', name: 'Scroll: Superior Striking', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Superior Striking enchant.', stackable: true,
+    scrollEnchantId: 'enchant_superior_striking_z5', sellValue: 15,
+  },
+  scroll_superior_impact_z5: {
+    id: 'scroll_superior_impact_z5', name: 'Scroll: Superior Impact', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Superior Impact enchant.', stackable: true,
+    scrollEnchantId: 'enchant_superior_impact_z5', sellValue: 15,
+  },
+  scroll_greater_haste_z5: {
+    id: 'scroll_greater_haste_z5', name: 'Scroll: Greater Haste', type: 'enchant_scroll',
+    description: 'Use on an equipped gloves item to apply the Greater Haste enchant.', stackable: true,
+    scrollEnchantId: 'enchant_greater_haste_z5', sellValue: 15,
+  },
+  scroll_greater_fire_resistance_z5: {
+    id: 'scroll_greater_fire_resistance_z5', name: 'Scroll: Greater Fire Resistance', type: 'enchant_scroll',
+    description: 'Use on an equipped cloak item to apply the Greater Fire Resistance enchant.', stackable: true,
+    scrollEnchantId: 'enchant_greater_fire_resistance_z5', sellValue: 15,
+  },
+  scroll_greater_frost_resistance_z5: {
+    id: 'scroll_greater_frost_resistance_z5', name: 'Scroll: Greater Frost Resistance', type: 'enchant_scroll',
+    description: 'Use on an equipped cloak item to apply the Greater Frost Resistance enchant.', stackable: true,
+    scrollEnchantId: 'enchant_greater_frost_resistance_z5', sellValue: 15,
+  },
+  scroll_greater_shadow_resistance_z5: {
+    id: 'scroll_greater_shadow_resistance_z5', name: 'Scroll: Greater Shadow Resistance', type: 'enchant_scroll',
+    description: 'Use on an equipped cloak item to apply the Greater Shadow Resistance enchant.', stackable: true,
+    scrollEnchantId: 'enchant_greater_shadow_resistance_z5', sellValue: 15,
+  },
+  scroll_fiery_weapon_z5: {
+    id: 'scroll_fiery_weapon_z5', name: 'Scroll: Fiery Weapon', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Fiery Weapon enchant.', stackable: true,
+    scrollEnchantId: 'enchant_fiery_weapon_z5', sellValue: 30,
+  },
+  scroll_icy_chill_z5: {
+    id: 'scroll_icy_chill_z5', name: 'Scroll: Icy Chill', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Icy Chill enchant.', stackable: true,
+    scrollEnchantId: 'enchant_icy_chill_z5', sellValue: 30,
+  },
+  scroll_lifestealing_z5: {
+    id: 'scroll_lifestealing_z5', name: 'Scroll: Lifestealing', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Lifestealing enchant.', stackable: true,
+    scrollEnchantId: 'enchant_lifestealing_z5', sellValue: 30,
+  },
+  scroll_ember_health: {
+    id: 'scroll_ember_health', name: 'Scroll: Ember Health', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Ember Health enchant.', stackable: true,
+    scrollEnchantId: 'enchant_ember_health', sellValue: 18,
+  },
+  scroll_ember_mana: {
+    id: 'scroll_ember_mana', name: 'Scroll: Ember Mana', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Ember Mana enchant.', stackable: true,
+    scrollEnchantId: 'enchant_ember_mana', sellValue: 18,
+  },
+  scroll_ember_stamina: {
+    id: 'scroll_ember_stamina', name: 'Scroll: Ember Stamina', type: 'enchant_scroll',
+    description: 'Use on an equipped bracer item to apply the Ember Stamina enchant.', stackable: true,
+    scrollEnchantId: 'enchant_ember_stamina', sellValue: 18,
+  },
+  scroll_ember_strength: {
+    id: 'scroll_ember_strength', name: 'Scroll: Ember Strength', type: 'enchant_scroll',
+    description: 'Use on an equipped gloves item to apply the Ember Strength enchant.', stackable: true,
+    scrollEnchantId: 'enchant_ember_strength', sellValue: 18,
+  },
+  scroll_ember_agility: {
+    id: 'scroll_ember_agility', name: 'Scroll: Ember Agility', type: 'enchant_scroll',
+    description: 'Use on an equipped boots item to apply the Ember Agility enchant.', stackable: true,
+    scrollEnchantId: 'enchant_ember_agility', sellValue: 18,
+  },
+  scroll_ember_intellect: {
+    id: 'scroll_ember_intellect', name: 'Scroll: Ember Intellect', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Ember Intellect enchant.', stackable: true,
+    scrollEnchantId: 'enchant_ember_intellect', sellValue: 18,
+  },
+  scroll_ember_spirit: {
+    id: 'scroll_ember_spirit', name: 'Scroll: Ember Spirit', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Ember Spirit enchant.', stackable: true,
+    scrollEnchantId: 'enchant_ember_spirit', sellValue: 18,
+  },
+  scroll_ember_stats: {
+    id: 'scroll_ember_stats', name: 'Scroll: Ember Stats', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Ember Stats enchant.', stackable: true,
+    scrollEnchantId: 'enchant_ember_stats', sellValue: 18,
+  },
+  scroll_ember_defense: {
+    id: 'scroll_ember_defense', name: 'Scroll: Ember Defense', type: 'enchant_scroll',
+    description: 'Use on an equipped cloak item to apply the Ember Defense enchant.', stackable: true,
+    scrollEnchantId: 'enchant_ember_defense', sellValue: 18,
+  },
+  scroll_ember_striking: {
+    id: 'scroll_ember_striking', name: 'Scroll: Ember Striking', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Ember Striking enchant.', stackable: true,
+    scrollEnchantId: 'enchant_ember_striking', sellValue: 18,
+  },
+  scroll_ember_impact: {
+    id: 'scroll_ember_impact', name: 'Scroll: Ember Impact', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Ember Impact enchant.', stackable: true,
+    scrollEnchantId: 'enchant_ember_impact', sellValue: 18,
+  },
+  scroll_ember_haste: {
+    id: 'scroll_ember_haste', name: 'Scroll: Ember Haste', type: 'enchant_scroll',
+    description: 'Use on an equipped gloves item to apply the Ember Haste enchant.', stackable: true,
+    scrollEnchantId: 'enchant_ember_haste', sellValue: 18,
+  },
+  scroll_ember_fire_resistance: {
+    id: 'scroll_ember_fire_resistance', name: 'Scroll: Ember Fire Resistance', type: 'enchant_scroll',
+    description: 'Use on an equipped cloak item to apply the Ember Fire Resistance enchant.', stackable: true,
+    scrollEnchantId: 'enchant_ember_fire_resistance', sellValue: 18,
+  },
+  scroll_ember_frost_resistance: {
+    id: 'scroll_ember_frost_resistance', name: 'Scroll: Ember Frost Resistance', type: 'enchant_scroll',
+    description: 'Use on an equipped cloak item to apply the Ember Frost Resistance enchant.', stackable: true,
+    scrollEnchantId: 'enchant_ember_frost_resistance', sellValue: 18,
+  },
+  scroll_ember_shadow_resistance: {
+    id: 'scroll_ember_shadow_resistance', name: 'Scroll: Ember Shadow Resistance', type: 'enchant_scroll',
+    description: 'Use on an equipped cloak item to apply the Ember Shadow Resistance enchant.', stackable: true,
+    scrollEnchantId: 'enchant_ember_shadow_resistance', sellValue: 18,
+  },
+  scroll_ember_fiery_weapon: {
+    id: 'scroll_ember_fiery_weapon', name: 'Scroll: Ember Fiery Weapon', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Ember Fiery Weapon enchant.', stackable: true,
+    scrollEnchantId: 'enchant_ember_fiery_weapon', sellValue: 36,
+  },
+  scroll_ember_icy_chill: {
+    id: 'scroll_ember_icy_chill', name: 'Scroll: Ember Icy Chill', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Ember Icy Chill enchant.', stackable: true,
+    scrollEnchantId: 'enchant_ember_icy_chill', sellValue: 36,
+  },
+  scroll_ember_lifestealing: {
+    id: 'scroll_ember_lifestealing', name: 'Scroll: Ember Lifestealing', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Ember Lifestealing enchant.', stackable: true,
+    scrollEnchantId: 'enchant_ember_lifestealing', sellValue: 36,
+  },
+  scroll_crusader: {
+    id: 'scroll_crusader', name: 'Scroll: Crusader', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Crusader enchant.', stackable: true,
+    scrollEnchantId: 'enchant_crusader', sellValue: 36,
+  },
+  scroll_spellpower: {
+    id: 'scroll_spellpower', name: 'Scroll: Spellpower', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Spellpower enchant.', stackable: true,
+    scrollEnchantId: 'enchant_spellpower', sellValue: 36,
+  },
+  scroll_healing_power: {
+    id: 'scroll_healing_power', name: 'Scroll: Healing Power', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Healing Power enchant.', stackable: true,
+    scrollEnchantId: 'enchant_healing_power', sellValue: 36,
+  },
+  scroll_mighty_intellect: {
+    id: 'scroll_mighty_intellect', name: 'Scroll: Mighty Intellect', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Mighty Intellect enchant.', stackable: true,
+    scrollEnchantId: 'enchant_mighty_intellect', sellValue: 18,
+  },
+  scroll_mighty_spirit: {
+    id: 'scroll_mighty_spirit', name: 'Scroll: Mighty Spirit', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Mighty Spirit enchant.', stackable: true,
+    scrollEnchantId: 'enchant_mighty_spirit', sellValue: 18,
+  },
+  scroll_mighty_strength: {
+    id: 'scroll_mighty_strength', name: 'Scroll: Mighty Strength', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Mighty Strength enchant.', stackable: true,
+    scrollEnchantId: 'enchant_mighty_strength', sellValue: 18,
+  },
+  scroll_mighty_agility: {
+    id: 'scroll_mighty_agility', name: 'Scroll: Mighty Agility', type: 'enchant_scroll',
+    description: 'Use on an equipped weapon item to apply the Mighty Agility enchant.', stackable: true,
+    scrollEnchantId: 'enchant_mighty_agility', sellValue: 18,
   },
 
   // ── Alchemy potions — healAmount/manaAmount potions stay simple instant

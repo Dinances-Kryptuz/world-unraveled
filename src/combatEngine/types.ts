@@ -193,6 +193,83 @@ export interface CasterProfile {
   // combatFormulas.ts's healingPowerMultiplier (SPI-driven). 1 for anyone
   // with no SPI (monsters always; most non-healing specs in practice).
   healingPowerMult: number;
+  // Enchanting overhaul's Haste enchant — speeds up ONLY this combatant's
+  // own action cadence (engine.ts divides ATTACK_INTERVAL_SECONDS by
+  // 1 + hastePct/100 wherever it increments actionReadyIn), never anyone
+  // else's. 0 for every monster/companion (buildMonsterProfile/
+  // buildCompanionProfile) and, for the player, whatever EncounterSetupInput.
+  // hastePct resolves to (0 with no Haste enchant active, matching the
+  // engine's behavior before this field existed).
+  hastePct: number;
+  // Enchanting overhaul's Beastslayer/Demonslaying weapon enchants check
+  // the DEFENDER's creatureType (not the attacker's) — mirrors Monster.
+  // creatureType (gameData/types.ts) exactly, set only in buildMonsterProfile;
+  // always absent for the player/companions (nothing in this game lets a
+  // player BE a beast or demon).
+  creatureType?: 'beast' | 'demon';
+  // Phase E6 catalog additions — all ATTACKER-side (checked against the
+  // DEFENDER's creatureType above) except flatDamageReduction/
+  // fireResistancePct/shadowResistancePct, which are DEFENDER-side (checked
+  // against the ATTACKER's damageSchool). Always 0 for monsters/companions
+  // (buildMonsterProfile/buildCompanionProfile); for the player, resolved
+  // once at encounter setup from buildActiveEnchantTotals (gameData/
+  // enchanting.ts), same static-per-encounter posture as hastePct/
+  // flatDamageBonus above.
+  //
+  // beastDamageBonusPct/demonDamageBonusPct: Beastslayer/Demonslaying —
+  // multiply final damage when defender.profile.creatureType matches.
+  // Demonslaying never actually fires (no monster is tagged 'demon' yet —
+  // see Monster.creatureType's doc comment) but is still modeled here, per
+  // the design brief's explicit "keep the recipe defined but unavailable."
+  beastDamageBonusPct: number;
+  demonDamageBonusPct: number;
+  // flatDamageReduction: Minor/Lesser/... Absorption — reduces incoming
+  // damage by a flat amount (minimum 1 post-reduction, applied only when
+  // the hit would otherwise deal damage) before any other defender-side
+  // multiplier.
+  flatDamageReduction: number;
+  // fireResistancePct/shadowResistancePct: the enchant-sourced (always-on,
+  // while the enchant is charged) counterpart to the Herbalism/Alchemy
+  // overhaul's consumable-only resistance (BuffEffect.fireResistancePct/
+  // shadowResistancePct) — the two are SUMMED in computeEffectDamage and
+  // clamped to the same 75% cap, never a second independent pipeline.
+  // frostResistancePct is deliberately NOT modeled — no frost damage school
+  // exists in this combat engine (DamageSchool is 'physical' | 'fire' |
+  // 'shadow'), so a Frost Resistance enchant is defined in the catalog but
+  // mechanically inert, per the design brief's own "only include resistance
+  // types supported by existing combat" instruction.
+  fireResistancePct: number;
+  shadowResistancePct: number;
+  // weaponProc: Fiery Weapon/Lifestealing/Crusader (and their Ember-tier
+  // upgrades) — a chance-on-hit effect carried by whatever's enchanted into
+  // the WEAPON slot right now. Always undefined for monsters/companions
+  // (companions have no enchantments storage at all — see Character.
+  // enchantmentCharges's doc comment). "Cannot trigger additional enchant
+  // procs" (every proc enchant's own description) is enforced by
+  // computeEffectDamage simply never rolling source.profile.weaponProc
+  // again for a proc's OWN bonus-damage sub-event.
+  weaponProc?: EnchantWeaponProc;
+}
+
+// EnchantProcKind values map 1:1 onto the design brief's Zone 5/6 proc
+// enchants — fiery_weapon/lifestealing/crusader are real mechanics (see
+// computeEffectDamage); icy_chill is defined/craftable/appliable but its
+// slow effect is a deliberate no-op (per this session's earlier-approved
+// "skip Icy Chill's slow proc" resolution — no attack-speed-debuff concept
+// exists on the DEFENDER side of this engine, only the player's own
+// hastePct lever).
+export type EnchantProcKind = 'fiery_weapon' | 'lifestealing' | 'icy_chill' | 'crusader';
+
+export interface EnchantWeaponProc {
+  kind: EnchantProcKind;
+  chancePct: number;
+  // Meaning varies by kind: fiery_weapon = bonus fire damage as a % of the
+  // triggering hit's amount; lifestealing = self-heal as a % of the
+  // triggering hit's amount (capped by missing health); icy_chill/crusader
+  // ignore this field (crusader's heal/buff magnitudes are fixed by the
+  // design brief, not tunable per-tier the way fiery_weapon/lifestealing
+  // are — see computeEffectDamage).
+  power: number;
 }
 
 export interface CombatState {
@@ -230,7 +307,14 @@ export interface ConditionGroup {
 // color, damage taken in red, healing in green, misses greyed out, deaths
 // bolded) without re-parsing message text — engine.ts sets this at the
 // point it already knows what happened, which is the only place that does.
-export type CombatEventKind = 'damage_out' | 'damage_in' | 'heal' | 'miss' | 'death' | 'status';
+// miss_out/miss_in (split the same way damage_out/damage_in already are,
+// by which side's attack failed to land) exist so the Enchanting
+// overhaul's offensive-enchant charge counting — which must consume 1
+// charge per ELIGIBLE OUTGOING ATTACK regardless of whether it actually
+// hits, unlike a defensive enchant's charge (only a successful incoming
+// hit, see Character.enchantmentCharges's doc comment) — can tell a
+// player's own missed swing apart from a monster's.
+export type CombatEventKind = 'damage_out' | 'damage_in' | 'heal' | 'miss_out' | 'miss_in' | 'death' | 'status';
 
 export interface CombatEvent {
   message: string;

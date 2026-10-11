@@ -78,10 +78,17 @@ export function maxHp(
   cls: ClassId,
   level: number,
   equipmentBonuses: Partial<Record<BaseStat, number>> = {},
-  hpMultPct = 0
+  hpMultPct = 0,
+  // Enchanting overhaul's flat Health enchants (Minor/Lesser/.../Ember
+  // Health) — a literal flat bonus, not a STA-point conversion (the design
+  // brief's given numbers are already scaled against this level-driven
+  // baseline), added AFTER the hpMultPct multiplier so it's never itself
+  // multiplied by talent/Fortitude-style % bonuses — matching how a flat
+  // "+N max HP" effect reads on a real item rather than scaling with build.
+  flatHpBonus = 0
 ): number {
   const sta = statAtLevel(cls, 'STA', level) + (equipmentBonuses.STA ?? 0);
-  return (50 + sta * 12 + level * 10) * (1 + hpMultPct / 100);
+  return (50 + sta * 12 + level * 10) * (1 + hpMultPct / 100) + flatHpBonus;
 }
 
 export function baseDamage(cls: ClassId, level: number, equipmentBonuses: Partial<Record<BaseStat, number>> = {}): number {

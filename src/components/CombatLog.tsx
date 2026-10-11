@@ -4,7 +4,8 @@ const LOG_COLORS: Record<CombatEventKind, string> = {
   damage_out: '#2a2420',
   damage_in: '#c0392b',
   heal: '#2e9e4f',
-  miss: '#8c8c8c',
+  miss_out: '#8c8c8c',
+  miss_in: '#8c8c8c',
   death: '#b8960c',
   status: '#5c4a8a',
 };
@@ -20,7 +21,7 @@ export function CombatLog({ events }: { events: CombatEvent[] }) {
           key={i}
           style={{
             color: LOG_COLORS[entry.kind],
-            fontStyle: entry.kind === 'miss' ? 'italic' : 'normal',
+            fontStyle: entry.kind === 'miss_out' || entry.kind === 'miss_in' ? 'italic' : 'normal',
             fontWeight: entry.kind === 'death' ? 700 : 400,
           }}
         >

@@ -21,6 +21,7 @@ import { WelcomeBackScreen, isLongAbsence } from './components/WelcomeBackScreen
 import { ProfessionScreen } from './components/professions/ProfessionScreen';
 import { maxHp, resolveCurrentHp } from './gameData/combatFormulas';
 import { getEquipmentStatBonuses } from './gameData/equipmentStats';
+import { buildActiveEnchantTotals } from './gameData/enchanting';
 import { evaluateTalents, EMPTY_TALENT_TOTALS } from './utils/talentEvaluator';
 import { characterXpForLevelV2 } from './gameData/xpTables';
 import { GATHER_NODES, FISHING_HOLES } from './gameData/zones';
@@ -69,9 +70,10 @@ function AppShell({
   children: ReactNode;
 }) {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const equipBonuses = getEquipmentStatBonuses(character.equipment, character.enchantments);
+  const equipBonuses = getEquipmentStatBonuses(character.equipment, character.enchantments, character.enchantmentCharges);
   const talentTotals = character.spec ? evaluateTalents(character.spec, character.talentPicks).totals : EMPTY_TALENT_TOTALS;
-  const characterMaxHp = maxHp(character.class, character.level, equipBonuses, talentTotals.hpMultPct);
+  const enchantTotals = buildActiveEnchantTotals(character.enchantments, character.enchantmentCharges);
+  const characterMaxHp = maxHp(character.class, character.level, equipBonuses, talentTotals.hpMultPct, enchantTotals.flatHpBonus);
   const currentHp = resolveCurrentHp(character.currentHp, characterMaxHp, character.hpCheckpointAt, new Date());
 
   const currentLevelXp = characterXpForLevelV2(character.level);

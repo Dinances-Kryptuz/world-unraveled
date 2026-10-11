@@ -4,6 +4,7 @@ export const MONSTERS: Record<string, Monster> = {
   greenhorn_boar: {
     id: 'greenhorn_boar',
     name: 'Greenhorn Boar',
+    creatureType: 'beast',
     zoneIds: ['greenhollow_fields'],
     levelRange: [1, 5],
     level: 3, // placeholder — real tuning against the new formulas happens at Step 10
@@ -25,6 +26,7 @@ export const MONSTERS: Record<string, Monster> = {
   forest_wolf: {
     id: 'forest_wolf',
     name: 'Forest Wolf',
+    creatureType: 'beast',
     zoneIds: ['greenhollow_fields'],
     levelRange: [3, 8],
     level: 6, // placeholder — real tuning against the new formulas happens at Step 10
@@ -69,6 +71,7 @@ export const MONSTERS: Record<string, Monster> = {
   thornback_hare: {
     id: 'thornback_hare',
     name: 'Thornback Hare',
+    creatureType: 'beast',
     zoneIds: ['greenhollow_fields'],
     levelRange: [2, 6],
     level: 1, // placeholder — real tuning against the new formulas happens at Step 10
@@ -91,6 +94,7 @@ export const MONSTERS: Record<string, Monster> = {
   ridge_jackal: {
     id: 'ridge_jackal',
     name: 'Ridge Jackal',
+    creatureType: 'beast',
     zoneIds: ['stonecrag_foothills'],
     levelRange: [8, 12],
     level: 10,
@@ -112,6 +116,7 @@ export const MONSTERS: Record<string, Monster> = {
   craggy_goat: {
     id: 'craggy_goat',
     name: 'Craggy Goat',
+    creatureType: 'beast',
     zoneIds: ['stonecrag_foothills'],
     levelRange: [11, 16],
     level: 13,
@@ -161,7 +166,7 @@ export const MONSTERS: Record<string, Monster> = {
     goldMin: 9,
     goldMax: 18,
     lootTable: [
-      { itemId: 'coarse_cloth', chance: 0.45, minQty: 1, maxQty: 2 },
+      { itemId: 'wool_cloth', chance: 0.45, minQty: 1, maxQty: 2 },
       { itemId: 'worn_shiv', chance: 0.2, minQty: 1, maxQty: 1 },
       { itemId: 'bandit_coin_pouch', chance: 0.12, minQty: 1, maxQty: 1 },
       { itemId: 'focusing_wand', chance: 0.07, minQty: 1, maxQty: 1 },
@@ -177,6 +182,7 @@ export const MONSTERS: Record<string, Monster> = {
   crag_wolf_alpha: {
     id: 'crag_wolf_alpha',
     name: 'Crag Wolf Alpha',
+    creatureType: 'beast',
     zoneIds: ['stonecrag_foothills'],
     levelRange: [19, 25],
     level: 22,
@@ -200,6 +206,7 @@ export const MONSTERS: Record<string, Monster> = {
   cinder_wolf: {
     id: 'cinder_wolf',
     name: 'Cinder Wolf',
+    creatureType: 'beast',
     damageSchool: 'fire',
     zoneIds: ['emberfall_ridge'],
     levelRange: [25, 29],
@@ -222,6 +229,7 @@ export const MONSTERS: Record<string, Monster> = {
   ashwing_bat: {
     id: 'ashwing_bat',
     name: 'Ashwing Bat',
+    creatureType: 'beast',
     zoneIds: ['emberfall_ridge'],
     levelRange: [27, 32],
     level: 30,
@@ -272,7 +280,7 @@ export const MONSTERS: Record<string, Monster> = {
     goldMin: 18,
     goldMax: 32,
     lootTable: [
-      { itemId: 'heavy_cloth', chance: 0.45, minQty: 1, maxQty: 2 },
+      { itemId: 'silk_cloth', chance: 0.45, minQty: 1, maxQty: 2 },
       { itemId: 'iron_ore', chance: 0.2, minQty: 1, maxQty: 1 },
       { itemId: 'common_seasoning', chance: 0.25, minQty: 1, maxQty: 2 },
       { itemId: 'serrated_cleaver', chance: 0.06, minQty: 1, maxQty: 1 },
@@ -321,6 +329,13 @@ export const MONSTERS: Record<string, Monster> = {
     isBoss: true,
     equippedAbilityIds: ['kobold_chieftain_warcry', 'kobold_chieftain_bash', 'kobold_chieftain_slam'],
     lootTable: [
+      { itemId: 'formula_linen_shirt_of_mastery', chance: 0.05, minQty: 1, maxQty: 1 },
+      { itemId: 'formula_linen_shirt_of_the_gatherer', chance: 0.05, minQty: 1, maxQty: 1 },
+      { itemId: 'formula_linen_shirt_of_the_artisan', chance: 0.05, minQty: 1, maxQty: 1 },
+      { itemId: 'formula_linen_shirt_of_learning', chance: 0.05, minQty: 1, maxQty: 1 },
+      { itemId: 'formula_linen_shirt_of_fortune', chance: 0.05, minQty: 1, maxQty: 1 },
+      { itemId: 'formula_linen_shirt_of_salvaging', chance: 0.05, minQty: 1, maxQty: 1 },
+      { itemId: 'formula_linen_shirt_of_preservation', chance: 0.05, minQty: 1, maxQty: 1 },
       { itemId: 'linen_cloth', chance: 0.5, minQty: 2, maxQty: 3 },
       { itemId: 'small_coin_pouch', chance: 0.25, minQty: 1, maxQty: 1 },
       { itemId: 'chieftains_warhammer', chance: 0.15, minQty: 1, maxQty: 1 },
@@ -344,6 +359,13 @@ export const MONSTERS: Record<string, Monster> = {
     isBoss: true,
     equippedAbilityIds: ['alpha_warlord_howl', 'alpha_warlord_rend', 'alpha_warlord_pounce'],
     lootTable: [
+      { itemId: 'formula_wool_shirt_of_mastery', chance: 0.05, minQty: 1, maxQty: 1 },
+      { itemId: 'formula_wool_shirt_of_the_gatherer', chance: 0.05, minQty: 1, maxQty: 1 },
+      { itemId: 'formula_wool_shirt_of_the_artisan', chance: 0.05, minQty: 1, maxQty: 1 },
+      { itemId: 'formula_wool_shirt_of_learning', chance: 0.05, minQty: 1, maxQty: 1 },
+      { itemId: 'formula_wool_shirt_of_fortune', chance: 0.05, minQty: 1, maxQty: 1 },
+      { itemId: 'formula_wool_shirt_of_salvaging', chance: 0.05, minQty: 1, maxQty: 1 },
+      { itemId: 'formula_wool_shirt_of_preservation', chance: 0.05, minQty: 1, maxQty: 1 },
       { itemId: 'sharp_fang', chance: 0.5, minQty: 2, maxQty: 3 },
       { itemId: 'alpha_pelt', chance: 0.2, minQty: 1, maxQty: 1 },
       { itemId: 'warlords_signet', chance: 0.15, minQty: 1, maxQty: 1 },
@@ -367,7 +389,14 @@ export const MONSTERS: Record<string, Monster> = {
     isBoss: true,
     equippedAbilityIds: ['kaldrun_warcry', 'kaldrun_hammerfall', 'kaldrun_cinderlash'],
     lootTable: [
-      { itemId: 'heavy_cloth', chance: 0.5, minQty: 2, maxQty: 3 },
+      { itemId: 'formula_silk_shirt_of_mastery', chance: 0.05, minQty: 1, maxQty: 1 },
+      { itemId: 'formula_silk_shirt_of_the_gatherer', chance: 0.05, minQty: 1, maxQty: 1 },
+      { itemId: 'formula_silk_shirt_of_the_artisan', chance: 0.05, minQty: 1, maxQty: 1 },
+      { itemId: 'formula_silk_shirt_of_learning', chance: 0.05, minQty: 1, maxQty: 1 },
+      { itemId: 'formula_silk_shirt_of_fortune', chance: 0.05, minQty: 1, maxQty: 1 },
+      { itemId: 'formula_silk_shirt_of_salvaging', chance: 0.05, minQty: 1, maxQty: 1 },
+      { itemId: 'formula_silk_shirt_of_preservation', chance: 0.05, minQty: 1, maxQty: 1 },
+      { itemId: 'silk_cloth', chance: 0.5, minQty: 2, maxQty: 3 },
       { itemId: 'ember_shard', chance: 0.35, minQty: 1, maxQty: 2 },
       { itemId: 'kaldrun_warhammer', chance: 0.15, minQty: 1, maxQty: 1 },
       { itemId: 'kaldrun_tempered_band', chance: 0.15, minQty: 1, maxQty: 1 },
@@ -391,7 +420,7 @@ export const MONSTERS: Record<string, Monster> = {
     goldMin: 12,
     goldMax: 22,
     lootTable: [
-      { itemId: 'ashwoven_cloth', chance: 0.4, minQty: 1, maxQty: 2 },
+      { itemId: 'mageweave_cloth', chance: 0.4, minQty: 1, maxQty: 2 },
       { itemId: 'smoky_quartz', chance: 0.06, minQty: 1, maxQty: 1 },
     ],
     specialAbility: {
@@ -412,7 +441,7 @@ export const MONSTERS: Record<string, Monster> = {
     goldMax: 25,
     lootTable: [
       { itemId: 'mithril_ore', chance: 0.4, minQty: 1, maxQty: 2 },
-      { itemId: 'ashwoven_cloth', chance: 0.25, minQty: 1, maxQty: 1 },
+      { itemId: 'mageweave_cloth', chance: 0.25, minQty: 1, maxQty: 1 },
       { itemId: 'scavenger_meat', chance: 0.3, minQty: 1, maxQty: 2 },
       { itemId: 'scavenged_hatchet', chance: 0.06, minQty: 1, maxQty: 1 },
       { itemId: 'scavenged_focus', chance: 0.06, minQty: 1, maxQty: 1 },
@@ -495,7 +524,7 @@ export const MONSTERS: Record<string, Monster> = {
     goldMin: 25,
     goldMax: 42,
     lootTable: [
-      { itemId: 'charred_cloth', chance: 0.4, minQty: 1, maxQty: 2 },
+      { itemId: 'runecloth', chance: 0.4, minQty: 1, maxQty: 2 },
       { itemId: 'fire_opal', chance: 0.06, minQty: 1, maxQty: 1 },
     ],
     specialAbility: {
@@ -554,7 +583,7 @@ export const MONSTERS: Record<string, Monster> = {
     goldMin: 36,
     goldMax: 58,
     lootTable: [
-      { itemId: 'charred_cloth', chance: 0.45, minQty: 1, maxQty: 2 },
+      { itemId: 'runecloth', chance: 0.45, minQty: 1, maxQty: 2 },
       { itemId: 'zealots_blade', chance: 0.06, minQty: 1, maxQty: 1 },
       { itemId: 'zealots_icon', chance: 0.06, minQty: 1, maxQty: 1 },
     ],
@@ -567,6 +596,7 @@ export const MONSTERS: Record<string, Monster> = {
   magma_hound: {
     id: 'magma_hound',
     name: 'Magma Hound',
+    creatureType: 'beast',
     damageSchool: 'fire',
     zoneIds: ['molten_scar'],
     levelRange: [48, 54],
@@ -601,7 +631,7 @@ export const MONSTERS: Record<string, Monster> = {
     voidShardsMin: 1,
     voidShardsMax: 2,
     lootTable: [
-      { itemId: 'ashenweave_cloth', chance: 0.4, minQty: 1, maxQty: 2 },
+      { itemId: 'ember_cloth', chance: 0.4, minQty: 1, maxQty: 2 },
       { itemId: 'heartflame_crystal', chance: 0.06, minQty: 1, maxQty: 1 },
     ],
     specialAbility: {
@@ -667,7 +697,7 @@ export const MONSTERS: Record<string, Monster> = {
     voidShardsMin: 1,
     voidShardsMax: 2,
     lootTable: [
-      { itemId: 'ashenweave_cloth', chance: 0.4, minQty: 1, maxQty: 2 },
+      { itemId: 'ember_cloth', chance: 0.4, minQty: 1, maxQty: 2 },
       { itemId: 'rare_seasoning', chance: 0.2, minQty: 1, maxQty: 2 },
       { itemId: 'harbingers_talon', chance: 0.06, minQty: 1, maxQty: 1 },
       { itemId: 'harbingers_omen', chance: 0.06, minQty: 1, maxQty: 1 },
@@ -714,7 +744,14 @@ export const MONSTERS: Record<string, Monster> = {
     isBoss: true,
     equippedAbilityIds: ['ashen_overseer_warcry', 'ashen_overseer_slam', 'ashen_overseer_cinderwound'],
     lootTable: [
-      { itemId: 'ashwoven_cloth', chance: 0.5, minQty: 2, maxQty: 3 },
+      { itemId: 'formula_mageweave_shirt_of_mastery', chance: 0.05, minQty: 1, maxQty: 1 },
+      { itemId: 'formula_mageweave_shirt_of_the_gatherer', chance: 0.05, minQty: 1, maxQty: 1 },
+      { itemId: 'formula_mageweave_shirt_of_the_artisan', chance: 0.05, minQty: 1, maxQty: 1 },
+      { itemId: 'formula_mageweave_shirt_of_learning', chance: 0.05, minQty: 1, maxQty: 1 },
+      { itemId: 'formula_mageweave_shirt_of_fortune', chance: 0.05, minQty: 1, maxQty: 1 },
+      { itemId: 'formula_mageweave_shirt_of_salvaging', chance: 0.05, minQty: 1, maxQty: 1 },
+      { itemId: 'formula_mageweave_shirt_of_preservation', chance: 0.05, minQty: 1, maxQty: 1 },
+      { itemId: 'mageweave_cloth', chance: 0.5, minQty: 2, maxQty: 3 },
       { itemId: 'cindercore_shard', chance: 0.35, minQty: 1, maxQty: 2 },
       { itemId: 'overseers_greatmace_damaged', chance: 0.15, minQty: 1, maxQty: 1 },
       { itemId: 'overseers_band', chance: 0.15, minQty: 1, maxQty: 1 },
@@ -738,7 +775,17 @@ export const MONSTERS: Record<string, Monster> = {
     isBoss: true,
     equippedAbilityIds: ['molten_herald_summon', 'molten_herald_eruption', 'molten_herald_scorch'],
     lootTable: [
-      { itemId: 'charred_cloth', chance: 0.5, minQty: 2, maxQty: 3 },
+      { itemId: 'formula_runecloth_shirt_of_mastery', chance: 0.05, minQty: 1, maxQty: 1 },
+      { itemId: 'formula_runecloth_shirt_of_the_gatherer', chance: 0.05, minQty: 1, maxQty: 1 },
+      { itemId: 'formula_runecloth_shirt_of_the_artisan', chance: 0.05, minQty: 1, maxQty: 1 },
+      { itemId: 'formula_runecloth_shirt_of_learning', chance: 0.05, minQty: 1, maxQty: 1 },
+      { itemId: 'formula_runecloth_shirt_of_fortune', chance: 0.05, minQty: 1, maxQty: 1 },
+      { itemId: 'formula_runecloth_shirt_of_salvaging', chance: 0.05, minQty: 1, maxQty: 1 },
+      { itemId: 'formula_runecloth_shirt_of_preservation', chance: 0.05, minQty: 1, maxQty: 1 },
+      { itemId: 'formula_scroll_fiery_weapon_z5', chance: 0.05, minQty: 1, maxQty: 1 },
+      { itemId: 'formula_scroll_icy_chill_z5', chance: 0.05, minQty: 1, maxQty: 1 },
+      { itemId: 'formula_scroll_lifestealing_z5', chance: 0.05, minQty: 1, maxQty: 1 },
+      { itemId: 'runecloth', chance: 0.5, minQty: 2, maxQty: 3 },
       { itemId: 'magma_heart', chance: 0.35, minQty: 1, maxQty: 2 },
       { itemId: 'heralds_ember_band', chance: 0.15, minQty: 1, maxQty: 1 },
     ],
@@ -766,7 +813,20 @@ export const MONSTERS: Record<string, Monster> = {
     isBoss: true,
     equippedAbilityIds: ['pyraxis_warcry', 'pyraxis_slam', 'pyraxis_cinderwound'],
     lootTable: [
-      { itemId: 'ashenweave_cloth', chance: 0.5, minQty: 2, maxQty: 3 },
+      { itemId: 'formula_ember_shirt_of_mastery', chance: 0.05, minQty: 1, maxQty: 1 },
+      { itemId: 'formula_ember_shirt_of_the_gatherer', chance: 0.05, minQty: 1, maxQty: 1 },
+      { itemId: 'formula_ember_shirt_of_the_artisan', chance: 0.05, minQty: 1, maxQty: 1 },
+      { itemId: 'formula_ember_shirt_of_learning', chance: 0.05, minQty: 1, maxQty: 1 },
+      { itemId: 'formula_ember_shirt_of_fortune', chance: 0.05, minQty: 1, maxQty: 1 },
+      { itemId: 'formula_ember_shirt_of_salvaging', chance: 0.05, minQty: 1, maxQty: 1 },
+      { itemId: 'formula_ember_shirt_of_preservation', chance: 0.05, minQty: 1, maxQty: 1 },
+      { itemId: 'formula_scroll_ember_fiery_weapon', chance: 0.05, minQty: 1, maxQty: 1 },
+      { itemId: 'formula_scroll_ember_icy_chill', chance: 0.05, minQty: 1, maxQty: 1 },
+      { itemId: 'formula_scroll_ember_lifestealing', chance: 0.05, minQty: 1, maxQty: 1 },
+      { itemId: 'formula_scroll_crusader', chance: 0.05, minQty: 1, maxQty: 1 },
+      { itemId: 'formula_scroll_spellpower', chance: 0.05, minQty: 1, maxQty: 1 },
+      { itemId: 'formula_scroll_healing_power', chance: 0.05, minQty: 1, maxQty: 1 },
+      { itemId: 'ember_cloth', chance: 0.5, minQty: 2, maxQty: 3 },
       { itemId: 'emberlords_ash', chance: 0.4, minQty: 1, maxQty: 2 },
       { itemId: 'pyraxis_flank', chance: 0.3, minQty: 1, maxQty: 2 },
       { itemId: 'pyraxis_warblade_damaged', chance: 0.15, minQty: 1, maxQty: 1 },

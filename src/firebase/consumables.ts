@@ -5,6 +5,7 @@ import { getInventory } from './inventory';
 import { ITEMS } from '../gameData/items';
 import { maxHp, resolveCurrentHp } from '../gameData/combatFormulas';
 import { getEquipmentStatBonuses } from '../gameData/equipmentStats';
+import { buildActiveEnchantTotals } from '../gameData/enchanting';
 import { evaluateTalents, EMPTY_TALENT_TOTALS } from '../utils/talentEvaluator';
 import type { Character, ConsumableAutomationSettings } from '../types/character';
 import type { ItemDef, BuffCategory } from '../gameData/types';
@@ -90,9 +91,10 @@ export async function useConsumableOutOfCombat(uid: string, itemId: string): Pro
     ...buffUpdateForItem(item, itemId, now),
   };
   if (item.consumableEffect.healAmount !== undefined) {
-    const equipBonuses = getEquipmentStatBonuses(character.equipment, character.enchantments);
+    const equipBonuses = getEquipmentStatBonuses(character.equipment, character.enchantments, character.enchantmentCharges);
     const talentTotals = character.spec ? evaluateTalents(character.spec, character.talentPicks).totals : EMPTY_TALENT_TOTALS;
-    const charMaxHp = maxHp(character.class, character.level, equipBonuses, talentTotals.hpMultPct);
+    const enchantTotals = buildActiveEnchantTotals(character.enchantments, character.enchantmentCharges);
+    const charMaxHp = maxHp(character.class, character.level, equipBonuses, talentTotals.hpMultPct, enchantTotals.flatHpBonus);
     const currentHp = resolveCurrentHp(character.currentHp, charMaxHp, character.hpCheckpointAt, now);
     characterUpdate.currentHp = Math.min(charMaxHp, currentHp + item.consumableEffect.healAmount);
     characterUpdate.hpCheckpointAt = serverTimestamp();
