@@ -127,11 +127,14 @@ export interface BuffEffect {
   // charge per matching combat trigger instead of expiring on a timer —
   // exactly one of charges/durationSeconds is set.
   charges?: number;
-  // Cooking overhaul Tier 2 — 'monster_kill'/'dungeon_encounter' consume a
-  // charge once per solo kill or once per completed dungeon/raid encounter
-  // (never per enemy in multi-target group content), a coarser granularity
-  // than the per-hit offensive/defensive-potion triggers above.
-  trigger?: 'offensive_action' | 'damage_taken' | 'monster_kill' | 'dungeon_encounter';
+  // Cooking overhaul Tier 2 — 'stat_food_use' consumes a charge once per
+  // solo monster kill OR once per completed dungeon/raid encounter (never
+  // per enemy in multi-target group content) — the caller (CombatScreen
+  // feeding kill count, DungeonScreen feeding completed-encounter count)
+  // decides which, so this one trigger key covers both contexts. A
+  // coarser granularity than the per-hit offensive/defensive-potion
+  // triggers above.
+  trigger?: 'offensive_action' | 'damage_taken' | 'stat_food_use';
   durationSeconds?: number;
 }
 

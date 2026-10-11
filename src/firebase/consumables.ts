@@ -64,6 +64,46 @@ export async function setEquippedConsumable(
   return { success: true };
 }
 
+// Cooking overhaul Tier 2 — Stat Food. Unlike the fixed-charges-on-item
+// potions buffUpdateForItem above handles, a Stat Food serving's charge
+// count was rolled at CRAFT time (1-4, from that zone's Cooking Mastery —
+// see craftingEngine.ts/chargedConsumables), so "using" one means
+// consuming exactly ONE unit from inventory right now and copying THAT
+// specific bucket's remainingCharges into activeBuffs.stat_food — never
+// item.consumableEffect.buff.charges, which stays undefined for every
+// Stat Food item definition. Spends the weakest (fewest-remaining-charges)
+// owned bucket first, same "finish nearly-spent servings before touching
+// fresher ones" convention as gameData/consumableCharges.ts's
+// applyChargeConsumption. Replaces whatever Stat Food buff was already
+// active — its leftover charges are simply discarded, per the design
+// brief's explicit "replacing (not stacking) a previous Stat Food buff."
+export async function equipStatFood(uid: string, itemId: string): Promise<{ success: boolean; reason?: string }> {
+  const item = ITEMS[itemId];
+  if (!item?.consumableEffect?.buff || item.consumableEffect.buff.category !== 'stat_food') {
+    return { success: false, reason: 'That isn’t a Stat Food.' };
+  }
+
+  const inventory = await getInventory(uid);
+  const buckets = Object.values(inventory.chargedConsumables ?? {}).filter(
+    (b) => b.itemId === itemId && b.remainingCharges > 0 && b.quantity > 0
+  );
+  if (buckets.length === 0) return { success: false, reason: 'You don’t have any.' };
+  buckets.sort((a, b) => a.remainingCharges - b.remainingCharges);
+  const chosen = buckets[0];
+
+  const instanceId = chargedInstanceId(itemId, chosen.remainingCharges);
+  const inventoryUpdate: Record<string, unknown> =
+    chosen.quantity > 1
+      ? { [`chargedConsumables.${instanceId}.quantity`]: increment(-1) }
+      : { [`chargedConsumables.${instanceId}`]: deleteField() };
+
+  await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), inventoryUpdate);
+  await updateDoc(doc(db, 'characters', uid), {
+    'activeBuffs.stat_food': { itemId, charges: chosen.remainingCharges },
+  });
+  return { success: true };
+}
+
 // Out-of-combat use (Inventory screen) — heals through the same
 // currentHp/hpCheckpointAt fields combat itself reads and writes. Only
 // meaningful for a healAmount consumable: mana has no persisted value
@@ -129,7 +169,7 @@ export async function useConsumableOutOfCombat(uid: string, itemId: string): Pro
 export async function consumeBuffCharges(
   uid: string,
   character: Character,
-  triggerCounts: Partial<Record<'offensive_action' | 'damage_taken', number>>
+  triggerCounts: Partial<Record<'offensive_action' | 'damage_taken' | 'stat_food_use', number>>
 ): Promise<void> {
   const update: Record<string, unknown> = {};
   for (const [category, buff] of Object.entries(character.activeBuffs) as [BuffCategory, { itemId: string; charges?: number }][]) {

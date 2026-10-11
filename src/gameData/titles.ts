@@ -73,6 +73,12 @@ function generateEnchanterTitles(): TitleDef[] {
   return Object.values(ZONES).map((zone) => ({ id: `enchanter_${zone.id}`, name: `Master Enchanter of ${zone.name}` }));
 }
 
+// Cooking overhaul — mirrors achievements.ts's generateChefAchievements
+// exactly (same ids, same names).
+function generateChefTitles(): TitleDef[] {
+  return Object.values(ZONES).map((zone) => ({ id: `chef_${zone.id}`, name: `Master Chef of ${zone.name}` }));
+}
+
 export const TITLES: TitleDef[] = [
   ...generateMaterialTitles(),
   { id: 'master_blacksmith', name: 'Master Blacksmith' },
@@ -90,6 +96,8 @@ export const TITLES: TitleDef[] = [
   { id: 'grandmaster_alchemist', name: 'Grandmaster Alchemist' },
   ...generateEnchanterTitles(),
   { id: 'grandmaster_enchanter', name: 'Grandmaster Enchanter' },
+  ...generateChefTitles(),
+  { id: 'grandmaster_chef', name: 'Grandmaster Chef' },
 ];
 
 const TITLES_BY_ID: Record<string, TitleDef> = Object.fromEntries(TITLES.map((t) => [t.id, t]));

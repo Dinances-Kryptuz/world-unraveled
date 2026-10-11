@@ -3597,6 +3597,51 @@ export const ITEMS: Record<string, ItemDef> = {
     consumableEffect: { cooldownSeconds: 20, recoveryFood: true },
   },
 
+  // ── Cooking overhaul Tier 2 — Stat Food. One dish per zone, granting a
+  // temporary bonus to all 5 primary stats (run through the existing class/
+  // spec stat-conversion system — no new combat formulas). Charges are
+  // deliberately absent here: they're rolled at CRAFT time by that zone's
+  // Cooking Mastery (1-4, see gameData/cookingMastery.ts) into a
+  // chargedConsumables bucket, never a fixed property of the item itself —
+  // see firebase/consumables.ts's equipStatFood. No healAmount — Stat Food
+  // restores no health, per the design brief.
+  greenhollow_hunters_stew: {
+    id: 'greenhollow_hunters_stew', name: 'Greenhollow Hunter’s Stew', type: 'consumable',
+    description: 'A well-seasoned stew that keeps a hunter sharp. Grants a small bonus to all stats until its charges run out.',
+    stackable: true, sellValue: 8,
+    consumableEffect: { cooldownSeconds: 20, buff: { category: 'stat_food', statBonuses: { STR: 2, STA: 2, AGI: 2, INT: 2, SPI: 2 }, trigger: 'stat_food_use' } },
+  },
+  stonecrag_highland_fare: {
+    id: 'stonecrag_highland_fare', name: 'Stonecrag Highland Fare', type: 'consumable',
+    description: 'A trail-ready meal favored by Stonecrag’s highland scouts. Grants a bonus to all stats until its charges run out.',
+    stackable: true, sellValue: 16,
+    consumableEffect: { cooldownSeconds: 20, buff: { category: 'stat_food', statBonuses: { STR: 4, STA: 4, AGI: 4, INT: 4, SPI: 4 }, trigger: 'stat_food_use' } },
+  },
+  emberfall_ridge_platter: {
+    id: 'emberfall_ridge_platter', name: 'Emberfall Ridge Platter', type: 'consumable',
+    description: 'A rich, fire-cured platter that fortifies body and mind. Grants a bonus to all stats until its charges run out.',
+    stackable: true, sellValue: 28,
+    consumableEffect: { cooldownSeconds: 20, buff: { category: 'stat_food', statBonuses: { STR: 7, STA: 7, AGI: 7, INT: 7, SPI: 7 }, trigger: 'stat_food_use' } },
+  },
+  cinderfall_depths_banquet: {
+    id: 'cinderfall_depths_banquet', name: 'Cinderfall Depths Banquet', type: 'consumable',
+    description: 'A hearty banquet drawn from the ruins below. Grants a sizable bonus to all stats until its charges run out.',
+    stackable: true, sellValue: 44,
+    consumableEffect: { cooldownSeconds: 20, buff: { category: 'stat_food', statBonuses: { STR: 11, STA: 11, AGI: 11, INT: 11, SPI: 11 }, trigger: 'stat_food_use' } },
+  },
+  molten_scar_feast_platter: {
+    id: 'molten_scar_feast_platter', name: 'Molten Scar Feast Platter', type: 'consumable',
+    description: 'A heat-forged platter prepared for the Scar’s most dangerous hunts. Grants a strong bonus to all stats until its charges run out.',
+    stackable: true, sellValue: 68,
+    consumableEffect: { cooldownSeconds: 20, buff: { category: 'stat_food', statBonuses: { STR: 16, STA: 16, AGI: 16, INT: 16, SPI: 16 }, trigger: 'stat_food_use' } },
+  },
+  cinderheart_molten_banquet: {
+    id: 'cinderheart_molten_banquet', name: 'Cinderheart Molten Banquet', type: 'consumable',
+    description: 'A banquet worthy of the world’s molten heart. Grants a powerful bonus to all stats until its charges run out.',
+    stackable: true, sellValue: 95,
+    consumableEffect: { cooldownSeconds: 20, buff: { category: 'stat_food', statBonuses: { STR: 22, STA: 22, AGI: 22, INT: 22, SPI: 22 }, trigger: 'stat_food_use' } },
+  },
+
   // ── Tailoring bags — permanent inventory capacity, consumed on use (see
   // firebase/consumables.ts's bagCapacityBonus handling). Each is strictly
   // additive, so order of purchase/use never matters.

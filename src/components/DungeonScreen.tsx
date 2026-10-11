@@ -110,9 +110,10 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
   const altSetupsRef = useRef<CompanionCombatSetup[]>([]);
   const pendingKillsRef = useRef<KillReward[]>([]);
   const pendingQuestSignalsRef = useRef<QuestSignals>({ healingDone: 0, abilityUseCounts: {} });
-  const pendingBuffTriggersRef = useRef<{ offensive_action: number; damage_taken: number }>({
+  const pendingBuffTriggersRef = useRef<{ offensive_action: number; damage_taken: number; stat_food_use: number }>({
     offensive_action: 0,
     damage_taken: 0,
+    stat_food_use: 0,
   });
   // Enchanting overhaul's charge counters — see CombatScreen.tsx's matching
   // pendingEnchantTriggersRef comment for why this is a separate tally from
@@ -161,6 +162,11 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
         kind: 'status',
       });
     }
+    // Cooking overhaul Tier 2 — Stat Food consumes exactly 1 charge per
+    // COMPLETED ENCOUNTER (this function fires once per whole-wave clear,
+    // regardless of stage size — see TickContext.nextMonster's doc
+    // comment), never once per enemy in a multi_target wave.
+    pendingBuffTriggersRef.current.stat_food_use++;
     stageIndexRef.current = (stageIndexRef.current + 1) % dungeon.stages.length;
     const next = MONSTERS[dungeon.stages[stageIndexRef.current]];
     currentMonsterRef.current = next;
@@ -253,7 +259,7 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
     retreatedRef.current = false;
     pendingKillsRef.current = [];
     pendingQuestSignalsRef.current = { healingDone: 0, abilityUseCounts: {} };
-    pendingBuffTriggersRef.current = { offensive_action: 0, damage_taken: 0 };
+    pendingBuffTriggersRef.current = { offensive_action: 0, damage_taken: 0, stat_food_use: 0 };
     pendingEnchantTriggersRef.current = { offensive_action: 0, damage_taken: 0 };
     stageIndexRef.current = 0;
     fullClearsRef.current = 0;
@@ -340,7 +346,7 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
     const enchantTriggers = pendingEnchantTriggersRef.current;
     const consumableState = consumableStateRef.current;
     const hasQuestSignals = questSignals.healingDone > 0 || Object.keys(questSignals.abilityUseCounts).length > 0;
-    const hasBuffTriggers = buffTriggers.offensive_action > 0 || buffTriggers.damage_taken > 0;
+    const hasBuffTriggers = buffTriggers.offensive_action > 0 || buffTriggers.damage_taken > 0 || buffTriggers.stat_food_use > 0;
     const hasEnchantTriggers = kills.length > 0 || enchantTriggers.offensive_action > 0 || enchantTriggers.damage_taken > 0;
     const hasConsumableUsage =
       consumableState.offensiveChargesConsumed > 0 ||
@@ -350,7 +356,7 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
     if (kills.length === 0 && !hasQuestSignals && !hasBuffTriggers && !hasConsumableUsage) return;
     pendingKillsRef.current = [];
     pendingQuestSignalsRef.current = { healingDone: 0, abilityUseCounts: {} };
-    pendingBuffTriggersRef.current = { offensive_action: 0, damage_taken: 0 };
+    pendingBuffTriggersRef.current = { offensive_action: 0, damage_taken: 0, stat_food_use: 0 };
     pendingEnchantTriggersRef.current = { offensive_action: 0, damage_taken: 0 };
     const dungeonClearsGained = pendingDungeonClearsRef.current;
     pendingDungeonClearsRef.current = 0;

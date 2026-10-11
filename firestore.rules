@@ -460,9 +460,9 @@ service cloud.firestore {
   }
 
   // Cooking overhaul's 6 independent zone-Mastery pools — same shape-only
-  // treatment as isValidFishingZoneMastery below. Not written by any path
-  // yet (reserved ahead of the Cooking Mastery phase of this overhaul);
-  // included now so its shape is already locked in once it is.
+  // treatment as isValidFishingZoneMastery below. Full validation happens
+  // in firebase/character.ts's applyCraftingProfessionResult, the only
+  // path that writes this field.
   function isValidCookingZoneMastery(after) {
     return !('cookingZoneMastery' in after) || (after.cookingZoneMastery is map && after.cookingZoneMastery.size() <= 6);
   }
@@ -477,7 +477,10 @@ service cloud.firestore {
   // Capped at 7 — the number of BuffCategory values (gameData/types.ts) —
   // since at most one buff per category can ever be active at once.
   function isValidActiveBuffs(after) {
-    return !('activeBuffs' in after) || (after.activeBuffs is map && after.activeBuffs.size() <= 7);
+    // Bounded by the number of registered BuffCategory values (8 as of the
+    // Cooking overhaul's 'stat_food' addition) — one active buff per
+    // category at most.
+    return !('activeBuffs' in after) || (after.activeBuffs is map && after.activeBuffs.size() <= 8);
   }
 
   // Same "may not exist yet on an old character" treatment as Smithing/

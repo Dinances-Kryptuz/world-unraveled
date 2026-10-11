@@ -11,6 +11,7 @@ import { ZONES } from './zones';
 import { HERBALISM_ZONE_MASTERY_THRESHOLD, FISHING_ZONE_MASTERY_THRESHOLD } from './gatheringEngine';
 import { ALCHEMY_ZONE_MASTERY_THRESHOLD } from './alchemyMastery';
 import { ENCHANTING_ZONE_MASTERY_THRESHOLD } from './enchantingMastery';
+import { COOKING_ZONE_MASTERY_THRESHOLD } from './cookingMastery';
 
 // Snapshot-checked, not event-driven: each check() reads CURRENT persisted
 // state and either is or isn't true right now. "Unlocked" is still
@@ -155,6 +156,12 @@ export function isEnchantingZoneMastered(character: Character, zoneId: string): 
   return xp >= ENCHANTING_ZONE_MASTERY_THRESHOLD;
 }
 
+// Cooking overhaul's own zone-Mastery axis.
+export function isCookingZoneMastered(character: Character, zoneId: string): boolean {
+  const xp = character.cookingZoneMastery?.[zoneId]?.xp ?? 0;
+  return xp >= COOKING_ZONE_MASTERY_THRESHOLD;
+}
+
 // One "Master Forager of {zone.name}" achievement per gameData/zones.ts
 // ZONE — same fully data-driven, zero-per-zone-hardcoding pattern as
 // generateMasteryAchievements above, reading the real ZONES registry
@@ -222,6 +229,24 @@ function generateEnchanterAchievements(): AchievementDef[] {
   }));
 }
 
+// Cooking overhaul — "Chef" (not "Alchemist"/"Enchanter"/"Blacksmith"),
+// one "Master Chef of {zone.name}" achievement per gameData/zones.ts ZONE.
+function generateChefAchievements(): AchievementDef[] {
+  return Object.values(ZONES).map((zone) => ({
+    id: `chef_${zone.id}`,
+    name: `Master Chef of ${zone.name}`,
+    description: `Reach 100% Cooking Mastery in ${zone.name}.`,
+    check: (c: Character) => isCookingZoneMastered(c, zone.id),
+  }));
+}
+
+const GRANDMASTER_CHEF_ACHIEVEMENT: AchievementDef = {
+  id: 'grandmaster_chef',
+  name: 'Grandmaster Chef',
+  description: 'Reach 100% Cooking Mastery in every zone.',
+  check: (c) => Object.values(ZONES).every((z) => isCookingZoneMastered(c, z.id)),
+};
+
 const GRANDMASTER_ENCHANTER_ACHIEVEMENT: AchievementDef = {
   id: 'grandmaster_enchanter',
   name: 'Grandmaster Enchanter',
@@ -246,6 +271,8 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   GRANDMASTER_ALCHEMIST_ACHIEVEMENT,
   ...generateEnchanterAchievements(),
   GRANDMASTER_ENCHANTER_ACHIEVEMENT,
+  ...generateChefAchievements(),
+  GRANDMASTER_CHEF_ACHIEVEMENT,
   { id: 'first_steps', name: 'First Steps', description: 'Reach character level 5.', check: (c) => c.level >= 5 },
   { id: 'adventurer', name: 'Adventurer', description: 'Reach character level 25.', check: (c) => c.level >= 25 },
   { id: 'veteran', name: 'Veteran', description: 'Reach character level 40.', check: (c) => c.level >= 40 },

@@ -36,6 +36,7 @@ import { MATERIAL_MASTERY_XP_THRESHOLDS, rollArmorStats, canonicalInstanceId } f
 import { herbZoneOf } from '../gameData/herbs';
 import { ALCHEMY_ZONE_MASTERY_THRESHOLD } from '../gameData/alchemyMastery';
 import { ENCHANTING_ZONE_MASTERY_THRESHOLD } from '../gameData/enchantingMastery';
+import { COOKING_ZONE_MASTERY_THRESHOLD } from '../gameData/cookingMastery';
 
 export const BASE_BAG_SLOTS = 24;
 
@@ -585,6 +586,12 @@ function allEnchantingZonesMastered(mastery: ZoneMasteryState | undefined): bool
   return Object.keys(ZONES).every((zoneId) => (mastery?.[zoneId]?.xp ?? 0) >= ENCHANTING_ZONE_MASTERY_THRESHOLD);
 }
 
+// Same role as allEnchantingZonesMastered above, for Cooking's own
+// zone-Mastery axis.
+function allCookingZonesMastered(mastery: ZoneMasteryState | undefined): boolean {
+  return Object.keys(ZONES).every((zoneId) => (mastery?.[zoneId]?.xp ?? 0) >= COOKING_ZONE_MASTERY_THRESHOLD);
+}
+
 function allMaterialsMastered(mastery: MaterialMasteryState | undefined, registry: MaterialDef[] = MATERIALS): boolean {
   return registry.every((m) => (mastery?.[m.id]?.xp ?? 0) >= (MATERIAL_MASTERY_XP_THRESHOLDS[m.id] ?? Infinity));
 }
@@ -641,6 +648,17 @@ export async function applyCraftingProfessionResult(
     enchantingZoneMastery?: {
       zoneId: string;
       newEnchantingZoneMasteryXp: number;
+    };
+    // Only set for a Recipe.cookingZoneId-tagged recipe (every Cooking
+    // overhaul recipe) — see craftingEngine.ts's resolveCraftingOffline/
+    // CookingZoneMasteryInput. `batches` is only populated for a Tier 2
+    // (Stat Food) recipe (see CraftingOfflineResult.cookingZoneMasteryBatches'
+    // doc comment) — absent for Tier 1/3, which fall through to the plain
+    // resultQuantity grant below like any other stackable item.
+    cookingZoneMastery?: {
+      zoneId: string;
+      newCookingZoneMasteryXp: number;
+      batches?: { quantity: number; chargesAtCraft: number }[];
     };
   }
 ): Promise<void> {
@@ -763,6 +781,31 @@ export async function applyCraftingProfessionResult(
         characterUpdate.unlockedAchievementIds = arrayUnion(...newlyUnlockedIds);
         characterUpdate.unlockedTitleIds = arrayUnion(...newlyUnlockedIds);
       }
+    } else if (result.cookingZoneMastery) {
+      // Cooking's own zone-Mastery axis — no cross-zone split needed (like
+      // Enchanting's), since no Cooking recipe spans two zones. Same eager-
+      // unlock treatment as the enchantingZoneMastery branch above.
+      const { zoneId, newCookingZoneMasteryXp } = result.cookingZoneMastery;
+      characterUpdate[`cookingZoneMastery.${zoneId}.xp`] = newCookingZoneMasteryXp;
+      const hypotheticalZoneMastery: ZoneMasteryState = {
+        ...character.cookingZoneMastery,
+        [zoneId]: { xp: newCookingZoneMasteryXp },
+      };
+      const newlyUnlockedIds: string[] = [];
+      const touchedId = `chef_${zoneId}`;
+      if (!character.unlockedAchievementIds.includes(touchedId) && newCookingZoneMasteryXp >= COOKING_ZONE_MASTERY_THRESHOLD) {
+        newlyUnlockedIds.push(touchedId);
+      }
+      if (
+        !character.unlockedAchievementIds.includes('grandmaster_chef') &&
+        allCookingZonesMastered(hypotheticalZoneMastery)
+      ) {
+        newlyUnlockedIds.push('grandmaster_chef');
+      }
+      if (newlyUnlockedIds.length > 0) {
+        characterUpdate.unlockedAchievementIds = arrayUnion(...newlyUnlockedIds);
+        characterUpdate.unlockedTitleIds = arrayUnion(...newlyUnlockedIds);
+      }
     } else {
       characterUpdate[`professions.${profession}.mastery.${recipeId}`] = {
         level: result.newMasteryLevel,
@@ -825,6 +868,28 @@ export async function applyCraftingProfessionResult(
     const grantsByCharges = new Map<number, number>();
     let carry = 0;
     for (const batch of result.alchemyZoneMastery.batches) {
+      carry += batch.quantity;
+      const whole = Math.floor(carry);
+      carry -= whole;
+      if (whole > 0) {
+        grantsByCharges.set(batch.chargesAtCraft, (grantsByCharges.get(batch.chargesAtCraft) ?? 0) + whole);
+      }
+    }
+    if (grantsByCharges.size > 0) {
+      await grantChargedConsumables(
+        uid,
+        result.resultItemId,
+        Array.from(grantsByCharges, ([remainingCharges, quantity]) => ({ remainingCharges, quantity }))
+      );
+    }
+  } else if (result.cookingZoneMastery?.batches) {
+    // Only a Tier 2 (Stat Food) recipe ever sets `batches` — same batch-
+    // carry/floor/charge-count treatment as the alchemyZoneMastery branch
+    // above, since Stat Food's charges-per-serving are set at CRAFT TIME
+    // and must never be retroactively changed for already-crafted servings.
+    const grantsByCharges = new Map<number, number>();
+    let carry = 0;
+    for (const batch of result.cookingZoneMastery.batches) {
       carry += batch.quantity;
       const whole = Math.floor(carry);
       carry -= whole;

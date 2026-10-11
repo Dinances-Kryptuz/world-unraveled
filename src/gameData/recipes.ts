@@ -1471,6 +1471,62 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
 
+  // ── Cooking overhaul Tier 2 — Stat Food. Pricier than the matching Tier 1
+  // dish at the same zone/level (more fish, more meat) per the design
+  // brief's "balanced against real ingredient-acquisition difficulty" ask —
+  // its 5x Mastery XP weight (gameData/cookingMastery.ts) already reflects
+  // that too. resultQuantity stays 1: the real "how many charges per
+  // serving" question is answered at craft time by that zone's Cooking
+  // Mastery, not by this field.
+  greenhollow_hunters_stew: {
+    id: 'greenhollow_hunters_stew', name: 'Greenhollow Hunter’s Stew', profession: 'cooking', requiredSkill: 1,
+    resultItemId: 'greenhollow_hunters_stew', resultQuantity: 1,
+    materials: [{ itemId: 'brilliant_smallfish', quantity: 5 }, { itemId: 'boar_meat', quantity: 4 }],
+    cookingZoneId: 'greenhollow_fields', cookingTier: 2,
+    craftSeconds: 10, xpAward: 10,
+    source: 'trainer', rarity: 'uncommon', learnedAutomatically: true,
+  },
+  stonecrag_highland_fare: {
+    id: 'stonecrag_highland_fare', name: 'Stonecrag Highland Fare', profession: 'cooking', requiredSkill: 16,
+    resultItemId: 'stonecrag_highland_fare', resultQuantity: 1,
+    materials: [{ itemId: 'bristle_whisker_catfish', quantity: 5 }, { itemId: 'raw_meat', quantity: 4 }],
+    cookingZoneId: 'stonecrag_foothills', cookingTier: 2,
+    craftSeconds: 14, xpAward: 16,
+    source: 'trainer', rarity: 'uncommon', learnedAutomatically: true,
+  },
+  emberfall_ridge_platter: {
+    id: 'emberfall_ridge_platter', name: 'Emberfall Ridge Platter', profession: 'cooking', requiredSkill: 31,
+    resultItemId: 'emberfall_ridge_platter', resultQuantity: 1,
+    materials: [{ itemId: 'mithril_head_trout', quantity: 6 }, { itemId: 'common_seasoning', quantity: 2 }],
+    cookingZoneId: 'emberfall_ridge', cookingTier: 2,
+    craftSeconds: 17, xpAward: 26,
+    source: 'trainer', rarity: 'uncommon', learnedAutomatically: true,
+  },
+  cinderfall_depths_banquet: {
+    id: 'cinderfall_depths_banquet', name: 'Cinderfall Depths Banquet', profession: 'cooking', requiredSkill: 46,
+    resultItemId: 'cinderfall_depths_banquet', resultQuantity: 1,
+    materials: [{ itemId: 'redgill', quantity: 5 }, { itemId: 'scavenger_meat', quantity: 4 }],
+    cookingZoneId: 'cinderfall_depths', cookingTier: 2,
+    craftSeconds: 20, xpAward: 43,
+    source: 'trainer', rarity: 'rare', learnedAutomatically: true,
+  },
+  molten_scar_feast_platter: {
+    id: 'molten_scar_feast_platter', name: 'Molten Scar Feast Platter', profession: 'cooking', requiredSkill: 61,
+    resultItemId: 'molten_scar_feast_platter', resultQuantity: 1,
+    materials: [{ itemId: 'stonescale_eel', quantity: 5 }, { itemId: 'hound_meat', quantity: 4 }],
+    cookingZoneId: 'molten_scar', cookingTier: 2,
+    craftSeconds: 23, xpAward: 70,
+    source: 'trainer', rarity: 'rare', learnedAutomatically: true,
+  },
+  cinderheart_molten_banquet: {
+    id: 'cinderheart_molten_banquet', name: 'Cinderheart Molten Banquet', profession: 'cooking', requiredSkill: 81,
+    resultItemId: 'cinderheart_molten_banquet', resultQuantity: 1,
+    materials: [{ itemId: 'emberfin_snapper', quantity: 5 }, { itemId: 'behemoth_flank', quantity: 4 }],
+    cookingZoneId: 'cinderheart_crater', cookingTier: 2,
+    craftSeconds: 26, xpAward: 114,
+    source: 'trainer', rarity: 'rare', learnedAutomatically: true,
+  },
+
   // ── Tailoring bags — permanent inventory capacity (see items.ts).
   small_pack: {
     id: 'small_pack', name: 'Small Pack', profession: 'tailoring', requiredSkill: 5,

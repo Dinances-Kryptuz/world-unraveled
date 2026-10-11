@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useCharacter } from '../hooks/useCharacter';
 import { subscribeToInventory } from '../firebase/inventory';
-import { useConsumableOutOfCombat, setEquippedConsumable } from '../firebase/consumables';
+import { useConsumableOutOfCombat, setEquippedConsumable, equipStatFood } from '../firebase/consumables';
 import { ITEMS } from '../gameData/items';
 import { ConsumablesBar } from './ConsumablesBar';
 import { ItemSlot } from './ItemSlot';
@@ -46,6 +46,19 @@ export function InventoryScreen() {
     if (!user) return;
     const result = await setEquippedConsumable(user.uid, slot, itemId);
     if (!result.success) setError(result.reason ?? 'Could not equip that.');
+    await refetch();
+  }
+
+  // Cooking overhaul Tier 2 — Stat Food. Equipping immediately consumes one
+  // serving from inventory (unlike the Food/Potion slots above, which are
+  // just pointers) — see firebase/consumables.ts's equipStatFood doc
+  // comment for why a Stat Food serving can't go through the generic
+  // buffUpdateForItem path.
+  async function handleEquipStatFood(itemId: string) {
+    if (!user) return;
+    setError(null);
+    const result = await equipStatFood(user.uid, itemId);
+    if (!result.success) setError(result.reason ?? 'Could not equip that Stat Food.');
     await refetch();
   }
 
@@ -103,6 +116,12 @@ export function InventoryScreen() {
         onEquip={handleEquipConsumable}
       />
       {error && <p className="error">{error}</p>}
+      {character.activeBuffs.stat_food && (
+        <p>
+          Active Stat Food: {ITEMS[character.activeBuffs.stat_food.itemId]?.name ?? character.activeBuffs.stat_food.itemId} (
+          {character.activeBuffs.stat_food.charges} charges left)
+        </p>
+      )}
       {entries.length === 0 ? (
         <p>Empty so far — go fight or gather something.</p>
       ) : (
@@ -116,11 +135,13 @@ export function InventoryScreen() {
                 </li>
               );
             }
+            const isStatFood = item.consumableEffect?.buff?.category === 'stat_food';
             return (
               <li key={key}>
                 <div className="item-row-main">
                   <ItemSlot item={item} quantity={quantity} statOverride={rolls} remainingCharges={remainingCharges} />
                   <span>{item.name}</span>
+                  {isStatFood && <button onClick={() => handleEquipStatFood(itemId)}>Equip</button>}
                 </div>
               </li>
             );
