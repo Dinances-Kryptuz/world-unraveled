@@ -17,6 +17,7 @@ import { DUNGEONS } from '../gameData/dungeons';
 import { MONSTERS } from '../gameData/monsters';
 import { notify } from '../utils/notifications';
 import { ITEMS } from '../gameData/items';
+import { inferItemRarity, RARITY_COLORS } from '../gameData/itemRarity';
 import { resolveSpecDef, getExtraDamageTakenPct } from '../gameData/combatProfileWithTalents';
 import { evaluateTalents, EMPTY_TALENT_TOTALS } from '../utils/talentEvaluator';
 import { evaluateActiveBuffs } from '../gameData/buffs';
@@ -86,6 +87,13 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
   const secondsSinceSaveRef = useRef(0);
 
   const [bankedTotals, setBankedTotals] = useState<SessionTotals>(EMPTY_TOTALS);
+  // Equipment Rarity overhaul — a small rarity-colored "recent loot" strip.
+  // Combat events (CombatLog) never carried loot item ids (only text), and
+  // there was previously no in-page surface for loot at all beyond the OS
+  // notify() toast (plain text, can't be colored) — this is new, not a
+  // restyle of something that already rendered.
+  const [recentLoot, setRecentLoot] = useState<{ itemId: string; quantity: number }[]>([]);
+  const MAX_RECENT_LOOT = 8;
   const [fullClears, setFullClears] = useState(0);
   const [log, setLog] = useState<CombatEvent[]>([]);
   const [retreated, setRetreated] = useState(false);
@@ -306,6 +314,7 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
     setBankedTotals(EMPTY_TOTALS);
     setFullClears(0);
     setLog([]);
+    setRecentLoot([]);
     setRetreated(false);
     retreatedRef.current = false;
     pendingKillsRef.current = [];
@@ -378,6 +387,10 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
       const result = advanceCombat(combatStateRef.current, ctx, 1);
       pendingKillsRef.current.push(...result.kills);
       notifyKills(result.kills);
+      if (result.kills.some((k) => k.loot.length > 0)) {
+        const newDrops = result.kills.flatMap((k) => k.loot);
+        setRecentLoot((prev) => [...newDrops, ...prev].slice(0, MAX_RECENT_LOOT));
+      }
       mergeQuestSignals(pendingQuestSignalsRef.current, result.questSignals);
       for (const event of result.events) {
         if (event.kind === 'damage_out') {
@@ -734,6 +747,21 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
           gold{bankedTotals.voidShardsGained > 0 ? `, +${bankedTotals.voidShardsGained} Void Shards` : ''}, {fullClears}{' '}
           full clear{fullClears === 1 ? '' : 's'}
         </p>
+      )}
+
+      {recentLoot.length > 0 && (
+        <div className="dungeon-recent-loot">
+          <strong>Recent loot:</strong>{' '}
+          {recentLoot.map((drop, i) => {
+            const dropItem = ITEMS[drop.itemId];
+            const rarity = dropItem ? inferItemRarity(dropItem) : null;
+            return (
+              <span key={i} style={{ color: rarity ? RARITY_COLORS[rarity] : undefined, marginRight: 8 }}>
+                {drop.quantity}x {dropItem?.name ?? drop.itemId}
+              </span>
+            );
+          })}
+        </div>
       )}
 
       <button onClick={handleExit}>Exit Dungeon</button>

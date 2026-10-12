@@ -1594,17 +1594,17 @@ export const ITEMS: Record<string, ItemDef> = {
   chieftains_warhammer: {
     id: 'chieftains_warhammer', name: "Chieftain's Warhammer", type: 'equipment',
     description: 'The warhammer of the Kobold Warrens’ chieftain — heavier and better balanced than anything else this side of the Warrens.',
-    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 8 }, sellValue: 45,
+    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 8 }, rarity: 'blue', sellValue: 45,
   },
   chieftains_seal: {
     id: 'chieftains_seal', name: "Chieftain's Seal", type: 'equipment',
     description: 'A plain band the Kobold Chieftain wore into every fight — worn smooth, but still solid.',
-    stackable: true, equipSlot: 'ring', statBonuses: { STA: 3 }, sellValue: 15,
+    stackable: true, equipSlot: 'ring', statBonuses: { STA: 3 }, rarity: 'blue', sellValue: 15,
   },
   warlords_signet: {
     id: 'warlords_signet', name: "Warlord's Signet", type: 'equipment',
     description: 'A heavy signet ring taken from the Alpha Warlord of the Stonecrag Depths.',
-    stackable: true, equipSlot: 'ring', statBonuses: { STA: 4, STR: 4 }, sellValue: 50,
+    stackable: true, equipSlot: 'ring', statBonuses: { STA: 4, STR: 4 }, rarity: 'blue', sellValue: 50,
   },
 
   // ── Consumables — vendor-bought basics; see Alchemy below for the
@@ -1956,12 +1956,12 @@ export const ITEMS: Record<string, ItemDef> = {
   kaldrun_warhammer: {
     id: 'kaldrun_warhammer', name: "Kaldrun's Warhammer", type: 'equipment',
     description: "The Forgemaster's own warhammer — heavier and better balanced than anything else on the ridge.",
-    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 12, STA: 3 }, sellValue: 70,
+    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 12, STA: 3 }, rarity: 'blue', sellValue: 70,
   },
   kaldrun_tempered_band: {
     id: 'kaldrun_tempered_band', name: "Kaldrun's Tempered Band", type: 'equipment',
     description: "A heavy ring quenched in the Forgemaster's own fire, matching the ember-set rings the ridge's drakes carry.",
-    stackable: true, equipSlot: 'ring', statBonuses: { STR: 7 }, sellValue: 44,
+    stackable: true, equipSlot: 'ring', statBonuses: { STR: 7 }, rarity: 'blue', sellValue: 44,
   },
 
   // ── Cinderfall Depths materials ───────────────────────────────────────
@@ -2075,12 +2075,12 @@ export const ITEMS: Record<string, ItemDef> = {
   overseers_greatmace: {
     id: 'overseers_greatmace', name: "Overseer's Greatmace", type: 'equipment',
     description: 'The ceremonial mace of the Ashen Overseer — too heavy for most, and twice as deadly.',
-    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 14, STA: 4 }, sellValue: 80,
+    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 14, STA: 4 }, rarity: 'blue', sellValue: 80,
   },
   overseers_band: {
     id: 'overseers_band', name: "Overseer's Band", type: 'equipment',
     description: 'A plain ash-blackened ring the Overseer wore under its gauntlet — solid, and built to outlast whoever wears it.',
-    stackable: true, equipSlot: 'ring', statBonuses: { STA: 8 }, sellValue: 60,
+    stackable: true, equipSlot: 'ring', statBonuses: { STA: 8 }, rarity: 'blue', sellValue: 60,
   },
   emberpetal_tonic: {
     id: 'emberpetal_tonic', name: 'Emberpetal Tonic', type: 'consumable',
@@ -2190,7 +2190,7 @@ export const ITEMS: Record<string, ItemDef> = {
   heralds_ember_band: {
     id: 'heralds_ember_band', name: "Herald's Ember Band", type: 'equipment',
     description: 'A ring taken from the Molten Herald, still warm as a living coal.',
-    stackable: true, equipSlot: 'ring', statBonuses: { INT: 12, STA: 3 }, sellValue: 95,
+    stackable: true, equipSlot: 'ring', statBonuses: { INT: 12, STA: 3 }, rarity: 'blue', sellValue: 95,
   },
   magma_forged_band: {
     id: 'magma_forged_band', name: 'Magma-Forged Band', type: 'equipment',
@@ -2328,7 +2328,7 @@ export const ITEMS: Record<string, ItemDef> = {
   pyraxis_warblade: {
     id: 'pyraxis_warblade', name: "Pyraxis's Warblade", type: 'equipment',
     description: 'The warblade of Pyraxis, Warden of the Cinderheart — forged in fire older than the world above.',
-    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 18, STA: 5 }, sellValue: 140,
+    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 18, STA: 5 }, rarity: 'blue', sellValue: 140,
   },
 
   // ── Damaged dungeon boss drops — unequippable (no equipSlot) until a
@@ -4645,6 +4645,76 @@ export const ITEMS: Record<string, ItemDef> = {
     id: 'sacred_platinum_ring', name: 'Sacred Platinum Ring', type: 'equipment',
     description: 'A platinum ring set with a faintly glowing stone.',
     stackable: true, equipSlot: 'ring', statBonuses: { INT: 7, SPI: 6 }, sellValue: 68,
+  },
+
+  // ── Equipment Rarity overhaul — gray/white normal-monster drops ───────
+  // One gray (1 weak stat) + one white (2 weak stats) item per zone,
+  // deliberately modest — primarily useful for early progression/selling,
+  // never meant to compete with the zone's own crafted green gear (see
+  // each zone's green chest-slot minimum in equipmentRolls.ts's
+  // ARMOR_STAT_RANGES for the comparison: every value below sits well
+  // under it). necklace/belt chosen because neither ever has an armorType
+  // (gameData/types.ts), so these drop usable by any class with zero
+  // itemization-restriction edge cases.
+  gray_necklace_z1: {
+    id: 'gray_necklace_z1', name: 'Frayed Necklace', type: 'equipment',
+    description: 'A plain cord necklace, barely holding together.',
+    stackable: true, equipSlot: 'necklace', statBonuses: { STA: 2 }, rarity: 'gray', sellValue: 2,
+  },
+  white_belt_z1: {
+    id: 'white_belt_z1', name: 'Tattered Belt', type: 'equipment',
+    description: 'A worn leather belt, patched more than once.',
+    stackable: true, equipSlot: 'belt', statBonuses: { STA: 1, STR: 1 }, rarity: 'white', sellValue: 4,
+  },
+  gray_necklace_z2: {
+    id: 'gray_necklace_z2', name: 'Chipped Necklace', type: 'equipment',
+    description: 'A rough stone pendant on a leather cord.',
+    stackable: true, equipSlot: 'necklace', statBonuses: { STA: 3 }, rarity: 'gray', sellValue: 4,
+  },
+  white_belt_z2: {
+    id: 'white_belt_z2', name: 'Worn Hide Belt', type: 'equipment',
+    description: 'A sturdier hide belt, stained from the foothills.',
+    stackable: true, equipSlot: 'belt', statBonuses: { STA: 2, STR: 2 }, rarity: 'white', sellValue: 8,
+  },
+  gray_necklace_z3: {
+    id: 'gray_necklace_z3', name: 'Scorched Necklace', type: 'equipment',
+    description: 'A necklace singed by the ridge’s heat but still intact.',
+    stackable: true, equipSlot: 'necklace', statBonuses: { STA: 4 }, rarity: 'gray', sellValue: 6,
+  },
+  white_belt_z3: {
+    id: 'white_belt_z3', name: 'Singed Belt', type: 'equipment',
+    description: 'A belt scorched dark by the ridge’s heat, still holding its shape.',
+    stackable: true, equipSlot: 'belt', statBonuses: { STA: 2, STR: 2 }, rarity: 'white', sellValue: 12,
+  },
+  gray_necklace_z4: {
+    id: 'gray_necklace_z4', name: 'Ash-Dusted Necklace', type: 'equipment',
+    description: 'A necklace caked in fine cinderfall ash.',
+    stackable: true, equipSlot: 'necklace', statBonuses: { STA: 5 }, rarity: 'gray', sellValue: 8,
+  },
+  white_belt_z4: {
+    id: 'white_belt_z4', name: 'Ashhide Belt', type: 'equipment',
+    description: 'A belt cut from tough ash-hide, built for the depths.',
+    stackable: true, equipSlot: 'belt', statBonuses: { STA: 3, STR: 3 }, rarity: 'white', sellValue: 16,
+  },
+  gray_necklace_z5: {
+    id: 'gray_necklace_z5', name: 'Cracked Obsidian Necklace', type: 'equipment',
+    description: 'A necklace strung with a fissured shard of black glass.',
+    stackable: true, equipSlot: 'necklace', statBonuses: { STA: 6 }, rarity: 'gray', sellValue: 10,
+  },
+  white_belt_z5: {
+    id: 'white_belt_z5', name: 'Scaleback Belt', type: 'equipment',
+    description: 'A belt cut from tough scaleback hide.',
+    stackable: true, equipSlot: 'belt', statBonuses: { STA: 3, STR: 3 }, rarity: 'white', sellValue: 20,
+  },
+  gray_necklace_z6: {
+    id: 'gray_necklace_z6', name: 'Emberlord’s Lost Pendant', type: 'equipment',
+    description: 'A charm dropped by one of the crater’s lesser cultists.',
+    stackable: true, equipSlot: 'necklace', statBonuses: { STA: 8 }, rarity: 'gray', sellValue: 14,
+  },
+  white_belt_z6: {
+    id: 'white_belt_z6', name: 'Emberscale Belt', type: 'equipment',
+    description: 'A belt cut from emberscale hide, warm to the touch.',
+    stackable: true, equipSlot: 'belt', statBonuses: { STA: 4, STR: 4 }, rarity: 'white', sellValue: 28,
   },
 
 };

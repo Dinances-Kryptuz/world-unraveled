@@ -16,6 +16,7 @@ import { equippedItemId } from '../../gameData/equipmentStats';
 import { describeItemStats } from '../../gameData/equipmentStats';
 import { MATERIALS, LEATHER_MATERIALS, CLOTH_MATERIALS, WOOD_MATERIALS, getMaterial, type MaterialDef } from '../../gameData/materials';
 import { getItemDisplayName, equipmentSuffixFor } from '../../gameData/equipmentSuffixes';
+import { rarityColor } from '../../gameData/itemRarity';
 import { materialIdForItem } from '../../gameData/itemMetadata';
 import { matchesInventoryFilter, type InventoryEntry } from '../../gameData/inventorySort';
 import {
@@ -697,7 +698,7 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
                             }
                           />
                           <ItemSlot item={item} quantity={quantity} statOverride={rolls} />
-                          <span>{getItemDisplayName(item.name, rolls)}</span>
+                          <span style={{ color: rarityColor(item) ?? undefined }}>{getItemDisplayName(item.name, rolls)}</span>
                         </div>
                         <input
                           type="range"

@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { getItemIcon } from '../gameData/itemIcons';
 import { getItemDisplayName } from '../gameData/equipmentSuffixes';
 import { compareEquipmentStats } from '../gameData/equipmentComparison';
+import { inferItemRarity, RARITY_COLORS, RARITY_LABELS } from '../gameData/itemRarity';
 import type { BaseStat } from '../gameData/classStats';
 import type { ItemDef } from '../gameData/types';
 
@@ -45,13 +46,15 @@ function buildTooltip(
   const metaParts = [TYPE_LABEL[item.type]];
   if (item.equipSlot) metaParts.push(item.equipSlot[0].toUpperCase() + item.equipSlot.slice(1));
   if (item.armorType) metaParts.push(item.armorType[0].toUpperCase() + item.armorType.slice(1));
+  const rarity = inferItemRarity(item);
 
   return (
     <div className="item-tooltip">
-      <div className="item-tooltip-name">
+      <div className="item-tooltip-name" style={rarity ? { color: RARITY_COLORS[rarity] } : undefined}>
         {getItemDisplayName(item.name, statOverride)}
         {locked ? ' 🔒' : ''}
       </div>
+      {rarity && <div className="item-tooltip-rarity" style={{ color: RARITY_COLORS[rarity] }}>{RARITY_LABELS[rarity]}</div>}
       <div className="item-tooltip-meta">{metaParts.join(' · ')}</div>
       {statLine && <div className="item-tooltip-stats">{statLine}</div>}
       {comparison && comparison.rows.length > 0 && (
@@ -163,12 +166,20 @@ export function ItemSlot({
   children?: ReactNode;
 }) {
   const Tag = onClick ? 'button' : 'div';
+  // Equipment Rarity overhaul — a colored border on the tile itself, same
+  // color as the tooltip name, so rarity reads at a glance across a grid
+  // without needing to hover every item. 'white' (RARITY_COLORS.white ===
+  // 'inherit') intentionally renders no special border, matching WoW's own
+  // "Common quality items aren't highlighted" convention.
+  const rarity = inferItemRarity(item);
+  const rarityBorderColor = rarity && RARITY_COLORS[rarity] !== 'inherit' ? RARITY_COLORS[rarity] : undefined;
   return (
     <Tag
       className={`item-slot${highlight ? ' item-slot-highlight' : ''}${disabled ? ' item-slot-disabled' : ''}`}
       onClick={onClick}
       disabled={onClick ? disabled : undefined}
       type={onClick ? 'button' : undefined}
+      style={rarityBorderColor ? { borderColor: rarityBorderColor } : undefined}
     >
       <ItemIcon key={item.id} item={item} />
       {quantity !== undefined && quantity > 1 && <span className="item-slot-qty">{quantity}</span>}

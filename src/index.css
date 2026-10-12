@@ -521,6 +521,12 @@ button.item-slot:active:not(:disabled) {
   margin-bottom: 2px;
 }
 
+.item-tooltip-rarity {
+  font-size: 0.72rem;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
 .item-tooltip-meta {
   font-size: 0.72rem;
   color: #b8ac97;

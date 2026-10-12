@@ -15,6 +15,8 @@ export const MONSTERS: Record<string, Monster> = {
       { itemId: 'leather_scraps', chance: 0.15, minQty: 1, maxQty: 2 },
       { itemId: 'boar_meat', chance: 0.6, minQty: 1, maxQty: 2 },
       { itemId: 'small_tusk', chance: 0.1, minQty: 1, maxQty: 1 },
+      { itemId: 'gray_necklace_z1', chance: 0.12, minQty: 1, maxQty: 1 },
+      { itemId: 'white_belt_z1', chance: 0.08, minQty: 1, maxQty: 1 },
     ],
     specialAbility: {
       name: 'Charge',
@@ -105,6 +107,8 @@ export const MONSTERS: Record<string, Monster> = {
       { itemId: 'coarse_hide', chance: 0.55, minQty: 1, maxQty: 2 },
       { itemId: 'raw_meat', chance: 0.45, minQty: 1, maxQty: 2 },
       { itemId: 'stone_shard', chance: 0.08, minQty: 1, maxQty: 1 },
+      { itemId: 'gray_necklace_z2', chance: 0.12, minQty: 1, maxQty: 1 },
+      { itemId: 'white_belt_z2', chance: 0.08, minQty: 1, maxQty: 1 },
     ],
     specialAbility: {
       name: 'Snarl',
@@ -218,6 +222,8 @@ export const MONSTERS: Record<string, Monster> = {
       { itemId: 'scaled_hide', chance: 0.5, minQty: 1, maxQty: 2 },
       { itemId: 'raw_meat', chance: 0.4, minQty: 1, maxQty: 2 },
       { itemId: 'ember_shard', chance: 0.05, minQty: 1, maxQty: 1 },
+      { itemId: 'gray_necklace_z3', chance: 0.12, minQty: 1, maxQty: 1 },
+      { itemId: 'white_belt_z3', chance: 0.08, minQty: 1, maxQty: 1 },
     ],
     specialAbility: {
       name: 'Ember Bite',
@@ -422,6 +428,8 @@ export const MONSTERS: Record<string, Monster> = {
     lootTable: [
       { itemId: 'mageweave_cloth', chance: 0.4, minQty: 1, maxQty: 2 },
       { itemId: 'smoky_quartz', chance: 0.06, minQty: 1, maxQty: 1 },
+      { itemId: 'gray_necklace_z4', chance: 0.12, minQty: 1, maxQty: 1 },
+      { itemId: 'white_belt_z4', chance: 0.08, minQty: 1, maxQty: 1 },
     ],
     specialAbility: {
       name: 'Chilling Wail',
@@ -526,6 +534,8 @@ export const MONSTERS: Record<string, Monster> = {
     lootTable: [
       { itemId: 'runecloth', chance: 0.4, minQty: 1, maxQty: 2 },
       { itemId: 'fire_opal', chance: 0.06, minQty: 1, maxQty: 1 },
+      { itemId: 'gray_necklace_z5', chance: 0.12, minQty: 1, maxQty: 1 },
+      { itemId: 'white_belt_z5', chance: 0.08, minQty: 1, maxQty: 1 },
     ],
     specialAbility: {
       name: 'Firebolt',
@@ -633,6 +643,8 @@ export const MONSTERS: Record<string, Monster> = {
     lootTable: [
       { itemId: 'ember_cloth', chance: 0.4, minQty: 1, maxQty: 2 },
       { itemId: 'heartflame_crystal', chance: 0.06, minQty: 1, maxQty: 1 },
+      { itemId: 'gray_necklace_z6', chance: 0.12, minQty: 1, maxQty: 1 },
+      { itemId: 'white_belt_z6', chance: 0.08, minQty: 1, maxQty: 1 },
     ],
     specialAbility: {
       name: 'Devotion of Flame',

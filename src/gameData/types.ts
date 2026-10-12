@@ -381,6 +381,15 @@ export interface EquippedItemRef {
   rolls?: Partial<Record<import('./classStats').BaseStat, number>>;
 }
 
+// Equipment Rarity overhaul — WoW-Classic-style item quality tiers, a
+// DIFFERENT axis from RecipeRarity below (which describes how hard a
+// *recipe* is to obtain, not the *item's* own power tier). Gray/white are
+// new, minor normal-monster-drop content; green is the existing crafted
+// randomized-stat system; blue/purple are dungeon-sourced fixed-stat gear
+// (plus an advanced "masterwork" crafted recipe tier for blue); orange is
+// reserved, zero content yet (future raid/legendary).
+export type ItemRarity = 'gray' | 'white' | 'green' | 'blue' | 'purple' | 'orange';
+
 export interface ItemDef {
   id: string;
   name: string;
@@ -426,6 +435,19 @@ export interface ItemDef {
   // id/name pattern-matching at combat time (that would silently re-tag any
   // future reskin); this is the one explicit source of truth.
   isShield?: boolean;
+  // Equipment Rarity overhaul — explicit override for this item's rarity
+  // tier. Absent means "infer it" (see gameData/itemRarity.ts's
+  // inferItemRarity) rather than "no rarity" — every equippable item has
+  // SOME rarity for display purposes, but only items where inference would
+  // guess wrong (fixed-stat dungeon drops, the two repaired boss weapons,
+  // the small new gray/white monster-drop set) need to say so explicitly.
+  rarity?: ItemRarity;
+  // Reserved for future Legendary (orange) raid content — a short machine
+  // key naming a unique on-equip/on-proc effect this specific item grants,
+  // outside the normal statBonuses system. No current item sets this; kept
+  // here now (architecture-only, per the design brief) so a future
+  // legendary doesn't need a schema change to exist.
+  uniqueEffect?: string;
   sellValue: number;
 }
 

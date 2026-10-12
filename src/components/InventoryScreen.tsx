@@ -6,6 +6,7 @@ import { useConsumableOutOfCombat, setEquippedConsumable, equipStatFood } from '
 import { setInventorySortPrefs } from '../firebase/character';
 import { ITEMS } from '../gameData/items';
 import { getItemDisplayName, equipmentSuffixFor } from '../gameData/equipmentSuffixes';
+import { rarityColor } from '../gameData/itemRarity';
 import { materialIdForItem } from '../gameData/itemMetadata';
 import { getMaterial } from '../gameData/materials';
 import { sortInventoryEntries, matchesInventoryFilter, type InventoryEntry } from '../gameData/inventorySort';
@@ -311,7 +312,7 @@ export function InventoryScreen() {
                     compareStats={compareStats}
                     locked={locked}
                   />
-                  <span>{getItemDisplayName(item.name, rolls)}</span>
+                  <span style={{ color: rarityColor(item) ?? undefined }}>{getItemDisplayName(item.name, rolls)}</span>
                   {isStatFood && <button onClick={() => handleEquipStatFood(itemId)}>Equip</button>}
                   {isLockableEquipment && (
                     <button onClick={() => handleToggleLock(key, locked)}>{locked ? 'Unlock' : 'Lock'}</button>
