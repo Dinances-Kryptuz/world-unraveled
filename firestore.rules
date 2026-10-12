@@ -34,8 +34,8 @@ service cloud.firestore {
 
       match /inventory/{docId} {
         allow read: if request.auth != null && request.auth.uid == uid;
-        allow create: if request.auth != null && request.auth.uid == uid && request.resource.data.keys().hasOnly(['items', 'equipmentInstances', 'chargedConsumables']);
-        allow update: if request.auth != null && request.auth.uid == uid && request.resource.data.keys().hasOnly(['items', 'equipmentInstances', 'chargedConsumables']);
+        allow create: if request.auth != null && request.auth.uid == uid && request.resource.data.keys().hasOnly(['items', 'equipmentInstances', 'chargedConsumables', 'lockedInstanceIds']);
+        allow update: if request.auth != null && request.auth.uid == uid && request.resource.data.keys().hasOnly(['items', 'equipmentInstances', 'chargedConsumables', 'lockedInstanceIds']);
         allow delete: if false;
       }
 
@@ -44,8 +44,8 @@ service cloud.firestore {
       // a different document shape.
       match /bank/{docId} {
         allow read: if request.auth != null && request.auth.uid == uid;
-        allow create: if request.auth != null && request.auth.uid == uid && request.resource.data.keys().hasOnly(['items', 'equipmentInstances', 'chargedConsumables']);
-        allow update: if request.auth != null && request.auth.uid == uid && request.resource.data.keys().hasOnly(['items', 'equipmentInstances', 'chargedConsumables']);
+        allow create: if request.auth != null && request.auth.uid == uid && request.resource.data.keys().hasOnly(['items', 'equipmentInstances', 'chargedConsumables', 'lockedInstanceIds']);
+        allow update: if request.auth != null && request.auth.uid == uid && request.resource.data.keys().hasOnly(['items', 'equipmentInstances', 'chargedConsumables', 'lockedInstanceIds']);
         allow delete: if false;
       }
 
@@ -69,12 +69,12 @@ service cloud.firestore {
 
         match /inventory/{docId} {
           allow read: if request.auth != null && request.auth.uid == uid;
-          allow create, update: if request.auth != null && request.auth.uid == uid && request.resource.data.keys().hasOnly(['items', 'equipmentInstances', 'chargedConsumables']);
+          allow create, update: if request.auth != null && request.auth.uid == uid && request.resource.data.keys().hasOnly(['items', 'equipmentInstances', 'chargedConsumables', 'lockedInstanceIds']);
           allow delete: if request.auth != null && request.auth.uid == uid;
         }
         match /bank/{docId} {
           allow read: if request.auth != null && request.auth.uid == uid;
-          allow create, update: if request.auth != null && request.auth.uid == uid && request.resource.data.keys().hasOnly(['items', 'equipmentInstances', 'chargedConsumables']);
+          allow create, update: if request.auth != null && request.auth.uid == uid && request.resource.data.keys().hasOnly(['items', 'equipmentInstances', 'chargedConsumables', 'lockedInstanceIds']);
           allow delete: if request.auth != null && request.auth.uid == uid;
         }
       }
@@ -230,7 +230,8 @@ service cloud.firestore {
       && isValidSkillXpNotificationsEnabled(after)
       && isValidMasteryXpNotificationsEnabled(after)
       && isValidMounts(after)
-      && isValidTrainedAbilityIds(after);
+      && isValidTrainedAbilityIds(after)
+      && isValidInventorySortPrefs(after);
   }
 
   // Same "may not exist yet on an old character" treatment and expression-
@@ -459,6 +460,16 @@ service cloud.firestore {
     return !('autoEatRank' in after) || (after.autoEatRank is number && after.autoEatRank >= 0 && after.autoEatRank <= 3);
   }
 
+  // Equipment overhaul's Inventory Sorting — presentation-only, so this is
+  // a shallow "it's a map with only the known fields" check, same posture
+  // as isValidConsumableAutomation's own field-presence-only validation.
+  function isValidInventorySortPrefs(after) {
+    return !('inventorySortPrefs' in after)
+      || (after.inventorySortPrefs is map
+        && after.inventorySortPrefs.keys().hasOnly(['sortBy', 'sortStat', 'filterSlot', 'filterTier', 'filterSuffix', 'filterLocked'])
+        && after.inventorySortPrefs.sortBy in ['slot', 'tier', 'suffix', 'totalStats', 'individualStat', 'newest', 'oldest']);
+  }
+
   // Cooking overhaul's 6 independent zone-Mastery pools — same shape-only
   // treatment as isValidFishingZoneMastery below. Full validation happens
   // in firebase/character.ts's applyCraftingProfessionResult, the only
@@ -651,6 +662,11 @@ service cloud.firestore {
       && (a.zoneId == null || a.zoneId is string)
       && (a.startedAt == null || a.startedAt is timestamp)
       && (!('disenchantQuantity' in a) || a.disenchantQuantity is int)
+      // Continuous Disenchanting Queue overhaul — a list of plain maps, one
+      // per queued item; per-entry field shapes aren't validated any more
+      // deeply here, matching this function's own existing posture (e.g.
+      // disenchantInstanceId right below isn't type-checked either).
+      && (!('disenchantQueue' in a) || a.disenchantQueue is list)
       && (!('equippedShirtItemId' in a) || a.equippedShirtItemId == null || a.equippedShirtItemId is string);
   }
 }
