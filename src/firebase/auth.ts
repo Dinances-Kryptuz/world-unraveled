@@ -1,5 +1,6 @@
 import {
-  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signInAnonymously,
   signOut as firebaseSignOut,
   type User,
@@ -24,13 +25,34 @@ async function ensureUserDoc(user: User): Promise<void> {
 }
 
 /**
- * Signs the player in with Google. If this is their first time, creates
- * their users/{uid} account doc. Does NOT create characters/{uid} — that
- * happens during character creation (step 3), since a signed-in user with
- * no character yet is a valid, expected state (routes to char-creation screen).
+ * Signs the player in with Google via a full-page redirect (not a popup).
+ * Firefox's Enhanced Tracking Protection and Safari's ITP both partition
+ * storage for the third-party auth iframe/popup signInWithPopup relies on
+ * — in practice this doesn't fail the sign-in UP FRONT, it leaves the
+ * client looking signed in while the Firestore auth context is actually
+ * invalid, surfacing later as a generic "Missing or insufficient
+ * permissions" error on the first write. A redirect navigates the whole
+ * page to accounts.google.com and back, so there's no third-party storage
+ * context to partition. The page unloads immediately after this call;
+ * see handleAuthRedirectResult below for what happens after it returns.
  */
-export async function signInWithGoogle(): Promise<User> {
-  const result = await signInWithPopup(auth, googleProvider);
+export async function signInWithGoogle(): Promise<void> {
+  await signInWithRedirect(auth, googleProvider);
+}
+
+/**
+ * Call once on app load to resolve a pending signInWithGoogle redirect, if
+ * any — this is where the users/{uid} doc actually gets created/touched
+ * now (signInWithGoogle itself can't do it, since the page navigates away
+ * before that would run). A no-op (returns null) on every load that isn't
+ * the bounce-back from a redirect sign-in. onAuthStateChanged still fires
+ * with the resolved user right after this resolves, same as it would for
+ * any other sign-in method — the hook just also needs to await this once
+ * to actually write ensureUserDoc.
+ */
+export async function handleAuthRedirectResult(): Promise<User | null> {
+  const result = await getRedirectResult(auth);
+  if (!result) return null;
   await ensureUserDoc(result.user);
   return result.user;
 }
