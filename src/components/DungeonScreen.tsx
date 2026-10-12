@@ -27,7 +27,13 @@ import {
   type ConsumableAutomationRuntimeState,
 } from '../gameData/consumableAutomation';
 import { resolveActiveCompanionSetups, type CompanionCombatSetup } from '../gameData/companions';
-import { maxHp, resolveCurrentHp, ATTACK_INTERVAL_SECONDS } from '../gameData/combatFormulas';
+import {
+  maxHp,
+  resolveCurrentHp,
+  ATTACK_INTERVAL_SECONDS,
+  DUNGEON_TRASH_DAMAGE_MULTIPLIER,
+  DUNGEON_BOSS_DAMAGE_MULTIPLIER,
+} from '../gameData/combatFormulas';
 import { getEquipmentStatBonuses, isShieldEquipped } from '../gameData/equipmentStats';
 import { buildActiveEnchantTotals } from '../gameData/enchanting';
 import { characterXpForLevelV2, MAX_CHARACTER_LEVEL } from '../gameData/xpTables';
@@ -232,6 +238,15 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
     return (1 + companionCount) / currentEncounterSize();
   }
 
+  // Combat/Rarity overhaul — the damage-side counterpart. Deliberately NOT
+  // scaled by party size (unlike HP above): a dungeon's per-hit threat is
+  // meant to challenge an undergeared party member regardless of how many
+  // allies are along, not just add up to a bigger total HP bar to chew
+  // through.
+  function currentMonsterDamageMultiplier(): number {
+    return currentMonsterRef.current.isBoss ? DUNGEON_BOSS_DAMAGE_MULTIPLIER : DUNGEON_TRASH_DAMAGE_MULTIPLIER;
+  }
+
   function buildEncounterInput(c: Character): EncounterSetupInput {
     const specDef = resolveSpecDef(c.class, c.spec);
     const talentTotals = c.spec ? evaluateTalents(c.spec, c.talentPicks).totals : EMPTY_TALENT_TOTALS;
@@ -298,6 +313,7 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
       // across the wave for a multi_target stage — see
       // currentMonsterHpMultiplier.
       monsterHpMultiplier: currentMonsterHpMultiplier(companions.length),
+      monsterDamageMultiplier: currentMonsterDamageMultiplier(),
       encounterSize: currentEncounterSize(),
     };
   }
@@ -381,6 +397,7 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
         nextMonster,
         encounterSize: currentEncounterSize(),
         monsterHpMultiplier: currentMonsterHpMultiplier(companionCount),
+        monsterDamageMultiplier: currentMonsterDamageMultiplier(),
         consumableState: consumableStateRef.current,
         goldFindPct: goldFindPctRef.current,
       };
@@ -572,6 +589,7 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
       nextMonster,
       encounterSize: currentEncounterSize(),
       monsterHpMultiplier: currentMonsterHpMultiplier(state.party.length - 1),
+      monsterDamageMultiplier: currentMonsterDamageMultiplier(),
       consumableState: consumableStateRef.current,
       goldFindPct: goldFindPctRef.current,
     };

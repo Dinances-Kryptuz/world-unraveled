@@ -106,6 +106,13 @@ export interface EncounterSetupInput {
   // open-world fight) leaves monster HP exactly as before this field
   // existed. See DungeonScreen.tsx for how this is computed.
   monsterHpMultiplier?: number;
+  // Combat/Rarity overhaul — multiplies monster DAMAGE (not HP), the
+  // sibling lever monsterHpMultiplier never had. Open-world combat never
+  // sets this (undefined/1, no change from before this field existed);
+  // dungeons set a small fixed value (bigger for a boss stage than trash)
+  // so a dungeon fight is a genuinely harder encounter per-hit, not just a
+  // bigger HP bar — see DungeonScreen.tsx.
+  monsterDamageMultiplier?: number;
   // How many enemies to start the encounter with — 1 everywhere except a
   // 'multi_target' dungeon stage (see TickContext.encounterSize, which this
   // feeds into alongside it for the respawn/wave-advance step).
@@ -350,13 +357,19 @@ function buildCompanionProfile(companion: CompanionCombatSetup, monster: Monster
   };
 }
 
-function buildMonsterProfile(monster: Monster, playerLevel: number, playerCombatType: CombatType): CasterProfile {
+function buildMonsterProfile(
+  monster: Monster,
+  playerLevel: number,
+  playerCombatType: CombatType,
+  damageMultiplier: number = 1
+): CasterProfile {
   const diff = monster.level - playerLevel;
   const eliteDamageMult = monster.isElite ? ELITE_DAMAGE_MULTIPLIER : 1;
   const eliteArmorMult = monster.isElite ? ELITE_ARMOR_MULTIPLIER : 1;
   return {
     normalizedHit: monsterBaseDamage(monster.level),
-    damageCoef: enemyDamageModifier(diff) * combatTypeModifier(monster.combatType, playerCombatType) * eliteDamageMult,
+    damageCoef:
+      enemyDamageModifier(diff) * combatTypeModifier(monster.combatType, playerCombatType) * eliteDamageMult * damageMultiplier,
     accuracy: 1, // monsters always attempt to hit; only the player's avoidance can prevent it
     avoidance: 0, // monsters have no avoidance stat in the existing balance model
     armor: monsterArmor(monster.level) * eliteArmorMult,
@@ -385,7 +398,8 @@ function createMonsterCombatant(
   playerLevel: number,
   playerCombatType: CombatType,
   idSuffix: number,
-  hpMultiplier: number = 1
+  hpMultiplier: number = 1,
+  damageMultiplier: number = 1
 ): Combatant {
   const hp = Math.round(monsterHp(monster.level) * hpMultiplier * (monster.isElite ? ELITE_HP_MULTIPLIER : 1));
   return {
@@ -409,7 +423,7 @@ function createMonsterCombatant(
     // ability rotation instead of a flat auto-attack.
     equippedAbilityIds: monster.equippedAbilityIds ?? [],
     basicAttackId: 'monster_basic_attack',
-    profile: buildMonsterProfile(monster, playerLevel, playerCombatType),
+    profile: buildMonsterProfile(monster, playerLevel, playerCombatType, damageMultiplier),
     threatWeight: 1,
   };
 }
@@ -424,10 +438,11 @@ function spawnEnemyWave(
   playerLevel: number,
   playerCombatType: CombatType,
   count: number,
-  hpMultiplier: number = 1
+  hpMultiplier: number = 1,
+  damageMultiplier: number = 1
 ): Combatant[] {
   return Array.from({ length: Math.max(1, count) }, () =>
-    createMonsterCombatant(monster, playerLevel, playerCombatType, Math.random(), hpMultiplier)
+    createMonsterCombatant(monster, playerLevel, playerCombatType, Math.random(), hpMultiplier, damageMultiplier)
   );
 }
 
@@ -524,7 +539,8 @@ export function createEncounterState(input: EncounterSetupInput): CombatState {
       input.level,
       input.specDef.combatType,
       input.encounterSize ?? 1,
-      input.monsterHpMultiplier
+      input.monsterHpMultiplier,
+      input.monsterDamageMultiplier
     ),
     timeElapsed: 0,
   };
@@ -795,6 +811,10 @@ export interface TickContext {
   // multi-enemy wave isn't just the single-enemy HP multiplied by headcount
   // again on top of already being split across more bodies.
   monsterHpMultiplier?: number;
+  // Combat/Rarity overhaul — see EncounterSetupInput.monsterDamageMultiplier's
+  // doc comment. Same "read at spawn/respawn time" posture as
+  // monsterHpMultiplier above.
+  monsterDamageMultiplier?: number;
   // Herbalism/Alchemy overhaul's Part 8 automation — built once per
   // encounter setup (gameData/consumableAutomation.ts's
   // buildConsumableAutomationState) and mutated in place by advanceCombat as
@@ -966,7 +986,8 @@ export function advanceCombat(state: CombatState, ctx: TickContext, deltaSeconds
       ctx.playerLevel,
       ctx.playerCombatType,
       ctx.encounterSize ?? 1,
-      ctx.monsterHpMultiplier
+      ctx.monsterHpMultiplier,
+      ctx.monsterDamageMultiplier
     );
   }
   const player = state.party.find((p) => p.isPlayer);

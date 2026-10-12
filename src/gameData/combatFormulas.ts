@@ -264,6 +264,18 @@ export const ELITE_DAMAGE_MULTIPLIER = 1.4;
 export const ELITE_ARMOR_MULTIPLIER = 1.3;
 export const ELITE_XP_MULTIPLIER = 2.0;
 
+// Combat/Rarity overhaul — dungeon-specific damage scaling. Dungeons
+// previously only scaled monster HP (by party size — see DungeonScreen.
+// tsx's monsterHpMultiplier), never damage, so a dungeon fight was
+// mechanically identical to an open-world fight at the same level, just
+// with more total HP to chew through. These are a SEPARATE, fixed
+// multiplier (not party-size-scaled — individual hits should threaten an
+// undergeared party member regardless of how many allies are along) so a
+// dungeon is a genuinely harder encounter per-hit, satisfying "all three
+// party members must contribute meaningfully to combat success."
+export const DUNGEON_TRASH_DAMAGE_MULTIPLIER = 1.3;
+export const DUNGEON_BOSS_DAMAGE_MULTIPLIER = 1.6;
+
 export function targetTimeToKill(level: number): number {
   return 12 + ((level - 1) * (25 - 12)) / 59;
 }
