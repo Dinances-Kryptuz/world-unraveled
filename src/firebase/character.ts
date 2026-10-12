@@ -365,6 +365,11 @@ export async function startActivity(
     // specific randomized-stat roll rather than a plain stack (see
     // CurrentActivity.disenchantInstanceId's doc comment).
     instanceId?: string;
+    // Continuous Disenchanting Queue overhaul — only meaningful for
+    // 'disenchanting'. The items queued AFTER this activity's own
+    // targetId/instanceId/quantity (the one actually being processed first)
+    // — see CurrentActivity.disenchantQueue's doc comment.
+    disenchantQueue?: { itemId: string; instanceId?: string; quantity: number }[];
     // A snapshot of whatever shirt (if any) is equipped RIGHT NOW, at the
     // moment this activity starts — see CurrentActivity.equippedShirtItemId's
     // doc comment for why every resolver reads this instead of the
@@ -382,6 +387,7 @@ export async function startActivity(
       startedAt: serverTimestamp(),
       ...(activity.quantity !== undefined ? { disenchantQuantity: activity.quantity } : {}),
       ...(activity.instanceId !== undefined ? { disenchantInstanceId: activity.instanceId } : {}),
+      ...(activity.disenchantQueue !== undefined ? { disenchantQueue: activity.disenchantQueue } : {}),
       equippedShirtItemId: activity.equippedShirtItemId ?? null,
     },
   });
@@ -390,6 +396,44 @@ export async function startActivity(
 export async function stopActivity(uid: string): Promise<void> {
   await updateDoc(doc(db, 'characters', uid), {
     currentActivity: { type: null, targetId: null, zoneId: null, startedAt: null },
+  });
+}
+
+// Continuous Disenchanting Queue overhaul — writes the activity forward to
+// whichever item is now "current" after a resolveDisenchantQueueOffline
+// call (or after the player manually edits the queue — removing an
+// unprocessed entry, or adding more via the Enchanting tab). Always writes
+// the WHOLE currentActivity object (same convention as startActivity/
+// stopActivity above, rather than per-field dot-paths) so there's only
+// ever one write shape for this field across the whole codebase. Passing
+// `targetId: null` is how a caller signals "the queue is fully drained" —
+// this just defers to stopActivity rather than duplicating its shape here.
+export async function advanceDisenchantQueue(
+  uid: string,
+  activity: {
+    targetId: string | null;
+    zoneId: string | null;
+    instanceId?: string;
+    quantity?: number;
+    queue: { itemId: string; instanceId?: string; quantity: number }[];
+    equippedShirtItemId?: string | null;
+  }
+): Promise<void> {
+  if (activity.targetId === null) {
+    await stopActivity(uid);
+    return;
+  }
+  await updateDoc(doc(db, 'characters', uid), {
+    currentActivity: {
+      type: 'disenchanting',
+      targetId: activity.targetId,
+      zoneId: activity.zoneId,
+      startedAt: serverTimestamp(),
+      disenchantQuantity: activity.quantity ?? 1,
+      ...(activity.instanceId !== undefined ? { disenchantInstanceId: activity.instanceId } : {}),
+      disenchantQueue: activity.queue,
+      equippedShirtItemId: activity.equippedShirtItemId ?? null,
+    },
   });
 }
 

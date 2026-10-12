@@ -68,6 +68,19 @@ export interface CurrentActivity {
   // decrement, so two different rolls of the same base item are never
   // conflated (see firebase/enchanting.ts's applyDisenchantResult).
   disenchantInstanceId?: string;
+  // Continuous Disenchanting Queue overhaul — items queued AFTER the one
+  // currently being processed (targetId/disenchantInstanceId/
+  // disenchantQuantity above describe ONLY the current item; this array is
+  // the upcoming rest of the queue, not yet started). Each entry's own
+  // itemId/instanceId/quantity mirror the same three fields' meaning for a
+  // single-item activity. Empty/absent means "not using the queue feature"
+  // — a plain single-item disenchant (today's existing flow) behaves
+  // exactly as before this field existed. When the current item finishes,
+  // DisenchantingScreen shifts the front of this array into
+  // targetId/disenchantInstanceId/disenchantQuantity and writes the
+  // shortened remainder back here (see firebase/enchanting.ts's
+  // applyDisenchantQueueResult).
+  disenchantQueue?: { itemId: string; instanceId?: string; quantity: number }[];
   // Tailoring overhaul's profession shirts — a SNAPSHOT of whichever shirt
   // (if any) was equipped the moment this activity started (see
   // firebase/character.ts's startActivity), read by every resolver

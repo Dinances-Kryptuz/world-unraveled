@@ -143,3 +143,51 @@ export async function applyDisenchantResult(
     await grantInventoryItems(uid, [{ itemId: result.yieldItemId, quantity: result.yieldQuantity }]);
   }
 }
+
+// Continuous Disenchanting Queue overhaul — the multi-item counterpart to
+// applyDisenchantResult above, for a single resolveDisenchantQueueOffline
+// call that may have touched several distinct items in one autosave/claim
+// cycle. Every item consumption and every yield grant lands in as FEW
+// Firestore writes as possible (one updateDoc per doc, not one per item —
+// see this function's two updateDoc calls below), per the design brief's
+// explicit "do not create a Firestore write for every item completion."
+// Lock revalidation already happened one layer up, in
+// DisenchantingScreen's autosave — by the time `perItem` exists, every
+// entry in it was built from an item the resolver was never even handed if
+// it was locked at that moment (see DisenchantingScreen.tsx's doc comment
+// for why that's the right place to revalidate, not here).
+export async function applyDisenchantQueueResult(
+  uid: string,
+  perItem: { itemId: string; instanceId?: string; itemsDisenchanted: number; yieldItemId: string; yieldQuantity: number }[],
+  newSkillLevel: number,
+  newSkillXp: number
+): Promise<void> {
+  if (perItem.length === 0) return;
+
+  await updateDoc(doc(db, 'characters', uid), {
+    'professions.enchanting.level': newSkillLevel,
+    'professions.enchanting.xp': newSkillXp,
+  });
+
+  // Consume every disenchanted item/instance in ONE write — write this
+  // FIRST so a stack dropping to 0 (freeing a bag slot) is already
+  // reflected before the capped yield grant below reads occupancy, same
+  // ordering as applyDisenchantResult above.
+  const consumeUpdate: Record<string, unknown> = {};
+  for (const entry of perItem) {
+    const path = entry.instanceId ? `equipmentInstances.${entry.instanceId}.quantity` : `items.${entry.itemId}`;
+    consumeUpdate[path] = increment(-entry.itemsDisenchanted);
+  }
+  await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), consumeUpdate);
+
+  // Combine same-material yields (several queued items commonly disenchant
+  // into the same dust/essence) into one grantInventoryItems call.
+  const yieldsByItemId = new Map<string, number>();
+  for (const entry of perItem) {
+    if (entry.yieldQuantity <= 0) continue;
+    yieldsByItemId.set(entry.yieldItemId, (yieldsByItemId.get(entry.yieldItemId) ?? 0) + Math.floor(entry.yieldQuantity));
+  }
+  if (yieldsByItemId.size > 0) {
+    await grantInventoryItems(uid, Array.from(yieldsByItemId, ([itemId, quantity]) => ({ itemId, quantity })));
+  }
+}
