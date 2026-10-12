@@ -4718,6 +4718,73 @@ const STATIC_ITEMS: Record<string, ItemDef> = {
     stackable: true, equipSlot: 'belt', statBonuses: { STA: 4, STR: 4 }, rarity: 'white', sellValue: 28,
   },
 
+  // ── Recipe-discovery overhaul (RARITY-6) — these 12 recipes were flipped
+  // from source:'trainer'/learnedAutomatically:true to source:'monster_drop'
+  // (see recipes.ts) so they must now be learned from a dropped 'recipe'
+  // item instead. Placed on normal/elite monsters in cinderfall_depths,
+  // molten_scar, and cinderheart_crater — see those monsters' lootTable
+  // entries in monsters.ts.
+  formula_obsidian_battleaxe: {
+    id: 'formula_obsidian_battleaxe', name: 'Formula: Obsidian Battleaxe', type: 'recipe',
+    description: 'A soot-stained smithing formula. Use to learn the recipe.',
+    stackable: true, teachesRecipeId: 'obsidian_battleaxe', sellValue: 0,
+  },
+  formula_sacred_obsidian_battleaxe: {
+    id: 'formula_sacred_obsidian_battleaxe', name: 'Formula: Sacred Obsidian Battleaxe', type: 'recipe',
+    description: 'A soot-stained smithing formula, blessed before the forge. Use to learn the recipe.',
+    stackable: true, teachesRecipeId: 'sacred_obsidian_battleaxe', sellValue: 0,
+  },
+  formula_elixir_of_giants: {
+    id: 'formula_elixir_of_giants', name: 'Formula: Elixir of Giants', type: 'recipe',
+    description: 'A charred alchemy formula. Use to learn the recipe.',
+    stackable: true, teachesRecipeId: 'elixir_of_giants', sellValue: 0,
+  },
+  formula_elixir_of_shadow_power: {
+    id: 'formula_elixir_of_shadow_power', name: 'Formula: Elixir of Shadow Power', type: 'recipe',
+    description: 'A charred alchemy formula. Use to learn the recipe.',
+    stackable: true, teachesRecipeId: 'elixir_of_shadow_power', sellValue: 0,
+  },
+  formula_platinum_ring: {
+    id: 'formula_platinum_ring', name: 'Formula: Platinum Ring', type: 'recipe',
+    description: 'A soot-stained smithing formula. Use to learn the recipe.',
+    stackable: true, teachesRecipeId: 'platinum_ring', sellValue: 0,
+  },
+  formula_greater_shadow_protection_potion: {
+    id: 'formula_greater_shadow_protection_potion', name: 'Formula: Greater Shadow Protection Potion', type: 'recipe',
+    description: 'A charred alchemy formula. Use to learn the recipe.',
+    stackable: true, teachesRecipeId: 'greater_shadow_protection_potion', sellValue: 0,
+  },
+  formula_elixir_of_the_mongoose: {
+    id: 'formula_elixir_of_the_mongoose', name: 'Formula: Elixir of the Mongoose', type: 'recipe',
+    description: 'A charred alchemy formula. Use to learn the recipe.',
+    stackable: true, teachesRecipeId: 'elixir_of_the_mongoose', sellValue: 0,
+  },
+  formula_greater_arcane_elixir: {
+    id: 'formula_greater_arcane_elixir', name: 'Formula: Greater Arcane Elixir', type: 'recipe',
+    description: 'A charred alchemy formula. Use to learn the recipe.',
+    stackable: true, teachesRecipeId: 'greater_arcane_elixir', sellValue: 0,
+  },
+  formula_flask_of_supreme_power: {
+    id: 'formula_flask_of_supreme_power', name: 'Formula: Flask of Supreme Power', type: 'recipe',
+    description: 'A charred alchemy formula. Use to learn the recipe.',
+    stackable: true, teachesRecipeId: 'flask_of_supreme_power', sellValue: 0,
+  },
+  formula_emberscar_leather_helm: {
+    id: 'formula_emberscar_leather_helm', name: 'Formula: Emberscar Leather Helm', type: 'recipe',
+    description: 'A scorched leatherworking pattern. Use to learn the recipe.',
+    stackable: true, teachesRecipeId: 'emberscar_leather_helm', sellValue: 0,
+  },
+  formula_emberscar_leather_legs: {
+    id: 'formula_emberscar_leather_legs', name: 'Formula: Emberscar Leather Legplates', type: 'recipe',
+    description: 'A scorched leatherworking pattern. Use to learn the recipe.',
+    stackable: true, teachesRecipeId: 'emberscar_leather_legs', sellValue: 0,
+  },
+  formula_platinum_necklace: {
+    id: 'formula_platinum_necklace', name: 'Formula: Platinum Necklace', type: 'recipe',
+    description: 'A soot-stained smithing formula. Use to learn the recipe.',
+    stackable: true, teachesRecipeId: 'platinum_necklace', sellValue: 0,
+  },
+
 };
 
 // Combat/Rarity overhaul — dungeon blue/purple fixed-stat equipment is

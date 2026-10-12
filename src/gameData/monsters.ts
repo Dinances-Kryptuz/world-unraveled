@@ -434,6 +434,7 @@ export const MONSTERS: Record<string, Monster> = {
       { itemId: 'smoky_quartz', chance: 0.06, minQty: 1, maxQty: 1 },
       { itemId: 'gray_necklace_z4', chance: 0.12, minQty: 1, maxQty: 1 },
       { itemId: 'white_belt_z4', chance: 0.08, minQty: 1, maxQty: 1 },
+      { itemId: 'formula_obsidian_battleaxe', chance: 0.12, minQty: 1, maxQty: 1 },
     ],
     specialAbility: {
       name: 'Chilling Wail',
@@ -540,6 +541,9 @@ export const MONSTERS: Record<string, Monster> = {
       { itemId: 'fire_opal', chance: 0.06, minQty: 1, maxQty: 1 },
       { itemId: 'gray_necklace_z5', chance: 0.12, minQty: 1, maxQty: 1 },
       { itemId: 'white_belt_z5', chance: 0.08, minQty: 1, maxQty: 1 },
+      { itemId: 'formula_elixir_of_giants', chance: 0.12, minQty: 1, maxQty: 1 },
+      { itemId: 'formula_elixir_of_shadow_power', chance: 0.12, minQty: 1, maxQty: 1 },
+      { itemId: 'formula_platinum_ring', chance: 0.12, minQty: 1, maxQty: 1 },
     ],
     specialAbility: {
       name: 'Firebolt',
@@ -649,6 +653,10 @@ export const MONSTERS: Record<string, Monster> = {
       { itemId: 'heartflame_crystal', chance: 0.06, minQty: 1, maxQty: 1 },
       { itemId: 'gray_necklace_z6', chance: 0.12, minQty: 1, maxQty: 1 },
       { itemId: 'white_belt_z6', chance: 0.08, minQty: 1, maxQty: 1 },
+      { itemId: 'formula_greater_shadow_protection_potion', chance: 0.12, minQty: 1, maxQty: 1 },
+      { itemId: 'formula_elixir_of_the_mongoose', chance: 0.12, minQty: 1, maxQty: 1 },
+      { itemId: 'formula_greater_arcane_elixir', chance: 0.12, minQty: 1, maxQty: 1 },
+      { itemId: 'formula_flask_of_supreme_power', chance: 0.12, minQty: 1, maxQty: 1 },
     ],
     specialAbility: {
       name: 'Devotion of Flame',
@@ -938,6 +946,7 @@ export const MONSTERS: Record<string, Monster> = {
     lootTable: [
       { itemId: 'mithril_ore', chance: 0.4, minQty: 2, maxQty: 4 },
       { itemId: 'cindercore_shard', chance: 0.18, minQty: 1, maxQty: 2 },
+      { itemId: 'formula_sacred_obsidian_battleaxe', chance: 0.18, minQty: 1, maxQty: 1 },
     ],
     specialAbility: { name: 'Ashen Devastation', description: 'A ground-shaking slam far fiercer than a common golem’s.', implemented: false },
   },
@@ -956,6 +965,7 @@ export const MONSTERS: Record<string, Monster> = {
     lootTable: [
       { itemId: 'scaleback_hide', chance: 0.4, minQty: 2, maxQty: 4 },
       { itemId: 'magma_heart', chance: 0.18, minQty: 1, maxQty: 2 },
+      { itemId: 'formula_emberscar_leather_helm', chance: 0.18, minQty: 1, maxQty: 1 },
     ],
     specialAbility: { name: 'Eruption', description: 'A molten breath far fiercer than a common hound’s.', implemented: false },
   },
@@ -975,6 +985,8 @@ export const MONSTERS: Record<string, Monster> = {
     lootTable: [
       { itemId: 'emberscale_hide', chance: 0.4, minQty: 2, maxQty: 4 },
       { itemId: 'behemoth_flank', chance: 0.3, minQty: 1, maxQty: 2 },
+      { itemId: 'formula_emberscar_leather_legs', chance: 0.18, minQty: 1, maxQty: 1 },
+      { itemId: 'formula_platinum_necklace', chance: 0.18, minQty: 1, maxQty: 1 },
     ],
     specialAbility: { name: 'Crater’s Wrath', description: 'A devastating blast far fiercer than a common crater-dweller’s.', implemented: false },
   },
