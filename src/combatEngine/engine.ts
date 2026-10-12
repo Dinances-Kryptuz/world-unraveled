@@ -29,7 +29,6 @@ import {
   HOLY_PRIEST_SPI_HEALING_BONUS_PCT_PER_POINT,
   PROT_PALADIN_INT_MANA_COST_REDUCTION_PCT_PER_POINT,
   PROT_PALADIN_MANA_COST_REDUCTION_CAP_PCT,
-  HOLY_PALADIN_CRIT_HEAL_MANA_REFUND_PCT,
 } from '../gameData/combatFormulas';
 import { EMPTY_TALENT_TOTALS, type TalentBonusTotals } from '../utils/talentEvaluator';
 import type { BuffTotals } from '../gameData/buffs';
@@ -273,7 +272,6 @@ function buildPlayerProfile(input: EncounterSetupInput): CasterProfile {
     shieldBlockValue: shieldBlock,
     manaRegenMult: manaRegenMultiplier(totalSpi),
     manaCostReductionPct,
-    critHealManaRefundPct: specId === 'holy_paladin' ? HOLY_PALADIN_CRIT_HEAL_MANA_REFUND_PCT : 0,
   };
 }
 
@@ -345,7 +343,6 @@ function buildCompanionProfile(companion: CompanionCombatSetup, monster: Monster
     shieldBlockValue: shieldBlock,
     manaRegenMult: manaRegenMultiplier(totalSpi),
     manaCostReductionPct,
-    critHealManaRefundPct: specId === 'holy_paladin' ? HOLY_PALADIN_CRIT_HEAL_MANA_REFUND_PCT : 0,
   };
 }
 
@@ -374,7 +371,6 @@ function buildMonsterProfile(monster: Monster, playerLevel: number, playerCombat
     shieldBlockValue: 0, // monsters have no STR/shield concept in the existing balance model
     manaRegenMult: 1,
     manaCostReductionPct: 0,
-    critHealManaRefundPct: 0,
   };
 }
 
@@ -1186,22 +1182,7 @@ export function useAbility(
           const hpBefore = target.hp;
           target.hp = Math.min(target.maxHp, target.hp + healAmount);
           if (source.isPlayer) questSignals.healingDone += target.hp - hpBefore;
-          // Holy Paladin's spec-identity passive — a crit heal (same
-          // critChance roll AGI/INT gear already feeds, no separate heal-
-          // crit stat) refunds a % of the ability's mana cost rather than
-          // healing for more, so this can't be stacked with gear into a
-          // second healing-throughput axis — see CasterProfile.
-          // critHealManaRefundPct's doc comment.
-          const isHealCrit = Math.random() < source.profile.critChance;
-          if (isHealCrit && source.profile.critHealManaRefundPct > 0 && ability.resourceType === 'mana' && resourceCost) {
-            gain(source.resources, 'mana', Math.round(resourceCost * (source.profile.critHealManaRefundPct / 100)));
-          }
-          events.push({
-            message: isHealCrit
-              ? `${source.name} critically uses ${ability.name} on ${target.name}, healing for ${healAmount}.`
-              : `${source.name} uses ${ability.name} on ${target.name}, healing for ${healAmount}.`,
-            kind: 'heal',
-          });
+          events.push({ message: `${source.name} uses ${ability.name} on ${target.name}, healing for ${healAmount}.`, kind: 'heal' });
           break;
         }
         case 'buff': {

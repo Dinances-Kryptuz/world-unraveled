@@ -217,15 +217,17 @@ export function shieldBlockValue(totalStr: number, hasShield: boolean): number {
 // suboptimal one (per the design brief's own target, explicitly "not a
 // hard cap") rather than a second independent power axis — see engine.ts's
 // buildPlayerProfile/buildCompanionProfile for where each is actually
-// wired in, and useAbility for the two (Prot Paladin, Holy Paladin) that
-// need a resolution-time hook rather than a static profile term.
+// wired in, and useAbility for Prot Paladin's, the one that needs a
+// resolution-time hook rather than a static profile term. Holy Paladin
+// deliberately has no stat-passive of its own here — its crit chance
+// already comes from the existing AGI/INT crit math as-is, with no
+// separate heal-crit mechanic layered on top.
 export const WARRIOR_DPS_STR_CRIT_PCT_PER_POINT = 0.02;
 export const SHIELD_TANK_SPEC_BLOCK_BONUS_PCT = 50; // warrior_tank / prot_paladin
 export const SHADOW_PRIEST_SPI_DAMAGE_PCT_PER_POINT = 0.05;
 export const HOLY_PRIEST_SPI_HEALING_BONUS_PCT_PER_POINT = 0.15;
 export const PROT_PALADIN_INT_MANA_COST_REDUCTION_PCT_PER_POINT = 0.1;
 export const PROT_PALADIN_MANA_COST_REDUCTION_CAP_PCT = 30;
-export const HOLY_PALADIN_CRIT_HEAL_MANA_REFUND_PCT = 50;
 
 export function monsterArmor(level: number): number {
   return 3 * level;

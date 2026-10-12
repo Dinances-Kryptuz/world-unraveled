@@ -268,13 +268,6 @@ export interface CasterProfile {
   // applies it to ability.resourceCost before spend()). 0 for every other
   // spec/monster/companion.
   manaCostReductionPct: number;
-  // critHealManaRefundPct: Holy Paladin's spec-identity passive — a crit
-  // heal (useAbility rolls a crit on the 'heal' effect case using this same
-  // combatant's critChance, same stat AGI/INT already feed) refunds this %
-  // of the ability's mana cost. Purely a resource-economy bonus — a crit
-  // heal is NOT itself larger, so this can't be stacked with gear into a
-  // second healing-throughput axis. 0 for every other spec/monster/companion.
-  critHealManaRefundPct: number;
 }
 
 // EnchantProcKind values map 1:1 onto the design brief's Zone 5/6 proc

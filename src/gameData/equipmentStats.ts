@@ -85,9 +85,7 @@ export function baseStatTooltip(stat: BaseStat, cls: ClassId, specId: SpecId | n
         : 'Each point adds 2 maximum Mana, plus a small amount of critical strike chance.';
       const protBonus =
         specId === 'prot_paladin' ? ' As Protection, Intellect also reduces the Mana cost of your own abilities.' : '';
-      const holyPaladinBonus =
-        specId === 'holy_paladin' ? ' As Holy, a critical heal refunds some of that spell’s Mana cost.' : '';
-      return base + protBonus + holyPaladinBonus;
+      return base + protBonus;
     }
     case 'SPI': {
       const base =
@@ -98,13 +96,8 @@ export function baseStatTooltip(stat: BaseStat, cls: ClassId, specId: SpecId | n
         specId === 'holy_priest' ? ' As Holy, Spirit grants extra healing power on top of the usual bonus.' : '';
       return base + shadowBonus + holyPriestBonus;
     }
-    case 'AGI': {
-      const base =
-        'Each point adds a small amount of critical strike chance, dodge chance, and Armor. Only gear raises this — it never grows from leveling alone.';
-      const holyPaladinBonus =
-        specId === 'holy_paladin' ? ' As Holy, a critical heal refunds some of that spell’s Mana cost.' : '';
-      return base + holyPaladinBonus;
-    }
+    case 'AGI':
+      return 'Each point adds a small amount of critical strike chance, dodge chance, and Armor. Only gear raises this — it never grows from leveling alone.';
   }
 }
 
