@@ -854,4 +854,121 @@ export const MONSTERS: Record<string, Monster> = {
       implemented: false,
     },
   },
+
+  // ── Combat/Rarity overhaul — open-world elites ─────────────────────────
+  // One per zone, isElite: true (combatFormulas.ts's ELITE_HP_MULTIPLIER/
+  // ELITE_DAMAGE_MULTIPLIER/ELITE_ARMOR_MULTIPLIER/ELITE_XP_MULTIPLIER
+  // apply on top of the same level-based formulas every monster uses).
+  // Levels sit near but below that zone's own dungeon boss level, so an
+  // elite reads as "the toughest thing loose in this zone" without
+  // literally matching a boss. Gold roughly doubles the zone's normal
+  // range; loot leans into the zone's own crafting materials at a better
+  // rate, with room for RARITY-6 to add recipe-teaching drops here too.
+  greenhollow_alpha_boar: {
+    id: 'greenhollow_alpha_boar',
+    name: 'Greenhollow Alpha Boar',
+    creatureType: 'beast',
+    zoneIds: ['greenhollow_fields'],
+    levelRange: [8, 8],
+    level: 8,
+    combatType: 'melee',
+    isElite: true,
+    goldMin: 6,
+    goldMax: 14,
+    lootTable: [
+      { itemId: 'leather_scraps', chance: 0.4, minQty: 2, maxQty: 4 },
+      { itemId: 'boar_meat', chance: 0.5, minQty: 2, maxQty: 3 },
+      { itemId: 'small_tusk', chance: 0.25, minQty: 1, maxQty: 2 },
+    ],
+    specialAbility: { name: 'Savage Charge', description: 'A much harder-hitting charge than a common boar.', implemented: false },
+  },
+  foothills_warg: {
+    id: 'foothills_warg',
+    name: 'Foothills Warg',
+    creatureType: 'beast',
+    zoneIds: ['stonecrag_foothills'],
+    levelRange: [22, 22],
+    level: 22,
+    combatType: 'melee',
+    isElite: true,
+    goldMin: 16,
+    goldMax: 32,
+    lootTable: [
+      { itemId: 'coarse_hide', chance: 0.4, minQty: 2, maxQty: 4 },
+      { itemId: 'raw_meat', chance: 0.4, minQty: 2, maxQty: 3 },
+      { itemId: 'stone_shard', chance: 0.18, minQty: 1, maxQty: 2 },
+    ],
+    specialAbility: { name: 'Pack Leader’s Howl', description: 'A savage howl that hits far harder than a common jackal.', implemented: false },
+  },
+  emberfall_firedrake: {
+    id: 'emberfall_firedrake',
+    name: 'Emberfall Firedrake',
+    damageSchool: 'fire',
+    zoneIds: ['emberfall_ridge'],
+    levelRange: [38, 38],
+    level: 38,
+    combatType: 'magic',
+    isElite: true,
+    goldMin: 34,
+    goldMax: 58,
+    lootTable: [
+      { itemId: 'scaled_hide', chance: 0.4, minQty: 2, maxQty: 4 },
+      { itemId: 'ember_shard', chance: 0.18, minQty: 1, maxQty: 2 },
+    ],
+    specialAbility: { name: 'Searing Breath', description: 'A blast of fire far fiercer than a common drake’s.', implemented: false },
+  },
+  cinderfall_ashlord: {
+    id: 'cinderfall_ashlord',
+    name: 'Cinderfall Ashlord',
+    damageSchool: 'fire',
+    zoneIds: ['cinderfall_depths'],
+    levelRange: [42, 42],
+    level: 42,
+    combatType: 'melee',
+    isElite: true,
+    goldMin: 44,
+    goldMax: 72,
+    lootTable: [
+      { itemId: 'mithril_ore', chance: 0.4, minQty: 2, maxQty: 4 },
+      { itemId: 'cindercore_shard', chance: 0.18, minQty: 1, maxQty: 2 },
+    ],
+    specialAbility: { name: 'Ashen Devastation', description: 'A ground-shaking slam far fiercer than a common golem’s.', implemented: false },
+  },
+  molten_scar_behemoth: {
+    id: 'molten_scar_behemoth',
+    name: 'Molten Scar Behemoth',
+    creatureType: 'beast',
+    damageSchool: 'fire',
+    zoneIds: ['molten_scar'],
+    levelRange: [52, 52],
+    level: 52,
+    combatType: 'magic',
+    isElite: true,
+    goldMin: 64,
+    goldMax: 100,
+    lootTable: [
+      { itemId: 'scaleback_hide', chance: 0.4, minQty: 2, maxQty: 4 },
+      { itemId: 'magma_heart', chance: 0.18, minQty: 1, maxQty: 2 },
+    ],
+    specialAbility: { name: 'Eruption', description: 'A molten breath far fiercer than a common hound’s.', implemented: false },
+  },
+  cinderheart_ember_wyrm: {
+    id: 'cinderheart_ember_wyrm',
+    name: 'Cinderheart Ember Wyrm',
+    damageSchool: 'fire',
+    zoneIds: ['cinderheart_crater'],
+    levelRange: [58, 58],
+    level: 58,
+    combatType: 'magic',
+    isElite: true,
+    voidShardsMin: 1,
+    voidShardsMax: 2,
+    goldMin: 80,
+    goldMax: 130,
+    lootTable: [
+      { itemId: 'emberscale_hide', chance: 0.4, minQty: 2, maxQty: 4 },
+      { itemId: 'behemoth_flank', chance: 0.3, minQty: 1, maxQty: 2 },
+    ],
+    specialAbility: { name: 'Crater’s Wrath', description: 'A devastating blast far fiercer than a common crater-dweller’s.', implemented: false },
+  },
 };

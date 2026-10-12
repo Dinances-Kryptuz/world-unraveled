@@ -29,6 +29,10 @@ import {
   HOLY_PRIEST_SPI_HEALING_BONUS_PCT_PER_POINT,
   PROT_PALADIN_INT_MANA_COST_REDUCTION_PCT_PER_POINT,
   PROT_PALADIN_MANA_COST_REDUCTION_CAP_PCT,
+  ELITE_HP_MULTIPLIER,
+  ELITE_DAMAGE_MULTIPLIER,
+  ELITE_ARMOR_MULTIPLIER,
+  ELITE_XP_MULTIPLIER,
 } from '../gameData/combatFormulas';
 import { EMPTY_TALENT_TOTALS, type TalentBonusTotals } from '../utils/talentEvaluator';
 import type { BuffTotals } from '../gameData/buffs';
@@ -348,12 +352,14 @@ function buildCompanionProfile(companion: CompanionCombatSetup, monster: Monster
 
 function buildMonsterProfile(monster: Monster, playerLevel: number, playerCombatType: CombatType): CasterProfile {
   const diff = monster.level - playerLevel;
+  const eliteDamageMult = monster.isElite ? ELITE_DAMAGE_MULTIPLIER : 1;
+  const eliteArmorMult = monster.isElite ? ELITE_ARMOR_MULTIPLIER : 1;
   return {
     normalizedHit: monsterBaseDamage(monster.level),
-    damageCoef: enemyDamageModifier(diff) * combatTypeModifier(monster.combatType, playerCombatType),
+    damageCoef: enemyDamageModifier(diff) * combatTypeModifier(monster.combatType, playerCombatType) * eliteDamageMult,
     accuracy: 1, // monsters always attempt to hit; only the player's avoidance can prevent it
     avoidance: 0, // monsters have no avoidance stat in the existing balance model
-    armor: monsterArmor(monster.level),
+    armor: monsterArmor(monster.level) * eliteArmorMult,
     damageTakenMult: 1,
     damageSchool: monster.damageSchool ?? 'physical',
     critChance: 0, // monsters have no AGI stat in the existing balance model
@@ -381,7 +387,7 @@ function createMonsterCombatant(
   idSuffix: number,
   hpMultiplier: number = 1
 ): Combatant {
-  const hp = Math.round(monsterHp(monster.level) * hpMultiplier);
+  const hp = Math.round(monsterHp(monster.level) * hpMultiplier * (monster.isElite ? ELITE_HP_MULTIPLIER : 1));
   return {
     id: `enemy-${idSuffix}`,
     name: monster.name,
@@ -1221,7 +1227,7 @@ function rollKillReward(monster: Monster, levelDiff: number, goldFindPct = 0): K
   const goldGained = Math.round(
     (monster.goldMin + Math.random() * (monster.goldMax - monster.goldMin)) * (1 + goldFindPct / 100)
   );
-  const xpGained = Math.round(50 * monster.level * xpModifier(levelDiff));
+  const xpGained = Math.round(50 * monster.level * xpModifier(levelDiff) * (monster.isElite ? ELITE_XP_MULTIPLIER : 1));
   const voidShardsGained = monster.voidShardsMin
     ? Math.round(monster.voidShardsMin + Math.random() * ((monster.voidShardsMax ?? monster.voidShardsMin) - monster.voidShardsMin))
     : 0;

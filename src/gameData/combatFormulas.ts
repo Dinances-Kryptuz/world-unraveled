@@ -237,6 +237,18 @@ export function monsterBaseDamage(level: number): number {
   return (15 + level * 5) * MONSTER_DAMAGE_SCALE;
 }
 
+// ── Combat/Rarity overhaul — elite monsters ─────────────────────────────
+// A fixed multiplier set applied on top of the same level-based formulas
+// every monster already uses (Monster.isElite), rather than a parallel
+// stat system. Chosen so an elite is a genuine fight (noticeably more HP
+// and bite than a same-level normal mob, not just a bigger damage sponge)
+// without being unfair solo: a well-geared character should still be able
+// to take one on, just not casually.
+export const ELITE_HP_MULTIPLIER = 2.5;
+export const ELITE_DAMAGE_MULTIPLIER = 1.4;
+export const ELITE_ARMOR_MULTIPLIER = 1.3;
+export const ELITE_XP_MULTIPLIER = 2.0;
+
 export function targetTimeToKill(level: number): number {
   return 12 + ((level - 1) * (25 - 12)) / 59;
 }

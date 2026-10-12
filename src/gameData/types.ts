@@ -257,6 +257,14 @@ export interface Monster {
   // AskUserQuestion resolution in this session's history: "add
   // Monster.creatureType, tag beasts now [only]").
   creatureType?: 'beast' | 'demon';
+  // Combat/Rarity overhaul — a tougher open-world variant of a normal zone
+  // monster. Absent/false behaves exactly like every monster before this
+  // field existed. See combatFormulas.ts's ELITE_* multipliers for the
+  // actual HP/damage/armor/XP scaling (applied in combatEngine/engine.ts's
+  // buildMonsterProfile/createMonsterCombatant/rollKillReward) — elites
+  // reuse the same level-based formulas as everything else, just scaled up,
+  // rather than a separate stat system.
+  isElite?: boolean;
 }
 
 export type DamageSchool = 'physical' | 'fire' | 'shadow';

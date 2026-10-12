@@ -686,7 +686,7 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
       </p>
       <h3>
         {monster.isBoss ? '☠ ' : ''}
-        {monster.name} — <MonsterLevelBadge monsterLevel={monster.level} playerLevel={character.level} />
+        {monster.name} — <MonsterLevelBadge monsterLevel={monster.level} playerLevel={character.level} isElite={monster.isElite} />
       </h3>
 
       {!retreated && (

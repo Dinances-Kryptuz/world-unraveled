@@ -97,7 +97,7 @@ export function ZoneScreen({
             <li key={monsterId} className="monster-list-item">
               <div className="monster-row-main">
                 <span className="monster-row-info">
-                  {monster.name} (<MonsterLevelBadge monsterLevel={monster.level} playerLevel={character.level} />{' '}
+                  {monster.name} (<MonsterLevelBadge monsterLevel={monster.level} playerLevel={character.level} isElite={monster.isElite} />{' '}
                   <CombatTypeBadge monsterType={monster.combatType} playerType={playerCombatType} />)
                 </span>
                 <div className="monster-row-actions">

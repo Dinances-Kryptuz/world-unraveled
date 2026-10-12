@@ -21,13 +21,30 @@ export const TIER_COLORS: Record<MobColorTier, string> = {
   unknown: '#7d2ae8',
 };
 
-export function MonsterLevelBadge({ monsterLevel, playerLevel }: { monsterLevel: number; playerLevel: number }) {
+// isElite (Combat/Rarity overhaul) renders a small gold "Elite" tag next
+// to the level — the same color family as purple/legendary loot would
+// clash with, so this reuses the level-badge's own yellow tier color
+// rather than introducing a third unrelated palette.
+export function MonsterLevelBadge({
+  monsterLevel,
+  playerLevel,
+  isElite,
+}: {
+  monsterLevel: number;
+  playerLevel: number;
+  isElite?: boolean;
+}) {
   const diff = monsterLevel - playerLevel;
   const tier = mobColorTier(diff);
   const label = tier === 'unknown' ? '??' : `Lv ${monsterLevel}`;
   return (
     <span style={{ color: TIER_COLORS[tier], fontWeight: 700 }} title={`${tier} — ${diff >= 0 ? '+' : ''}${diff} levels vs you`}>
       {label}
+      {isElite && (
+        <span style={{ color: '#b8960c', marginLeft: 4 }} title="Elite — significantly tougher than a normal monster">
+          ⭐ Elite
+        </span>
+      )}
     </span>
   );
 }

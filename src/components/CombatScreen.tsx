@@ -535,7 +535,7 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
   return (
     <div className="combat-screen">
       <h2>
-        Fighting {monster.name} — <MonsterLevelBadge monsterLevel={monster.level} playerLevel={character.level} />
+        Fighting {monster.name} — <MonsterLevelBadge monsterLevel={monster.level} playerLevel={character.level} isElite={monster.isElite} />
       </h2>
 
       {!retreated && (
