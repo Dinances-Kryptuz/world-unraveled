@@ -427,17 +427,19 @@ export async function advanceDisenchantQueue(
     await stopActivity(uid);
     return;
   }
-  await updateDoc(doc(db, 'characters', uid), {
-    currentActivity: {
-      type: 'disenchanting',
-      targetId: activity.targetId,
-      zoneId: activity.zoneId,
-      startedAt: serverTimestamp(),
-      disenchantQuantity: activity.quantity ?? 1,
-      ...(activity.instanceId !== undefined ? { disenchantInstanceId: activity.instanceId } : {}),
-      disenchantQueue: activity.queue,
-      equippedShirtItemId: activity.equippedShirtItemId ?? null,
-    },
+  // Reuses startActivity's own currentActivity write rather than
+  // duplicating its shape here — zoneId is never actually null while
+  // disenchanting is the active activity in practice (it's set alongside
+  // targetId by startActivity itself), so the `?? ''` fallback is only a
+  // type-level accommodation, not a real behavior change.
+  await startActivity(uid, {
+    type: 'disenchanting',
+    targetId: activity.targetId,
+    zoneId: activity.zoneId ?? '',
+    quantity: activity.quantity ?? 1,
+    instanceId: activity.instanceId,
+    disenchantQueue: activity.queue,
+    equippedShirtItemId: activity.equippedShirtItemId,
   });
 }
 

@@ -1,4 +1,4 @@
-import { PRIMARY_STAT, SPECS, statAtLevel, type BaseStat, type ClassId, type SpecId } from './classStats';
+import { PRIMARY_STAT, statAtLevel, type BaseStat, type ClassId } from './classStats';
 
 export const ATTACK_INTERVAL_SECONDS = 2.0; // universal baseline, both player and monster
 // Combat/Rarity overhaul Part 1 re-calibration — raised from Pass 1's 0.75,
@@ -328,69 +328,3 @@ export function resolveCurrentHp(
 }
 
 
-export interface CombatProfileInput {
-  cls: ClassId;
-  spec: SpecId;
-  playerLevel: number;
-  monsterLevel: number;
-}
-
-export interface CombatProfileResult {
-  playerMaxHp: number;
-  playerDps: number;
-  timeToKill: number;
-  incomingDps: number;
-  healingPerSec: number;
-  netHpChangePerSec: number;
-  xpPerKill: number;
-  levelDiff: number;
-  colorTier: MobColorTier;
-}
-
-export function computeCombatProfile({
-  cls,
-  spec,
-  playerLevel,
-  monsterLevel,
-}: CombatProfileInput): CombatProfileResult {
-  const specDef = SPECS[spec];
-  const levelDiff = monsterLevel - playerLevel;
-
-  const hp = maxHp(cls, playerLevel);
-  const dmg = baseDamage(cls, playerLevel);
-  const dps = dmg / ATTACK_INTERVAL_SECONDS;
-
-  const lvlMod = playerDamageModifier(levelDiff);
-  const acc = accuracy(levelDiff);
-  const mArmor = monsterArmor(monsterLevel);
-  const armorMod = 1 - armorReduction(mArmor);
-
-  const playerDps = dps * specDef.damageCoef * lvlMod * acc * armorMod;
-  const mHp = monsterHp(monsterLevel);
-  const timeToKill = playerDps > 0 ? mHp / playerDps : Infinity;
-
-  const mBaseDmg = monsterBaseDamage(monsterLevel);
-  const enemyLvlMod = enemyDamageModifier(levelDiff);
-  const pArmor = statAtLevel(cls, 'STA', playerLevel) * 2 * specDef.survivabilityCoef;
-  const pArmorMod = 1 - armorReduction(pArmor);
-
-  const incomingDmgPerHit = mBaseDmg * enemyLvlMod * pArmorMod * (1 - specDef.avoidance);
-  const incomingDps = incomingDmgPerHit / ATTACK_INTERVAL_SECONDS;
-
-  const healingPerSec = playerDps * specDef.healFrac + hp * specDef.passiveHealPct;
-  const netHpChangePerSec = incomingDps - healingPerSec;
-
-  const xpPerKill = 50 * monsterLevel * xpModifier(levelDiff);
-
-  return {
-    playerMaxHp: hp,
-    playerDps,
-    timeToKill,
-    incomingDps,
-    healingPerSec,
-    netHpChangePerSec,
-    xpPerKill,
-    levelDiff,
-    colorTier: mobColorTier(levelDiff),
-  };
-}

@@ -11,7 +11,7 @@ import {
   applyConsumableAutomationUsage,
   consumeFeast,
 } from '../firebase/consumables';
-import { statAtLevel, type BaseStat } from '../gameData/classStats';
+import { type BaseStat } from '../gameData/classStats';
 import { consumeEnchantCharges } from '../firebase/enchanting';
 import { DUNGEONS } from '../gameData/dungeons';
 import { MONSTERS } from '../gameData/monsters';
@@ -19,23 +19,15 @@ import { notify } from '../utils/notifications';
 import { ITEMS } from '../gameData/items';
 import { inferItemRarity, RARITY_COLORS } from '../gameData/itemRarity';
 import { resolveSpecDef, getExtraDamageTakenPct } from '../gameData/combatProfileWithTalents';
-import { evaluateTalents, EMPTY_TALENT_TOTALS } from '../utils/talentEvaluator';
-import { evaluateActiveBuffs } from '../gameData/buffs';
+import { resolveCombatProfile } from '../gameData/resolveCombatProfile';
 import {
   buildConsumableAutomationState,
   emptyConsumableAutomationState,
   type ConsumableAutomationRuntimeState,
 } from '../gameData/consumableAutomation';
 import { resolveActiveCompanionSetups, type CompanionCombatSetup } from '../gameData/companions';
-import {
-  maxHp,
-  resolveCurrentHp,
-  ATTACK_INTERVAL_SECONDS,
-  DUNGEON_TRASH_DAMAGE_MULTIPLIER,
-  DUNGEON_BOSS_DAMAGE_MULTIPLIER,
-} from '../gameData/combatFormulas';
-import { getEquipmentStatBonuses, isShieldEquipped } from '../gameData/equipmentStats';
-import { buildActiveEnchantTotals } from '../gameData/enchanting';
+import { ATTACK_INTERVAL_SECONDS, DUNGEON_TRASH_DAMAGE_MULTIPLIER, DUNGEON_BOSS_DAMAGE_MULTIPLIER } from '../gameData/combatFormulas';
+import { isShieldEquipped } from '../gameData/equipmentStats';
 import { characterXpForLevelV2, MAX_CHARACTER_LEVEL } from '../gameData/xpTables';
 import { checkAndUnlockNextSlot, resolveActiveAltSetups } from '../firebase/characterSlots';
 import { equippedItemId } from '../gameData/equipmentStats';
@@ -249,25 +241,19 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
 
   function buildEncounterInput(c: Character): EncounterSetupInput {
     const specDef = resolveSpecDef(c.class, c.spec);
-    const talentTotals = c.spec ? evaluateTalents(c.spec, c.talentPicks).totals : EMPTY_TALENT_TOTALS;
-    const buffTotals = evaluateActiveBuffs(c.activeBuffs, new Date());
+    const { equipmentBonuses, talentTotals, buffTotals, enchantTotals, currentHp } = resolveCombatProfile(c, new Date());
     // Cooking overhaul Tier 3 — Feasts fold into the SAME statBonuses pool
     // a Stat Food buff already uses (both just add — "stacks with personal
     // Stat Food" per the design brief), so the player needs zero new
     // CasterProfile plumbing. Mutating buffTotals.statBonuses directly
     // (rather than threading a new field through buildPlayerProfile) is
-    // safe here: evaluateActiveBuffs just returned a fresh object this
-    // call owns outright.
+    // safe here: resolveCombatProfile's evaluateActiveBuffs call just
+    // returned a fresh object this call owns outright.
     for (const [stat, value] of Object.entries(feastStatBonusesRef.current)) {
       const key = stat as BaseStat;
       buffTotals.statBonuses[key] = (buffTotals.statBonuses[key] ?? 0) + (value ?? 0);
     }
     const extraDamageTakenPct = getExtraDamageTakenPct(c.spec, c.talentPicks);
-    const equipmentBonuses = getEquipmentStatBonuses(c.equipment, c.enchantments, c.enchantmentCharges);
-    const enchantTotals = buildActiveEnchantTotals(c.enchantments, c.enchantmentCharges);
-    const charMaxHp = maxHp(c.class, c.level, equipmentBonuses, talentTotals.hpMultPct, enchantTotals.flatHpBonus);
-    const totalSpi = statAtLevel(c.class, 'SPI', c.level) + (equipmentBonuses.SPI ?? 0);
-    const currentHp = resolveCurrentHp(c.currentHp, charMaxHp, c.hpCheckpointAt, new Date(), totalSpi);
     // Feasts are party-wide — each companion/alt gets the exact same
     // feastStatBonuses folded into its OWN equipmentBonuses, which
     // buildCompanionProfile (combatEngine/engine.ts) already reads into
@@ -528,10 +514,7 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
           newLevel++;
         }
         if (newLevel !== fresh.level) {
-          const equipBonuses = getEquipmentStatBonuses(fresh.equipment, fresh.enchantments, fresh.enchantmentCharges);
-          const freshTalentTotals = fresh.spec ? evaluateTalents(fresh.spec, fresh.talentPicks).totals : EMPTY_TALENT_TOTALS;
-          const freshEnchantTotals = buildActiveEnchantTotals(fresh.enchantments, fresh.enchantmentCharges);
-          const restoredHp = maxHp(fresh.class, newLevel, equipBonuses, freshTalentTotals.hpMultPct, freshEnchantTotals.flatHpBonus);
+          const restoredHp = resolveCombatProfile(fresh, new Date(), { level: newLevel }).maxHp;
           await setCharacterLevel(currentUser.uid, newLevel, restoredHp);
           player.hp = restoredHp;
           player.maxHp = restoredHp;
