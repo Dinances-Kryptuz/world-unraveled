@@ -1,5 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { getItemIcon } from '../gameData/itemIcons';
+import { getItemDisplayName } from '../gameData/equipmentSuffixes';
+import { compareEquipmentStats } from '../gameData/equipmentComparison';
 import type { BaseStat } from '../gameData/classStats';
 import type { ItemDef } from '../gameData/types';
 
@@ -22,26 +24,61 @@ const TYPE_LABEL: Record<ItemDef['type'], string> = {
 // offensive/defensive potion stack, since resource (heal/mana) potions
 // never carry charges at all (see ConsumableEffect's doc comment), so there
 // is nothing else to gate this on.
+// `compareStats`, when passed, is the effective stats (rolls or static
+// statBonuses) of whatever is CURRENTLY EQUIPPED in this item's slot —
+// Equipment Comparison overhaul. Its presence (even as `{}`, meaning the
+// slot is empty) switches the stat lines from a flat "+N STAT" list to a
+// per-stat diff with a colored up/down/unchanged indicator, per the design
+// brief's comparison-indicator spec. Omitted entirely (the default, used by
+// every pre-existing call site), the tooltip renders exactly as before this
+// feature existed.
 function buildTooltip(
   item: ItemDef,
   statOverride?: Partial<Record<BaseStat, number>>,
-  remainingCharges?: number
+  remainingCharges?: number,
+  compareStats?: Partial<Record<BaseStat, number>>,
+  locked?: boolean
 ): ReactNode {
   const stats = statOverride ?? item.statBonuses;
-  const statLine = stats
-    ? Object.entries(stats)
-        .map(([stat, val]) => `+${val} ${stat}`)
-        .join('  ')
-    : '';
+  const comparison = compareStats !== undefined ? compareEquipmentStats(stats, compareStats) : null;
+  const statLine = !comparison && stats ? Object.entries(stats).map(([stat, val]) => `+${val} ${stat}`).join('  ') : '';
   const metaParts = [TYPE_LABEL[item.type]];
   if (item.equipSlot) metaParts.push(item.equipSlot[0].toUpperCase() + item.equipSlot.slice(1));
   if (item.armorType) metaParts.push(item.armorType[0].toUpperCase() + item.armorType.slice(1));
 
   return (
     <div className="item-tooltip">
-      <div className="item-tooltip-name">{item.name}</div>
+      <div className="item-tooltip-name">
+        {getItemDisplayName(item.name, statOverride)}
+        {locked ? ' 🔒' : ''}
+      </div>
       <div className="item-tooltip-meta">{metaParts.join(' · ')}</div>
       {statLine && <div className="item-tooltip-stats">{statLine}</div>}
+      {comparison && comparison.rows.length > 0 && (
+        <div className="item-tooltip-compare">
+          {comparison.rows.map((row) => {
+            const dir = row.diff > 0 ? 'up' : row.diff < 0 ? 'down' : 'same';
+            const arrow = row.diff > 0 ? '▲' : row.diff < 0 ? '▼' : '●';
+            return (
+              <div key={row.stat} className={`item-tooltip-compare-row stat-diff-${dir}`}>
+                {row.stat}: {row.candidateValue} vs {row.equippedValue}{' '}
+                <span>
+                  {arrow} {row.diff > 0 ? '+' : ''}
+                  {row.diff}
+                </span>
+              </div>
+            );
+          })}
+          <div
+            className={`item-tooltip-compare-total stat-diff-${
+              comparison.totalDiff > 0 ? 'up' : comparison.totalDiff < 0 ? 'down' : 'same'
+            }`}
+          >
+            Total: {comparison.totalDiff > 0 ? '+' : ''}
+            {comparison.totalDiff}
+          </div>
+        </div>
+      )}
       {item.gatherBonusPct ? <div className="item-tooltip-stats">+{item.gatherBonusPct}% gather success</div> : null}
       {item.consumableEffect?.healAmount ? (
         <div className="item-tooltip-stats">Heals {item.consumableEffect.healAmount} HP</div>
@@ -100,6 +137,8 @@ export function ItemSlot({
   onClick,
   statOverride,
   remainingCharges,
+  compareStats,
+  locked,
   children,
 }: {
   item: ItemDef;
@@ -115,6 +154,12 @@ export function ItemSlot({
   // quantity) PLUS the tooltip line, since "which stack has more charges
   // left" is exactly the kind of thing worth seeing without hovering.
   remainingCharges?: number;
+  // Equipment Comparison overhaul — see buildTooltip's doc comment above.
+  compareStats?: Partial<Record<BaseStat, number>>;
+  // Equipment Locking overhaul — shows a small lock badge + the tooltip's
+  // 🔒 marker. Purely display; actual lock enforcement lives server-side
+  // (firebase/inventory.ts's isLocked), not here.
+  locked?: boolean;
   children?: ReactNode;
 }) {
   const Tag = onClick ? 'button' : 'div';
@@ -128,7 +173,8 @@ export function ItemSlot({
       <ItemIcon key={item.id} item={item} />
       {quantity !== undefined && quantity > 1 && <span className="item-slot-qty">{quantity}</span>}
       {remainingCharges !== undefined && <span className="item-slot-charges">{remainingCharges}c</span>}
-      {buildTooltip(item, statOverride, remainingCharges)}
+      {locked && <span className="item-slot-locked">🔒</span>}
+      {buildTooltip(item, statOverride, remainingCharges, compareStats, locked)}
       {children}
     </Tag>
   );

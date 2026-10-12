@@ -266,6 +266,11 @@ export interface Character {
   // behavior exactly, so nothing changes for a character who never touches
   // this.
   consumableAutomation?: ConsumableAutomationSettings;
+  // Inventory sort/filter overhaul — the player's preferred Inventory
+  // screen configuration, same "field directly on the character doc, one
+  // setter, absence is default" convention as consumableAutomation above.
+  // Presentation-only: never read by anything outside InventoryScreen.tsx.
+  inventorySortPrefs?: InventorySortPrefs;
   // Quest progress — see QuestState above.
   quests: QuestState;
   // Recruited companions, keyed by CompanionDef.id (gameData/companions.ts)
@@ -389,6 +394,14 @@ export interface Inventory {
     itemId: string;
     rolls: Partial<Record<BaseStat, number>>;
     quantity: number;
+    // Stamped once, when this specific roll's bucket is first created
+    // (never touched again by later grants of more of the same roll) —
+    // drives the Inventory screen's Newest/Oldest First sort (Timestamp on
+    // write via serverTimestamp(), always read back as a Date — see
+    // itemCooldowns' matching comment above). Optional because buckets
+    // created before this field existed have none; they sort as "oldest"
+    // (see InventoryScreen.tsx's sort comparator).
+    acquiredAt?: Date;
   }>;
   // Charge-count-distinguished offensive/defensive potions (Herbalism/
   // Alchemy overhaul) — same bucketing pattern as equipmentInstances
@@ -402,6 +415,16 @@ export interface Inventory {
     remainingCharges: number;
     quantity: number;
   }>;
+  // Equipment Locking — a flat set of identifiers the player has marked
+  // "don't destroy." An identifier is an equipmentInstances key for a
+  // randomized roll, or a plain itemId for a non-instanced (legacy/frozen)
+  // equipment item — see firebase/inventory.ts's isLocked, the single
+  // choke point every destructive action (sellItem, applyDisenchantResult,
+  // the disenchant queue) checks before consuming an item. A flat array
+  // (not a per-instance boolean field) because toggling one lock is then a
+  // single arrayUnion/arrayRemove write that can't race a concurrent
+  // quantity-changing increment() on the same instance document path.
+  lockedInstanceIds?: string[];
 }
 
 // Herbalism/Alchemy overhaul's Part 8 "potion automation" settings — one
@@ -410,6 +433,31 @@ export interface Inventory {
 // combat (combatEngine/offlineCombat.ts) and online combat
 // (combatEngine/engine.ts) both read the exact same object, so there is
 // only ever one set of automation rules, never two that could drift apart.
+// Equipment Naming/Sorting/Comparison/Locking/Queue overhaul's Inventory
+// sort+filter configuration. 'individualStat' needs `sortStat` to say which
+// of the 5 BaseStats to rank by; every other sortBy ignores it. The filter
+// fields are all independent and combine with AND semantics (see
+// InventoryScreen.tsx) — `null` (as opposed to omitted) is the explicit
+// "no filter" value a Clear-filters control writes, so a round-trip through
+// Firestore can't confuse "never set" with "user cleared it."
+export type InventorySortOption =
+  | 'slot'
+  | 'tier'
+  | 'suffix'
+  | 'totalStats'
+  | 'individualStat'
+  | 'newest'
+  | 'oldest';
+
+export interface InventorySortPrefs {
+  sortBy: InventorySortOption;
+  sortStat?: BaseStat;
+  filterSlot?: EquipmentSlot | null;
+  filterTier?: string | null;
+  filterSuffix?: string | null;
+  filterLocked?: 'locked' | 'unlocked' | null;
+}
+
 export interface ConsumableAutomationSettings {
   offensiveItemId: string | null;
   defensiveItemId: string | null;

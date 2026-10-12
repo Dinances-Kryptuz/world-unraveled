@@ -1,6 +1,6 @@
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp, Timestamp, increment, arrayUnion } from 'firebase/firestore';
 import { db } from './config';
-import type { Character, CombatPreset, MaterialMasteryState, ZoneMasteryState } from '../types/character';
+import type { Character, CombatPreset, MaterialMasteryState, ZoneMasteryState, InventorySortPrefs } from '../types/character';
 import type { ProfessionId, EquipmentSlot, EquippedItemRef } from '../gameData/types';
 import type { ClassId, SpecId } from '../gameData/classStats';
 import type { TalentColumn } from '../gameData/talents';
@@ -1176,6 +1176,14 @@ export async function respecTalents(uid: string): Promise<{ success: boolean; re
 
 export async function setNotificationsEnabled(uid: string, enabled: boolean): Promise<void> {
   await updateDoc(doc(db, 'characters', uid), { notificationsEnabled: enabled });
+}
+
+// Equipment Naming/Sorting/Comparison/Locking/Queue overhaul — persists the
+// Inventory screen's sort/filter configuration, same one-shot full-overwrite
+// setter shape as setConsumableAutomation. Presentation-only: never read by
+// anything outside InventoryScreen.tsx.
+export async function setInventorySortPrefs(uid: string, prefs: InventorySortPrefs): Promise<void> {
+  await updateDoc(doc(db, 'characters', uid), { inventorySortPrefs: prefs });
 }
 
 export async function setSkillXpNotificationsEnabled(uid: string, enabled: boolean): Promise<void> {

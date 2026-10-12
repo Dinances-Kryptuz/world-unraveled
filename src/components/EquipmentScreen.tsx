@@ -26,7 +26,7 @@ const LEFT_COLUMN: EquipmentSlot[] = ['helmet', 'necklace', 'shoulders', 'cape',
 const RIGHT_COLUMN: EquipmentSlot[] = ['gloves', 'belt', 'legs', 'boots', 'ring', 'ring2'];
 const BOTTOM_ROW: EquipmentSlot[] = ['weapon', 'offhand', 'ammo'];
 
-const SLOT_LABEL: Record<EquipmentSlot, string> = {
+export const SLOT_LABEL: Record<EquipmentSlot, string> = {
   weapon: 'Weapon', offhand: 'Off Hand', chest: 'Chest', helmet: 'Helmet', gloves: 'Gloves',
   legs: 'Legs', boots: 'Boots', ring: 'Ring', ring2: 'Ring', necklace: 'Necklace', tool: 'Tool',
   shoulders: 'Shoulders', cape: 'Cape', shirt: 'Shirt', tabard: 'Tabard', bracers: 'Bracers',

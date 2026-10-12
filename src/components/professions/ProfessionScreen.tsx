@@ -9,7 +9,7 @@ import { gatheringColorTier, GATHERING_COLOR_XP_PCT, fishingZoneMasteryPercent }
 import { craftingColorTier, CRAFTING_COLOR_XP_PCT } from '../../gameData/craftingEngine';
 import { canUseRecipe } from '../../firebase/professions';
 import { useEnchantScroll, removeEnchant } from '../../firebase/enchanting';
-import { subscribeToInventory } from '../../firebase/inventory';
+import { subscribeToInventory, isLocked } from '../../firebase/inventory';
 import { ENCHANTS, isDisenchantable, disenchantRequiredSkill, disenchantYieldRange } from '../../gameData/enchanting';
 import { ITEMS } from '../../gameData/items';
 import { equippedItemId } from '../../gameData/equipmentStats';
@@ -445,14 +445,23 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
 
     const disenchantableEntries: { itemId: string; quantity: number; instanceId?: string; rolls?: Record<string, number> }[] = [
       ...Object.entries(inventory?.items ?? {})
-        .filter(([itemId, quantity]) => quantity > 0 && ITEMS[itemId] && isDisenchantable(ITEMS[itemId]!))
+        .filter(
+          ([itemId, quantity]) =>
+            quantity > 0 && ITEMS[itemId] && isDisenchantable(ITEMS[itemId]!) && !isLocked(inventory!, itemId)
+        )
         .map(([itemId, quantity]) => ({ itemId, quantity })),
       // Randomized-roll equipment lives in its own instanceId-keyed bucket
       // (see types/character.ts's Inventory.equipmentInstances) — each
       // distinct roll is disenchanted independently so the player picks
-      // which specific variant to break down.
+      // which specific variant to break down. Equipment Locking overhaul —
+      // a locked instance never appears here at all (never "disabled",
+      // simply excluded), matching "locked equipment cannot be included in
+      // bulk disenchant selection."
       ...Object.entries(inventory?.equipmentInstances ?? {})
-        .filter(([, inst]) => inst.quantity > 0 && ITEMS[inst.itemId] && isDisenchantable(ITEMS[inst.itemId]!))
+        .filter(
+          ([instanceId, inst]) =>
+            inst.quantity > 0 && ITEMS[inst.itemId] && isDisenchantable(ITEMS[inst.itemId]!) && !isLocked(inventory!, instanceId)
+        )
         .map(([instanceId, inst]) => ({ itemId: inst.itemId, quantity: inst.quantity, instanceId, rolls: inst.rolls })),
     ].sort((a, b) => (ITEMS[a.itemId]?.name ?? a.itemId).localeCompare(ITEMS[b.itemId]?.name ?? b.itemId));
 
