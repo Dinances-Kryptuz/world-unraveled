@@ -342,6 +342,42 @@ export const ITEMS: Record<string, ItemDef> = {
     stackable: true, equipSlot: 'belt', statBonuses: { STA: 8, STR: 7 }, sellValue: 57,
   },
 
+  // ── Leatherworking Bracers (6 tiers) — Equipment overhaul's itemization
+  // parity fix: Leatherworking previously had Shoulders at every tier but
+  // no Bracers. Stat budgets mirror each tier's own Gloves 1:1 (same rule
+  // this file's Shoulders entries already use), so the existing power
+  // curve is unchanged, only the missing slot is filled.
+  handstitched_leather_bracers: {
+    id: 'handstitched_leather_bracers', name: 'Handstitched Leather Bracers', type: 'equipment',
+    description: 'A Handstitched Leather bracers, crafted by a skilled leatherworker.',
+    stackable: true, equipSlot: 'bracers', armorType: 'leather', statBonuses: { STA: 2, STR: 2 }, sellValue: 12,
+  },
+  fine_leather_bracers: {
+    id: 'fine_leather_bracers', name: 'Fine Leather Bracers', type: 'equipment',
+    description: 'A Fine Leather bracers, crafted by a skilled leatherworker.',
+    stackable: true, equipSlot: 'bracers', armorType: 'leather', statBonuses: { STA: 4, STR: 3 }, sellValue: 22,
+  },
+  barbaric_leather_bracers: {
+    id: 'barbaric_leather_bracers', name: 'Barbaric Leather Bracers', type: 'equipment',
+    description: 'A Barbaric Leather bracers, crafted by a skilled leatherworker.',
+    stackable: true, equipSlot: 'bracers', armorType: 'leather', statBonuses: { STA: 5, STR: 4 }, sellValue: 31,
+  },
+  nightscape_leather_bracers: {
+    id: 'nightscape_leather_bracers', name: 'Nightscape Leather Bracers', type: 'equipment',
+    description: 'A Nightscape Leather bracers, crafted by a skilled leatherworker.',
+    stackable: true, equipSlot: 'bracers', armorType: 'leather', statBonuses: { STA: 6, STR: 5 }, sellValue: 39,
+  },
+  wicked_leather_bracers: {
+    id: 'wicked_leather_bracers', name: 'Wicked Leather Bracers', type: 'equipment',
+    description: 'A Wicked Leather bracers, crafted by a skilled leatherworker.',
+    stackable: true, equipSlot: 'bracers', armorType: 'leather', statBonuses: { STA: 7, STR: 6 }, sellValue: 47,
+  },
+  emberscar_leather_bracers: {
+    id: 'emberscar_leather_bracers', name: 'Emberscar Leather Bracers', type: 'equipment',
+    description: 'A Emberscar Leather bracers, crafted by a skilled leatherworker.',
+    stackable: true, equipSlot: 'bracers', armorType: 'leather', statBonuses: { STA: 8, STR: 7 }, sellValue: 57,
+  },
+
   // ── Tailoring overhaul — 36 cloth armor items (6 tiers x 6 pieces) + 6
   // capes, replacing the old ad-hoc linen/heavy/ashwoven/charred/ashenweave
   // roster (frozen untouched, same convention as every other retired-content
@@ -532,6 +568,42 @@ export const ITEMS: Record<string, ItemDef> = {
     description: 'A ember shoulders, woven by a skilled tailor.',
     stackable: true, equipSlot: 'shoulders', armorType: 'cloth', statBonuses: { INT: 8, STA: 7 }, sellValue: 57,
   },
+
+  // ── Tailoring Bracers (6 tiers) — Equipment overhaul's itemization
+  // parity fix: Tailoring previously had Shoulders at every tier but no
+  // Bracers. Stat budgets mirror each tier's own Gloves 1:1, same rule as
+  // this file's Leatherworking Bracers entries above.
+  tailored_linen_bracers: {
+    id: 'tailored_linen_bracers', name: 'Linen Bracers', type: 'equipment',
+    description: 'A linen bracers, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'bracers', armorType: 'cloth', statBonuses: { INT: 2, STA: 2 }, sellValue: 12,
+  },
+  wool_bracers: {
+    id: 'wool_bracers', name: 'Wool Bracers', type: 'equipment',
+    description: 'A wool bracers, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'bracers', armorType: 'cloth', statBonuses: { INT: 4, STA: 3 }, sellValue: 22,
+  },
+  silk_bracers: {
+    id: 'silk_bracers', name: 'Silk Bracers', type: 'equipment',
+    description: 'A silk bracers, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'bracers', armorType: 'cloth', statBonuses: { INT: 5, STA: 4 }, sellValue: 31,
+  },
+  mageweave_bracers: {
+    id: 'mageweave_bracers', name: 'Mageweave Bracers', type: 'equipment',
+    description: 'A mageweave bracers, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'bracers', armorType: 'cloth', statBonuses: { INT: 6, STA: 5 }, sellValue: 39,
+  },
+  runecloth_bracers: {
+    id: 'runecloth_bracers', name: 'Runecloth Bracers', type: 'equipment',
+    description: 'A runecloth bracers, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'bracers', armorType: 'cloth', statBonuses: { INT: 7, STA: 6 }, sellValue: 47,
+  },
+  ember_bracers: {
+    id: 'ember_bracers', name: 'Ember Bracers', type: 'equipment',
+    description: 'A ember bracers, woven by a skilled tailor.',
+    stackable: true, equipSlot: 'bracers', armorType: 'cloth', statBonuses: { INT: 8, STA: 7 }, sellValue: 57,
+  },
+
   // ── Capes (zones 1-6) — universal (cloth is already allowed for every
   // class), 2 random stats, same materialId as that tier's armor so they
   // feed the SAME cloth mastery bar (no separate cape mastery).
@@ -4470,6 +4542,50 @@ export const ITEMS: Record<string, ItemDef> = {
     description: 'A black, light-touched battleaxe forged from Obsidian by a skilled blacksmith.',
     stackable: true, equipSlot: 'weapon', statBonuses: { INT: 33, SPI: 18 }, sellValue: 204,
   },
+
+  // ── Blacksmithing Shoulders (7 tiers) — Equipment overhaul's itemization
+  // parity fix: Blacksmithing previously had every other plate slot
+  // (including Bracers) but no Shoulders at all. Stat budgets mirror each
+  // tier's own Gauntlets 1:1 (same "Shoulders mirrors Gauntlets'" rule
+  // ARMOR_STAT_RANGES already uses for Leatherworking/Tailoring's
+  // Shoulders), so this doesn't change Blacksmithing's existing power
+  // curve, only fills the missing slot at every tier.
+  copper_shoulders: {
+    id: 'copper_shoulders', name: 'Copper Shoulders', type: 'equipment',
+    description: 'An orange shoulders forged from Copper by a skilled blacksmith.',
+    stackable: true, equipSlot: 'shoulders', statBonuses: { STA: 2, STR: 2 }, sellValue: 12,
+  },
+  bronze_shoulders: {
+    id: 'bronze_shoulders', name: 'Bronze Shoulders', type: 'equipment',
+    description: 'A brown shoulders forged from Bronze by a skilled blacksmith.',
+    stackable: true, equipSlot: 'shoulders', statBonuses: { STA: 4, STR: 3 }, sellValue: 22,
+  },
+  iron_shoulders: {
+    id: 'iron_shoulders', name: 'Iron Shoulders', type: 'equipment',
+    description: 'A dark gray shoulders forged from Iron by a skilled blacksmith.',
+    stackable: true, equipSlot: 'shoulders', statBonuses: { STA: 5, STR: 4 }, sellValue: 31,
+  },
+  steel_shoulders: {
+    id: 'steel_shoulders', name: 'Steel Shoulders', type: 'equipment',
+    description: 'A light gray shoulders forged from Steel by a skilled blacksmith.',
+    stackable: true, equipSlot: 'shoulders', statBonuses: { STA: 6, STR: 5 }, sellValue: 39,
+  },
+  mithril_shoulders: {
+    id: 'mithril_shoulders', name: 'Mithril Shoulders', type: 'equipment',
+    description: 'A dark blue shoulders forged from Mithril by a skilled blacksmith.',
+    stackable: true, equipSlot: 'shoulders', statBonuses: { STA: 7, STR: 6 }, sellValue: 47,
+  },
+  thorium_shoulders: {
+    id: 'thorium_shoulders', name: 'Thorium Shoulders', type: 'equipment',
+    description: 'A light teal shoulders forged from Thorium by a skilled blacksmith.',
+    stackable: true, equipSlot: 'shoulders', statBonuses: { STA: 8, STR: 7 }, sellValue: 57,
+  },
+  obsidian_shoulders: {
+    id: 'obsidian_shoulders', name: 'Obsidian Shoulders', type: 'equipment',
+    description: 'A black shoulders forged from Obsidian by a skilled blacksmith.',
+    stackable: true, equipSlot: 'shoulders', statBonuses: { STA: 10, STR: 8 }, sellValue: 72,
+  },
+
   silver_necklace: {
     id: 'silver_necklace', name: 'Silver Necklace', type: 'equipment',
     description: 'A silver necklace set with a faintly glowing stone.',
