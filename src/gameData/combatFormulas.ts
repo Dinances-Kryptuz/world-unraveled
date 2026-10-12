@@ -1,7 +1,22 @@
 import { PRIMARY_STAT, SPECS, statAtLevel, type BaseStat, type ClassId, type SpecId } from './classStats';
 
 export const ATTACK_INTERVAL_SECONDS = 2.0; // universal baseline, both player and monster
-export const MONSTER_DAMAGE_SCALE = 0.75; // global tuning knob found during Pass 1 calibration
+// Combat/Rarity overhaul Part 1 re-calibration — raised from Pass 1's 0.75,
+// which deliberately made a naked (no-gear) character "solvent" (margin
+// >= ~1.0x) at every level; this overhaul's design brief asks for the
+// opposite ("a naked character should not reliably defeat equal-level
+// monsters"). A sensitivity sweep (not committed — see this phase's final
+// report) across naked/partial/green/blue-equivalent gear totals at
+// levels 10/30/50 found 2.0 lands naked clearly below a 1.0x survival
+// margin at low-mid levels (and only marginal, not comfortable, at the
+// top of the range) while green stays solidly >1.5x and blue higher
+// still — matching "fully equipped with basic crafted gear reliably wins;
+// higher-quality gear improves farming efficiency." Armor's own
+// diminishing-returns curve (armorReduction below) means this doesn't
+// scale incoming damage linearly for a geared character the way it does
+// for an unarmored one, which is the actual lever doing the work here, not
+// a flat damage multiplier on its own.
+export const MONSTER_DAMAGE_SCALE = 2.0;
 
 export const LEVEL_CAP = 60;
 
