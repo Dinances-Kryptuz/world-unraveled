@@ -1,4 +1,5 @@
 import type { Monster } from './types';
+import { DUNGEON_BOSS_LOOT_DROPS } from './dungeonLoot';
 
 export const MONSTERS: Record<string, Monster> = {
   greenhorn_boar: {
@@ -346,6 +347,7 @@ export const MONSTERS: Record<string, Monster> = {
       { itemId: 'small_coin_pouch', chance: 0.25, minQty: 1, maxQty: 1 },
       { itemId: 'chieftains_warhammer', chance: 0.15, minQty: 1, maxQty: 1 },
       { itemId: 'chieftains_seal', chance: 0.12, minQty: 1, maxQty: 1 },
+      ...(DUNGEON_BOSS_LOOT_DROPS.kobold_chieftain ?? []),
     ],
     specialAbility: {
       name: 'Warlord’s Command',
@@ -375,6 +377,7 @@ export const MONSTERS: Record<string, Monster> = {
       { itemId: 'sharp_fang', chance: 0.5, minQty: 2, maxQty: 3 },
       { itemId: 'alpha_pelt', chance: 0.2, minQty: 1, maxQty: 1 },
       { itemId: 'warlords_signet', chance: 0.15, minQty: 1, maxQty: 1 },
+      ...(DUNGEON_BOSS_LOOT_DROPS.alpha_warlord ?? []),
     ],
     specialAbility: {
       name: 'Warlord of the Depths',
@@ -406,6 +409,7 @@ export const MONSTERS: Record<string, Monster> = {
       { itemId: 'ember_shard', chance: 0.35, minQty: 1, maxQty: 2 },
       { itemId: 'kaldrun_warhammer', chance: 0.15, minQty: 1, maxQty: 1 },
       { itemId: 'kaldrun_tempered_band', chance: 0.15, minQty: 1, maxQty: 1 },
+      ...(DUNGEON_BOSS_LOOT_DROPS.forgemaster_kaldrun ?? []),
     ],
     specialAbility: {
       name: 'Master of the Sundered Forge',
@@ -767,6 +771,7 @@ export const MONSTERS: Record<string, Monster> = {
       { itemId: 'cindercore_shard', chance: 0.35, minQty: 1, maxQty: 2 },
       { itemId: 'overseers_greatmace_damaged', chance: 0.15, minQty: 1, maxQty: 1 },
       { itemId: 'overseers_band', chance: 0.15, minQty: 1, maxQty: 1 },
+      ...(DUNGEON_BOSS_LOOT_DROPS.ashen_overseer ?? []),
     ],
     specialAbility: {
       name: 'The Last Overseer',
@@ -800,6 +805,7 @@ export const MONSTERS: Record<string, Monster> = {
       { itemId: 'runecloth', chance: 0.5, minQty: 2, maxQty: 3 },
       { itemId: 'magma_heart', chance: 0.35, minQty: 1, maxQty: 2 },
       { itemId: 'heralds_ember_band', chance: 0.15, minQty: 1, maxQty: 1 },
+      ...(DUNGEON_BOSS_LOOT_DROPS.molten_herald ?? []),
     ],
     specialAbility: {
       name: 'Herald of the Rift',
@@ -847,6 +853,7 @@ export const MONSTERS: Record<string, Monster> = {
       // (a boss-dropped formula for a dish that still needs its own
       // boss-dropped meat plus other ingredients gathered separately).
       { itemId: 'recipe_pyraxis_flame_seared_flank', chance: 0.08, minQty: 1, maxQty: 1 },
+      ...(DUNGEON_BOSS_LOOT_DROPS.pyraxis ?? []),
     ],
     specialAbility: {
       name: 'Warden of the Cinderheart',

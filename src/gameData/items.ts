@@ -1,10 +1,11 @@
 import type { ItemDef } from './types';
+import { DUNGEON_LOOT_ITEMS } from './dungeonLoot';
 
 // V1 has zero stat variance: every unit of a given item is identical.
 // This is what lets inventory be a simple { itemId: quantity } map instead
 // of tracking per-item instances.
 
-export const ITEMS: Record<string, ItemDef> = {
+const STATIC_ITEMS: Record<string, ItemDef> = {
   // ── Starter gear — granted directly at character creation (see
   // firebase/character.ts's createCharacter), not sold, gathered, or
   // crafted. A level-1 character fighting bare-handed dies to the first
@@ -4718,3 +4719,11 @@ export const ITEMS: Record<string, ItemDef> = {
   },
 
 };
+
+// Combat/Rarity overhaul — dungeon blue/purple fixed-stat equipment is
+// generated (not hand-authored) by gameData/dungeonLoot.ts, from a compact
+// per-dungeon slot/rarity table and the 8-specialization stat-weight
+// template, rather than ~180 individual literal item entries. Merged in
+// here so every existing caller of ITEMS (equip, crafting, loot, tooltips)
+// needs zero changes to see them.
+export const ITEMS: Record<string, ItemDef> = { ...STATIC_ITEMS, ...DUNGEON_LOOT_ITEMS };
