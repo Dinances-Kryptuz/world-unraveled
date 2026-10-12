@@ -113,10 +113,27 @@ export const SPECS: Record<SpecId, SpecDef> = {
   // Both Mage specs are matched to the other pure-DPS casters (Shadow
   // Priest's own 1.0/0.8) rather than given a raw-number edge — they
   // differentiate through their ability kits (combatEngine/abilities.ts),
-  // not a bigger coefficient. Mage has no survivability or threat tools of
-  // its own, so it leans on a tank companion more than Shadow Priest does.
-  mage_fire: { class: 'mage', damageCoef: 1.0, survivabilityCoef: 0.75, avoidance: 0.05, healFrac: 0.0, passiveHealPct: 0.0, combatType: 'magic', threatWeight: 1 },
-  mage_frost: { class: 'mage', damageCoef: 1.0, survivabilityCoef: 0.75, avoidance: 0.05, healFrac: 0.0, passiveHealPct: 0.0, combatType: 'magic', threatWeight: 1 },
+  // not a bigger coefficient. Mage has no healFrac/threat tools of its own,
+  // so it leans on a tank companion more than Shadow Priest does.
+  //
+  // survivabilityCoef raised 0.75 -> 0.8 (matching Shadow Priest's own
+  // floor — no longer the single squishiest spec on top of everything
+  // else) and passiveHealPct raised 0.0 -> 0.014 (every OTHER spec in this
+  // table has some non-zero baseline trickle, from 0.016 up to 0.044 —
+  // Mage was the only one with literally none) — a companion-reliability
+  // fix (Mage is currently only usable as a hired companion/AI ally, with
+  // a player class planned for the future). A live-simulation sweep found
+  // the ORIGINAL numbers meant even the game's own intended pairing — Mage
+  // + a dedicated, fully-geared tank companion — still eventually wiped
+  // over a multi-hour window (1021 kills then death vs. a weak zone-1
+  // mob; 19 kills then death vs. a mid-tier mob); this fix makes that same
+  // pairing sustain indefinitely (5062/1812 kills, no forced retreat) with
+  // zero change to scenarios that were already safe. Solo Mage (no tank)
+  // remains deliberately the weakest spec in the roster, unchanged — it's
+  // still meant to lean on a tank, just no longer unable to survive WITH
+  // one.
+  mage_fire: { class: 'mage', damageCoef: 1.0, survivabilityCoef: 0.8, avoidance: 0.05, healFrac: 0.0, passiveHealPct: 0.014, combatType: 'magic', threatWeight: 1 },
+  mage_frost: { class: 'mage', damageCoef: 1.0, survivabilityCoef: 0.8, avoidance: 0.05, healFrac: 0.0, passiveHealPct: 0.014, combatType: 'magic', threatWeight: 1 },
 };
 
 export function statAtLevel(cls: ClassId, stat: BaseStat, level: number): number {
