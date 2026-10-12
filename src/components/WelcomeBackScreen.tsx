@@ -18,7 +18,8 @@ import { resolveSpecDef, getExtraDamageTakenPct } from '../gameData/combatProfil
 import { simulateOfflineCombat } from '../combatEngine/offlineCombat';
 import { evaluateTalents, EMPTY_TALENT_TOTALS } from '../utils/talentEvaluator';
 import { maxHp, resolveCurrentHp } from '../gameData/combatFormulas';
-import { getEquipmentStatBonuses } from '../gameData/equipmentStats';
+import { getEquipmentStatBonuses, isShieldEquipped } from '../gameData/equipmentStats';
+import { statAtLevel } from '../gameData/classStats';
 import { getProfessionState, maxSkillForUnlockedTier, PROFESSION_CATEGORY } from '../gameData/professionTiers';
 import { evaluateActiveBuffs } from '../gameData/buffs';
 import { getInventory } from '../firebase/inventory';
@@ -89,7 +90,8 @@ export function WelcomeBackScreen({
         const equipBonuses = getEquipmentStatBonuses(character.equipment, character.enchantments, character.enchantmentCharges);
         const enchantTotals = buildActiveEnchantTotals(character.enchantments, character.enchantmentCharges);
         const charMaxHp = maxHp(character.class, character.level, equipBonuses, talentTotals.hpMultPct, enchantTotals.flatHpBonus);
-        const startingHp = resolveCurrentHp(character.currentHp, charMaxHp, character.hpCheckpointAt, activity.startedAt);
+        const totalSpi = statAtLevel(character.class, 'SPI', character.level) + (equipBonuses.SPI ?? 0);
+        const startingHp = resolveCurrentHp(character.currentHp, charMaxHp, character.hpCheckpointAt, activity.startedAt, totalSpi);
         // Herbalism/Alchemy overhaul's Part 8 automation — built from
         // inventory as of the moment the player went offline (activity.
         // startedAt is also what cooldownRemaining is measured from, see
@@ -116,6 +118,7 @@ export function WelcomeBackScreen({
           trainedAbilityIds: character.trainedAbilityIds,
           savedAbilityConditions: character.abilityConditions,
           disabledAbilityIds: character.disabledAbilityIds,
+          hasShieldEquipped: isShieldEquipped(character.equipment),
           monster,
           consumableState,
           goldFindPct: shirtBonusPct(shirtBonusForItemId(activity.equippedShirtItemId), 'gold_find'),

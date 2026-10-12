@@ -43,6 +43,9 @@ export interface OfflineCombatInput {
   trainedAbilityIds: string[];
   savedAbilityConditions: Record<string, ConditionGroup>;
   disabledAbilityIds: string[];
+  // Attribute/Specialization overhaul's Shield Block Value — see
+  // EncounterSetupInput.hasShieldEquipped's doc comment.
+  hasShieldEquipped?: boolean;
   monster: Monster;
   // Same as EncounterSetupInput.companions — each one's `level` is
   // overwritten on every buildInput() call (including after a
@@ -151,6 +154,7 @@ export function simulateOfflineCombat(input: OfflineCombatInput): OfflineCombatR
       trainedAbilityIds: input.trainedAbilityIds,
       savedAbilityConditions: input.savedAbilityConditions,
       disabledAbilityIds: input.disabledAbilityIds,
+      hasShieldEquipped: input.hasShieldEquipped,
       companions: input.companions?.map((c) => ({ ...c, level })),
       ...enchantTotals,
     };

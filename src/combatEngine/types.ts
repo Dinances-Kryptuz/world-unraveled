@@ -249,6 +249,32 @@ export interface CasterProfile {
   // computeEffectDamage simply never rolling source.profile.weaponProc
   // again for a proc's OWN bonus-damage sub-event.
   weaponProc?: EnchantWeaponProc;
+  // ── Attribute & Specialization Identity overhaul ──────────────────────
+  // shieldBlockValue: a flat damage-reduction stat, SUMMED with
+  // flatDamageReduction in computeEffectDamage (one pipeline, two sources —
+  // same convention as fireResistancePct/shadowResistancePct above). 0 for
+  // anyone without a real shield equipped (gameData/types.ts's ItemDef.
+  // isShield) — see combatFormulas.ts's shieldBlockValue(). Boosted for the
+  // two shield-tank specs (warrior_tank/prot_paladin) as their spec-identity
+  // passive — see engine.ts's buildPlayerProfile.
+  shieldBlockValue: number;
+  // manaRegenMult: SPI's mana-regen-rate bonus (combatFormulas.ts's
+  // manaRegenMultiplier) — multiplies MANA_REGEN_PCT_PER_SECOND in
+  // resources.ts's regenResources. 1 for anyone with no SPI bonus (every
+  // monster/companion with 0 SPI, and any player before this field existed).
+  manaRegenMult: number;
+  // manaCostReductionPct: Prot Paladin's spec-identity passive — INT
+  // reduces the mana cost of this combatant's OWN abilities (useAbility
+  // applies it to ability.resourceCost before spend()). 0 for every other
+  // spec/monster/companion.
+  manaCostReductionPct: number;
+  // critHealManaRefundPct: Holy Paladin's spec-identity passive — a crit
+  // heal (useAbility rolls a crit on the 'heal' effect case using this same
+  // combatant's critChance, same stat AGI/INT already feed) refunds this %
+  // of the ability's mana cost. Purely a resource-economy bonus — a crit
+  // heal is NOT itself larger, so this can't be stacked with gear into a
+  // second healing-throughput axis. 0 for every other spec/monster/companion.
+  critHealManaRefundPct: number;
 }
 
 // EnchantProcKind values map 1:1 onto the design brief's Zone 5/6 proc

@@ -11,7 +11,7 @@ import {
   applyConsumableAutomationUsage,
   consumeFeast,
 } from '../firebase/consumables';
-import type { BaseStat } from '../gameData/classStats';
+import { statAtLevel, type BaseStat } from '../gameData/classStats';
 import { consumeEnchantCharges } from '../firebase/enchanting';
 import { DUNGEONS } from '../gameData/dungeons';
 import { MONSTERS } from '../gameData/monsters';
@@ -27,7 +27,7 @@ import {
 } from '../gameData/consumableAutomation';
 import { resolveActiveCompanionSetups, type CompanionCombatSetup } from '../gameData/companions';
 import { maxHp, resolveCurrentHp, ATTACK_INTERVAL_SECONDS } from '../gameData/combatFormulas';
-import { getEquipmentStatBonuses } from '../gameData/equipmentStats';
+import { getEquipmentStatBonuses, isShieldEquipped } from '../gameData/equipmentStats';
 import { buildActiveEnchantTotals } from '../gameData/enchanting';
 import { characterXpForLevelV2, MAX_CHARACTER_LEVEL } from '../gameData/xpTables';
 import { checkAndUnlockNextSlot, resolveActiveAltSetups } from '../firebase/characterSlots';
@@ -243,7 +243,8 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
     const equipmentBonuses = getEquipmentStatBonuses(c.equipment, c.enchantments, c.enchantmentCharges);
     const enchantTotals = buildActiveEnchantTotals(c.enchantments, c.enchantmentCharges);
     const charMaxHp = maxHp(c.class, c.level, equipmentBonuses, talentTotals.hpMultPct, enchantTotals.flatHpBonus);
-    const currentHp = resolveCurrentHp(c.currentHp, charMaxHp, c.hpCheckpointAt, new Date());
+    const totalSpi = statAtLevel(c.class, 'SPI', c.level) + (equipmentBonuses.SPI ?? 0);
+    const currentHp = resolveCurrentHp(c.currentHp, charMaxHp, c.hpCheckpointAt, new Date(), totalSpi);
     // Feasts are party-wide — each companion/alt gets the exact same
     // feastStatBonuses folded into its OWN equipmentBonuses, which
     // buildCompanionProfile (combatEngine/engine.ts) already reads into
@@ -275,6 +276,7 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
       trainedAbilityIds: c.trainedAbilityIds,
       savedAbilityConditions: c.abilityConditions,
       disabledAbilityIds: c.disabledAbilityIds,
+      hasShieldEquipped: isShieldEquipped(c.equipment),
       companions,
       ...enchantTotals,
       // A dungeon is fixed-size group content (REQUIRED_DUNGEON_PARTY_SIZE,

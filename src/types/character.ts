@@ -148,6 +148,14 @@ export interface Character {
   currentHp: number;
   hpCheckpointAt: Date;
   respecCount: number;
+  // Attribute/Specialization overhaul's spec respec — a SEPARATE growing-
+  // cost counter from respecCount above (talent-tree respec keeps its own
+  // independent cost curve; switching specs entirely is its own, bigger
+  // decision with its own curve — see firebase/character.ts's
+  // getSpecRespecCost). Absent means never respecced specs yet (0), same
+  // "absence is the zero state" convention as every other optional counter
+  // in this type.
+  specRespecCount?: number;
   equipment: Record<EquipmentSlot, EquippedItemRef | null>;
   // Only professions actually learned (see firebase/professions.ts's
   // learnProfession) have a key here — Partial, not a full Record, since an

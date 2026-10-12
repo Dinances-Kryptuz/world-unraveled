@@ -19,6 +19,17 @@ import {
   critChanceFromAgi,
   dodgeChanceFromAgi,
   CRIT_DAMAGE_MULTIPLIER,
+  critChanceFromInt,
+  armorFromAgi,
+  manaRegenMultiplier,
+  shieldBlockValue,
+  WARRIOR_DPS_STR_CRIT_PCT_PER_POINT,
+  SHIELD_TANK_SPEC_BLOCK_BONUS_PCT,
+  SHADOW_PRIEST_SPI_DAMAGE_PCT_PER_POINT,
+  HOLY_PRIEST_SPI_HEALING_BONUS_PCT_PER_POINT,
+  PROT_PALADIN_INT_MANA_COST_REDUCTION_PCT_PER_POINT,
+  PROT_PALADIN_MANA_COST_REDUCTION_CAP_PCT,
+  HOLY_PALADIN_CRIT_HEAL_MANA_REFUND_PCT,
 } from '../gameData/combatFormulas';
 import { EMPTY_TALENT_TOTALS, type TalentBonusTotals } from '../utils/talentEvaluator';
 import type { BuffTotals } from '../gameData/buffs';
@@ -127,6 +138,13 @@ export interface EncounterSetupInput {
   fireResistancePct?: number;
   shadowResistancePct?: number;
   weaponProc?: EnchantWeaponProc;
+  // Attribute/Specialization overhaul's Shield Block Value — whether a
+  // genuine shield (gameData/types.ts's ItemDef.isShield) currently sits in
+  // the player's offhand slot. Resolved by the caller from Character.
+  // equipment (see gameData/equipmentStats.ts's isShieldEquipped) once at
+  // encounter setup, same posture as every other equipment-derived input
+  // here. Undefined/false behaves exactly like no shield equipped.
+  hasShieldEquipped?: boolean;
 }
 
 // Folds active-buff stat bonuses (Alchemy stat potions, Cooking's Well Fed)
@@ -149,16 +167,32 @@ function mergeStatBonuses(
 }
 
 function buildPlayerProfile(input: EncounterSetupInput): CasterProfile {
-  const { cls, level, specDef, talentTotals, buffTotals, extraDamageTakenPct, monster } = input;
+  const { cls, level, specId, specDef, talentTotals, buffTotals, extraDamageTakenPct, monster } = input;
   const equipmentBonuses = mergeStatBonuses(input.equipmentBonuses, buffTotals.statBonuses);
   const diff = monster.level - level;
   const survCoefFinal = specDef.survivabilityCoef * (1 + talentTotals.survCoefMultPct / 100);
   const effectiveSta = statAtLevel(cls, 'STA', level) + (equipmentBonuses.STA ?? 0);
+  const totalAgi = statAtLevel(cls, 'AGI', level) + (equipmentBonuses.AGI ?? 0);
+  const totalStr = statAtLevel(cls, 'STR', level) + (equipmentBonuses.STR ?? 0);
+  const totalInt = statAtLevel(cls, 'INT', level) + (equipmentBonuses.INT ?? 0);
+  const totalSpi = statAtLevel(cls, 'SPI', level) + (equipmentBonuses.SPI ?? 0) + (input.healingPowerFlatBonus ?? 0);
+  // Shield-tank spec passive — Shield Block Value scales further for the
+  // two specs actually built to stand behind a shield (see combatFormulas.
+  // ts's SHIELD_TANK_SPEC_BLOCK_BONUS_PCT doc comment); every other spec
+  // still gets the base STR-scaled value from equipping one, just without
+  // the spec bonus.
+  const isShieldTankSpec = specId === 'warrior_tank' || specId === 'prot_paladin';
+  const shieldBlock =
+    shieldBlockValue(totalStr, input.hasShieldEquipped ?? false) * (isShieldTankSpec ? 1 + SHIELD_TANK_SPEC_BLOCK_BONUS_PCT / 100 : 1);
   // flatArmorBonus (the Defense family of enchants — Minor/Lesser/.../Ember
   // Defense) is the closest existing lever to the design brief's flat
   // "Defense" stat, which this engine doesn't otherwise model — folded in
   // post-multiplier, same flat-addend posture as flatHpBonus/flatManaBonus.
-  const armor = effectiveSta * 2 * survCoefFinal * (1 + talentTotals.armorMultPct / 100) + (input.flatArmorBonus ?? 0);
+  // armorFromAgi (AGI's third job, ATTR overhaul) is likewise a flat addend.
+  const armor =
+    effectiveSta * 2 * survCoefFinal * (1 + talentTotals.armorMultPct / 100) +
+    (input.flatArmorBonus ?? 0) +
+    armorFromAgi(totalAgi);
   const avoidance = Math.min(
     0.75,
     specDef.avoidance + talentTotals.avoidanceAddPct / 100 + buffTotals.avoidanceAddPct / 100
@@ -167,7 +201,31 @@ function buildPlayerProfile(input: EncounterSetupInput): CasterProfile {
     Math.max(0.05, 1 - talentTotals.flatDmgTakenPct / 100) *
     (1 - buffTotals.mitigationMultiplierPct / 100) *
     (1 + extraDamageTakenPct / 100);
-  const totalAgi = statAtLevel(cls, 'AGI', level) + (equipmentBonuses.AGI ?? 0);
+  // Shadow Priest spec passive — a sliver of SPI (its class's own healing
+  // stat) converts into bonus damage instead, folded directly into
+  // damageCoef since this is a static per-encounter multiplier, not a
+  // resolution-time hook (see combatFormulas.ts's SHADOW_PRIEST_SPI_
+  // DAMAGE_PCT_PER_POINT doc comment).
+  const shadowPriestDamageBonus =
+    specId === 'shadow_priest' ? 1 + (totalSpi * SHADOW_PRIEST_SPI_DAMAGE_PCT_PER_POINT) / 100 : 1;
+  // Warrior DPS spec passive — STR converts into a small extra crit chance
+  // on top of AGI's/INT's, folded additively into critChance below.
+  const warriorDpsCritBonus =
+    specId === 'warrior_dps' ? Math.max(0, (totalStr * WARRIOR_DPS_STR_CRIT_PCT_PER_POINT) / 100) : 0;
+  // Holy Priest spec passive — extra healing power from SPI on top of the
+  // universal SPI_HEALING_PCT_PER_POINT every class/spec already gets.
+  const holyPriestHealingBonus =
+    specId === 'holy_priest' ? 1 + (totalSpi * HOLY_PRIEST_SPI_HEALING_BONUS_PCT_PER_POINT) / 100 : 1;
+  // Prot Paladin spec passive — INT reduces this combatant's own mana
+  // costs (applied in useAbility, not here — see CasterProfile.
+  // manaCostReductionPct's doc comment).
+  const manaCostReductionPct =
+    specId === 'prot_paladin'
+      ? Math.min(
+          PROT_PALADIN_MANA_COST_REDUCTION_CAP_PCT,
+          totalInt * PROT_PALADIN_INT_MANA_COST_REDUCTION_PCT_PER_POINT
+        )
+      : 0;
 
   return {
     // flatDamageBonus (Spell/Attack Power, Striking/Impact enchants) folds
@@ -185,7 +243,8 @@ function buildPlayerProfile(input: EncounterSetupInput): CasterProfile {
       playerDamageModifier(diff) *
       combatTypeModifier(specDef.combatType, monster.combatType) *
       (1 + talentTotals.flatDmgPct / 100) *
-      (1 + buffTotals.damageMultiplierPct / 100),
+      (1 + buffTotals.damageMultiplierPct / 100) *
+      shadowPriestDamageBonus,
     // 1 + hitChanceBonusPct/100 — an Alchemy hit-chance potion's only effect.
     // See the levelGapAccuracy calc in useAbility below, the one place this
     // is actually read for the player (unused for monsters, who always
@@ -195,7 +254,7 @@ function buildPlayerProfile(input: EncounterSetupInput): CasterProfile {
     armor,
     damageTakenMult,
     damageSchool: 'physical',
-    critChance: critChanceFromAgi(totalAgi),
+    critChance: critChanceFromAgi(totalAgi) + critChanceFromInt(totalInt) + warriorDpsCritBonus,
     dodgeChance: dodgeChanceFromAgi(totalAgi),
     healFrac: specDef.healFrac + talentTotals.healFracAddPct / 100,
     passiveHealPct:
@@ -203,9 +262,7 @@ function buildPlayerProfile(input: EncounterSetupInput): CasterProfile {
     // healingPowerFlatBonus (the Healing Power enchant) is a flat
     // SPI-equivalent addend fed into the SAME formula an SPI stat point
     // already uses, rather than a second multiplier stacked on top.
-    healingPowerMult: healingPowerMultiplier(
-      statAtLevel(cls, 'SPI', level) + (equipmentBonuses.SPI ?? 0) + (input.healingPowerFlatBonus ?? 0)
-    ),
+    healingPowerMult: healingPowerMultiplier(totalSpi) * holyPriestHealingBonus,
     hastePct: input.hastePct ?? 0,
     beastDamageBonusPct: input.beastDamageBonusPct ?? 0,
     demonDamageBonusPct: input.demonDamageBonusPct ?? 0,
@@ -213,6 +270,10 @@ function buildPlayerProfile(input: EncounterSetupInput): CasterProfile {
     fireResistancePct: input.fireResistancePct ?? 0,
     shadowResistancePct: input.shadowResistancePct ?? 0,
     weaponProc: input.weaponProc,
+    shieldBlockValue: shieldBlock,
+    manaRegenMult: manaRegenMultiplier(totalSpi),
+    manaCostReductionPct,
+    critHealManaRefundPct: specId === 'holy_paladin' ? HOLY_PALADIN_CRIT_HEAL_MANA_REFUND_PCT : 0,
   };
 }
 
@@ -224,7 +285,7 @@ function buildPlayerProfile(input: EncounterSetupInput): CasterProfile {
 // because computeEffectDamage reads a non-player attacker's profile.accuracy
 // straight through as its hit chance.
 function buildCompanionProfile(companion: CompanionCombatSetup, monster: Monster): CasterProfile {
-  const { cls, level, specDef, equipmentBonuses } = companion;
+  const { cls, level, specId, specDef, equipmentBonuses } = companion;
   // Only an alt recruit ever has talentTotals (see companions.ts's
   // buildAltCombatSetup) — an ordinary hired companion falls back to the
   // same "no talents" baseline it always had, so this is a no-op change for
@@ -233,26 +294,47 @@ function buildCompanionProfile(companion: CompanionCombatSetup, monster: Monster
   const diff = monster.level - level;
   const survCoefFinal = specDef.survivabilityCoef * (1 + totals.survCoefMultPct / 100);
   const effectiveSta = statAtLevel(cls, 'STA', level) + (equipmentBonuses.STA ?? 0);
-  const armor = effectiveSta * 2 * survCoefFinal * (1 + totals.armorMultPct / 100);
-  const avoidance = Math.min(0.75, specDef.avoidance + totals.avoidanceAddPct / 100);
   const totalAgi = statAtLevel(cls, 'AGI', level) + (equipmentBonuses.AGI ?? 0);
+  const totalStr = statAtLevel(cls, 'STR', level) + (equipmentBonuses.STR ?? 0);
+  const totalInt = statAtLevel(cls, 'INT', level) + (equipmentBonuses.INT ?? 0);
+  const totalSpi = statAtLevel(cls, 'SPI', level) + (equipmentBonuses.SPI ?? 0);
+  const armor = effectiveSta * 2 * survCoefFinal * (1 + totals.armorMultPct / 100) + armorFromAgi(totalAgi);
+  const avoidance = Math.min(0.75, specDef.avoidance + totals.avoidanceAddPct / 100);
+  const isShieldTankSpec = specId === 'warrior_tank' || specId === 'prot_paladin';
+  const shieldBlock =
+    shieldBlockValue(totalStr, companion.hasShieldEquipped ?? false) *
+    (isShieldTankSpec ? 1 + SHIELD_TANK_SPEC_BLOCK_BONUS_PCT / 100 : 1);
+  const shadowPriestDamageBonus =
+    specId === 'shadow_priest' ? 1 + (totalSpi * SHADOW_PRIEST_SPI_DAMAGE_PCT_PER_POINT) / 100 : 1;
+  const warriorDpsCritBonus =
+    specId === 'warrior_dps' ? Math.max(0, (totalStr * WARRIOR_DPS_STR_CRIT_PCT_PER_POINT) / 100) : 0;
+  const holyPriestHealingBonus =
+    specId === 'holy_priest' ? 1 + (totalSpi * HOLY_PRIEST_SPI_HEALING_BONUS_PCT_PER_POINT) / 100 : 1;
+  const manaCostReductionPct =
+    specId === 'prot_paladin'
+      ? Math.min(
+          PROT_PALADIN_MANA_COST_REDUCTION_CAP_PCT,
+          totalInt * PROT_PALADIN_INT_MANA_COST_REDUCTION_PCT_PER_POINT
+        )
+      : 0;
   return {
     normalizedHit: baseDamage(cls, level, equipmentBonuses),
     damageCoef:
       specDef.damageCoef *
       playerDamageModifier(diff) *
       combatTypeModifier(specDef.combatType, monster.combatType) *
-      (1 + totals.flatDmgPct / 100),
+      (1 + totals.flatDmgPct / 100) *
+      shadowPriestDamageBonus,
     accuracy: playerAccuracy(diff),
     avoidance,
     armor,
     damageTakenMult: Math.max(0.05, 1 - totals.flatDmgTakenPct / 100),
     damageSchool: 'physical',
-    critChance: critChanceFromAgi(totalAgi),
+    critChance: critChanceFromAgi(totalAgi) + critChanceFromInt(totalInt) + warriorDpsCritBonus,
     dodgeChance: dodgeChanceFromAgi(totalAgi),
     healFrac: specDef.healFrac + totals.healFracAddPct / 100,
     passiveHealPct: (specDef.passiveHealPct + totals.passiveHealAddPct / 100) * (1 + totals.healMultPct / 100),
-    healingPowerMult: healingPowerMultiplier(statAtLevel(cls, 'SPI', level) + (equipmentBonuses.SPI ?? 0)),
+    healingPowerMult: healingPowerMultiplier(totalSpi) * holyPriestHealingBonus,
     hastePct: 0, // no companion Combat Setup screen to equip a Haste enchant through in this V1
     beastDamageBonusPct: 0,
     demonDamageBonusPct: 0,
@@ -260,6 +342,10 @@ function buildCompanionProfile(companion: CompanionCombatSetup, monster: Monster
     fireResistancePct: 0,
     shadowResistancePct: 0,
     // weaponProc stays undefined — companions have no enchantments storage.
+    shieldBlockValue: shieldBlock,
+    manaRegenMult: manaRegenMultiplier(totalSpi),
+    manaCostReductionPct,
+    critHealManaRefundPct: specId === 'holy_paladin' ? HOLY_PALADIN_CRIT_HEAL_MANA_REFUND_PCT : 0,
   };
 }
 
@@ -285,6 +371,10 @@ function buildMonsterProfile(monster: Monster, playerLevel: number, playerCombat
     flatDamageReduction: 0,
     fireResistancePct: 0,
     shadowResistancePct: 0,
+    shieldBlockValue: 0, // monsters have no STR/shield concept in the existing balance model
+    manaRegenMult: 1,
+    manaCostReductionPct: 0,
+    critHealManaRefundPct: 0,
   };
 }
 
@@ -573,9 +663,13 @@ function computeEffectDamage(
 
   // Minor/Lesser/Mystic/Nether/Superior/Ember Absorption — flat reduction,
   // minimum 1, applied only to an already-positive hit (a hit already
-  // mitigated to 0 by armor stays 0, never floored back up to 1).
-  if (amount > 0 && defender.profile.flatDamageReduction > 0) {
-    amount = Math.max(1, amount - defender.profile.flatDamageReduction);
+  // mitigated to 0 by armor stays 0, never floored back up to 1). SUMMED
+  // with the Attribute overhaul's Shield Block Value (same pipeline, two
+  // sources — see CasterProfile.shieldBlockValue's doc comment) rather than
+  // a second parallel flat-reduction step.
+  const totalFlatReduction = defender.profile.flatDamageReduction + defender.profile.shieldBlockValue;
+  if (amount > 0 && totalFlatReduction > 0) {
+    amount = Math.max(1, amount - totalFlatReduction);
   }
 
   // Elixir of Fortitude's maxHpBonusPct — "temporarily raises the ceiling
@@ -735,7 +829,7 @@ export function advanceCombat(state: CombatState, ctx: TickContext, deltaSeconds
     for (const id of Object.keys(c.cooldowns)) {
       c.cooldowns[id] = Math.max(0, c.cooldowns[id] - deltaSeconds);
     }
-    regenResources(c.resources, deltaSeconds);
+    regenResources(c.resources, deltaSeconds, c.profile.manaRegenMult);
     tickDots(c, deltaSeconds, ctx, events, kills);
     tickHots(c, deltaSeconds, events);
     c.buffs = c.buffs.filter((b) => (b.remainingSeconds -= deltaSeconds) > 0);
@@ -935,7 +1029,16 @@ export function useAbility(
   kills: KillReward[],
   questSignals: QuestSignals = emptyQuestSignals()
 ): void {
-  spend(source.resources, ability.resourceType, ability.resourceCost);
+  // Prot Paladin's spec-identity passive — INT reduces this combatant's
+  // own mana costs (see CasterProfile.manaCostReductionPct's doc comment).
+  // 0 for every other spec, so resourceCost is just ability.resourceCost
+  // unchanged for everyone else — no behavior change for a character
+  // before this field existed.
+  const resourceCost =
+    ability.resourceType === 'mana' && ability.resourceCost && source.profile.manaCostReductionPct > 0
+      ? Math.max(0, Math.round(ability.resourceCost * (1 - source.profile.manaCostReductionPct / 100)))
+      : ability.resourceCost;
+  spend(source.resources, ability.resourceType, resourceCost);
   if (ability.cooldownSeconds > 0) source.cooldowns[ability.id] = ability.cooldownSeconds;
   if (source.isPlayer) {
     questSignals.abilityUseCounts[ability.id] = (questSignals.abilityUseCounts[ability.id] ?? 0) + 1;
@@ -1083,7 +1186,22 @@ export function useAbility(
           const hpBefore = target.hp;
           target.hp = Math.min(target.maxHp, target.hp + healAmount);
           if (source.isPlayer) questSignals.healingDone += target.hp - hpBefore;
-          events.push({ message: `${source.name} uses ${ability.name} on ${target.name}, healing for ${healAmount}.`, kind: 'heal' });
+          // Holy Paladin's spec-identity passive — a crit heal (same
+          // critChance roll AGI/INT gear already feeds, no separate heal-
+          // crit stat) refunds a % of the ability's mana cost rather than
+          // healing for more, so this can't be stacked with gear into a
+          // second healing-throughput axis — see CasterProfile.
+          // critHealManaRefundPct's doc comment.
+          const isHealCrit = Math.random() < source.profile.critChance;
+          if (isHealCrit && source.profile.critHealManaRefundPct > 0 && ability.resourceType === 'mana' && resourceCost) {
+            gain(source.resources, 'mana', Math.round(resourceCost * (source.profile.critHealManaRefundPct / 100)));
+          }
+          events.push({
+            message: isHealCrit
+              ? `${source.name} critically uses ${ability.name} on ${target.name}, healing for ${healAmount}.`
+              : `${source.name} uses ${ability.name} on ${target.name}, healing for ${healAmount}.`,
+            kind: 'heal',
+          });
           break;
         }
         case 'buff': {

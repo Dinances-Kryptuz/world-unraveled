@@ -65,10 +65,18 @@ export function resourcesForClass(cls: ClassId): ResourceType[] {
 const MANA_REGEN_PCT_PER_SECOND = 0.02;
 const RAGE_REGEN_PER_SECOND = 1;
 
-export function regenResources(resources: Partial<Record<ResourceType, ResourcePool>>, deltaSeconds: number): void {
+export function regenResources(
+  resources: Partial<Record<ResourceType, ResourcePool>>,
+  deltaSeconds: number,
+  // SPI's mana-regen-rate bonus (Attribute/Specialization overhaul — see
+  // combatFormulas.ts's manaRegenMultiplier). Defaults to 1 (no bonus) so
+  // every caller that hasn't been updated to pass a combatant's profile
+  // value behaves exactly as before this param existed.
+  manaRegenMult = 1
+): void {
   const mana = resources.mana;
   if (mana) {
-    mana.current = Math.min(mana.max, mana.current + mana.max * MANA_REGEN_PCT_PER_SECOND * deltaSeconds);
+    mana.current = Math.min(mana.max, mana.current + mana.max * MANA_REGEN_PCT_PER_SECOND * manaRegenMult * deltaSeconds);
   }
   const rage = resources.rage;
   if (rage) {

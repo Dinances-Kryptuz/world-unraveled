@@ -460,6 +460,7 @@ button.item-slot:active:not(:disabled) {
   align-items: baseline;
   padding: 4px 0;
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  cursor: help;
 }
 
 .equipment-stat-row:last-child {

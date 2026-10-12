@@ -6,7 +6,7 @@ import { setEquippedConsumable, useConsumableOutOfCombat } from '../firebase/con
 import { subscribeToInventory } from '../firebase/inventory';
 import { ENCHANTS } from '../gameData/enchanting';
 import { statAtLevel } from '../gameData/classStats';
-import { getEquipmentStatBonuses } from '../gameData/equipmentStats';
+import { getEquipmentStatBonuses, baseStatTooltip } from '../gameData/equipmentStats';
 import { EquipmentPaperDoll, SLOT_LABEL } from './EquipmentPaperDoll';
 import { ConsumablesBar } from './ConsumablesBar';
 import type { Inventory } from '../types/character';
@@ -98,7 +98,7 @@ export function EquipmentScreen() {
           <div className="equipment-stats-panel">
             <h3>Character Stats</h3>
             {BASE_STATS.map((stat) => (
-              <div key={stat} className="equipment-stat-row">
+              <div key={stat} className="equipment-stat-row" title={baseStatTooltip(stat, character.class, character.spec)}>
                 <span>{BASE_STAT_LABEL[stat]}</span>
                 <span className="equipment-stat-value">{totalStats[stat]}</span>
               </div>

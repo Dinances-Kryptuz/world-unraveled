@@ -420,6 +420,12 @@ export interface ItemDef {
   // see items.ts's damaged-item convention). Points at the real item a
   // Blacksmith/Leatherworking/Tailoring repair recipe turns it into.
   repairsIntoItemId?: string;
+  // Only present on the plain (non-"sacred") *_shield offhand items —
+  // Attribute/Specialization overhaul's Shield Block Value (see
+  // combatFormulas.ts's shieldBlockValue). Deliberately NOT inferred from
+  // id/name pattern-matching at combat time (that would silently re-tag any
+  // future reskin); this is the one explicit source of truth.
+  isShield?: boolean;
   sellValue: number;
 }
 

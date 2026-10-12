@@ -1,4 +1,4 @@
-import type { BaseStat } from './classStats';
+import { PRIMARY_STAT, type BaseStat, type ClassId, type SpecId } from './classStats';
 import type { EquipmentSlot, EquippedItemRef, ItemDef } from './types';
 import { ITEMS } from './items';
 import { ENCHANTS } from './enchanting';
@@ -38,6 +38,74 @@ export function isTwoHandedWeapon(item: Pick<ItemDef, 'id' | 'equipSlot'>): bool
 export function canEquipInOffhand(item: Pick<ItemDef, 'id' | 'equipSlot'>): boolean {
   if (item.equipSlot === 'offhand') return true;
   return item.equipSlot === 'weapon' && !isTwoHandedWeapon(item);
+}
+
+// Attribute/Specialization overhaul's Shield Block Value only applies when
+// a genuine shield (ItemDef.isShield) sits in the offhand slot — not the
+// cloth-caster tome/orb offhands, which are itemized as INT/SPI gear
+// instead. Takes the bare equipment record (not a full Character) so every
+// caller — the player, a recruited alt, a hired companion — can share it.
+export function isShieldEquipped(equipment: Record<EquipmentSlot, EquippedItemRef | null>): boolean {
+  const id = equippedItemId(equipment.offhand);
+  return !!id && !!ITEMS[id]?.isShield;
+}
+
+// Attribute/Specialization overhaul (the Equipment screen's "hover a stat
+// for a description" ask) — explains what a stat ACTUALLY does for THIS
+// character's class/spec right now, quoting the real formulas/passives
+// (gameData/combatFormulas.ts) rather than generic flavor text, and
+// changing when the mechanical effect genuinely differs by class/spec
+// (STR does nothing for a Priest's own damage; INT is a Priest/Mage's
+// primary damage stat but just a Mana pool for everyone else; the 6
+// current specs' passives from the ATTR overhaul each add one more
+// sentence only when they actually apply).
+export function baseStatTooltip(stat: BaseStat, cls: ClassId, specId: SpecId | null): string {
+  switch (stat) {
+    case 'STR': {
+      const isPrimary = PRIMARY_STAT[cls] === 'STR';
+      const base = isPrimary
+        ? 'Each point adds 2 Attack Power, increasing your physical damage.'
+        : 'Your damage comes from Intellect, not Strength, so this mostly sits idle for you.';
+      const shield =
+        ' If you have a shield equipped, Strength also raises your Shield Block Value (flat damage blocked per hit).';
+      const tankBonus =
+        specId === 'warrior_tank' || specId === 'prot_paladin'
+          ? ' As a shield-tank spec, your Shield Block Value from Strength is boosted further.'
+          : '';
+      const dpsBonus =
+        specId === 'warrior_dps' ? ' As Warrior DPS, Strength also grants a small bonus to critical strike chance.' : '';
+      return base + shield + tankBonus + dpsBonus;
+    }
+    case 'STA':
+      return "Each point adds 12 maximum HP, plus a smaller amount of Armor scaled by your spec's survivability.";
+    case 'INT': {
+      const isPrimary = PRIMARY_STAT[cls] === 'INT';
+      const base = isPrimary
+        ? 'Each point adds 2 spell power, increasing your ability damage, plus a small amount of critical strike chance.'
+        : 'Each point adds 2 maximum Mana, plus a small amount of critical strike chance.';
+      const protBonus =
+        specId === 'prot_paladin' ? ' As Protection, Intellect also reduces the Mana cost of your own abilities.' : '';
+      const holyPaladinBonus =
+        specId === 'holy_paladin' ? ' As Holy, a critical heal refunds some of that spell’s Mana cost.' : '';
+      return base + protBonus + holyPaladinBonus;
+    }
+    case 'SPI': {
+      const base =
+        'Each point adds 0.5% to all healing you do, and speeds up Mana regeneration and out-of-combat HP regeneration.';
+      const shadowBonus =
+        specId === 'shadow_priest' ? ' As Shadow, a portion of your Spirit converts into bonus damage instead.' : '';
+      const holyPriestBonus =
+        specId === 'holy_priest' ? ' As Holy, Spirit grants extra healing power on top of the usual bonus.' : '';
+      return base + shadowBonus + holyPriestBonus;
+    }
+    case 'AGI': {
+      const base =
+        'Each point adds a small amount of critical strike chance, dodge chance, and Armor. Only gear raises this — it never grows from leveling alone.';
+      const holyPaladinBonus =
+        specId === 'holy_paladin' ? ' As Holy, a critical heal refunds some of that spell’s Mana cost.' : '';
+      return base + holyPaladinBonus;
+    }
+  }
 }
 
 const SLOT_LABELS: Record<EquipmentSlot, string> = {

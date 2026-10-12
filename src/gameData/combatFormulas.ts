@@ -135,6 +135,98 @@ export function dodgeChanceFromAgi(totalAgi: number): number {
   return Math.max(0, (totalAgi * AGI_DODGE_PCT_PER_POINT) / 100);
 }
 
+// ── Attribute & Specialization Identity overhaul ────────────────────────
+// Every formula below is a small ADDITIVE layer on top of the already-live,
+// already-calibrated math above (maxHp/baseDamage/healingPowerMultiplier/
+// critChanceFromAgi/dodgeChanceFromAgi) rather than a replacement of it —
+// see this phase's design notes for why: the live game's HP/mana/damage
+// curves are already balanced against real playtesting data the Classic-
+// exact source formulas (10 HP/STA, 15 Mana/INT, etc.) were never tuned
+// against here, so swapping them out would silently re-balance every
+// existing character. Each coefficient here is deliberately small relative
+// to its stat's natural growth (classStats.ts's CLASS_GROWTH) so leveling
+// alone can't run a derived stat away — see each constant's own comment
+// for the specific reasoning.
+
+// INT's second job: a flat % "spell crit" chance per total point, additive
+// with AGI's physical crit (critChanceFromAgi) into the SAME CasterProfile.
+// critChance field — this engine has no damage-school split on the player
+// side (every ability resolves through one computeEffectDamage call), so
+// there's no clean way to roll "physical crit" and "spell crit" separately.
+// A deliberate, flagged simplification: INT boosts a warrior's physical
+// crit by a trivial amount too, since INT grows barely at all for warriors
+// (CLASS_GROWTH.STR 0.2/level) — never enough to matter. The rate itself is
+// an order of magnitude below AGI_CRIT_PCT_PER_POINT specifically because
+// INT, unlike AGI, grows every level from class training alone (CLASS_
+// GROWTH), not just from gear — an equal rate would let a caster's crit
+// chance run away purely from leveling.
+export const INT_SPELL_CRIT_PCT_PER_POINT = 0.02;
+
+export function critChanceFromInt(totalInt: number): number {
+  return Math.max(0, (totalInt * INT_SPELL_CRIT_PCT_PER_POINT) / 100);
+}
+
+// AGI's third job: a small flat Armor bonus per total point, added on top
+// of the existing STA*2*survivabilityCoef formula as a flat addend (same
+// posture as flatArmorBonus/the Defense enchant family) rather than a new
+// multiplier — armor's own diminishing-returns curve (armorReduction above)
+// already keeps a large flat addition from translating into anywhere near
+// a proportional mitigation gain.
+export const AGI_ARMOR_PER_POINT = 0.5;
+
+export function armorFromAgi(totalAgi: number): number {
+  return Math.max(0, totalAgi * AGI_ARMOR_PER_POINT);
+}
+
+// SPI's second and third jobs: a flat % bonus to mana regen RATE and
+// out-of-combat HP regen RATE per total point — a rate multiplier (not a
+// flat amount) so the bonus scales with a character's own current pool
+// instead of becoming proportionally smaller at high level, same intent as
+// SPI_HEALING_PCT_PER_POINT above.
+export const SPI_MANA_REGEN_BONUS_PCT_PER_POINT = 0.3;
+
+export function manaRegenMultiplier(totalSpi: number): number {
+  return 1 + (totalSpi * SPI_MANA_REGEN_BONUS_PCT_PER_POINT) / 100;
+}
+
+export const SPI_HP_REGEN_BONUS_PCT_PER_POINT = 0.5;
+
+// Shield Block Value — a flat damage-reduction stat for a character with a
+// genuine shield equipped (gameData/types.ts's ItemDef.isShield), scaled
+// from STR. Deliberately a flat reduction rather than a new RNG block-
+// chance roll: a second chance-based mitigation layer would stack with the
+// existing dodge/avoidance rolls toward near-immunity for a well-geared
+// tank, where a flat value can't (see this phase's design notes). Flows
+// into the SAME CasterProfile.flatDamageReduction pipeline the Enchanting
+// overhaul's Absorption family already uses (computeEffectDamage sums the
+// two) rather than a second parallel reduction step.
+export const SHIELD_BLOCK_BASE_VALUE = 5;
+export const SHIELD_BLOCK_STR_PER_POINT = 0.2;
+
+export function shieldBlockValue(totalStr: number, hasShield: boolean): number {
+  if (!hasShield) return 0;
+  return SHIELD_BLOCK_BASE_VALUE + totalStr * SHIELD_BLOCK_STR_PER_POINT;
+}
+
+// ── Specialization-identity passives ─────────────────────────────────────
+// One small, additive hook per one of the game's 6 current specs (Rogue/
+// Druid/Mage/Hunter are architecture-only per the design brief — nothing
+// here is keyed to them), each tied to the primary attribute a player
+// gearing "for" that spec would naturally stack more of. Coefficients are
+// tuned to land roughly a 5-10% edge for an optimized build over a
+// suboptimal one (per the design brief's own target, explicitly "not a
+// hard cap") rather than a second independent power axis — see engine.ts's
+// buildPlayerProfile/buildCompanionProfile for where each is actually
+// wired in, and useAbility for the two (Prot Paladin, Holy Paladin) that
+// need a resolution-time hook rather than a static profile term.
+export const WARRIOR_DPS_STR_CRIT_PCT_PER_POINT = 0.02;
+export const SHIELD_TANK_SPEC_BLOCK_BONUS_PCT = 50; // warrior_tank / prot_paladin
+export const SHADOW_PRIEST_SPI_DAMAGE_PCT_PER_POINT = 0.05;
+export const HOLY_PRIEST_SPI_HEALING_BONUS_PCT_PER_POINT = 0.15;
+export const PROT_PALADIN_INT_MANA_COST_REDUCTION_PCT_PER_POINT = 0.1;
+export const PROT_PALADIN_MANA_COST_REDUCTION_CAP_PCT = 30;
+export const HOLY_PALADIN_CRIT_HEAL_MANA_REFUND_PCT = 50;
+
 export function monsterArmor(level: number): number {
   return 3 * level;
 }
@@ -177,9 +269,20 @@ export const HP_REGEN_PCT_PER_MINUTE = 0.20; // full recovery from near-zero in 
  * else in this project (gathering, crafting, offline catch-up). Read-only;
  * doesn't write anything, callers decide when to persist the result.
  */
-export function resolveCurrentHp(storedHp: number, maxHpValue: number, checkpointAt: Date, now: Date): number {
+export function resolveCurrentHp(
+  storedHp: number,
+  maxHpValue: number,
+  checkpointAt: Date,
+  now: Date,
+  // SPI's third job (Attribute/Specialization overhaul) — a flat % bonus to
+  // this RATE per total SPI point, same shape as the mana-regen bonus
+  // above. Defaults to 0 so every pre-existing call site that hasn't been
+  // updated to pass it behaves exactly as before this param existed.
+  totalSpi = 0
+): number {
   const elapsedMinutes = Math.max(0, (now.getTime() - checkpointAt.getTime()) / 60000);
-  const regenAmount = maxHpValue * HP_REGEN_PCT_PER_MINUTE * elapsedMinutes;
+  const regenRate = HP_REGEN_PCT_PER_MINUTE * (1 + (totalSpi * SPI_HP_REGEN_BONUS_PCT_PER_POINT) / 100);
+  const regenAmount = maxHpValue * regenRate * elapsedMinutes;
   return Math.min(maxHpValue, storedHp + regenAmount);
 }
 
