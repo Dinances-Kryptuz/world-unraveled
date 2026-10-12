@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useCharacter } from '../hooks/useCharacter';
-import { applyCombatResult, setCharacterLevel, getCharacter, advanceQuests } from '../firebase/character';
+import { applyCombatResult, setCharacterLevel, getCharacter, advanceQuests, startActivity } from '../firebase/character';
 import { subscribeToInventory } from '../firebase/inventory';
 import {
   recordConsumableUse,
@@ -579,6 +579,28 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
     onExit();
   }
 
+  // Equipment Rarity overhaul's Part 8 — leaves the party farming this same
+  // dungeon while the player is away, instead of just abandoning the run.
+  // Banks whatever this session already earned (same as a normal exit),
+  // then writes a 'dungeon' currentActivity anchored at now so the next
+  // long-absence WelcomeBackScreen can simulate the stage sequence offline
+  // (see combatEngine/offlineCombat.ts's simulateOfflineDungeonCombat).
+  // Companions/alts are re-resolved fresh from the character at that later
+  // point (not snapshotted here) — same posture live entry already has.
+  async function handleFarmOffline() {
+    if (!user || retreatedRef.current) return;
+    if (!retreatedRef.current) await autosave();
+    await startActivity(user.uid, {
+      type: 'dungeon',
+      targetId: dungeonId,
+      zoneId: dungeon.zoneId,
+      equippedShirtItemId: equippedItemId(character.equipment.shirt),
+      dungeonFeastStatBonuses: feastStatBonusesRef.current,
+    });
+    await refetch();
+    onExit();
+  }
+
   function handleManualUse(abilityId: string) {
     const state = combatStateRef.current;
     if (!state || retreatedRef.current) return;
@@ -783,6 +805,11 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
       )}
 
       <button onClick={handleExit}>Exit Dungeon</button>
+      {!retreated && (
+        <button onClick={() => void handleFarmOffline()} title="Leave your party here to keep clearing this dungeon while you're away.">
+          Leave Party Farming (Offline)
+        </button>
+      )}
 
       <CombatLog events={log} />
     </div>

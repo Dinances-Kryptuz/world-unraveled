@@ -657,7 +657,7 @@ service cloud.firestore {
   }
 
   function isValidActivity(a) {
-    return a.type in [null, 'combat', 'gathering', 'crafting', 'fishing', 'disenchanting']
+    return a.type in [null, 'combat', 'gathering', 'crafting', 'fishing', 'disenchanting', 'dungeon']
       && (a.targetId == null || a.targetId is string)
       && (a.zoneId == null || a.zoneId is string)
       && (a.startedAt == null || a.startedAt is timestamp)
@@ -667,6 +667,11 @@ service cloud.firestore {
       // deeply here, matching this function's own existing posture (e.g.
       // disenchantInstanceId right below isn't type-checked either).
       && (!('disenchantQueue' in a) || a.disenchantQueue is list)
-      && (!('equippedShirtItemId' in a) || a.equippedShirtItemId == null || a.equippedShirtItemId is string);
+      && (!('equippedShirtItemId' in a) || a.equippedShirtItemId == null || a.equippedShirtItemId is string)
+      // Equipment Rarity overhaul's Part 8 — only meaningful for
+      // type == 'dungeon' (see CurrentActivity.dungeonFeastStatBonuses's
+      // doc comment); a plain map of stat -> number, not deeply validated
+      // any further, same posture as disenchantQueue above.
+      && (!('dungeonFeastStatBonuses' in a) || a.dungeonFeastStatBonuses is map);
   }
 }

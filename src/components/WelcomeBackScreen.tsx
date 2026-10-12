@@ -15,11 +15,14 @@ import { RECIPES } from '../gameData/recipes';
 import { ITEMS } from '../gameData/items';
 import { disenchantRequiredSkill, disenchantXpAward, disenchantYieldRange, buildActiveEnchantTotals } from '../gameData/enchanting';
 import { resolveSpecDef, getExtraDamageTakenPct } from '../gameData/combatProfileWithTalents';
-import { simulateOfflineCombat } from '../combatEngine/offlineCombat';
+import { simulateOfflineCombat, simulateOfflineDungeonCombat } from '../combatEngine/offlineCombat';
+import { DUNGEONS } from '../gameData/dungeons';
+import { resolveActiveCompanionSetups } from '../gameData/companions';
+import { resolveActiveAltSetups } from '../firebase/characterSlots';
 import { evaluateTalents, EMPTY_TALENT_TOTALS } from '../utils/talentEvaluator';
 import { maxHp, resolveCurrentHp } from '../gameData/combatFormulas';
 import { getEquipmentStatBonuses, isShieldEquipped } from '../gameData/equipmentStats';
-import { statAtLevel } from '../gameData/classStats';
+import { statAtLevel, type BaseStat } from '../gameData/classStats';
 import { getProfessionState, maxSkillForUnlockedTier, PROFESSION_CATEGORY } from '../gameData/professionTiers';
 import { evaluateActiveBuffs } from '../gameData/buffs';
 import { getInventory } from '../firebase/inventory';
@@ -181,6 +184,127 @@ export function WelcomeBackScreen({
           `While you were away, you defeated ${result.monstersDefeated} ${monster.name}${
             result.monstersDefeated === 1 ? '' : 's'
           }, earning ${result.xpGained} XP and ${result.goldGained} gold${voidShardsNote}.${retreatNote}${levelUpNote}`
+        );
+      } else if (activity.type === 'dungeon') {
+        // Equipment Rarity overhaul's Part 8 — offline/overnight dungeon
+        // farming. Same shape as the 'combat' branch above, but fights the
+        // dungeon's fixed stage sequence with the player's CURRENT
+        // companions/alts (resolved fresh here, not snapshotted — same
+        // "companions only fight in dungeons, always at this character's
+        // level" rule live entry already follows), and folds in whichever
+        // Feast (if any) was active when the party was left farming (see
+        // CurrentActivity.dungeonFeastStatBonuses).
+        const dungeon = DUNGEONS[activity.targetId];
+        const specDef = resolveSpecDef(character.class, character.spec);
+        const talentTotals = character.spec
+          ? evaluateTalents(character.spec, character.talentPicks).totals
+          : EMPTY_TALENT_TOTALS;
+        const buffTotals = evaluateActiveBuffs(character.activeBuffs, now);
+        const feastBonuses = activity.dungeonFeastStatBonuses ?? {};
+        for (const [stat, value] of Object.entries(feastBonuses)) {
+          const key = stat as BaseStat;
+          buffTotals.statBonuses[key] = (buffTotals.statBonuses[key] ?? 0) + (value ?? 0);
+        }
+        const extraDmgTaken = getExtraDamageTakenPct(character.spec, character.talentPicks);
+        const equipBonuses = getEquipmentStatBonuses(character.equipment, character.enchantments, character.enchantmentCharges);
+        const enchantTotals = buildActiveEnchantTotals(character.enchantments, character.enchantmentCharges);
+        const charMaxHp = maxHp(character.class, character.level, equipBonuses, talentTotals.hpMultPct, enchantTotals.flatHpBonus);
+        const totalSpi = statAtLevel(character.class, 'SPI', character.level) + (equipBonuses.SPI ?? 0);
+        const startingHp = resolveCurrentHp(character.currentHp, charMaxHp, character.hpCheckpointAt, activity.startedAt, totalSpi);
+        const offlineInventory = user ? await getInventory(user.uid) : { items: {} };
+        const consumableState = buildConsumableAutomationState(character, offlineInventory, activity.startedAt);
+        const companions = [...resolveActiveCompanionSetups(character), ...(user ? await resolveActiveAltSetups(user.uid, character) : [])].map(
+          (companion) => ({
+            ...companion,
+            equipmentBonuses: (() => {
+              const merged = { ...companion.equipmentBonuses };
+              for (const [stat, value] of Object.entries(feastBonuses)) {
+                const key = stat as BaseStat;
+                merged[key] = (merged[key] ?? 0) + (value ?? 0);
+              }
+              return merged;
+            })(),
+          })
+        );
+
+        const result = simulateOfflineDungeonCombat({
+          startedAt: activity.startedAt,
+          now,
+          cls: character.class,
+          specId: character.spec,
+          specDef,
+          talentTotals,
+          buffTotals,
+          extraDamageTakenPct: extraDmgTaken,
+          equipmentBonuses: equipBonuses,
+          startingLevel: character.level,
+          startingXp: character.xp,
+          startingHp,
+          savedEquippedAbilityIds: character.equippedAbilityIds,
+          trainedAbilityIds: character.trainedAbilityIds,
+          savedAbilityConditions: character.abilityConditions,
+          disabledAbilityIds: character.disabledAbilityIds,
+          hasShieldEquipped: isShieldEquipped(character.equipment),
+          stages: dungeon.stages.map((id) => MONSTERS[id]),
+          dungeonCombatType: dungeon.combatType,
+          dungeonEncounterSize: dungeon.encounterSize,
+          companions,
+          consumableState,
+          goldFindPct: shirtBonusPct(shirtBonusForItemId(activity.equippedShirtItemId), 'gold_find'),
+          enchantments: character.enchantments,
+          enchantmentCharges: character.enchantmentCharges,
+        });
+
+        if (user) {
+          await applyCombatResult(user.uid, {
+            xpGained: result.xpGained,
+            goldGained: result.goldGained,
+            voidShardsGained: result.voidShardsGained,
+            loot: result.loot,
+            hpAfter: result.hpAfter,
+            dungeonCleared: result.dungeonClearsGained > 0 ? { dungeonId: activity.targetId, count: result.dungeonClearsGained } : undefined,
+          });
+          if (result.finalLevel !== character.level) {
+            await setCharacterLevel(user.uid, result.finalLevel, result.hpAfter);
+            if (result.finalLevel >= MAX_CHARACTER_LEVEL) void checkAndUnlockNextSlot(user.uid);
+          }
+          if (result.finalConsumableState) {
+            const fcs = result.finalConsumableState;
+            const usage = {
+              offensiveChargesConsumed: fcs.offensiveChargesConsumed,
+              defensiveChargesConsumed: fcs.defensiveChargesConsumed,
+              healingUsed: fcs.healingUsed,
+              manaUsed: fcs.manaUsed,
+            };
+            if (usage.offensiveChargesConsumed > 0 || usage.defensiveChargesConsumed > 0 || usage.healingUsed > 0 || usage.manaUsed > 0) {
+              await applyConsumableAutomationUsage(user.uid, character.consumableAutomation, usage);
+            }
+          }
+          const { offensiveAction, damageTaken } = result.enchantTriggerCounts;
+          if (offensiveAction > 0 || damageTaken > 0 || result.monstersDefeated > 0) {
+            await consumeEnchantCharges(user.uid, character, {
+              offensive_action: offensiveAction,
+              damage_taken: damageTaken,
+              completedEncounters: result.monstersDefeated,
+            });
+          }
+          // Deliberately NOT refetching here — same reasoning as the
+          // 'combat' branch above (applyCombatResult's own
+          // currentActivity.startedAt bump would otherwise race
+          // isLongAbsence()).
+        }
+
+        const retreatNote = result.forcedRetreat ? ' Your party was forced to retreat before your time was up.' : '';
+        const levelUpNote = result.finalLevel !== character.level ? ` You reached level ${result.finalLevel}!` : '';
+        const voidShardsNote = result.voidShardsGained > 0 ? ` and ${result.voidShardsGained} Void Shards` : '';
+        const clearsNote =
+          result.dungeonClearsGained > 0
+            ? ` Your party cleared ${dungeon.name} ${result.dungeonClearsGained} time${result.dungeonClearsGained === 1 ? '' : 's'}.`
+            : '';
+        setSummary(
+          `While you were away, your party in ${dungeon.name} defeated ${result.monstersDefeated} enem${
+            result.monstersDefeated === 1 ? 'y' : 'ies'
+          }, earning ${result.xpGained} XP and ${result.goldGained} gold${voidShardsNote}.${clearsNote}${retreatNote}${levelUpNote}`
         );
       } else if (activity.type === 'gathering') {
         // All 4 gathering professions (Mining/Herbalism/Skinning/Fishing's

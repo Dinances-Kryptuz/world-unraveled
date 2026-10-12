@@ -2,7 +2,7 @@ import { doc, getDoc, setDoc, updateDoc, serverTimestamp, Timestamp, increment, 
 import { db } from './config';
 import type { Character, CombatPreset, MaterialMasteryState, ZoneMasteryState, InventorySortPrefs } from '../types/character';
 import type { ProfessionId, EquipmentSlot, EquippedItemRef } from '../gameData/types';
-import type { ClassId, SpecId } from '../gameData/classStats';
+import type { ClassId, SpecId, BaseStat } from '../gameData/classStats';
 import type { TalentColumn } from '../gameData/talents';
 import { PROFESSION_CATEGORY, tierForLevel } from '../gameData/professionTiers';
 import {
@@ -353,7 +353,7 @@ export async function createCharacter(uid: string, name: string, characterClass:
 export async function startActivity(
   uid: string,
   activity: {
-    type: 'combat' | 'gathering' | 'crafting' | 'fishing' | 'disenchanting';
+    type: 'combat' | 'gathering' | 'crafting' | 'fishing' | 'disenchanting' | 'dungeon';
     targetId: string;
     zoneId: string;
     // Only meaningful for 'disenchanting' — the stack size chosen on the
@@ -377,6 +377,9 @@ export async function startActivity(
     // equippedItemId(character.equipment.shirt) — undefined/null both mean
     // "no shirt."
     equippedShirtItemId?: string | null;
+    // Only meaningful for 'dungeon' — see CurrentActivity.dungeonFeastStatBonuses's
+    // doc comment.
+    dungeonFeastStatBonuses?: Partial<Record<BaseStat, number>>;
   }
 ): Promise<void> {
   await updateDoc(doc(db, 'characters', uid), {
@@ -389,6 +392,7 @@ export async function startActivity(
       ...(activity.instanceId !== undefined ? { disenchantInstanceId: activity.instanceId } : {}),
       ...(activity.disenchantQueue !== undefined ? { disenchantQueue: activity.disenchantQueue } : {}),
       equippedShirtItemId: activity.equippedShirtItemId ?? null,
+      ...(activity.dungeonFeastStatBonuses !== undefined ? { dungeonFeastStatBonuses: activity.dungeonFeastStatBonuses } : {}),
     },
   });
 }

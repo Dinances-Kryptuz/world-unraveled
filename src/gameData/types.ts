@@ -17,7 +17,12 @@ export type ProfessionId =
   | 'enchanting'
   | 'cooking';
 
-export type ActivityType = 'combat' | 'gathering' | 'crafting' | 'fishing' | 'disenchanting';
+// 'dungeon' (Equipment Rarity overhaul's Part 8) — leaving a dungeon party
+// to farm offline/overnight. targetId holds the dungeonId (gameData/
+// dungeons.ts), same role 'combat' gives it for a monster id. See
+// CurrentActivity.dungeonFeastStatBonuses and DungeonScreen.tsx's
+// handleFarmOffline.
+export type ActivityType = 'combat' | 'gathering' | 'crafting' | 'fishing' | 'disenchanting' | 'dungeon';
 
 // 'tool' is a 7th-slot-adjacent equip slot for profession tools (mining
 // pick, skinning knife, fishing rod) — reuses the exact same equip/unequip
