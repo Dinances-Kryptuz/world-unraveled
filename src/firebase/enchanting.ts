@@ -1,6 +1,6 @@
 import { doc, updateDoc, increment } from 'firebase/firestore';
 import { db } from './config';
-import { getInventory, grantInventoryItems } from './inventory';
+import { getInventory, grantInventoryItems, isLocked } from './inventory';
 import { ITEMS } from '../gameData/items';
 import { ENCHANTS, ENCHANT_SCROLL_CHARGES } from '../gameData/enchanting';
 import type { EquipmentSlot } from '../gameData/types';
@@ -118,6 +118,16 @@ export async function applyDisenchantResult(
   },
   instanceId?: string
 ): Promise<void> {
+  // Equipment Locking overhaul — revalidated here (not just when the
+  // activity was started) since a player can lock an item mid-disenchant;
+  // a locked item is never actually consumed/destroyed, full stop, even if
+  // the activity's own offline-elapsed-time math already decided time has
+  // passed. Profession XP for the (now-void) attempt is intentionally not
+  // awarded either, matching "locked equipment cannot be disenchanted" as
+  // an absolute rule rather than a soft preference.
+  const inventory = await getInventory(uid);
+  if (isLocked(inventory, instanceId ?? itemId)) return;
+
   await updateDoc(doc(db, 'characters', uid), {
     'professions.enchanting.level': result.newSkillLevel,
     'professions.enchanting.xp': result.newSkillXp,
@@ -131,5 +141,53 @@ export async function applyDisenchantResult(
   await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), consumeUpdate);
   if (result.yieldQuantity > 0) {
     await grantInventoryItems(uid, [{ itemId: result.yieldItemId, quantity: result.yieldQuantity }]);
+  }
+}
+
+// Continuous Disenchanting Queue overhaul — the multi-item counterpart to
+// applyDisenchantResult above, for a single resolveDisenchantQueueOffline
+// call that may have touched several distinct items in one autosave/claim
+// cycle. Every item consumption and every yield grant lands in as FEW
+// Firestore writes as possible (one updateDoc per doc, not one per item —
+// see this function's two updateDoc calls below), per the design brief's
+// explicit "do not create a Firestore write for every item completion."
+// Lock revalidation already happened one layer up, in
+// DisenchantingScreen's autosave — by the time `perItem` exists, every
+// entry in it was built from an item the resolver was never even handed if
+// it was locked at that moment (see DisenchantingScreen.tsx's doc comment
+// for why that's the right place to revalidate, not here).
+export async function applyDisenchantQueueResult(
+  uid: string,
+  perItem: { itemId: string; instanceId?: string; itemsDisenchanted: number; yieldItemId: string; yieldQuantity: number }[],
+  newSkillLevel: number,
+  newSkillXp: number
+): Promise<void> {
+  if (perItem.length === 0) return;
+
+  await updateDoc(doc(db, 'characters', uid), {
+    'professions.enchanting.level': newSkillLevel,
+    'professions.enchanting.xp': newSkillXp,
+  });
+
+  // Consume every disenchanted item/instance in ONE write — write this
+  // FIRST so a stack dropping to 0 (freeing a bag slot) is already
+  // reflected before the capped yield grant below reads occupancy, same
+  // ordering as applyDisenchantResult above.
+  const consumeUpdate: Record<string, unknown> = {};
+  for (const entry of perItem) {
+    const path = entry.instanceId ? `equipmentInstances.${entry.instanceId}.quantity` : `items.${entry.itemId}`;
+    consumeUpdate[path] = increment(-entry.itemsDisenchanted);
+  }
+  await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), consumeUpdate);
+
+  // Combine same-material yields (several queued items commonly disenchant
+  // into the same dust/essence) into one grantInventoryItems call.
+  const yieldsByItemId = new Map<string, number>();
+  for (const entry of perItem) {
+    if (entry.yieldQuantity <= 0) continue;
+    yieldsByItemId.set(entry.yieldItemId, (yieldsByItemId.get(entry.yieldItemId) ?? 0) + Math.floor(entry.yieldQuantity));
+  }
+  if (yieldsByItemId.size > 0) {
+    await grantInventoryItems(uid, Array.from(yieldsByItemId, ([itemId, quantity]) => ({ itemId, quantity })));
   }
 }

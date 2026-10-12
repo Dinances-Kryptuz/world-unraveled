@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useCharacter } from '../../hooks/useCharacter';
-import { startActivity } from '../../firebase/character';
+import { startActivity, advanceDisenchantQueue } from '../../firebase/character';
 import { ZONES, GATHER_NODES, FISHING_HOLES } from '../../gameData/zones';
 import { RECIPES } from '../../gameData/recipes';
 import { PROFESSION_LABELS, PROFESSION_CATEGORY, getProfessionState } from '../../gameData/professionTiers';
@@ -9,12 +9,15 @@ import { gatheringColorTier, GATHERING_COLOR_XP_PCT, fishingZoneMasteryPercent }
 import { craftingColorTier, CRAFTING_COLOR_XP_PCT } from '../../gameData/craftingEngine';
 import { canUseRecipe } from '../../firebase/professions';
 import { useEnchantScroll, removeEnchant } from '../../firebase/enchanting';
-import { subscribeToInventory } from '../../firebase/inventory';
+import { subscribeToInventory, isLocked } from '../../firebase/inventory';
 import { ENCHANTS, isDisenchantable, disenchantRequiredSkill, disenchantYieldRange } from '../../gameData/enchanting';
 import { ITEMS } from '../../gameData/items';
 import { equippedItemId } from '../../gameData/equipmentStats';
 import { describeItemStats } from '../../gameData/equipmentStats';
-import { MATERIALS, LEATHER_MATERIALS, CLOTH_MATERIALS, WOOD_MATERIALS, type MaterialDef } from '../../gameData/materials';
+import { MATERIALS, LEATHER_MATERIALS, CLOTH_MATERIALS, WOOD_MATERIALS, getMaterial, type MaterialDef } from '../../gameData/materials';
+import { getItemDisplayName, equipmentSuffixFor } from '../../gameData/equipmentSuffixes';
+import { materialIdForItem } from '../../gameData/itemMetadata';
+import { matchesInventoryFilter, type InventoryEntry } from '../../gameData/inventorySort';
 import {
   materialMasteryPercent,
   materialMasterySpeedMultiplier,
@@ -150,6 +153,18 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
   // click, per the design brief's "further incentivize idle" ask.
   const [disenchantQty, setDisenchantQty] = useState<Record<string, number>>({});
 
+  // Continuous Disenchanting Queue overhaul — which rows (keyed by
+  // instanceId ?? itemId, matching disenchantQty's own key) are currently
+  // checked for bulk queueing, plus the disenchant list's own slot/tier/
+  // suffix filter so "Select all shown" operates on exactly what's
+  // currently displayed, never the whole inventory silently.
+  const [selectedForQueue, setSelectedForQueue] = useState<Set<string>>(new Set());
+  const [disenchantFilter, setDisenchantFilter] = useState<{ slot: EquipmentSlot | ''; materialId: string; suffix: string }>({
+    slot: '',
+    materialId: '',
+    suffix: '',
+  });
+
   // Cooking overhaul Tier 1 — Auto Eat's own tiny bit of local state, same
   // shape as MountTrainerScreen's training/error pair.
   const [autoEatTraining, setAutoEatTraining] = useState(false);
@@ -226,6 +241,44 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
       instanceId,
       equippedShirtItemId: equippedItemId(character?.equipment.shirt),
     });
+    await refetch();
+  }
+
+  // Continuous Disenchanting Queue overhaul — queues one or more selected
+  // rows at once. If a disenchant activity is already running, the
+  // selection is APPENDED to its existing queue (advanceDisenchantQueue,
+  // current item untouched) rather than restarting it; otherwise the
+  // first selected item becomes the new activity's current target and the
+  // rest seed its queue (startActivity). Always confirms exactly how many
+  // equipment pieces will be destroyed first, per the design brief's
+  // explicit "display a confirmation before starting the queue" rule.
+  async function handleAddToDisenchantQueue(entries: { itemId: string; instanceId?: string; quantity: number }[]) {
+    if (!user || entries.length === 0) return;
+    const totalPieces = entries.reduce((sum, e) => sum + e.quantity, 0);
+    if (!confirm(`This will destroy ${totalPieces} equipment piece${totalPieces === 1 ? '' : 's'}. Continue?`)) return;
+
+    if (character?.currentActivity.type === 'disenchanting') {
+      await advanceDisenchantQueue(user.uid, {
+        targetId: character.currentActivity.targetId,
+        zoneId: character.currentActivity.zoneId,
+        instanceId: character.currentActivity.disenchantInstanceId,
+        quantity: character.currentActivity.disenchantQuantity,
+        queue: [...(character.currentActivity.disenchantQueue ?? []), ...entries],
+        equippedShirtItemId: character.currentActivity.equippedShirtItemId,
+      });
+    } else {
+      const [first, ...rest] = entries;
+      await startActivity(user.uid, {
+        type: 'disenchanting',
+        targetId: first.itemId,
+        zoneId,
+        quantity: first.quantity,
+        instanceId: first.instanceId,
+        disenchantQueue: rest,
+        equippedShirtItemId: equippedItemId(character?.equipment.shirt),
+      });
+    }
+    setSelectedForQueue(new Set());
     await refetch();
   }
 
@@ -445,14 +498,23 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
 
     const disenchantableEntries: { itemId: string; quantity: number; instanceId?: string; rolls?: Record<string, number> }[] = [
       ...Object.entries(inventory?.items ?? {})
-        .filter(([itemId, quantity]) => quantity > 0 && ITEMS[itemId] && isDisenchantable(ITEMS[itemId]!))
+        .filter(
+          ([itemId, quantity]) =>
+            quantity > 0 && ITEMS[itemId] && isDisenchantable(ITEMS[itemId]!) && !isLocked(inventory!, itemId)
+        )
         .map(([itemId, quantity]) => ({ itemId, quantity })),
       // Randomized-roll equipment lives in its own instanceId-keyed bucket
       // (see types/character.ts's Inventory.equipmentInstances) — each
       // distinct roll is disenchanted independently so the player picks
-      // which specific variant to break down.
+      // which specific variant to break down. Equipment Locking overhaul —
+      // a locked instance never appears here at all (never "disabled",
+      // simply excluded), matching "locked equipment cannot be included in
+      // bulk disenchant selection."
       ...Object.entries(inventory?.equipmentInstances ?? {})
-        .filter(([, inst]) => inst.quantity > 0 && ITEMS[inst.itemId] && isDisenchantable(ITEMS[inst.itemId]!))
+        .filter(
+          ([instanceId, inst]) =>
+            inst.quantity > 0 && ITEMS[inst.itemId] && isDisenchantable(ITEMS[inst.itemId]!) && !isLocked(inventory!, instanceId)
+        )
         .map(([instanceId, inst]) => ({ itemId: inst.itemId, quantity: inst.quantity, instanceId, rolls: inst.rolls })),
     ].sort((a, b) => (ITEMS[a.itemId]?.name ?? a.itemId).localeCompare(ITEMS[b.itemId]?.name ?? b.itemId));
 
@@ -520,39 +582,163 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
         {disenchantableEntries.length === 0 ? (
           <p>No disenchantable equipment in your inventory.</p>
         ) : (
-          <ul>
-            {disenchantableEntries.map(({ itemId, quantity, instanceId, rolls }) => {
-              const item = ITEMS[itemId]!;
-              const requiredSkill = disenchantRequiredSkill(item);
-              const meetsSkill = skill >= requiredSkill;
-              const qtyKey = instanceId ?? itemId;
-              const qty = Math.min(disenchantQty[qtyKey] ?? quantity, quantity);
-              return (
-                <li key={qtyKey}>
-                  <div className="item-row-main">
-                    <ItemSlot item={item} quantity={quantity} statOverride={rolls} />
-                    <span>{item.name}</span>
-                  </div>
-                  <input
-                    type="range"
-                    min={1}
-                    max={quantity}
-                    value={qty}
-                    disabled={!meetsSkill || quantity <= 1}
-                    onChange={(e) => setDisenchantQty((prev) => ({ ...prev, [qtyKey]: Number(e.target.value) }))}
-                  />
-                  <span>{qty}</span>
+          (() => {
+            // Continuous Disenchanting Queue overhaul — bulk selection
+            // works against whatever the slot/tier/suffix filters below
+            // currently show, never the whole unfiltered list, per the
+            // design brief's explicit "Select All Unlocked must apply
+            // only to the current filtered results" rule (every entry
+            // here is already unlocked by construction — see
+            // disenchantableEntries above — so filtering by `locked` has
+            // nothing left to exclude and is deliberately omitted here).
+            const availableSlots = Array.from(
+              new Set(disenchantableEntries.map((e) => ITEMS[e.itemId]?.equipSlot).filter((s): s is EquipmentSlot => !!s))
+            );
+            const availableMaterialIds = Array.from(
+              new Set(disenchantableEntries.map((e) => materialIdForItem(e.itemId)).filter((m): m is string => !!m))
+            );
+            const availableSuffixes = Array.from(
+              new Set(disenchantableEntries.map((e) => equipmentSuffixFor(e.rolls)).filter((s): s is string => !!s))
+            );
+            const filtered = disenchantableEntries.filter((e) =>
+              matchesInventoryFilter(
+                { key: e.instanceId ?? e.itemId, itemId: e.itemId, quantity: e.quantity, rolls: e.rolls, locked: false } as InventoryEntry,
+                {
+                  slot: disenchantFilter.slot || null,
+                  materialId: disenchantFilter.materialId || null,
+                  suffix: disenchantFilter.suffix || null,
+                }
+              )
+            );
+            const selectedEntries = disenchantableEntries.filter((e) => selectedForQueue.has(e.instanceId ?? e.itemId));
+            const totalSelectedPieces = selectedEntries.reduce(
+              (sum, e) => sum + Math.min(disenchantQty[e.instanceId ?? e.itemId] ?? e.quantity, e.quantity),
+              0
+            );
+
+            return (
+              <>
+                <div className="inventory-controls">
+                  <label>
+                    Slot{' '}
+                    <select
+                      value={disenchantFilter.slot}
+                      onChange={(e) => setDisenchantFilter((p) => ({ ...p, slot: e.target.value as EquipmentSlot | '' }))}
+                    >
+                      <option value="">All</option>
+                      {availableSlots.map((s) => (
+                        <option key={s} value={s}>
+                          {s}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    Tier{' '}
+                    <select
+                      value={disenchantFilter.materialId}
+                      onChange={(e) => setDisenchantFilter((p) => ({ ...p, materialId: e.target.value }))}
+                    >
+                      <option value="">All</option>
+                      {availableMaterialIds.map((m) => (
+                        <option key={m} value={m}>
+                          {getMaterial(m)?.name ?? m}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    Suffix{' '}
+                    <select
+                      value={disenchantFilter.suffix}
+                      onChange={(e) => setDisenchantFilter((p) => ({ ...p, suffix: e.target.value }))}
+                    >
+                      <option value="">All</option>
+                      {availableSuffixes.map((s) => (
+                        <option key={s} value={s}>
+                          {s}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
                   <button
-                    onClick={() => handleStartDisenchanting(itemId, qty, instanceId)}
-                    disabled={!meetsSkill}
-                    title={`Disenchants into ${ITEMS[disenchantYieldRange(item).itemId]?.name ?? 'materials'} (requires Enchanting ${requiredSkill})`}
+                    onClick={() =>
+                      setSelectedForQueue(new Set(filtered.filter((e) => skill >= disenchantRequiredSkill(ITEMS[e.itemId]!)).map((e) => e.instanceId ?? e.itemId)))
+                    }
                   >
-                    {meetsSkill ? `Disenchant ${qty}` : `Needs skill ${requiredSkill}`}
+                    Select all shown ({filtered.length})
                   </button>
-                </li>
-              );
-            })}
-          </ul>
+                  <button onClick={() => setSelectedForQueue(new Set())} disabled={selectedForQueue.size === 0}>
+                    Clear selection
+                  </button>
+                </div>
+
+                <ul>
+                  {filtered.map(({ itemId, quantity, instanceId, rolls }) => {
+                    const item = ITEMS[itemId]!;
+                    const requiredSkill = disenchantRequiredSkill(item);
+                    const meetsSkill = skill >= requiredSkill;
+                    const qtyKey = instanceId ?? itemId;
+                    const qty = Math.min(disenchantQty[qtyKey] ?? quantity, quantity);
+                    return (
+                      <li key={qtyKey}>
+                        <div className="item-row-main">
+                          <input
+                            type="checkbox"
+                            checked={selectedForQueue.has(qtyKey)}
+                            disabled={!meetsSkill}
+                            onChange={(e) =>
+                              setSelectedForQueue((prev) => {
+                                const next = new Set(prev);
+                                if (e.target.checked) next.add(qtyKey);
+                                else next.delete(qtyKey);
+                                return next;
+                              })
+                            }
+                          />
+                          <ItemSlot item={item} quantity={quantity} statOverride={rolls} />
+                          <span>{getItemDisplayName(item.name, rolls)}</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={1}
+                          max={quantity}
+                          value={qty}
+                          disabled={!meetsSkill || quantity <= 1}
+                          onChange={(e) => setDisenchantQty((prev) => ({ ...prev, [qtyKey]: Number(e.target.value) }))}
+                        />
+                        <span>{qty}</span>
+                        <button
+                          onClick={() => handleStartDisenchanting(itemId, qty, instanceId)}
+                          disabled={!meetsSkill}
+                          title={`Disenchants into ${ITEMS[disenchantYieldRange(item).itemId]?.name ?? 'materials'} (requires Enchanting ${requiredSkill})`}
+                        >
+                          {meetsSkill ? `Disenchant ${qty} now` : `Needs skill ${requiredSkill}`}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+
+                {selectedForQueue.size > 0 && (
+                  <button
+                    onClick={() =>
+                      handleAddToDisenchantQueue(
+                        selectedEntries.map((e) => ({
+                          itemId: e.itemId,
+                          instanceId: e.instanceId,
+                          quantity: Math.min(disenchantQty[e.instanceId ?? e.itemId] ?? e.quantity, e.quantity),
+                        }))
+                      )
+                    }
+                  >
+                    Queue {selectedForQueue.size} selected ({totalSelectedPieces} pieces)
+                    {character?.currentActivity.type === 'disenchanting' ? ' — adds to running queue' : ''}
+                  </button>
+                )}
+              </>
+            );
+          })()
         )}
       </>
     );

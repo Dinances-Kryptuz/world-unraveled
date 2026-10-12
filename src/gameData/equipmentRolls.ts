@@ -69,6 +69,19 @@ export const ARMOR_STAT_RANGES: Record<string, { min: number; max: number }> = {
   obsidian_legplates: { min: 12, max: 17 },
   obsidian_greaves: { min: 8, max: 11 },
   obsidian_shield: { min: 11, max: 15 },
+  // ── Blacksmithing Shoulders (7 tiers) — Equipment overhaul's itemization
+  // parity fix (user-confirmed): Blacksmithing had every other plate slot
+  // (Bracers included) but no Shoulders. Ranges mirror each tier's own
+  // Gauntlets 1:1, same "Shoulders mirrors Gauntlets'" rule this file
+  // already uses for Leatherworking/Tailoring's Shoulders below.
+  copper_shoulders: { min: 1, max: 3 },
+  bronze_shoulders: { min: 2, max: 5 },
+  iron_shoulders: { min: 3, max: 6 },
+  steel_shoulders: { min: 4, max: 7 },
+  mithril_shoulders: { min: 5, max: 8 },
+  thorium_shoulders: { min: 6, max: 9 },
+  obsidian_shoulders: { min: 7, max: 11 },
+
   silver_necklace: { min: 2, max: 4 },
   silver_ring: { min: 1, max: 4 },
   gold_necklace: { min: 4, max: 8 },
@@ -123,6 +136,16 @@ export const ARMOR_STAT_RANGES: Record<string, { min: number; max: number }> = {
   emberscar_leather_shoulders: { min: 6, max: 9 },
   emberscar_leather_belt: { min: 6, max: 9 },
 
+  // ── Leatherworking Bracers (6 tiers) — Equipment overhaul's itemization
+  // parity fix (user-confirmed): Leatherworking had Shoulders at every
+  // tier but no Bracers. Ranges mirror each tier's own Gloves 1:1.
+  handstitched_leather_bracers: { min: 1, max: 3 },
+  fine_leather_bracers: { min: 2, max: 5 },
+  barbaric_leather_bracers: { min: 3, max: 6 },
+  nightscape_leather_bracers: { min: 4, max: 7 },
+  wicked_leather_bracers: { min: 5, max: 8 },
+  emberscar_leather_bracers: { min: 6, max: 9 },
+
   // ── Tailoring (6 tiers × 6 armor pieces + 6 capes) — ranges copied 1:1
   // from the Blacksmithing analog piece of the same tier (helm/chestplate/
   // gauntlets/legplates/greaves; Shoulders AND Cape mirror Gauntlets').
@@ -162,6 +185,16 @@ export const ARMOR_STAT_RANGES: Record<string, { min: number; max: number }> = {
   ember_leggings: { min: 10, max: 15 },
   ember_boots: { min: 7, max: 10 },
   ember_shoulders: { min: 6, max: 9 },
+  // ── Tailoring Bracers (6 tiers) — Equipment overhaul's itemization
+  // parity fix (user-confirmed): Tailoring had Shoulders at every tier but
+  // no Bracers. Ranges mirror each tier's own Gloves 1:1.
+  tailored_linen_bracers: { min: 1, max: 3 },
+  wool_bracers: { min: 2, max: 5 },
+  silk_bracers: { min: 3, max: 6 },
+  mageweave_bracers: { min: 4, max: 7 },
+  runecloth_bracers: { min: 5, max: 8 },
+  ember_bracers: { min: 6, max: 9 },
+
   cape_of_linen: { min: 1, max: 3 },
   cape_of_wool: { min: 2, max: 5 },
   cape_of_silk: { min: 3, max: 6 },

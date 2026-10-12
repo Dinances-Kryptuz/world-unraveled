@@ -1,35 +1,52 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useCharacter } from '../hooks/useCharacter';
-import { applyDisenchantResult } from '../firebase/enchanting';
-import { getCharacter, stopActivity } from '../firebase/character';
-import { getInventory } from '../firebase/inventory';
+import { applyDisenchantQueueResult } from '../firebase/enchanting';
+import { getCharacter, stopActivity, advanceDisenchantQueue } from '../firebase/character';
+import { getInventory, isLocked } from '../firebase/inventory';
 import { AUTOSAVE_INTERVAL_SECONDS } from '../gameData/activityEngine';
 import {
   resolveDisenchantOffline,
+  resolveDisenchantQueueOffline,
   craftingColorTier,
   craftingXpForNextLevel,
   CRAFTING_COLOR_XP_PCT,
   DISENCHANT_SECONDS,
   type DisenchantOfflineResult,
+  type DisenchantQueueItemInput,
 } from '../gameData/craftingEngine';
 import { getProfessionState, maxSkillForUnlockedTier } from '../gameData/professionTiers';
 import { disenchantRequiredSkill, disenchantXpAward, disenchantYieldRange } from '../gameData/enchanting';
 import { ITEMS } from '../gameData/items';
+import { getItemDisplayName } from '../gameData/equipmentSuffixes';
 import { ItemSlot } from './ItemSlot';
 import { TickBar } from './TickBar';
 import { notify } from '../utils/notifications';
 import { shirtBonusForItemId, shirtBonusPct } from '../gameData/shirts';
 import type { Character } from '../types/character';
 import type { User } from 'firebase/auth';
+import type { BaseStat } from '../gameData/classStats';
+
+// Resolves one item id's disenchant params — used for every entry in the
+// queue (not just the current item, which already has itemId/requiredSkill/
+// baseXp/yieldRange as plain component-scope values below), since a queued
+// item can be a completely different base item with its own skill
+// requirement/XP/yield.
+function resolveItemDisenchantParams(itemId: string) {
+  const item = ITEMS[itemId];
+  if (!item) return null;
+  return { item, requiredSkill: disenchantRequiredSkill(item), baseXp: disenchantXpAward(item), yieldRange: disenchantYieldRange(item) };
+}
 
 // Disenchanting's own activity screen — same ticking/autosave shape as
-// CraftingScreen, but simpler: no materials to track, no Mastery axis (see
-// craftingEngine.ts's resolveDisenchantOffline doc comment), and it
-// auto-stops once `disenchantQuantity` items are processed or the stack
-// runs out, rather than running until manually stopped. This is what turns
-// "disenchant my whole stack" from N individual clicks into one slider pick
-// and an idle/AFK wait, per the design brief's explicit ask.
+// CraftingScreen. `itemId`/`instanceId` describe only the item CURRENTLY
+// being processed (CurrentActivity.targetId/disenchantInstanceId); anything
+// queued after it (CurrentActivity.disenchantQueue, the Continuous
+// Disenchanting Queue overhaul) is read directly off `character` here
+// rather than via props, since the queue's own composition changes over
+// the activity's lifetime without this component ever remounting for a
+// reason other than "the current item changed" (see the reset effect's
+// [itemId, instanceId] dependency — unchanged from before this feature).
 export function DisenchantingScreen({ itemId, instanceId }: { itemId: string; instanceId?: string }) {
   const { user } = useAuth();
   const { character: characterOrNull, refetch, applyOptimisticUpdate } = useCharacter();
@@ -42,11 +59,26 @@ export function DisenchantingScreen({ itemId, instanceId }: { itemId: string; in
   const [done, setDone] = useState(false);
   // Updated only from TickBar's onIteration below (the bar's own compositor
   // clock) — see TickBar.tsx's doc comment for why an independent JS timer
-  // would drift against the bar's visual completion.
+  // would drift against the bar's visual completion. Scoped to the CURRENT
+  // item only — the queue's own items don't get a live preview, only a
+  // static "queued" listing (see render below).
   const [livePreview, setLivePreview] = useState<DisenchantOfflineResult | null>(null);
   const anchorRef = useRef<Date | null>(character.currentActivity.startedAt);
   const stockRef = useRef(0);
   const remainingRequestedRef = useRef(character.currentActivity.disenchantQuantity ?? 1);
+  // Continuous Disenchanting Queue overhaul — the upcoming queue (not yet
+  // started) and each entry's own remaining stock, fetched ONCE per
+  // current-item change alongside stockRef above (same "this activity
+  // session's own bookkeeping, not live-subscribed" posture every other
+  // ref here already has).
+  const queueRef = useRef<{ itemId: string; instanceId?: string; quantity: number }[]>([]);
+  const queueStockRef = useRef<Record<string, number>>({});
+  // Display-only: the actual rolled stats (Equipment Suffix Naming
+  // overhaul) of the current item and every queued entry, keyed the same
+  // way queueStockRef is — fetched alongside stock in the reset effect
+  // below, never read by the autosave/resolver logic itself.
+  const [currentRolls, setCurrentRolls] = useState<Partial<Record<BaseStat, number>> | undefined>(undefined);
+  const [queueRollsByKey, setQueueRollsByKey] = useState<Record<string, Partial<Record<BaseStat, number>>>>({});
 
   const characterRef = useRef<Character | null>(character);
   const userRef = useRef<User | null>(user);
@@ -69,9 +101,22 @@ export function DisenchantingScreen({ itemId, instanceId }: { itemId: string; in
     setLivePreview(null);
     anchorRef.current = character.currentActivity.startedAt;
     remainingRequestedRef.current = character.currentActivity.disenchantQuantity ?? 1;
+    queueRef.current = character.currentActivity.disenchantQueue ?? [];
     if (user) {
       getInventory(user.uid).then((inv) => {
         stockRef.current = instanceId ? inv.equipmentInstances?.[instanceId]?.quantity ?? 0 : inv.items[itemId] ?? 0;
+        setCurrentRolls(instanceId ? inv.equipmentInstances?.[instanceId]?.rolls : undefined);
+        const stockMap: Record<string, number> = {};
+        const rollsMap: Record<string, Partial<Record<BaseStat, number>>> = {};
+        for (const q of queueRef.current) {
+          const key = q.instanceId ?? q.itemId;
+          stockMap[key] = q.instanceId ? inv.equipmentInstances?.[q.instanceId]?.quantity ?? 0 : inv.items[q.itemId] ?? 0;
+          if (q.instanceId && inv.equipmentInstances?.[q.instanceId]?.rolls) {
+            rollsMap[key] = inv.equipmentInstances[q.instanceId].rolls;
+          }
+        }
+        queueStockRef.current = stockMap;
+        setQueueRollsByKey(rollsMap);
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -96,12 +141,47 @@ export function DisenchantingScreen({ itemId, instanceId }: { itemId: string; in
     const anchor = anchorRef.current;
     if (!currentUser || !currentCharacter || !anchor || !item || !yieldRange || done) return;
 
-    const maxQuantity = Math.min(remainingRequestedRef.current, stockRef.current);
-    if (maxQuantity <= 0) {
-      // Same convention as CraftingScreen's "out of materials" case —
-      // freeze progress and tell the player, but don't auto-call
-      // stopActivity (that would unmount this screen out from under them
-      // before they even see the message). They click Stop when ready.
+    const current: DisenchantQueueItemInput = {
+      itemId,
+      instanceId,
+      requiredSkill,
+      baseXp,
+      yieldItemId: yieldRange.itemId,
+      yieldMin: yieldRange.min,
+      yieldMax: yieldRange.max,
+      maxQuantity: Math.min(remainingRequestedRef.current, stockRef.current),
+    };
+    const queueItems: DisenchantQueueItemInput[] = queueRef.current
+      .map((q): DisenchantQueueItemInput | null => {
+        const resolved = resolveItemDisenchantParams(q.itemId);
+        if (!resolved) return null;
+        const key = q.instanceId ?? q.itemId;
+        const stock = queueStockRef.current[key] ?? 0;
+        return {
+          itemId: q.itemId,
+          instanceId: q.instanceId,
+          requiredSkill: resolved.requiredSkill,
+          baseXp: resolved.baseXp,
+          yieldItemId: resolved.yieldRange.itemId,
+          yieldMin: resolved.yieldRange.min,
+          yieldMax: resolved.yieldRange.max,
+          maxQuantity: Math.min(q.quantity, stock),
+        };
+      })
+      .filter((q): q is DisenchantQueueItemInput => q !== null);
+
+    // Equipment Locking overhaul — revalidated HERE, every autosave tick,
+    // right before anything is actually processed ("revalidate item
+    // eligibility when a queued item is actually processed"). A locked
+    // entry is simply excluded from this call: it's never consumed, and it
+    // also silently falls out of the persisted queue from this point on —
+    // it stays exactly where it is in inventory, just no longer
+    // auto-processed; re-queuing it once unlocked starts fresh.
+    const freshInventory = await getInventory(currentUser.uid);
+    const eligible = [current, ...queueItems].filter((entry) => !isLocked(freshInventory, entry.instanceId ?? entry.itemId));
+
+    const totalEligible = eligible.reduce((sum, e) => sum + e.maxQuantity, 0);
+    if (totalEligible <= 0) {
       setOutOfStock(stockRef.current <= 0);
       setDone(true);
       return;
@@ -110,64 +190,84 @@ export function DisenchantingScreen({ itemId, instanceId }: { itemId: string; in
     const now = new Date();
     const prof = getProfessionState(currentCharacter.professions, 'enchanting');
     const cap = maxSkillForUnlockedTier('enchanting', prof.unlockedTier);
+    const salvageBonusPct = shirtBonusPct(shirtBonusForItemId(currentCharacter.currentActivity.equippedShirtItemId), 'salvage_bonus');
 
-    const result = resolveDisenchantOffline(
-      anchor,
-      now,
-      requiredSkill,
-      baseXp,
-      yieldRange.min,
-      yieldRange.max,
-      maxQuantity,
-      prof.level,
-      prof.xp,
-      cap,
-      shirtBonusPct(shirtBonusForItemId(currentCharacter.currentActivity.equippedShirtItemId), 'salvage_bonus')
-    );
-
-    if (result.itemsDisenchanted === 0) return;
+    const result = resolveDisenchantQueueOffline(eligible, anchor, now, prof.level, prof.xp, cap, salvageBonusPct);
+    if (result.perItem.length === 0) return;
 
     const previousAnchor = anchor;
     const previousStock = stockRef.current;
     const previousRemaining = remainingRequestedRef.current;
+    const previousQueueStock = { ...queueStockRef.current };
+    const previousQueue = queueRef.current;
+    const totalThisTick = result.perItem.reduce((s, e) => s + e.itemsDisenchanted, 0);
 
     anchorRef.current = now;
-    stockRef.current -= result.itemsDisenchanted;
-    remainingRequestedRef.current -= result.itemsDisenchanted;
-    setSessionDisenchanted((prev) => prev + result.itemsDisenchanted);
+    for (const entry of result.perItem) {
+      if (entry.itemId === itemId && entry.instanceId === instanceId) {
+        stockRef.current -= entry.itemsDisenchanted;
+        remainingRequestedRef.current -= entry.itemsDisenchanted;
+      } else {
+        const key = entry.instanceId ?? entry.itemId;
+        queueStockRef.current[key] = (queueStockRef.current[key] ?? 0) - entry.itemsDisenchanted;
+      }
+    }
+    setSessionDisenchanted((prev) => prev + totalThisTick);
     setLivePreview(null);
 
     if (currentCharacter.notificationsEnabled) {
-      notify('Disenchanted', [`${result.itemsDisenchanted}x ${item.name} -> ${Math.floor(result.yieldQuantity)}x ${ITEMS[yieldRange.itemId]?.name ?? yieldRange.itemId}`]);
+      notify(
+        'Disenchanted',
+        result.perItem.map((entry) => {
+          const srcItem = ITEMS[entry.itemId];
+          const yieldItem = ITEMS[entry.yieldItemId];
+          return `${entry.itemsDisenchanted}x ${srcItem?.name ?? entry.itemId} -> ${Math.floor(entry.yieldQuantity)}x ${yieldItem?.name ?? entry.yieldItemId}`;
+        })
+      );
     }
     if (currentCharacter.skillXpNotificationsEnabled && result.professionXpGained > 0) {
       notify('Enchanting XP gained', [`+${result.professionXpGained} XP`]);
     }
 
-    applyOptimisticUpdate((c) => ({
-      ...c,
-      professions: {
-        ...c.professions,
-        enchanting: { ...getProfessionState(c.professions, 'enchanting'), level: result.finalSkill, xp: result.finalSkillXp },
-      },
-    }));
+    // Did the item this component was rendered for (itemId/instanceId)
+    // finish entirely and hand off to a different item within this same
+    // tick? Compare against the resolver's own idea of what's now current.
+    const newCurrent = result.remainingQueue[0];
+    const sameCurrentItem = !!newCurrent && newCurrent.itemId === itemId && newCurrent.instanceId === instanceId;
+    const newQueueTail = result.remainingQueue.slice(1).map((q) => ({ itemId: q.itemId, instanceId: q.instanceId, quantity: q.maxQuantity }));
 
     try {
       const fresh = await getCharacter(currentUser.uid);
       if (!fresh) throw new Error('Character not found during autosave');
 
-      await applyDisenchantResult(
-        currentUser.uid,
-        itemId,
-        {
-          itemsDisenchanted: result.itemsDisenchanted,
-          yieldItemId: yieldRange.itemId,
-          yieldQuantity: Math.floor(result.yieldQuantity),
-          newSkillLevel: result.finalSkill,
-          newSkillXp: result.finalSkillXp,
-        },
-        instanceId
-      );
+      await applyDisenchantQueueResult(currentUser.uid, result.perItem, result.finalSkill, result.finalSkillXp);
+
+      // The whole queue (current item included) just finished — same
+      // "freeze locally, let the player review before Stop/Continue"
+      // convention a single-item disenchant has always had. No
+      // currentActivity write here; handleStop below does it once clicked.
+      if (!newCurrent) {
+        queueRef.current = [];
+        setOutOfStock(false);
+        setDone(true);
+      } else if (!sameCurrentItem) {
+        // Hand off to the next item immediately — no player interaction
+        // needed, per "the next item begins automatically." Advances the
+        // server AND the local optimistic cache in the same write so
+        // App.tsx re-renders this component with the new item's
+        // itemId/instanceId right away; its reset effect (above) then
+        // re-initializes everything fresh for it.
+        await advanceDisenchantQueue(currentUser.uid, {
+          targetId: newCurrent.itemId,
+          zoneId: fresh.currentActivity.zoneId,
+          instanceId: newCurrent.instanceId,
+          quantity: newCurrent.maxQuantity,
+          queue: newQueueTail,
+          equippedShirtItemId: fresh.currentActivity.equippedShirtItemId,
+        });
+      } else {
+        queueRef.current = newQueueTail;
+      }
 
       applyOptimisticUpdate(() => ({
         ...fresh,
@@ -175,19 +275,28 @@ export function DisenchantingScreen({ itemId, instanceId }: { itemId: string; in
           ...fresh.professions,
           enchanting: { ...getProfessionState(fresh.professions, 'enchanting'), level: result.finalSkill, xp: result.finalSkillXp },
         },
-        currentActivity: { ...fresh.currentActivity, startedAt: now },
+        currentActivity: !newCurrent
+          ? fresh.currentActivity
+          : sameCurrentItem
+            ? { ...fresh.currentActivity, startedAt: now, disenchantQueue: newQueueTail }
+            : {
+                ...fresh.currentActivity,
+                type: 'disenchanting',
+                targetId: newCurrent.itemId,
+                disenchantInstanceId: newCurrent.instanceId,
+                disenchantQuantity: newCurrent.maxQuantity,
+                disenchantQueue: newQueueTail,
+                startedAt: now,
+              },
       }));
-
-      if (remainingRequestedRef.current <= 0 || stockRef.current <= 0) {
-        setOutOfStock(stockRef.current <= 0);
-        setDone(true);
-      }
     } catch (err) {
       console.error('Disenchant autosave failed, will retry next cycle:', err);
       anchorRef.current = previousAnchor;
       stockRef.current = previousStock;
       remainingRequestedRef.current = previousRemaining;
-      setSessionDisenchanted((prev) => prev - result.itemsDisenchanted);
+      queueStockRef.current = previousQueueStock;
+      queueRef.current = previousQueue;
+      setSessionDisenchanted((prev) => prev - totalThisTick);
       setLivePreview(null);
     }
   }
@@ -195,6 +304,25 @@ export function DisenchantingScreen({ itemId, instanceId }: { itemId: string; in
   async function handleStop() {
     if (!done) await autosave();
     if (userRef.current) await stopActivity(userRef.current.uid);
+    await refetch();
+  }
+
+  // Removes an unprocessed entry from the queue (the currently-processing
+  // item can't be removed this way — Cancel below stops the whole
+  // activity instead, which is the closest equivalent and never destroys
+  // the in-progress item since it hasn't finished disenchanting).
+  async function handleRemoveFromQueue(index: number) {
+    if (!userRef.current) return;
+    const next = queueRef.current.filter((_, i) => i !== index);
+    queueRef.current = next;
+    await advanceDisenchantQueue(userRef.current.uid, {
+      targetId: itemId,
+      zoneId: character.currentActivity.zoneId,
+      instanceId,
+      quantity: character.currentActivity.disenchantQuantity ?? remainingRequestedRef.current,
+      queue: next,
+      equippedShirtItemId: character.currentActivity.equippedShirtItemId,
+    });
     await refetch();
   }
 
@@ -206,12 +334,8 @@ export function DisenchantingScreen({ itemId, instanceId }: { itemId: string; in
   const xpForNextLevel = craftingXpForNextLevel(prof.level);
   const requestedQuantity = character.currentActivity.disenchantQuantity ?? 1;
   const yieldItem = ITEMS[yieldRange.itemId];
+  const queue = character.currentActivity.disenchantQueue ?? [];
 
-  // Recomputed from TickBar's onIteration below — fired by the bar's own
-  // CSS animation completing a loop (the compositor clock), not by the
-  // separate 1s setInterval that drives the real 20s autosave cadence —
-  // see TickBar.tsx's doc comment for why an independent JS timer would
-  // drift against the bar's visual completion.
   const cap = maxSkillForUnlockedTier('enchanting', prof.unlockedTier);
   function handleTickIteration() {
     const previewMaxQuantity = Math.min(remainingRequestedRef.current, stockRef.current);
@@ -234,11 +358,29 @@ export function DisenchantingScreen({ itemId, instanceId }: { itemId: string; in
   }
   const displayDisenchanted = sessionDisenchanted + (livePreview?.itemsDisenchanted ?? 0);
 
+  // Expected-rewards estimate across the whole queue (current item
+  // included) without revealing any specific roll — a min..max range per
+  // distinct yield material, summed across every queued item's own
+  // min/max and remaining quantity.
+  const expectedByMaterial = new Map<string, { min: number; max: number }>();
+  const addExpected = (targetItemId: string, qty: number) => {
+    const resolved = resolveItemDisenchantParams(targetItemId);
+    if (!resolved || qty <= 0) return;
+    const existing = expectedByMaterial.get(resolved.yieldRange.itemId) ?? { min: 0, max: 0 };
+    existing.min += resolved.yieldRange.min * qty;
+    existing.max += resolved.yieldRange.max * qty;
+    expectedByMaterial.set(resolved.yieldRange.itemId, existing);
+  };
+  addExpected(itemId, Math.min(remainingRequestedRef.current, stockRef.current));
+  for (const q of queue) addExpected(q.itemId, q.quantity);
+  const totalRemainingQuantity = Math.min(remainingRequestedRef.current, stockRef.current) + queue.reduce((s, q) => s + q.quantity, 0);
+  const etaSeconds = totalRemainingQuantity * DISENCHANT_SECONDS;
+
   return (
     <div className="crafting-screen">
-      <h2>Disenchanting: {item.name}</h2>
+      <h2>Disenchanting: {getItemDisplayName(item.name, currentRolls)}</h2>
       <div className="item-row-main" style={{ marginBottom: 12 }}>
-        <ItemSlot item={item} />
+        <ItemSlot item={item} statOverride={currentRolls} />
         {yieldItem && <ItemSlot item={yieldItem} />}
       </div>
       {!done && <TickBar seconds={DISENCHANT_SECONDS} color="#6b4f2a" label="Disenchanting" onIteration={handleTickIteration} />}
@@ -255,8 +397,47 @@ export function DisenchantingScreen({ itemId, instanceId }: { itemId: string; in
         <div className="profession-xp-bar-fill" style={{ width: `${Math.min(100, (prof.xp / xpForNextLevel) * 100)}%` }} />
       </div>
       {outOfStock && <p>Ran out of {item.name} — stopped.</p>}
-      {done && !outOfStock && <p>Finished disenchanting.</p>}
-      <button onClick={handleStop}>{done ? 'Continue' : 'Stop'}</button>
+      {done && !outOfStock && <p>Finished disenchanting{queue.length > 0 || sessionDisenchanted > 0 ? ' the queue' : ''}.</p>}
+      <button onClick={handleStop}>{done ? 'Continue' : queue.length > 0 ? 'Cancel queue' : 'Stop'}</button>
+
+      {queue.length > 0 && (
+        <div className="disenchant-queue">
+          <h3>
+            Up next ({queue.length} more item{queue.length === 1 ? '' : 's'})
+          </h3>
+          <p>
+            <small>Estimated total remaining time: ~{Math.ceil(etaSeconds)}s</small>
+          </p>
+          <ul>
+            {queue.map((q, i) => {
+              const qItem = ITEMS[q.itemId];
+              if (!qItem) return null;
+              const qRolls = queueRollsByKey[q.instanceId ?? q.itemId];
+              return (
+                <li key={`${q.itemId}:${q.instanceId ?? ''}:${i}`}>
+                  <div className="item-row-main">
+                    <ItemSlot item={qItem} quantity={q.quantity} statOverride={qRolls} />
+                    <span>{getItemDisplayName(qItem.name, qRolls)}</span>
+                  </div>
+                  <button onClick={() => handleRemoveFromQueue(i)}>Remove</button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+
+      {expectedByMaterial.size > 0 && (
+        <p>
+          <small>
+            Expected rewards:{' '}
+            {Array.from(expectedByMaterial, ([mId, range]) => {
+              const mItem = ITEMS[mId];
+              return `${range.min}-${range.max}x ${mItem?.name ?? mId}`;
+            }).join(', ')}
+          </small>
+        </p>
+      )}
     </div>
   );
 }

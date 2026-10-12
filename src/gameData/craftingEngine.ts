@@ -654,3 +654,121 @@ export function resolveDisenchantOffline(
     didNotConverge: iterations >= MAX_BATCH_ITERATIONS,
   };
 }
+
+// Continuous Disenchanting Queue overhaul — the same flat-DISENCHANT_SECONDS,
+// offline-batched loop as resolveDisenchantOffline above, except it walks
+// through MULTIPLE distinct items in order instead of stopping once one
+// item's maxQuantity is reached, so a long offline window can clear several
+// queued stacks in one autosave/claim cycle. `items[0]` is always the item
+// CURRENTLY being processed (same semantics as CurrentActivity's own
+// targetId/disenchantInstanceId/disenchantQuantity); `items[1..]` is the
+// upcoming queue (CurrentActivity.disenchantQueue), not yet started. Each
+// entry carries its OWN requiredSkill/baseXp/yield range since different
+// queued items disenchant into different materials at different skill
+// requirements — this resolver has no item-data access of its own (same
+// "pure, caller supplies the data" posture as every other resolver here).
+export interface DisenchantQueueItemInput {
+  itemId: string;
+  instanceId?: string;
+  requiredSkill: number;
+  baseXp: number;
+  yieldItemId: string;
+  yieldMin: number;
+  yieldMax: number;
+  // Remaining quantity to process for this item — the caller clamps this
+  // to min(requested, stock on hand) exactly as resolveDisenchantOffline's
+  // own maxQuantity param does.
+  maxQuantity: number;
+}
+
+export interface DisenchantQueueItemResult {
+  itemId: string;
+  instanceId?: string;
+  itemsDisenchanted: number;
+  yieldItemId: string;
+  yieldQuantity: number;
+}
+
+export interface DisenchantQueueOfflineResult {
+  // One entry per item that had at least 1 unit processed this call, in
+  // queue order — an item untouched this call (ran out of elapsed time
+  // before reaching it) has no entry at all, same "nothing to report"
+  // convention as itemsDisenchanted === 0 elsewhere.
+  perItem: DisenchantQueueItemResult[];
+  professionXpGained: number;
+  finalSkill: number;
+  finalSkillXp: number;
+  // The queue as it stands AFTER this call: the in-progress item (reduced
+  // maxQuantity) first if it isn't fully done, followed by the untouched
+  // remainder — directly assignable back onto the next call's `items`
+  // param, and empty once the whole original queue has been cleared.
+  remainingQueue: DisenchantQueueItemInput[];
+  didNotConverge: boolean;
+}
+
+export function resolveDisenchantQueueOffline(
+  items: DisenchantQueueItemInput[],
+  startedAt: Date,
+  now: Date,
+  startingSkill: number,
+  startingSkillXp: number,
+  skillCap: number,
+  salvageBonusPct = 0
+): DisenchantQueueOfflineResult {
+  const progress = resolveElapsedProgress(startedAt, now);
+  let remainingSeconds = progress.effectiveHours * 3600;
+  let skill = startingSkill;
+  let skillXp = startingSkillXp;
+  let professionXpGained = 0;
+  let iterations = 0;
+  let didNotConverge = false;
+
+  const perItem: DisenchantQueueItemResult[] = [];
+  let itemIndex = 0;
+
+  while (itemIndex < items.length && remainingSeconds >= DISENCHANT_SECONDS && !didNotConverge) {
+    const current = items[itemIndex];
+    let itemsDisenchanted = 0;
+    let yieldQuantity = 0;
+
+    while (remainingSeconds >= DISENCHANT_SECONDS && itemsDisenchanted < current.maxQuantity) {
+      if (iterations >= MAX_BATCH_ITERATIONS) {
+        didNotConverge = true;
+        break;
+      }
+      iterations++;
+      remainingSeconds -= DISENCHANT_SECONDS;
+      itemsDisenchanted++;
+      const result = applyOneCraftXp(current.baseXp, current.requiredSkill, skill, skillXp, skillCap);
+      professionXpGained += result.professionXpGained;
+      skill = result.finalSkill;
+      skillXp = result.finalSkillXp;
+      const baseYield = current.yieldMin + Math.floor(Math.random() * (current.yieldMax - current.yieldMin + 1));
+      yieldQuantity += baseYield * (1 + salvageBonusPct / 100);
+    }
+
+    if (itemsDisenchanted > 0) {
+      perItem.push({ itemId: current.itemId, instanceId: current.instanceId, itemsDisenchanted, yieldItemId: current.yieldItemId, yieldQuantity });
+    }
+
+    const remainingForCurrent = current.maxQuantity - itemsDisenchanted;
+    if (remainingForCurrent > 0) {
+      // Didn't finish this item (ran out of elapsed time, or hit the
+      // safety cap) — it stays first-in-line for the next call, with its
+      // maxQuantity reduced by what was just processed.
+      items = [{ ...current, maxQuantity: remainingForCurrent }, ...items.slice(itemIndex + 1)];
+      itemIndex = 0;
+      break;
+    }
+    itemIndex++;
+  }
+
+  return {
+    perItem,
+    professionXpGained,
+    finalSkill: skill,
+    finalSkillXp: skillXp,
+    remainingQueue: items.slice(itemIndex),
+    didNotConverge,
+  };
+}

@@ -1,4 +1,4 @@
-import { doc, getDoc, updateDoc, increment, onSnapshot, type Unsubscribe } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, increment, onSnapshot, serverTimestamp, arrayUnion, arrayRemove, type Unsubscribe } from 'firebase/firestore';
 import { db } from './config';
 import type { Inventory } from '../types/character';
 import type { BaseStat } from '../gameData/classStats';
@@ -163,7 +163,15 @@ export async function grantEquipmentInstances(
     } else {
       // A brand-new bucket — no existing quantity to add to, so no
       // increment() sentinel needed here, just the literal starting value.
-      updates[`equipmentInstances.${instanceId}`] = { itemId, rolls: rollsByInstance.get(instanceId) ?? {}, quantity };
+      // acquiredAt is stamped ONLY here (never touched again by later
+      // grants of more of this exact roll) — see Inventory.equipmentInstances'
+      // doc comment for why that's the right "when was this acquired" value.
+      updates[`equipmentInstances.${instanceId}`] = {
+        itemId,
+        rolls: rollsByInstance.get(instanceId) ?? {},
+        quantity,
+        acquiredAt: serverTimestamp(),
+      };
     }
   }
   await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), updates);
@@ -250,5 +258,21 @@ export async function grantChargedConsumables(
 export function subscribeToInventory(uid: string, callback: (inventory: Inventory) => void): Unsubscribe {
   return onSnapshot(doc(db, 'characters', uid, 'inventory', 'main'), (snap) => {
     callback(snap.exists() ? (snap.data() as Inventory) : { items: {} });
+  });
+}
+
+// Equipment Locking — identifier is an equipmentInstances key for a
+// randomized roll, or a plain itemId for a non-instanced equipment item
+// (see Inventory.lockedInstanceIds' doc comment). A pure read-side check,
+// used by every destructive action (sellItem, applyDisenchantResult, the
+// disenchant queue's enqueue/process steps) to refuse to touch a locked
+// item — never bypassed by any of them.
+export function isLocked(inventory: Inventory, identifier: string): boolean {
+  return (inventory.lockedInstanceIds ?? []).includes(identifier);
+}
+
+export async function setItemLocked(uid: string, identifier: string, locked: boolean): Promise<void> {
+  await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), {
+    lockedInstanceIds: locked ? arrayUnion(identifier) : arrayRemove(identifier),
   });
 }

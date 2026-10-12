@@ -6,15 +6,11 @@ import { getAccount, listRosterSummaries, addAltToParty, removeAltFromParty } fr
 import { subscribeToInventory } from '../firebase/inventory';
 import { COMPANIONS, checkRecruitCompanion, MAX_ACTIVE_COMPANIONS, REQUIRED_DUNGEON_PARTY_SIZE } from '../gameData/companions';
 import type { RosterSlotSummary } from '../gameData/characterSlots';
-import { CLASS_LABELS, SPEC_LABELS, canClassEquip, type ClassId, type SpecId } from '../gameData/classStats';
-import { ITEMS } from '../gameData/items';
+import { CLASS_LABELS, SPEC_LABELS, type ClassId, type SpecId } from '../gameData/classStats';
 import { ZONES } from '../gameData/zones';
-import { equippedItemId } from '../gameData/equipmentStats';
-import { ItemSlot } from './ItemSlot';
+import { EquipmentPaperDoll } from './EquipmentPaperDoll';
 import type { Inventory } from '../types/character';
 import type { EquipmentSlot } from '../gameData/types';
-
-const SLOT_ORDER: EquipmentSlot[] = ['weapon', 'offhand', 'chest', 'helmet', 'gloves', 'legs', 'boots', 'necklace', 'ring', 'ring2'];
 
 export function CompanionScreen() {
   const { user } = useAuth();
@@ -86,9 +82,9 @@ export function CompanionScreen() {
     await refetch();
   }
 
-  async function handleEquip(companionId: string, slot: EquipmentSlot, itemId: string) {
+  async function handleEquip(companionId: string, slot: EquipmentSlot, itemId: string, instanceId?: string) {
     if (!user) return;
-    await equipCompanionItem(user.uid, companionId, slot, itemId);
+    await equipCompanionItem(user.uid, companionId, slot, itemId, instanceId);
     await refetch();
   }
 
@@ -97,11 +93,6 @@ export function CompanionScreen() {
     await unequipCompanionItem(user.uid, companionId, slot);
     await refetch();
   }
-
-  const equippableInInventory = Object.entries(inventory.items).filter(([itemId, quantity]) => {
-    const item = ITEMS[itemId];
-    return item?.type === 'equipment' && item.equipSlot !== 'tool' && quantity > 0;
-  });
 
   return (
     <div className="companion-screen">
@@ -199,67 +190,14 @@ export function CompanionScreen() {
                     {partyFull ? `Party full (${MAX_ACTIVE_COMPANIONS}/${MAX_ACTIVE_COMPANIONS})` : 'Add to party'}
                   </button>
                 )}
-                <ul>
-                  {SLOT_ORDER.map((slot) => {
-                    const equippedId = equippedItemId(state.equipment[slot]);
-                    const equippedItem = equippedId ? ITEMS[equippedId] : null;
-                    return (
-                      <li key={slot}>
-                        <div className="item-row-main">
-                          {equippedItem ? <ItemSlot item={equippedItem} /> : <div className="item-slot item-slot-empty" />}
-                          <span>
-                            {slot}: {equippedItem ? equippedItem.name : '(empty)'}
-                          </span>
-                        </div>
-                        {equippedItem && <button onClick={() => handleUnequip(companionId, slot)}>Unequip</button>}
-                      </li>
-                    );
-                  })}
-                </ul>
-                <details>
-                  <summary>Equip from inventory</summary>
-                  {equippableInInventory.length === 0 ? (
-                    <p>No equippable items in inventory.</p>
-                  ) : (
-                    <ul>
-                      {equippableInInventory.map(([itemId, quantity]) => {
-                        const item = ITEMS[itemId];
-                        if (!item?.equipSlot) return null;
-                        const allowed = canClassEquip(def.class, item);
-                        // See EquipmentScreen's matching comment — a ring
-                        // item fits either independent ring slot, so both
-                        // are offered rather than always targeting 'ring'.
-                        if (item.equipSlot === 'ring') {
-                          return (
-                            <li key={itemId}>
-                              <div className="item-row-main">
-                                <ItemSlot item={item} quantity={quantity} />
-                                <span>{item.name}</span>
-                              </div>
-                              <button onClick={() => handleEquip(companionId, 'ring', itemId)} disabled={!allowed}>
-                                {allowed ? 'Equip (Ring 1)' : `${item.armorType} — not usable`}
-                              </button>
-                              {allowed && (
-                                <button onClick={() => handleEquip(companionId, 'ring2', itemId)}>Equip (Ring 2)</button>
-                              )}
-                            </li>
-                          );
-                        }
-                        return (
-                          <li key={itemId}>
-                            <div className="item-row-main">
-                              <ItemSlot item={item} quantity={quantity} />
-                              <span>{item.name}</span>
-                            </div>
-                            <button onClick={() => handleEquip(companionId, item.equipSlot!, itemId)} disabled={!allowed}>
-                              {allowed ? 'Equip' : `${item.armorType} — not usable`}
-                            </button>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  )}
-                </details>
+                <EquipmentPaperDoll
+                  equipment={state.equipment}
+                  inventory={inventory}
+                  allowedClass={def.class}
+                  onEquip={(slot, itemId, instanceId) => handleEquip(companionId, slot, itemId, instanceId)}
+                  onUnequip={(slot) => handleUnequip(companionId, slot)}
+                  showTool={false}
+                />
               </div>
             );
           })}

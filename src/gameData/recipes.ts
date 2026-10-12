@@ -72,6 +72,17 @@ export const RECIPES: Record<string, Recipe> = {
     materialId: 'light_leather',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
+  // Equipment overhaul itemization parity fix — Leatherworking Bracers
+  // (see items.ts's matching comment); mirrors this tier's own Gloves
+  // recipe exactly.
+  handstitched_leather_bracers: {
+    id: 'handstitched_leather_bracers', name: 'Handstitched Leather Bracers', profession: 'leatherworking', requiredSkill: 1,
+    resultItemId: 'handstitched_leather_bracers', resultQuantity: 1,
+    materials: [{ itemId: 'skinned_light_leather', quantity: 3 }],
+    craftSeconds: 8, xpAward: 10,
+    materialId: 'light_leather',
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
   handstitched_leather_belt: {
     id: 'handstitched_leather_belt', name: 'Handstitched Leather Belt', profession: 'leatherworking', requiredSkill: 1,
     resultItemId: 'handstitched_leather_belt', resultQuantity: 1,
@@ -123,6 +134,14 @@ export const RECIPES: Record<string, Recipe> = {
   fine_leather_shoulders: {
     id: 'fine_leather_shoulders', name: 'Fine Leather Shoulders', profession: 'leatherworking', requiredSkill: 18,
     resultItemId: 'fine_leather_shoulders', resultQuantity: 1,
+    materials: [{ itemId: 'medium_leather', quantity: 3 }],
+    craftSeconds: 8.5, xpAward: 13,
+    materialId: 'medium_leather',
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  fine_leather_bracers: {
+    id: 'fine_leather_bracers', name: 'Fine Leather Bracers', profession: 'leatherworking', requiredSkill: 18,
+    resultItemId: 'fine_leather_bracers', resultQuantity: 1,
     materials: [{ itemId: 'medium_leather', quantity: 3 }],
     craftSeconds: 8.5, xpAward: 13,
     materialId: 'medium_leather',
@@ -184,6 +203,14 @@ export const RECIPES: Record<string, Recipe> = {
     materialId: 'heavy_leather',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
+  barbaric_leather_bracers: {
+    id: 'barbaric_leather_bracers', name: 'Barbaric Leather Bracers', profession: 'leatherworking', requiredSkill: 35,
+    resultItemId: 'barbaric_leather_bracers', resultQuantity: 1,
+    materials: [{ itemId: 'heavy_leather', quantity: 3 }],
+    craftSeconds: 9.6, xpAward: 23,
+    materialId: 'heavy_leather',
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
   barbaric_leather_belt: {
     id: 'barbaric_leather_belt', name: 'Barbaric Leather Belt', profession: 'leatherworking', requiredSkill: 35,
     resultItemId: 'barbaric_leather_belt', resultQuantity: 1,
@@ -235,6 +262,14 @@ export const RECIPES: Record<string, Recipe> = {
   nightscape_leather_shoulders: {
     id: 'nightscape_leather_shoulders', name: 'Nightscape Leather Shoulders', profession: 'leatherworking', requiredSkill: 52,
     resultItemId: 'nightscape_leather_shoulders', resultQuantity: 1,
+    materials: [{ itemId: 'thick_leather', quantity: 3 }],
+    craftSeconds: 9.8, xpAward: 40,
+    materialId: 'thick_leather',
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  nightscape_leather_bracers: {
+    id: 'nightscape_leather_bracers', name: 'Nightscape Leather Bracers', profession: 'leatherworking', requiredSkill: 52,
+    resultItemId: 'nightscape_leather_bracers', resultQuantity: 1,
     materials: [{ itemId: 'thick_leather', quantity: 3 }],
     craftSeconds: 9.8, xpAward: 40,
     materialId: 'thick_leather',
@@ -296,6 +331,14 @@ export const RECIPES: Record<string, Recipe> = {
     materialId: 'rugged_leather',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
+  wicked_leather_bracers: {
+    id: 'wicked_leather_bracers', name: 'Wicked Leather Bracers', profession: 'leatherworking', requiredSkill: 69,
+    resultItemId: 'wicked_leather_bracers', resultQuantity: 1,
+    materials: [{ itemId: 'rugged_leather', quantity: 3 }],
+    craftSeconds: 10, xpAward: 53,
+    materialId: 'rugged_leather',
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
   wicked_leather_belt: {
     id: 'wicked_leather_belt', name: 'Wicked Leather Belt', profession: 'leatherworking', requiredSkill: 69,
     resultItemId: 'wicked_leather_belt', resultQuantity: 1,
@@ -347,6 +390,14 @@ export const RECIPES: Record<string, Recipe> = {
   emberscar_leather_shoulders: {
     id: 'emberscar_leather_shoulders', name: 'Emberscar Leather Shoulders', profession: 'leatherworking', requiredSkill: 86,
     resultItemId: 'emberscar_leather_shoulders', resultQuantity: 1,
+    materials: [{ itemId: 'emberscar_leather', quantity: 3 }],
+    craftSeconds: 10.7, xpAward: 92,
+    materialId: 'emberscar_leather',
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  emberscar_leather_bracers: {
+    id: 'emberscar_leather_bracers', name: 'Emberscar Leather Bracers', profession: 'leatherworking', requiredSkill: 86,
+    resultItemId: 'emberscar_leather_bracers', resultQuantity: 1,
     materials: [{ itemId: 'emberscar_leather', quantity: 3 }],
     craftSeconds: 10.7, xpAward: 92,
     materialId: 'emberscar_leather',
@@ -424,6 +475,17 @@ export const RECIPES: Record<string, Recipe> = {
     materialId: 'linen_cloth',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
+  // Equipment overhaul itemization parity fix — Tailoring Bracers (see
+  // items.ts's matching comment); mirrors this tier's own Gloves recipe
+  // exactly.
+  tailored_linen_bracers: {
+    id: 'tailored_linen_bracers', name: 'Linen Bracers', profession: 'tailoring', requiredSkill: 1,
+    resultItemId: 'tailored_linen_bracers', resultQuantity: 1,
+    materials: [{ itemId: 'linen_cloth', quantity: 3 }, { itemId: 'coarse_thread', quantity: 2 }],
+    craftSeconds: 8, xpAward: 10,
+    materialId: 'linen_cloth',
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
   wool_robe_helm: {
     id: 'wool_robe_helm', name: 'Wool Hood', profession: 'tailoring', requiredSkill: 18,
     resultItemId: 'wool_robe_helm', resultQuantity: 1,
@@ -467,6 +529,14 @@ export const RECIPES: Record<string, Recipe> = {
   wool_shoulders: {
     id: 'wool_shoulders', name: 'Wool Shoulders', profession: 'tailoring', requiredSkill: 18,
     resultItemId: 'wool_shoulders', resultQuantity: 1,
+    materials: [{ itemId: 'wool_cloth', quantity: 3 }, { itemId: 'fine_thread', quantity: 2 }],
+    craftSeconds: 8.5, xpAward: 13,
+    materialId: 'wool_cloth',
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  wool_bracers: {
+    id: 'wool_bracers', name: 'Wool Bracers', profession: 'tailoring', requiredSkill: 18,
+    resultItemId: 'wool_bracers', resultQuantity: 1,
     materials: [{ itemId: 'wool_cloth', quantity: 3 }, { itemId: 'fine_thread', quantity: 2 }],
     craftSeconds: 8.5, xpAward: 13,
     materialId: 'wool_cloth',
@@ -520,6 +590,14 @@ export const RECIPES: Record<string, Recipe> = {
     materialId: 'silk_cloth',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
+  silk_bracers: {
+    id: 'silk_bracers', name: 'Silk Bracers', profession: 'tailoring', requiredSkill: 35,
+    resultItemId: 'silk_bracers', resultQuantity: 1,
+    materials: [{ itemId: 'silk_cloth', quantity: 3 }, { itemId: 'silken_thread', quantity: 2 }],
+    craftSeconds: 9.6, xpAward: 23,
+    materialId: 'silk_cloth',
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
   mageweave_robe_helm: {
     id: 'mageweave_robe_helm', name: 'Mageweave Hood', profession: 'tailoring', requiredSkill: 52,
     resultItemId: 'mageweave_robe_helm', resultQuantity: 1,
@@ -563,6 +641,14 @@ export const RECIPES: Record<string, Recipe> = {
   mageweave_shoulders: {
     id: 'mageweave_shoulders', name: 'Mageweave Shoulders', profession: 'tailoring', requiredSkill: 52,
     resultItemId: 'mageweave_shoulders', resultQuantity: 1,
+    materials: [{ itemId: 'mageweave_cloth', quantity: 3 }, { itemId: 'heavy_silken_thread', quantity: 2 }],
+    craftSeconds: 9.8, xpAward: 40,
+    materialId: 'mageweave_cloth',
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  mageweave_bracers: {
+    id: 'mageweave_bracers', name: 'Mageweave Bracers', profession: 'tailoring', requiredSkill: 52,
+    resultItemId: 'mageweave_bracers', resultQuantity: 1,
     materials: [{ itemId: 'mageweave_cloth', quantity: 3 }, { itemId: 'heavy_silken_thread', quantity: 2 }],
     craftSeconds: 9.8, xpAward: 40,
     materialId: 'mageweave_cloth',
@@ -616,6 +702,14 @@ export const RECIPES: Record<string, Recipe> = {
     materialId: 'runecloth',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
+  runecloth_bracers: {
+    id: 'runecloth_bracers', name: 'Runecloth Bracers', profession: 'tailoring', requiredSkill: 69,
+    resultItemId: 'runecloth_bracers', resultQuantity: 1,
+    materials: [{ itemId: 'runecloth', quantity: 3 }, { itemId: 'rune_thread', quantity: 2 }],
+    craftSeconds: 10, xpAward: 53,
+    materialId: 'runecloth',
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
   ember_robe_helm: {
     id: 'ember_robe_helm', name: 'Ember Hood', profession: 'tailoring', requiredSkill: 86,
     resultItemId: 'ember_robe_helm', resultQuantity: 1,
@@ -659,6 +753,14 @@ export const RECIPES: Record<string, Recipe> = {
   ember_shoulders: {
     id: 'ember_shoulders', name: 'Ember Shoulders', profession: 'tailoring', requiredSkill: 86,
     resultItemId: 'ember_shoulders', resultQuantity: 1,
+    materials: [{ itemId: 'ember_cloth', quantity: 3 }, { itemId: 'ember_thread', quantity: 2 }],
+    craftSeconds: 10.7, xpAward: 92,
+    materialId: 'ember_cloth',
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  ember_bracers: {
+    id: 'ember_bracers', name: 'Ember Bracers', profession: 'tailoring', requiredSkill: 86,
+    resultItemId: 'ember_bracers', resultQuantity: 1,
     materials: [{ itemId: 'ember_cloth', quantity: 3 }, { itemId: 'ember_thread', quantity: 2 }],
     craftSeconds: 10.7, xpAward: 92,
     materialId: 'ember_cloth',
@@ -1681,6 +1783,17 @@ export const RECIPES: Record<string, Recipe> = {
     materialId: 'copper',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
+  // Equipment overhaul itemization parity fix — Blacksmithing Shoulders
+  // (see items.ts's matching comment); mirrors this tier's own Gauntlets
+  // recipe exactly.
+  copper_shoulders: {
+    id: 'copper_shoulders', name: 'Copper Shoulders', profession: 'smithing', requiredSkill: 1,
+    resultItemId: 'copper_shoulders', resultQuantity: 1,
+    materials: [{ itemId: 'copper_bar', quantity: 3 }],
+    craftSeconds: 8, xpAward: 1,
+    materialId: 'copper',
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
   copper_legplates: {
     id: 'copper_legplates', name: 'Copper Legplates', profession: 'smithing', requiredSkill: 1,
     resultItemId: 'copper_legplates', resultQuantity: 1,
@@ -1760,6 +1873,14 @@ export const RECIPES: Record<string, Recipe> = {
   bronze_bracers: {
     id: 'bronze_bracers', name: 'Bronze Bracers', profession: 'smithing', requiredSkill: 4,
     resultItemId: 'bronze_bracers', resultQuantity: 1,
+    materials: [{ itemId: 'bronze_bar', quantity: 3 }],
+    craftSeconds: 8.5, xpAward: 6,
+    materialId: 'bronze',
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  bronze_shoulders: {
+    id: 'bronze_shoulders', name: 'Bronze Shoulders', profession: 'smithing', requiredSkill: 4,
+    resultItemId: 'bronze_shoulders', resultQuantity: 1,
     materials: [{ itemId: 'bronze_bar', quantity: 3 }],
     craftSeconds: 8.5, xpAward: 6,
     materialId: 'bronze',
@@ -1849,6 +1970,14 @@ export const RECIPES: Record<string, Recipe> = {
     materialId: 'iron',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
+  iron_shoulders: {
+    id: 'iron_shoulders', name: 'Iron Shoulders', profession: 'smithing', requiredSkill: 10,
+    resultItemId: 'iron_shoulders', resultQuantity: 1,
+    materials: [{ itemId: 'iron_bar', quantity: 3 }],
+    craftSeconds: 9.6, xpAward: 16,
+    materialId: 'iron',
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
   iron_legplates: {
     id: 'iron_legplates', name: 'Iron Legplates', profession: 'smithing', requiredSkill: 10,
     resultItemId: 'iron_legplates', resultQuantity: 1,
@@ -1928,6 +2057,14 @@ export const RECIPES: Record<string, Recipe> = {
   steel_bracers: {
     id: 'steel_bracers', name: 'Steel Bracers', profession: 'smithing', requiredSkill: 11,
     resultItemId: 'steel_bracers', resultQuantity: 1,
+    materials: [{ itemId: 'steel_bar', quantity: 3 }],
+    craftSeconds: 9.8, xpAward: 18,
+    materialId: 'steel',
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  steel_shoulders: {
+    id: 'steel_shoulders', name: 'Steel Shoulders', profession: 'smithing', requiredSkill: 11,
+    resultItemId: 'steel_shoulders', resultQuantity: 1,
     materials: [{ itemId: 'steel_bar', quantity: 3 }],
     craftSeconds: 9.8, xpAward: 18,
     materialId: 'steel',
@@ -2017,6 +2154,14 @@ export const RECIPES: Record<string, Recipe> = {
     materialId: 'mithril',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
+  mithril_shoulders: {
+    id: 'mithril_shoulders', name: 'Mithril Shoulders', profession: 'smithing', requiredSkill: 12,
+    resultItemId: 'mithril_shoulders', resultQuantity: 1,
+    materials: [{ itemId: 'mithril_bar', quantity: 3 }],
+    craftSeconds: 10, xpAward: 20,
+    materialId: 'mithril',
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
   mithril_legplates: {
     id: 'mithril_legplates', name: 'Mithril Legplates', profession: 'smithing', requiredSkill: 12,
     resultItemId: 'mithril_legplates', resultQuantity: 1,
@@ -2101,6 +2246,14 @@ export const RECIPES: Record<string, Recipe> = {
     materialId: 'thorium',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
+  thorium_shoulders: {
+    id: 'thorium_shoulders', name: 'Thorium Shoulders', profession: 'smithing', requiredSkill: 16,
+    resultItemId: 'thorium_shoulders', resultQuantity: 1,
+    materials: [{ itemId: 'thorium_bar', quantity: 3 }],
+    craftSeconds: 10.7, xpAward: 27,
+    materialId: 'thorium',
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
   thorium_legplates: {
     id: 'thorium_legplates', name: 'Thorium Legplates', profession: 'smithing', requiredSkill: 16,
     resultItemId: 'thorium_legplates', resultQuantity: 1,
@@ -2180,6 +2333,14 @@ export const RECIPES: Record<string, Recipe> = {
   obsidian_bracers: {
     id: 'obsidian_bracers', name: 'Obsidian Bracers', profession: 'smithing', requiredSkill: 19,
     resultItemId: 'obsidian_bracers', resultQuantity: 1,
+    materials: [{ itemId: 'obsidian_bar', quantity: 3 }],
+    craftSeconds: 11.3, xpAward: 33,
+    materialId: 'obsidian',
+    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  obsidian_shoulders: {
+    id: 'obsidian_shoulders', name: 'Obsidian Shoulders', profession: 'smithing', requiredSkill: 19,
+    resultItemId: 'obsidian_shoulders', resultQuantity: 1,
     materials: [{ itemId: 'obsidian_bar', quantity: 3 }],
     craftSeconds: 11.3, xpAward: 33,
     materialId: 'obsidian',

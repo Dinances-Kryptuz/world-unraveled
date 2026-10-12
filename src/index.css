@@ -534,6 +534,50 @@ button.item-slot:active:not(:disabled) {
   margin-bottom: 2px;
 }
 
+/* Equipment Comparison overhaul — diff rows shown instead of the plain
+   .item-tooltip-stats line when a compareStats target was passed to
+   ItemSlot. Colors match the spec's explicit green/red/gray convention. */
+.item-tooltip-compare {
+  font-size: 0.78rem;
+  margin-bottom: 2px;
+}
+
+.item-tooltip-compare-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.item-tooltip-compare-total {
+  font-weight: 700;
+  margin-top: 2px;
+  border-top: 1px solid rgba(216, 207, 190, 0.25);
+  padding-top: 2px;
+}
+
+.stat-diff-up {
+  color: #5fcf5f;
+}
+
+.stat-diff-down {
+  color: #e06a6a;
+}
+
+.stat-diff-same {
+  color: #a39a89;
+}
+
+/* Equipment Locking overhaul — small corner badge, opposite side from
+   .item-slot-charges so it never collides with the charge badge (an item
+   is never both charge-based AND equipment-instanced today). */
+.item-slot-locked {
+  position: absolute;
+  top: 2px;
+  left: 4px;
+  font-size: 0.68rem;
+  line-height: 1.4;
+}
+
 .item-tooltip-desc {
   font-size: 0.78rem;
   color: #d8cfbe;
