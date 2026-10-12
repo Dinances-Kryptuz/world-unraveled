@@ -1,5 +1,6 @@
 import type { Monster } from './types';
 import { DUNGEON_BOSS_LOOT_DROPS } from './dungeonLoot';
+import { CITADEL_WEAPON_LOOT_DROPS } from './citadelLoot';
 
 export const MONSTERS: Record<string, Monster> = {
   greenhorn_boar: {
@@ -989,5 +990,153 @@ export const MONSTERS: Record<string, Monster> = {
       { itemId: 'formula_platinum_necklace', chance: 0.18, minQty: 1, maxQty: 1 },
     ],
     specialAbility: { name: 'Crater’s Wrath', description: 'A devastating blast far fiercer than a common crater-dweller’s.', implemented: false },
+  },
+
+  // ── The Citadel of Krypt ─────────────────────────────────────────────
+  // Three new Dungeon entries (see dungeons.ts) built entirely from these
+  // monsters — all level 60, all fire school, all zoned to Cinderheart
+  // Crater like the zone's existing cinderheart_sanctum dungeon (no new
+  // Zone needed). Level 1's three embermite stages are the SAME
+  // archetype repeated with a growing wave size (multi_target); Level 2's
+  // three cultist stages are each a DIFFERENT archetype, differentiated via
+  // Monster.hpMultiplier/damageMultiplier rather than level (see that
+  // field's own doc comment) since a dungeon's combatType/multiplier is
+  // fixed per-dungeon, not per-stage.
+  embermite_swarm: {
+    id: 'embermite_swarm',
+    name: 'Embermite Swarm',
+    damageSchool: 'fire',
+    zoneIds: ['cinderheart_crater'],
+    levelRange: [60, 60],
+    level: 60,
+    combatType: 'magic',
+    goldMin: 4,
+    goldMax: 8,
+    lootTable: [{ itemId: 'citadel_ember_orb_ring', chance: 0.03, minQty: 1, maxQty: 1 }],
+    specialAbility: { name: 'Swarm of Embers', description: 'A chittering mass of small fire elementals.', implemented: false },
+  },
+  embermite_cluster: {
+    id: 'embermite_cluster',
+    name: 'Embermite Cluster',
+    damageSchool: 'fire',
+    zoneIds: ['cinderheart_crater'],
+    levelRange: [60, 60],
+    level: 60,
+    combatType: 'magic',
+    goldMin: 4,
+    goldMax: 8,
+    lootTable: [{ itemId: 'citadel_ember_orb_ring2', chance: 0.03, minQty: 1, maxQty: 1 }],
+    specialAbility: { name: 'Swarm of Embers', description: 'A denser knot of small fire elementals.', implemented: false },
+  },
+  embermite_broodmother: {
+    id: 'embermite_broodmother',
+    name: 'Embermite Broodmother',
+    damageSchool: 'fire',
+    zoneIds: ['cinderheart_crater'],
+    levelRange: [60, 60],
+    level: 60,
+    combatType: 'magic',
+    isBoss: true,
+    goldMin: 6,
+    goldMax: 12,
+    lootTable: [
+      { itemId: 'citadel_ember_orb_ring', chance: 0.05, minQty: 1, maxQty: 1 },
+      { itemId: 'citadel_ember_orb_ring2', chance: 0.05, minQty: 1, maxQty: 1 },
+      { itemId: 'citadel_ember_orb_necklace', chance: 0.06, minQty: 1, maxQty: 1 },
+    ],
+    specialAbility: { name: 'Broodmother', description: 'The swollen, swarm-spawning heart of the embermite nest.', implemented: false },
+  },
+
+  citadel_cultist_rogue: {
+    id: 'citadel_cultist_rogue',
+    name: "Krypt's Cultist (Rogue)",
+    damageSchool: 'fire',
+    zoneIds: ['cinderheart_crater'],
+    levelRange: [60, 60],
+    level: 60,
+    combatType: 'melee',
+    // High single-target damage, low HP — see Monster.damageMultiplier's
+    // doc comment.
+    hpMultiplier: 0.6,
+    damageMultiplier: 1.4,
+    goldMin: 10,
+    goldMax: 18,
+    lootTable: [],
+    specialAbility: { name: 'Zealous Blade', description: 'A fast, vicious knife-fighter devoted to the Firelord.', implemented: false },
+  },
+  citadel_cultist_warrior: {
+    id: 'citadel_cultist_warrior',
+    name: "Krypt's Cultist (Warrior)",
+    damageSchool: 'fire',
+    zoneIds: ['cinderheart_crater'],
+    levelRange: [60, 60],
+    level: 60,
+    combatType: 'melee',
+    // High HP, low damage — the stone wall to the Rogue's glass cannon.
+    hpMultiplier: 1.6,
+    damageMultiplier: 0.7,
+    goldMin: 10,
+    goldMax: 18,
+    lootTable: [],
+    specialAbility: { name: 'Unyielding Devotion', description: 'A heavily-armored zealot who refuses to fall.', implemented: false },
+  },
+  citadel_cultist_summoner: {
+    id: 'citadel_cultist_summoner',
+    name: "Krypt's Cultist (Summoner)",
+    damageSchool: 'fire',
+    zoneIds: ['cinderheart_crater'],
+    levelRange: [60, 60],
+    level: 60,
+    combatType: 'magic',
+    isBoss: true,
+    // Low HP, low direct hit damage — its threat is entirely the
+    // whole-party DOT from citadel_summoner_bloodrite below.
+    hpMultiplier: 0.6,
+    damageMultiplier: 0.5,
+    equippedAbilityIds: ['citadel_summoner_bloodrite'],
+    goldMin: 14,
+    goldMax: 24,
+    lootTable: [
+      { itemId: 'citadel_ember_eye_helmet', chance: 0.04, minQty: 1, maxQty: 1 },
+      { itemId: 'citadel_ember_eye_chest', chance: 0.04, minQty: 1, maxQty: 1 },
+      { itemId: 'citadel_ember_eye_shoulders', chance: 0.04, minQty: 1, maxQty: 1 },
+      { itemId: 'citadel_ember_eye_legs', chance: 0.04, minQty: 1, maxQty: 1 },
+      { itemId: 'citadel_ember_eye_gloves', chance: 0.04, minQty: 1, maxQty: 1 },
+    ],
+    specialAbility: { name: 'Blood Ritualist', description: 'A robed cultist who channels Krypt’s power into a burning rite.', implemented: false },
+  },
+
+  krypt_the_firelord: {
+    id: 'krypt_the_firelord',
+    name: 'Krypt the Firelord',
+    damageSchool: 'fire',
+    zoneIds: ['cinderheart_crater'],
+    levelRange: [60, 60],
+    level: 60,
+    combatType: 'melee',
+    isBoss: true,
+    voidShardsMin: 8,
+    voidShardsMax: 12,
+    goldMin: 0,
+    goldMax: 0,
+    equippedAbilityIds: ['krypt_warcry', 'krypt_cinderstrike', 'krypt_immolation'],
+    // See BossPhaseTrigger's own doc comment — the 50% add phase punishes a
+    // slow kill by regenerating the HP it cost you to get there; the 25%
+    // enrage is the real hard cap on a run, same "a soft gate is tuned
+    // numbers, not a blocked button" posture Citadel's whole fire-resist
+    // gate uses. rampPctPerSecond locked at 4 via Phase-0 simulation (see
+    // this file's commit history) — flat enough that a well-geared party
+    // clears before it matters, steep enough that stalling in the enrage
+    // window is a real loss condition.
+    bossPhases: [
+      { hpPct: 50, kind: 'adds_and_regen', addsMonsterId: 'embermite_swarm', addsCount: 6, regenPctPerSecond: 1 },
+      { hpPct: 25, kind: 'enrage', rampPctPerSecond: 4 },
+    ],
+    lootTable: [...CITADEL_WEAPON_LOOT_DROPS],
+    specialAbility: {
+      name: 'The Firelord',
+      description: 'An elemental monster summoned by cultists across every zone, now bound into a single burning form.',
+      implemented: false,
+    },
   },
 };

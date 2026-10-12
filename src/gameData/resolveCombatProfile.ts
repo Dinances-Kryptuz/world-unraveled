@@ -11,7 +11,7 @@
 // duplication, not a hidden behavior change.
 import { statAtLevel, type BaseStat } from './classStats';
 import { maxHp, resolveCurrentHp } from './combatFormulas';
-import { getEquipmentStatBonuses } from './equipmentStats';
+import { getEquipmentStatBonuses, getInnateItemFireResistance } from './equipmentStats';
 import { buildActiveEnchantTotals, type EnchantTotals } from './enchanting';
 import { evaluateTalents, EMPTY_TALENT_TOTALS, type TalentBonusTotals } from '../utils/talentEvaluator';
 import { evaluateActiveBuffs, type BuffTotals } from './buffs';
@@ -45,6 +45,12 @@ export function resolveCombatProfile(
   const talentTotals = character.spec ? evaluateTalents(character.spec, character.talentPicks).totals : EMPTY_TALENT_TOTALS;
   const buffTotals = evaluateActiveBuffs(character.activeBuffs, options.buffsAt ?? now);
   const enchantTotals = buildActiveEnchantTotals(character.enchantments, character.enchantmentCharges);
+  // The Citadel of Krypt — innate weapon resistance (Level 3's BiS purple
+  // weapons) is summed straight into enchantTotals.fireResistancePct here
+  // rather than threaded as its own new field, so every one of this
+  // function's 8 call sites (which already just spread ...enchantTotals
+  // into EncounterSetupInput) picks it up with zero changes of their own.
+  enchantTotals.fireResistancePct += getInnateItemFireResistance(character.equipment);
   const maxHpValue = maxHp(character.class, level, equipmentBonuses, talentTotals.hpMultPct, enchantTotals.flatHpBonus);
   const totalSpi = statAtLevel(character.class, 'SPI', level) + (equipmentBonuses.SPI ?? 0);
   const currentHp = resolveCurrentHp(character.currentHp, maxHpValue, character.hpCheckpointAt, options.hpAt ?? now, totalSpi);

@@ -181,3 +181,21 @@ export function getEquipmentStatBonuses(
   }
   return totals;
 }
+
+// The Citadel of Krypt — sums each equipped item's OWN innate
+// fireResistancePct (ItemDef.fireResistancePct, e.g. Citadel Level 3's BiS
+// weapons), separate from getEquipmentStatBonuses above (raw stats) and from
+// the enchant-sourced resistance gameData/enchanting.ts's
+// buildActiveEnchantTotals already sums. Every item before Citadel leaves
+// this undefined, so every existing equipment set sums to 0 here — zero
+// behavior change. Used for both the player (gameData/resolveCombatProfile.ts)
+// and companions/alts (gameData/companions.ts), the only two equipment
+// shapes in this game.
+export function getInnateItemFireResistance(equipment: Record<EquipmentSlot, EquippedItemRef | null>): number {
+  let total = 0;
+  for (const ref of Object.values(equipment)) {
+    if (!ref) continue;
+    total += ITEMS[ref.itemId]?.fireResistancePct ?? 0;
+  }
+  return total;
+}

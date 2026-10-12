@@ -38,6 +38,12 @@ import { EMPTY_TALENT_TOTALS, type TalentBonusTotals } from '../utils/talentEval
 import type { BuffTotals } from '../gameData/buffs';
 import type { CompanionCombatSetup } from '../gameData/companions';
 import type { DamageSchool, Monster } from '../gameData/types';
+// The Citadel of Krypt — the one place engine.ts looks a monster up by id
+// itself rather than receiving an already-resolved Monster object from its
+// caller (BossPhaseTrigger.addsMonsterId is a plain string id baked into
+// Krypt's own Monster def). Safe: gameData/monsters.ts has no dependency on
+// combatEngine/ at all, so this doesn't create a cycle.
+import { MONSTERS } from '../gameData/monsters';
 import { combatTypeModifier, type CombatType } from '../gameData/combatTriangle';
 import type { ConsumableAutomationRuntimeState } from '../gameData/consumableAutomation';
 import { ABILITIES, BASIC_ATTACK_BY_CLASS } from './abilities';
@@ -400,7 +406,10 @@ function buildCompanionProfile(companion: CompanionCombatSetup, monster: Monster
     beastDamageBonusPct: 0,
     demonDamageBonusPct: 0,
     flatDamageReduction: 0,
-    fireResistancePct: 0,
+    // The Citadel of Krypt — companions have no enchantments storage, so this
+    // is innate-item-only (see CompanionCombatSetup.fireResistancePct's doc
+    // comment); 0 for every companion before Citadel's weapons existed.
+    fireResistancePct: companion.fireResistancePct ?? 0,
     shadowResistancePct: 0,
     // weaponProc stays undefined — companions have no enchantments storage.
     shieldBlockValue: core.shieldBlock,
@@ -421,7 +430,14 @@ function buildMonsterProfile(
   return {
     normalizedHit: monsterBaseDamage(monster.level),
     damageCoef:
-      enemyDamageModifier(diff) * combatTypeModifier(monster.combatType, playerCombatType) * eliteDamageMult * damageMultiplier,
+      enemyDamageModifier(diff) *
+      combatTypeModifier(monster.combatType, playerCombatType) *
+      eliteDamageMult *
+      damageMultiplier *
+      // The Citadel of Krypt — a generic per-monster archetype scale,
+      // independent of isElite (see Monster.damageMultiplier's doc
+      // comment). 1 for every monster before this field existed.
+      (monster.damageMultiplier ?? 1),
     accuracy: 1, // monsters always attempt to hit; only the player's avoidance can prevent it
     avoidance: 0, // monsters have no avoidance stat in the existing balance model
     armor: monsterArmor(monster.level) * eliteArmorMult,
@@ -453,7 +469,9 @@ function createMonsterCombatant(
   hpMultiplier: number = 1,
   damageMultiplier: number = 1
 ): Combatant {
-  const hp = Math.round(monsterHp(monster.level) * hpMultiplier * (monster.isElite ? ELITE_HP_MULTIPLIER : 1));
+  const hp = Math.round(
+    monsterHp(monster.level) * hpMultiplier * (monster.isElite ? ELITE_HP_MULTIPLIER : 1) * (monster.hpMultiplier ?? 1)
+  );
   return {
     id: `enemy-${idSuffix}`,
     name: monster.name,
@@ -477,6 +495,13 @@ function createMonsterCombatant(
     basicAttackId: 'monster_basic_attack',
     profile: buildMonsterProfile(monster, playerLevel, playerCombatType, damageMultiplier),
     threatWeight: 1,
+    // The Citadel of Krypt — only ever set on a monster with its own
+    // bossPhases; every other monster (including every other boss) gets
+    // undefined, same zero-behavior-change posture as every optional field
+    // above. See advanceCombat's own "Boss phase triggers" step.
+    bossPhaseState: monster.bossPhases
+      ? { phases: monster.bossPhases, triggeredHpPcts: [], paused: false, regenPctPerSecond: 0, enrageActive: false, enrageRampPctPerSecond: 0 }
+      : undefined,
   };
 }
 
@@ -1013,7 +1038,10 @@ export function advanceCombat(state: CombatState, ctx: TickContext, deltaSeconds
   // action timer doesn't advance at all (matches "your swing timer freezes
   // during a stun," not "swings bank up and all fire the instant it ends").
   for (const c of allCombatants) {
-    if (!c.isAlive || c.stunnedSeconds > 0) continue;
+    // The Citadel of Krypt — a paused boss (its 50% add phase) doesn't act
+    // at all until its adds are dead, same "action timer doesn't advance"
+    // treatment as a stun.
+    if (!c.isAlive || c.stunnedSeconds > 0 || c.bossPhaseState?.paused) continue;
     // Haste enchant — see CasterProfile.hastePct's doc comment. 0 for
     // everyone except possibly the player, so this is a no-op divide-by-1
     // for every other combatant, same cadence as before this field existed.
@@ -1027,6 +1055,57 @@ export function advanceCombat(state: CombatState, ctx: TickContext, deltaSeconds
       }
       useAbility(state, c, picked.ability, picked.targetId, ctx, events, kills, questSignals);
       c.actionReadyIn += attackInterval;
+    }
+  }
+
+  // 2.5. The Citadel of Krypt — boss phase triggers (Monster.bossPhases).
+  // Runs after this tick's damage so a threshold crossed by THIS tick's
+  // hits fires immediately, not one tick late. Three parts, each a plain
+  // loop over state.enemies (bossPhaseState is only ever set on a monster
+  // with bossPhases, so this is a zero-cost no-op for every other fight):
+  for (const enemy of state.enemies) {
+    if (!enemy.isAlive || !enemy.bossPhaseState) continue;
+    const phases = enemy.bossPhaseState.phases;
+    const hpPct = (enemy.hp / enemy.maxHp) * 100;
+    for (const phase of phases) {
+      if (enemy.bossPhaseState.triggeredHpPcts.includes(phase.hpPct) || hpPct > phase.hpPct) continue;
+      enemy.bossPhaseState.triggeredHpPcts.push(phase.hpPct);
+      if (phase.kind === 'adds_and_regen') {
+        enemy.bossPhaseState.paused = true;
+        enemy.bossPhaseState.regenPctPerSecond = phase.regenPctPerSecond ?? 0;
+        const addsMonster = phase.addsMonsterId ? MONSTERS[phase.addsMonsterId] : undefined;
+        if (addsMonster) {
+          // A flat, deliberately small HP multiplier (NOT the dungeon's own
+          // monsterHpMultiplier, which this spawn bypasses entirely) — these
+          // are meant to read as "6 low-HP minions," not 6 full-strength
+          // copies of their open-world selves.
+          const adds = spawnEnemyWave(addsMonster, ctx.playerLevel, ctx.playerCombatType, phase.addsCount ?? 1, 0.15);
+          state.enemies.push(...adds);
+        }
+        events.push({ message: `${enemy.name} stops attacking and begins to regenerate!`, kind: 'status' });
+      } else if (phase.kind === 'enrage') {
+        enemy.bossPhaseState.enrageActive = true;
+        enemy.bossPhaseState.enrageRampPctPerSecond = phase.rampPctPerSecond ?? 0;
+        events.push({ message: `${enemy.name} enrages — its attacks grow stronger by the second!`, kind: 'status' });
+      }
+    }
+    // Regen + resume-check for a currently-paused boss — every OTHER living
+    // enemy is, by construction, one of this phase's own adds (Krypt's own
+    // encounter never has more than one enemy before this fires).
+    if (enemy.bossPhaseState.paused) {
+      enemy.hp = Math.min(enemy.maxHp, enemy.hp + enemy.maxHp * (enemy.bossPhaseState.regenPctPerSecond / 100) * deltaSeconds);
+      const addsStillAlive = state.enemies.some((e) => e.id !== enemy.id && e.isAlive);
+      if (!addsStillAlive) {
+        enemy.bossPhaseState.paused = false;
+        enemy.bossPhaseState.regenPctPerSecond = 0;
+        events.push({ message: `${enemy.name} resumes its attack!`, kind: 'status' });
+      }
+    }
+    // Enrage ramp — compounds profile.damageCoef IN PLACE every tick rather
+    // than computing an absolute multiplier from a stored trigger time (see
+    // Combatant.bossPhaseState's own doc comment for why that's safe here).
+    if (enemy.bossPhaseState.enrageActive) {
+      enemy.profile.damageCoef *= 1 + (enemy.bossPhaseState.enrageRampPctPerSecond / 100) * deltaSeconds;
     }
   }
 

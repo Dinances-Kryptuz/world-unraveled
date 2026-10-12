@@ -271,6 +271,37 @@ function generateTowerAchievements(): AchievementDef[] {
   }));
 }
 
+// The Citadel of Krypt — reuses Character.dungeonClears exactly like any
+// other dungeon's own achievements would (Citadel Levels 1-3 are, under the
+// hood, just three more Dungeon entries — see dungeons.ts's own doc
+// comment), so no new Character field was needed for any of this.
+const CITADEL_LEVEL_ACHIEVEMENTS: AchievementDef[] = [
+  {
+    id: 'citadel_level_1_cleared',
+    name: 'Into the Citadel',
+    description: 'Clear the Citadel of Krypt: Outer Swarm.',
+    check: (c) => (c.dungeonClears['citadel_level_1'] ?? 0) > 0,
+  },
+  {
+    id: 'citadel_level_2_cleared',
+    name: 'The Cultist Halls',
+    description: 'Clear the Citadel of Krypt: Cultist Halls.',
+    check: (c) => (c.dungeonClears['citadel_level_2'] ?? 0) > 0,
+  },
+  {
+    id: 'citadel_level_3_cleared',
+    name: 'The Firelord Falls',
+    description: 'Defeat Krypt the Firelord.',
+    check: (c) => (c.dungeonClears['citadel_level_3'] ?? 0) > 0,
+  },
+  {
+    id: 'citadel_full_cleared',
+    name: 'The Unbroken Citadel',
+    description: 'Clear the full Citadel of Krypt — all three levels — in a single run.',
+    check: (c) => (c.dungeonClears['citadel_full'] ?? 0) > 0,
+  },
+];
+
 export const ACHIEVEMENTS: AchievementDef[] = [
   ...generateMasteryAchievements(),
   MASTER_BLACKSMITH_ACHIEVEMENT,
@@ -291,6 +322,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   ...generateChefAchievements(),
   GRANDMASTER_CHEF_ACHIEVEMENT,
   ...generateTowerAchievements(),
+  ...CITADEL_LEVEL_ACHIEVEMENTS,
   { id: 'first_steps', name: 'First Steps', description: 'Reach character level 5.', check: (c) => c.level >= 5 },
   { id: 'adventurer', name: 'Adventurer', description: 'Reach character level 25.', check: (c) => c.level >= 25 },
   { id: 'veteran', name: 'Veteran', description: 'Reach character level 40.', check: (c) => c.level >= 40 },

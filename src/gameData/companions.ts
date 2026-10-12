@@ -2,7 +2,7 @@ import type { ClassId, SpecDef, SpecId } from './classStats';
 import { SPECS } from './classStats';
 import type { BaseStat } from './classStats';
 import type { EquipmentSlot, EquippedItemRef } from './types';
-import { getEquipmentStatBonuses, isShieldEquipped } from './equipmentStats';
+import { getEquipmentStatBonuses, getInnateItemFireResistance, isShieldEquipped } from './equipmentStats';
 import { evaluateTalents, EMPTY_TALENT_TOTALS, type TalentBonusTotals } from '../utils/talentEvaluator';
 import type { TalentPicks } from './talents';
 import type { Character } from '../types/character';
@@ -210,6 +210,15 @@ export interface CompanionCombatSetup {
   specDef: SpecDef;
   level: number;
   equipmentBonuses: Partial<Record<BaseStat, number>>;
+  // The Citadel of Krypt — companions/alts have no enchantments storage (see
+  // CompanionState's own doc comment), so unlike the player's own
+  // fireResistancePct (which sums enchant-sourced + innate-item sources) a
+  // companion can only ever get this from an innately-resistant item itself
+  // (Citadel Level 3's BiS weapons) — a real, deliberate ceiling below the
+  // player's own: 50% from one weapon slot, vs. the player's 75%-capped
+  // combination of a weapon plus every enchantable slot. Absent/0 for every
+  // companion before Citadel existed.
+  fireResistancePct?: number;
   // Attribute/Specialization overhaul's Shield Block Value — whether this
   // companion currently has a genuine shield (ItemDef.isShield) equipped in
   // its offhand. See gameData/equipmentStats.ts's isShieldEquipped.
@@ -272,6 +281,7 @@ export function buildAltCombatSetup(slot: number, alt: AltCharacterSnapshot): Co
     specDef: SPECS[specId],
     level: alt.level,
     equipmentBonuses: getEquipmentStatBonuses(alt.equipment, alt.enchantments, alt.enchantmentCharges),
+    fireResistancePct: getInnateItemFireResistance(alt.equipment),
     hasShieldEquipped: isShieldEquipped(alt.equipment),
     talentTotals,
     savedEquippedAbilityIds: alt.equippedAbilityIds ?? [],
@@ -312,6 +322,7 @@ export function resolveActiveCompanionSetups(character: Character): CompanionCom
       specDef: SPECS[def.specId],
       level: character.level,
       equipmentBonuses: getEquipmentStatBonuses(state.equipment),
+      fireResistancePct: getInnateItemFireResistance(state.equipment),
       hasShieldEquipped: isShieldEquipped(state.equipment),
     });
   }

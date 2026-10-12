@@ -106,6 +106,11 @@ export const TITLES: TitleDef[] = [
   ...generateChefTitles(),
   { id: 'grandmaster_chef', name: 'Grandmaster Chef' },
   ...generateTowerTitles(),
+  // Mirrors achievements.ts's CITADEL_LEVEL_ACHIEVEMENTS exactly (same ids).
+  { id: 'citadel_level_1_cleared', name: 'Into the Citadel' },
+  { id: 'citadel_level_2_cleared', name: 'Cultist Hunter' },
+  { id: 'citadel_level_3_cleared', name: 'Firelord\'s Bane' },
+  { id: 'citadel_full_cleared', name: 'Unbroken' },
 ];
 
 const TITLES_BY_ID: Record<string, TitleDef> = Object.fromEntries(TITLES.map((t) => [t.id, t]));

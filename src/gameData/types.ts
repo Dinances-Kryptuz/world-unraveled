@@ -270,6 +270,52 @@ export interface Monster {
   // reuse the same level-based formulas as everything else, just scaled up,
   // rather than a separate stat system.
   isElite?: boolean;
+  // The Citadel of Krypt — a generic per-monster HP/damage scale, independent
+  // of isElite (which is a fixed, single open-world "tougher variant" tier).
+  // This is what lets Citadel Level 2's three cultist archetypes share the
+  // same level/dungeon config but still read as distinct glass-cannon
+  // (Rogue: high damageMultiplier, low hpMultiplier), stone-wall (Warrior:
+  // the reverse), or support (Summoner: low hpMultiplier, relies on its DOT
+  // kit rather than raw hit damage) threats. Absent/1 for every monster
+  // before this field existed — zero behavior change. Applied in
+  // combatEngine/engine.ts's buildMonsterProfile/createMonsterCombatant
+  // multiplicatively alongside the existing dungeon-level/elite multipliers,
+  // never replacing them.
+  hpMultiplier?: number;
+  damageMultiplier?: number;
+  // The Citadel of Krypt's boss-only HP-threshold phase mechanic — see
+  // BossPhaseTrigger's own doc comment. Absent for every monster before this
+  // field existed (including every other dungeon boss, which keep their
+  // flat ability-rotation-only kit).
+  bossPhases?: BossPhaseTrigger[];
+}
+
+// One-shot, HP-threshold-triggered boss mechanics — evaluated in
+// combatEngine/engine.ts's advanceCombat right after damage resolution, the
+// same tick that crosses the threshold, shared verbatim by the online tick
+// loop and simulateOfflineDungeonCombat (same function, same rules both
+// paths, per this project's long-standing convention). Each trigger fires
+// AT MOST ONCE per encounter (tracked on the boss's own Combatant, not
+// persisted) — crossing the same threshold again later (e.g. via the
+// 'adds_and_regen' kind's own regen ticking the boss back up past hpPct)
+// never re-fires it.
+export interface BossPhaseTrigger {
+  // Fires the first tick the boss's HP, expressed as a percent of its max,
+  // drops to or below this value.
+  hpPct: number;
+  // 'adds_and_regen': the boss stops acting (no attacks, no abilities) and
+  // regenerates regenPctPerSecond% of its max HP every second until every
+  // spawned add is dead, at which point it resumes attacking normally —
+  // same "don't stall" pressure a real enrage timer gives, just phrased as
+  // "adds you're slow to kill undo your own progress" instead of a flat
+  // damage ramp. 'enrage': the boss's own outgoing damage is multiplied by
+  // 1 + rampPctPerSecond/100 * secondsSinceTriggered, growing every second
+  // this phase has been active, uncapped (it's meant to end the fight).
+  kind: 'adds_and_regen' | 'enrage';
+  addsMonsterId?: string;
+  addsCount?: number;
+  regenPctPerSecond?: number;
+  rampPctPerSecond?: number;
 }
 
 export type DamageSchool = 'physical' | 'fire' | 'shadow';
@@ -414,6 +460,16 @@ export interface ItemDef {
   // Equipment stat bonuses are raw STR/STA/INT/SPI points — the same
   // currency the class-growth system already uses (see classStats.ts).
   statBonuses?: Partial<Record<import('./classStats').BaseStat, number>>;
+  // The Citadel of Krypt — an INNATE, always-on resistance the item itself
+  // carries while equipped, entirely separate from gameData/enchanting.ts's
+  // enchant-sourced fireResistancePct (which lives on an EnchantDef/slot and
+  // needs periodic re-application as its charges deplete). Summed with the
+  // enchant-sourced total in getEquipmentStatBonuses before it reaches
+  // CasterProfile.fireResistancePct, same "one pipeline, multiple sources"
+  // convention the resistance system already uses. Only ever set on Citadel
+  // Level 3's BiS purple weapons (50%) for now — architecture-only
+  // elsewhere, zero behavior change for every other item.
+  fireResistancePct?: number;
   consumableEffect?: ConsumableEffect; // only present when type === 'consumable'
   // Only present on equipSlot === 'tool' items. gatherBonusPct is a small,
   // flat bonus to that tool's gathering success chance (see

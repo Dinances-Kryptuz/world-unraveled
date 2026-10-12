@@ -647,7 +647,82 @@ export const ENCHANTS: Record<string, EnchantDef> = {
     description: 'Use on an equipped weapon item to apply the Mighty Agility enchant.', slot: 'weapon', category: 'passive',
     statBonuses: { AGI: 20 }, scrollItemId: 'scroll_mighty_agility',
   },
+
+  // ── The Citadel of Krypt ─────────────────────────────────────────────
+  // Ember Orb (ring/ring2/necklace) and Ember Eye (helmet/chest/shoulders/
+  // legs/gloves) — loot-dropped, not crafted (Citadel Levels 1 and 2's own
+  // reward), but otherwise plain members of this exact catalog: same
+  // passive/100-charge/decrements-per-completed-encounter model as every
+  // enchant above, so Citadel's own "soft gate, you'll likely fail without
+  // enough resist" design has a real, repeatable maintenance cost — not a
+  // one-time permanent stat — matching how every other charge-based system
+  // in this game (Stat Food, potions, every other enchant) already treats
+  // "idle-capable" as "idle until your charges run out, then top up," never
+  // literally forever. 10% each, applied via the existing enchant-sourced
+  // half of the resistance pipeline (CasterProfile.fireResistancePct) —
+  // see combatEngine/engine.ts's resistance pipeline doc comment.
+  enchant_citadel_ember_orb_ring: {
+    id: 'enchant_citadel_ember_orb_ring', name: 'Ember Orb (Ring)',
+    description: 'Use on an equipped ring item to apply the Ember Orb enchant.', slot: 'ring', category: 'passive',
+    statBonuses: {}, scrollItemId: 'citadel_ember_orb_ring',
+    fireResistancePct: 10,
+  },
+  enchant_citadel_ember_orb_ring2: {
+    id: 'enchant_citadel_ember_orb_ring2', name: 'Ember Orb (Ring)',
+    description: 'Use on an equipped ring item to apply the Ember Orb enchant.', slot: 'ring2', category: 'passive',
+    statBonuses: {}, scrollItemId: 'citadel_ember_orb_ring2',
+    fireResistancePct: 10,
+  },
+  enchant_citadel_ember_orb_necklace: {
+    id: 'enchant_citadel_ember_orb_necklace', name: 'Ember Orb (Necklace)',
+    description: 'Use on an equipped necklace item to apply the Ember Orb enchant.', slot: 'necklace', category: 'passive',
+    statBonuses: {}, scrollItemId: 'citadel_ember_orb_necklace',
+    fireResistancePct: 10,
+  },
+  enchant_citadel_ember_eye_helmet: {
+    id: 'enchant_citadel_ember_eye_helmet', name: 'Ember Eye (Helm)',
+    description: 'Use on an equipped helm item to apply the Ember Eye enchant.', slot: 'helmet', category: 'passive',
+    statBonuses: {}, scrollItemId: 'citadel_ember_eye_helmet',
+    fireResistancePct: 10,
+  },
+  enchant_citadel_ember_eye_chest: {
+    id: 'enchant_citadel_ember_eye_chest', name: 'Ember Eye (Chest)',
+    description: 'Use on an equipped chest item to apply the Ember Eye enchant.', slot: 'chest', category: 'passive',
+    statBonuses: {}, scrollItemId: 'citadel_ember_eye_chest',
+    fireResistancePct: 10,
+  },
+  enchant_citadel_ember_eye_shoulders: {
+    id: 'enchant_citadel_ember_eye_shoulders', name: 'Ember Eye (Shoulders)',
+    description: 'Use on an equipped shoulders item to apply the Ember Eye enchant.', slot: 'shoulders', category: 'passive',
+    statBonuses: {}, scrollItemId: 'citadel_ember_eye_shoulders',
+    fireResistancePct: 10,
+  },
+  enchant_citadel_ember_eye_legs: {
+    id: 'enchant_citadel_ember_eye_legs', name: 'Ember Eye (Legs)',
+    description: 'Use on an equipped legs item to apply the Ember Eye enchant.', slot: 'legs', category: 'passive',
+    statBonuses: {}, scrollItemId: 'citadel_ember_eye_legs',
+    fireResistancePct: 10,
+  },
+  enchant_citadel_ember_eye_gloves: {
+    id: 'enchant_citadel_ember_eye_gloves', name: 'Ember Eye (Gloves)',
+    description: 'Use on an equipped gloves item to apply the Ember Eye enchant.', slot: 'gloves', category: 'passive',
+    statBonuses: {}, scrollItemId: 'citadel_ember_eye_gloves',
+    fireResistancePct: 10,
+  },
 };
+
+// Loot-dropped scroll ids this Citadel enchant set uses, for monsters.ts's
+// Level 1/2 lootTables to reference without re-typing each id — mirrors
+// gameData/towerLoot.ts's TOWER_MILESTONE_ITEM_IDS-style "export the id
+// list, not just the registry" convention.
+export const CITADEL_EMBER_ORB_SCROLL_IDS = ['citadel_ember_orb_ring', 'citadel_ember_orb_ring2', 'citadel_ember_orb_necklace'];
+export const CITADEL_EMBER_EYE_SCROLL_IDS = [
+  'citadel_ember_eye_helmet',
+  'citadel_ember_eye_chest',
+  'citadel_ember_eye_shoulders',
+  'citadel_ember_eye_legs',
+  'citadel_ember_eye_gloves',
+];
 
 export function enchantsForSlot(slot: EquipmentSlot): EnchantDef[] {
   return Object.values(ENCHANTS).filter((e) => e.slot === slot);
