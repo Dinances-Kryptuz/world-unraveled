@@ -344,6 +344,14 @@ export interface Character {
   // (gameData/achievements.ts) needed; everything else they check is a
   // plain snapshot of already-persisted state.
   dungeonClears: Record<string, number>;
+  // The Tower of Infinity — highest floor ever reached (always resume
+  // there, never re-climb from 1) and the current streak of consecutive
+  // failures AT that floor (resets to 0 on a win; 3 failures in a row
+  // drops towerHighestFloor back by 1, per the locked design). Absent
+  // means floor 1, 0 failures — same "absence is the zero state"
+  // convention as every other optional field here.
+  towerHighestFloor?: number;
+  towerConsecutiveFailures?: number;
   // Every equipment item id ever seen in this character's inventory or
   // bank — permanent, never shrinks even if the item is later sold,
   // disenchanted, or deposited/withdrawn. Reconciled lazily whenever the

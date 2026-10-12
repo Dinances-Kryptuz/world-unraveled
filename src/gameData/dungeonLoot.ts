@@ -11,7 +11,9 @@
 import type { ArmorType, EquipmentSlot, ItemDef, ItemRarity } from './types';
 import type { BaseStat, SpecId } from './classStats';
 
-interface SpecVariant {
+// Exported for reuse by towerLoot.ts (The Tower of Infinity's milestone
+// rewards use the exact same "one fixed-stat variant per spec" pattern).
+export interface SpecVariant {
   // 'leather_future' isn't a real SpecId — no leather-primary class exists
   // yet (warrior/paladin treat leather as off-stat, priest/mage can't wear
   // it at all) — this is the architecture-only placeholder the design
@@ -30,7 +32,7 @@ interface SpecVariant {
 // companion specs, STR/STA for Warrior DPS) rather than inventing a new
 // stat language — see combatFormulas.ts/classStats.ts for why these are
 // the stats that actually matter to each spec today.
-const SPEC_VARIANTS: SpecVariant[] = [
+export const SPEC_VARIANTS: SpecVariant[] = [
   { key: 'warrior_tank', label: 'the Warrior Tank', armorType: 'plate', primary: 'STA', secondary: 'STR' },
   { key: 'warrior_dps', label: 'the Warrior', armorType: 'plate', primary: 'STR', secondary: 'STA' },
   { key: 'prot_paladin', label: 'the Protector', armorType: 'plate', primary: 'STA', secondary: 'STR' },
@@ -42,7 +44,7 @@ const SPEC_VARIANTS: SpecVariant[] = [
   { key: 'leather_future', label: 'the Hunter', armorType: 'leather', primary: 'AGI', secondary: 'STA' },
 ];
 
-const SLOT_NOUN: Partial<Record<EquipmentSlot, string>> = {
+export const SLOT_NOUN: Partial<Record<EquipmentSlot, string>> = {
   shoulders: 'Shoulders', weapon: 'Blade', ring: 'Ring', chest: 'Chestguard', necklace: 'Pendant',
   boots: 'Boots', helmet: 'Helm', bracers: 'Bracers', gloves: 'Gauntlets', belt: 'Belt',
   offhand: 'Offhand', legs: 'Legguards',

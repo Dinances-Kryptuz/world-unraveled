@@ -17,7 +17,8 @@ export type AppSection =
   | 'characters'
   | 'collection'
   | 'settings'
-  | 'profession';
+  | 'profession'
+  | 'tower';
 
 interface SidebarItem {
   id: AppSection;
@@ -42,6 +43,7 @@ const TOP_ITEMS: SidebarItem[] = [
   { id: 'professionsTrainer', label: 'Professions Trainer' },
   { id: 'characters', label: 'Characters' },
   { id: 'collection', label: 'Collection' },
+  { id: 'tower', label: 'Tower of Infinity' },
   { id: 'settings', label: 'Settings' },
 ];
 

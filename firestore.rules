@@ -231,7 +231,9 @@ service cloud.firestore {
       && isValidMasteryXpNotificationsEnabled(after)
       && isValidMounts(after)
       && isValidTrainedAbilityIds(after)
-      && isValidInventorySortPrefs(after);
+      && isValidInventorySortPrefs(after)
+      && isValidTowerHighestFloor(after)
+      && isValidTowerConsecutiveFailures(after);
   }
 
   // Same "may not exist yet on an old character" treatment and expression-
@@ -386,6 +388,22 @@ service cloud.firestore {
   // with the ability catalog, not with player action.
   function isValidTrainedAbilityIds(after) {
     return !('trainedAbilityIds' in after) || (after.trainedAbilityIds is list && after.trainedAbilityIds.size() <= 60);
+  }
+
+  // The Tower of Infinity — same "may not exist yet on an old character,
+  // shape-only here" treatment as isValidDungeonClears above. Full
+  // validation (that a win only ever advances by exactly 1, that a drop-back
+  // only happens after 3 consecutive failures, that the attempt cost was
+  // actually paid first) happens in firebase/tower.ts's
+  // payTowerAttemptCost/applyTowerAttemptResult, the only paths that write
+  // these two fields.
+  function isValidTowerHighestFloor(after) {
+    return !('towerHighestFloor' in after) || (after.towerHighestFloor is number && after.towerHighestFloor >= 0);
+  }
+
+  function isValidTowerConsecutiveFailures(after) {
+    return !('towerConsecutiveFailures' in after)
+      || (after.towerConsecutiveFailures is number && after.towerConsecutiveFailures >= 0);
   }
 
   // Same "may not exist yet on an old character" treatment and ownership-

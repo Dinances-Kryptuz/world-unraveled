@@ -17,6 +17,7 @@ import { FishingScreen } from './components/FishingScreen';
 import { CraftingScreen } from './components/CraftingScreen';
 import { DisenchantingScreen } from './components/DisenchantingScreen';
 import { DungeonScreen } from './components/DungeonScreen';
+import { TowerScreen } from './components/TowerScreen';
 import { WelcomeBackScreen, isLongAbsence } from './components/WelcomeBackScreen';
 import { ProfessionScreen } from './components/professions/ProfessionScreen';
 import { resolveCombatProfile } from './gameData/resolveCombatProfile';
@@ -254,6 +255,7 @@ function AppContent() {
       {section === 'mountTrainer' && <MountTrainerScreen zoneId={character.currentZoneId} />}
       {section === 'professionsTrainer' && <ProfessionsTrainerScreen />}
       {section === 'quests' && <QuestLog />}
+      {section === 'tower' && <TowerScreen />}
       {section === 'settings' && <SettingsScreen />}
     </AppShell>
   );

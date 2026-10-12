@@ -276,6 +276,44 @@ export const ELITE_XP_MULTIPLIER = 2.0;
 export const DUNGEON_TRASH_DAMAGE_MULTIPLIER = 1.3;
 export const DUNGEON_BOSS_DAMAGE_MULTIPLIER = 1.6;
 
+// ── The Tower of Infinity — the end-game "how high can you climb" mini-
+// game (100 floors, one scripted boss-tier encounter per floor, costing
+// escalating gold per attempt). HP and damage growth are DELIBERATELY on
+// separate curves, locked via a live-simulation sweep (a near-max-level,
+// near-BiS 5-person party against a level-60 boss-tier monster, using the
+// same createEncounterState/advanceCombat primitives live combat uses):
+// scaling both by the identical exponential made high floors a coin-flip
+// on "did the boss land its first swing before dying" (a huge damageCoef
+// multiplier makes a single hit instantly lethal regardless of real
+// survivability, which isn't a meaningful difficulty signal). Locked
+// values (hpGrowth=1.05, damageGrowth=1.03) keep every fight under ~60
+// simulated seconds even at the hardest floors (per the "flatter, shorter"
+// revision — an earlier steeper pass produced a real curve too, but
+// 20-30 minute single fights for an "active-only, no offline simulation"
+// encounter), with a 10-trial win-rate sweep landing: floors 1-35 clear
+// reliably (10/10), floors ~40-60 settle into a genuine 30-60% coin-flip
+// "ceiling zone" for a near-BiS party, matching the "under perfect
+// current-tier conditions, a party might only reach ~floor 50" target —
+// floors well beyond that are reserved for future gear/content.
+export const TOWER_HP_GROWTH = 1.05;
+export const TOWER_DAMAGE_GROWTH = 1.03;
+
+// HP scales with the full party size (a Tower floor is always a single
+// boss-tier monster, never a multi-target wave — there's no wave to split
+// across, unlike a dungeon's multi_target trash stages) times the floor's
+// own exponential growth.
+export function towerHpMultiplier(floor: number, partySize: number): number {
+  return partySize * Math.pow(TOWER_HP_GROWTH, floor - 1);
+}
+
+// Damage uses the same DUNGEON_BOSS_DAMAGE_MULTIPLIER base every dungeon
+// boss already does (not party-size-scaled — per-hit threat should
+// challenge the party regardless of headcount), scaled further by the
+// floor's own (much gentler) growth.
+export function towerDamageMultiplier(floor: number): number {
+  return DUNGEON_BOSS_DAMAGE_MULTIPLIER * Math.pow(TOWER_DAMAGE_GROWTH, floor - 1);
+}
+
 export function targetTimeToKill(level: number): number {
   return 12 + ((level - 1) * (25 - 12)) / 59;
 }

@@ -1,5 +1,6 @@
 import type { ItemDef } from './types';
 import { DUNGEON_LOOT_ITEMS } from './dungeonLoot';
+import { TOWER_LOOT_ITEMS } from './towerLoot';
 
 // V1 has zero stat variance: every unit of a given item is identical.
 // This is what lets inventory be a simple { itemId: quantity } map instead
@@ -4793,4 +4794,4 @@ const STATIC_ITEMS: Record<string, ItemDef> = {
 // template, rather than ~180 individual literal item entries. Merged in
 // here so every existing caller of ITEMS (equip, crafting, loot, tooltips)
 // needs zero changes to see them.
-export const ITEMS: Record<string, ItemDef> = { ...STATIC_ITEMS, ...DUNGEON_LOOT_ITEMS };
+export const ITEMS: Record<string, ItemDef> = { ...STATIC_ITEMS, ...DUNGEON_LOOT_ITEMS, ...TOWER_LOOT_ITEMS };
