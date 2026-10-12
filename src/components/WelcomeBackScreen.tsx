@@ -20,7 +20,7 @@ import { simulateOfflineCombat, simulateOfflineDungeonCombat } from '../combatEn
 import { DUNGEONS } from '../gameData/dungeons';
 import { resolveActiveCompanionSetups } from '../gameData/companions';
 import { resolveActiveAltSetups } from '../firebase/characterSlots';
-import { isShieldEquipped } from '../gameData/equipmentStats';
+import { isShieldEquipped, getInnateWeaponProc } from '../gameData/equipmentStats';
 import { type BaseStat } from '../gameData/classStats';
 import { getProfessionState, maxSkillForUnlockedTier, PROFESSION_CATEGORY } from '../gameData/professionTiers';
 import { getInventory } from '../firebase/inventory';
@@ -117,6 +117,7 @@ export function WelcomeBackScreen({
           savedAbilityConditions: character.abilityConditions,
           disabledAbilityIds: character.disabledAbilityIds,
           hasShieldEquipped: isShieldEquipped(character.equipment),
+          innateWeaponProc: getInnateWeaponProc(character.equipment),
           monster,
           consumableState,
           goldFindPct: shirtBonusPct(shirtBonusForItemId(activity.equippedShirtItemId), 'gold_find'),
@@ -237,6 +238,7 @@ export function WelcomeBackScreen({
           savedAbilityConditions: character.abilityConditions,
           disabledAbilityIds: character.disabledAbilityIds,
           hasShieldEquipped: isShieldEquipped(character.equipment),
+          innateWeaponProc: getInnateWeaponProc(character.equipment),
           stages: dungeon.stages.map((id) => MONSTERS[id]),
           dungeonCombatType: dungeon.combatType,
           dungeonEncounterSize: dungeon.encounterSize,

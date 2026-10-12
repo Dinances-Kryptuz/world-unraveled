@@ -199,3 +199,14 @@ export function getInnateItemFireResistance(equipment: Record<EquipmentSlot, Equ
   }
   return total;
 }
+
+// The Citadel of Krypt's Full Citadel legendary (Lightningfury) — reads the
+// equipped WEAPON's own innate proc (ItemDef.innateProc), entirely separate
+// from the weapon-SLOT enchant's own proc (gameData/enchanting.ts's
+// buildActiveEnchantTotals). Only a weapon can carry one, and only one
+// weapon is ever equipped, so this is a simple lookup, not a sum like the
+// two helpers above. Undefined for every weapon before Lightningfury existed.
+export function getInnateWeaponProc(equipment: Record<EquipmentSlot, EquippedItemRef | null>): ItemDef['innateProc'] {
+  const weaponId = equipment.weapon?.itemId;
+  return weaponId ? ITEMS[weaponId]?.innateProc : undefined;
+}

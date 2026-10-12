@@ -344,6 +344,14 @@ export interface Dungeon {
   // How many enemies spawn per non-boss stage for a 'multi_target' dungeon.
   // Ignored (treated as 1) for every other combatType.
   encounterSize?: number;
+  // The Citadel of Krypt's "Full Citadel" chase run — absent (every dungeon
+  // before this field existed) means always visible/enterable at the usual
+  // level gate; set means ZoneScreen.tsx also hides this dungeon entirely
+  // until Character.dungeonClears[unlockedAfterDungeonId] > 0. A generic,
+  // reusable unlock condition rather than a one-off hardcoded check, in
+  // case future end-game content wants the same "beat the boss once to
+  // unlock the harder chase mode" shape.
+  unlockedAfterDungeonId?: string;
 }
 
 export interface GatherNode {
@@ -470,6 +478,19 @@ export interface ItemDef {
   // Level 3's BiS purple weapons (50%) for now — architecture-only
   // elsewhere, zero behavior change for every other item.
   fireResistancePct?: number;
+  // The Citadel of Krypt's Full Citadel legendary (Lightningfury) — an
+  // INNATE on-hit weapon proc the item itself carries, entirely separate
+  // from gameData/enchanting.ts's enchant-sourced weaponProc (which lives on
+  // an EnchantDef applied via a scroll and can be re-enchanted away). Only
+  // ever set on a weapon; the shape mirrors gameData/enchanting.ts's own
+  // EnchantProcDef (re-declared here, not imported, so this file stays
+  // independent of enchanting.ts the same way enchanting.ts's own
+  // EnchantProcKind is independently re-declared from combatEngine/types.ts's
+  // matching type rather than importing it). Takes priority over an
+  // equipped enchant's own proc if a weapon somehow has both (see
+  // equipmentStats.ts's getInnateWeaponProc). Architecture-only everywhere
+  // except Lightningfury itself.
+  innateProc?: { kind: 'fiery_weapon' | 'lifestealing' | 'icy_chill' | 'crusader' | 'chain_lightning'; chancePct: number; power: number };
   consumableEffect?: ConsumableEffect; // only present when type === 'consumable'
   // Only present on equipSlot === 'tool' items. gatherBonusPct is a small,
   // flat bonus to that tool's gathering success chance (see

@@ -15,7 +15,7 @@ import { characterXpForLevelV2, MAX_CHARACTER_LEVEL } from '../gameData/xpTables
 import { resolveElapsedProgress } from '../gameData/activityEngine';
 import type { CompanionCombatSetup } from '../gameData/companions';
 import type { ConsumableAutomationRuntimeState } from '../gameData/consumableAutomation';
-import { ENCHANTS, buildActiveEnchantTotals, type EnchantTotals } from '../gameData/enchanting';
+import { ENCHANTS, buildActiveEnchantTotals, type EnchantTotals, type EnchantProcDef } from '../gameData/enchanting';
 import {
   createEncounterState,
   createPlayerCombatant,
@@ -77,6 +77,13 @@ export interface OfflineCombatInput {
   // character before this field existed).
   enchantments?: Partial<Record<EquipmentSlot, string>>;
   enchantmentCharges?: Partial<Record<EquipmentSlot, number>>;
+  // The Citadel of Krypt's Full Citadel legendary (Lightningfury) — see
+  // buildActiveEnchantTotals's own doc comment for why this is resolved
+  // once by the caller (gameData/equipmentStats.ts's getInnateWeaponProc)
+  // and passed raw rather than pre-summed, same posture as enchantments/
+  // enchantmentCharges above, even though (unlike those) it never changes
+  // mid-window.
+  innateWeaponProc?: EnchantProcDef;
 }
 
 export interface OfflineCombatResult {
@@ -217,7 +224,7 @@ export function simulateOfflineCombat(input: OfflineCombatInput): OfflineCombatR
   const charges: Partial<Record<EquipmentSlot, number>> = { ...(input.enchantmentCharges ?? {}) };
 
   function buildInput(level: number, currentHp: number): EncounterSetupInput {
-    return buildBaseEncounterInput(input, level, currentHp, input.monster, buildActiveEnchantTotals(enchantments, charges));
+    return buildBaseEncounterInput(input, level, currentHp, input.monster, buildActiveEnchantTotals(enchantments, charges, input.innateWeaponProc));
   }
 
   let level = input.startingLevel;
@@ -303,7 +310,7 @@ export function simulateOfflineCombat(input: OfflineCombatInput): OfflineCombatR
       // only actually shrinks if the enchant that just ran out was a flat
       // Health enchant — createPlayerCombatant's own Math.min handles the
       // capping, same as it already does for ordinary re-equips).
-      const enchantTotals = buildActiveEnchantTotals(enchantments, charges);
+      const enchantTotals = buildActiveEnchantTotals(enchantments, charges, input.innateWeaponProc);
       const freshMaxHp = maxHp(input.cls, level, input.equipmentBonuses, input.talentTotals.hpMultPct, enchantTotals.flatHpBonus);
       const freshParty = [createPlayerCombatant(buildInput(level, leveledUp ? freshMaxHp : currentPlayer.hp))];
       for (const companion of input.companions ?? []) {
@@ -393,7 +400,7 @@ export function simulateOfflineDungeonCombat(input: OfflineDungeonCombatInput): 
   }
 
   function buildInput(level: number, currentHp: number, monster: Monster): EncounterSetupInput {
-    const base = buildBaseEncounterInput(input, level, currentHp, monster, buildActiveEnchantTotals(enchantments, charges));
+    const base = buildBaseEncounterInput(input, level, currentHp, monster, buildActiveEnchantTotals(enchantments, charges, input.innateWeaponProc));
     return {
       ...base,
       monsterHpMultiplier: hpMultiplierFor(monster, input.companions?.length ?? 0),
@@ -493,7 +500,7 @@ export function simulateOfflineDungeonCombat(input: OfflineDungeonCombatInput): 
     if (leveledUp || anyExhausted) {
       ctx.playerLevel = level;
       const currentPlayer = state.party.find((p) => p.isPlayer)!;
-      const enchantTotals = buildActiveEnchantTotals(enchantments, charges);
+      const enchantTotals = buildActiveEnchantTotals(enchantments, charges, input.innateWeaponProc);
       const freshMaxHp = maxHp(input.cls, level, input.equipmentBonuses, input.talentTotals.hpMultPct, enchantTotals.flatHpBonus);
       const freshParty = [createPlayerCombatant(buildInput(level, leveledUp ? freshMaxHp : currentPlayer.hp, currentMonster))];
       for (const companion of input.companions ?? []) {

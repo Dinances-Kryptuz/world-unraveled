@@ -656,6 +656,30 @@ function upsertBuff(c: Combatant, buff: ActiveBuff): void {
   c.buffs.push(buff);
 }
 
+// Lightningfury's chain-lightning proc — "reduces their defense by 10%,
+// stacking up to 3 times" is modeled as damageTakenPct on the EXISTING
+// ActiveBuff mechanism (the same field Krypt's own self-buffs and the
+// Crusader proc already use, just applied to an enemy instead of an ally —
+// buffDamageTakenMultiplier already reads c.buffs generically regardless of
+// which side c is on), not a new armor-specific field. upsertBuff alone
+// would just REPLACE the existing stack at a flat value each proc, so this
+// reads the current stack count back out of the existing buff (if any)
+// before re-applying, refreshing duration either way.
+const CHAIN_LIGHTNING_DEBUFF_PCT_PER_STACK = 10;
+const CHAIN_LIGHTNING_MAX_STACKS = 3;
+const CHAIN_LIGHTNING_MAX_TARGETS = 2;
+function applyChainLightningDebuff(target: Combatant): void {
+  const existing = target.buffs.find((b) => b.abilityId === 'lightningfury_chain_debuff');
+  const currentStacks = existing ? Math.round(existing.damageTakenPct / CHAIN_LIGHTNING_DEBUFF_PCT_PER_STACK) : 0;
+  const nextStacks = Math.min(CHAIN_LIGHTNING_MAX_STACKS, currentStacks + 1);
+  upsertBuff(target, {
+    abilityId: 'lightningfury_chain_debuff',
+    remainingSeconds: 15,
+    damageDealtPct: 0,
+    damageTakenPct: CHAIN_LIGHTNING_DEBUFF_PCT_PER_STACK * nextStacks,
+  });
+}
+
 // Crusader's temporary Strength buff, approximated as a flat damageDealtPct
 // bonus on the existing ActiveBuff mechanism (Battle Cry's own mechanism)
 // rather than a live STR/normalizedHit recompute — this engine bakes
@@ -1267,6 +1291,32 @@ export function useAbility(
             events.push({ message: `${source.name}'s weapon enchant drains life from ${target.name}.`, kind: 'status' });
           } else if (procTriggered === 'crusader') {
             events.push({ message: `${source.name} is empowered by a Crusader enchant.`, kind: 'status' });
+          } else if (procTriggered === 'chain_lightning') {
+            // Lightningfury — chains bonus damage (power% of this hit) to up
+            // to 2 OTHER alive enemies on the same side as `target`, and
+            // stacks the defense-reduction debuff (see
+            // applyChainLightningDebuff below) on every enemy it touches,
+            // target included. Never re-triggers computeEffectDamage (so
+            // this can't itself proc again), same "procs don't chain to
+            // other procs" rule fiery_weapon's bonus damage already follows.
+            events.push({ message: `${source.name}'s blade arcs with lightning!`, kind: 'status' });
+            if (target.isAlive) applyChainLightningDebuff(target);
+            const chainPower = (source.profile.weaponProc?.power ?? 0) / 100;
+            const others = resolvedSide.filter((c) => c.id !== target.id && c.isAlive);
+            for (const chained of others.slice(0, CHAIN_LIGHTNING_MAX_TARGETS)) {
+              const chainAmount = Math.round(amount * chainPower);
+              chained.hp = Math.max(0, chained.hp - chainAmount);
+              applyChainLightningDebuff(chained);
+              events.push({
+                message: `Lightning arcs to ${chained.name} for ${chainAmount} damage.`,
+                kind: chained.isPlayer ? 'damage_in' : 'damage_out',
+              });
+              if (chained.hp <= 0 && chained.isAlive) {
+                chained.isAlive = false;
+                events.push({ message: `${chained.name} is defeated!`, kind: 'death' });
+                if (!chained.isPlayer) kills.push(rollKillReward(ctx.monster, levelDiff, ctx.goldFindPct));
+              }
+            }
           }
           // healFrac (Shadow Priest's "sustain from the damage you deal," per
           // its own spec blurb) was computed onto the profile since Phase 1

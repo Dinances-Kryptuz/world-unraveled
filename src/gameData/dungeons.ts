@@ -106,4 +106,36 @@ export const DUNGEONS: Record<string, Dungeon> = {
     levelRange: [60, 60],
     stages: ['krypt_the_firelord'],
   },
+  // The Full Citadel — chains all 7 stages from Levels 1-3 into one run,
+  // unlocked only after a Level 3 clear (see ZoneScreen.tsx's own
+  // unlockedAfterDungeonId filter). Reuses krypt_the_firelord_citadel (not
+  // krypt_the_firelord) for its boss stage specifically so the 0.01%
+  // Lightningfury chance only ever rolls here, never on solo-farming
+  // Level 3 alone — see that monster's own doc comment.
+  //
+  // Deliberate simplification: combatType is left single_target (not
+  // 'multi_target' like citadel_level_1), since Dungeon.combatType is one
+  // flag for the WHOLE dungeon and this run's later cultist stages need to
+  // stay single-enemy (their Rogue/Warrior archetype split only makes sense
+  // one at a time). The embermite stages here fight as single, undivided-HP
+  // enemies instead of Level 1's 4-wide wave — still a real fight, just not
+  // literally "a swarm" in this one chained context. Flagged, not hidden.
+  citadel_full: {
+    id: 'citadel_full',
+    name: 'The Citadel of Krypt: Full Citadel',
+    description:
+      'Every ward of the citadel in one unbroken run, from the outer swarm through the cultist halls to Krypt himself.',
+    zoneId: 'cinderheart_crater',
+    levelRange: [60, 60],
+    stages: [
+      'embermite_swarm',
+      'embermite_cluster',
+      'embermite_broodmother',
+      'citadel_cultist_rogue',
+      'citadel_cultist_warrior',
+      'citadel_cultist_summoner',
+      'krypt_the_firelord_citadel',
+    ],
+    unlockedAfterDungeonId: 'citadel_level_3',
+  },
 };

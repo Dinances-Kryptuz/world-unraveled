@@ -1,6 +1,6 @@
 import type { Monster } from './types';
 import { DUNGEON_BOSS_LOOT_DROPS } from './dungeonLoot';
-import { CITADEL_WEAPON_LOOT_DROPS } from './citadelLoot';
+import { CITADEL_WEAPON_LOOT_DROPS, LIGHTNINGFURY_ITEM_ID } from './citadelLoot';
 
 export const MONSTERS: Record<string, Monster> = {
   greenhorn_boar: {
@@ -1133,6 +1133,37 @@ export const MONSTERS: Record<string, Monster> = {
       { hpPct: 25, kind: 'enrage', rampPctPerSecond: 4 },
     ],
     lootTable: [...CITADEL_WEAPON_LOOT_DROPS],
+    specialAbility: {
+      name: 'The Firelord',
+      description: 'An elemental monster summoned by cultists across every zone, now bound into a single burning form.',
+      implemented: false,
+    },
+  },
+
+  // A separate monster entry (same stats/kit/phases as krypt_the_firelord
+  // above, verbatim) used ONLY by the Full Citadel chained run (dungeons.ts)
+  // — deliberately NOT the same monster id, so the 0.01% Lightningfury
+  // chance only ever rolls on a full, all-three-levels clear, never on
+  // repeatedly solo-farming Level 3 alone for its own BiS weapons.
+  krypt_the_firelord_citadel: {
+    id: 'krypt_the_firelord_citadel',
+    name: 'Krypt the Firelord',
+    damageSchool: 'fire',
+    zoneIds: ['cinderheart_crater'],
+    levelRange: [60, 60],
+    level: 60,
+    combatType: 'melee',
+    isBoss: true,
+    voidShardsMin: 8,
+    voidShardsMax: 12,
+    goldMin: 0,
+    goldMax: 0,
+    equippedAbilityIds: ['krypt_warcry', 'krypt_cinderstrike', 'krypt_immolation'],
+    bossPhases: [
+      { hpPct: 50, kind: 'adds_and_regen', addsMonsterId: 'embermite_swarm', addsCount: 6, regenPctPerSecond: 1 },
+      { hpPct: 25, kind: 'enrage', rampPctPerSecond: 4 },
+    ],
+    lootTable: [{ itemId: LIGHTNINGFURY_ITEM_ID, chance: 0.0001, minQty: 1, maxQty: 1 }],
     specialAbility: {
       name: 'The Firelord',
       description: 'An elemental monster summoned by cultists across every zone, now bound into a single burning form.',

@@ -300,7 +300,7 @@ export interface CasterProfile {
 // "skip Icy Chill's slow proc" resolution — no attack-speed-debuff concept
 // exists on the DEFENDER side of this engine, only the player's own
 // hastePct lever).
-export type EnchantProcKind = 'fiery_weapon' | 'lifestealing' | 'icy_chill' | 'crusader';
+export type EnchantProcKind = 'fiery_weapon' | 'lifestealing' | 'icy_chill' | 'crusader' | 'chain_lightning';
 
 export interface EnchantWeaponProc {
   kind: EnchantProcKind;

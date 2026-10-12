@@ -52,3 +52,44 @@ for (const variant of SPEC_VARIANTS) {
   CITADEL_WEAPON_ITEM_IDS.push(item.id);
   CITADEL_WEAPON_LOOT_DROPS.push({ itemId: item.id, chance: 0.04, minQty: 1, maxQty: 1 });
 }
+
+// ── Lightningfury — the Full Citadel's 0.01%-drop legendary ────────────────
+// A single, universal item (no armorType — see classStats.ts's
+// canClassEquip: an undefined armorType is never restricted), not a 9-
+// variant set like every other drop in this file, matching the "one true
+// legendary" chase-item convention this whole feature was scoped around
+// (Orange/Legendary was deliberately held back from both Tower and Citadel's
+// regular loot specifically for this). Every base stat at a flat, moderate
+// value (12 each — roughly 40% of a single Krypt weapon's primary-stat
+// value, spread across 5 stats instead of 2, so it reads as a genuine
+// universal upgrade without being an outright 2.5x power spike for whichever
+// 2 stats a given spec actually uses) — flagged for its own dedicated
+// stat-budget review once real players are actually seeing this drop, same
+// as this whole feature's final report already notes.
+export const LIGHTNINGFURY_ITEM_ID = 'lightningfury';
+const LIGHTNINGFURY_STAT_VALUE = 12;
+export const LIGHTNINGFURY_ITEM: ItemDef = {
+  id: LIGHTNINGFURY_ITEM_ID,
+  name: 'Lightningfury, Unblessed Blade of the Windavoider',
+  type: 'equipment',
+  description:
+    'A legendary blade pulled from the Citadel of Krypt itself. On hit, it has a chance to arc lightning between nearby enemies, scarring their defenses.',
+  stackable: true,
+  equipSlot: 'weapon',
+  statBonuses: {
+    STR: LIGHTNINGFURY_STAT_VALUE,
+    STA: LIGHTNINGFURY_STAT_VALUE,
+    AGI: LIGHTNINGFURY_STAT_VALUE,
+    INT: LIGHTNINGFURY_STAT_VALUE,
+    SPI: LIGHTNINGFURY_STAT_VALUE,
+  },
+  // 'chain_lightning' — see combatEngine/engine.ts's useAbility: on a landed
+  // hit, bonus damage (power% of that hit) chains to up to 2 OTHER alive
+  // enemies, and every enemy it touches (the primary target included) stacks
+  // a -defense debuff (see engine.ts's CHAIN_LIGHTNING_DEBUFF_PCT_PER_STACK/
+  // _MAX_STACKS) up to 3 times.
+  innateProc: { kind: 'chain_lightning', chancePct: 20, power: 50 },
+  rarity: 'orange',
+  sellValue: 500,
+};
+CITADEL_LOOT_ITEMS[LIGHTNINGFURY_ITEM.id] = LIGHTNINGFURY_ITEM;

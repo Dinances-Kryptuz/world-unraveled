@@ -49,7 +49,7 @@ export const ENCHANT_SCROLL_CHARGES = 100;
 // firebase/enchanting.ts's buildActiveEnchantTotals (Phase E6-4) maps an
 // EnchantProcDef 1:1 onto an EnchantWeaponProc when it builds the combat
 // engine's input.
-export type EnchantProcKind = 'fiery_weapon' | 'lifestealing' | 'icy_chill' | 'crusader';
+export type EnchantProcKind = 'fiery_weapon' | 'lifestealing' | 'icy_chill' | 'crusader' | 'chain_lightning';
 
 export interface EnchantProcDef {
   kind: EnchantProcKind;
@@ -759,7 +759,15 @@ export interface EnchantTotals {
 // every other bonus already baked into EncounterSetupInput uses.
 export function buildActiveEnchantTotals(
   enchantments: Partial<Record<EquipmentSlot, string>> = {},
-  enchantmentCharges: Partial<Record<EquipmentSlot, number>> = {}
+  enchantmentCharges: Partial<Record<EquipmentSlot, number>> = {},
+  // The Citadel of Krypt's Full Citadel legendary (Lightningfury) — an
+  // INNATE weapon proc has no charge concept at all (unlike an enchant
+  // scroll's proc), so it's simplest applied here, unconditionally, rather
+  // than threaded through the charge-tracking loop below. Resolved by the
+  // caller (gameData/equipmentStats.ts's getInnateWeaponProc) from the
+  // equipped weapon item itself; undefined for every weapon before
+  // Lightningfury existed.
+  innateWeaponProc?: EnchantProcDef
 ): EnchantTotals {
   const totals: EnchantTotals = {
     hastePct: 0,
@@ -795,6 +803,9 @@ export function buildActiveEnchantTotals(
     // have (every slot holds at most one enchant, same as statBonuses).
     if (enchant.proc) totals.weaponProc = enchant.proc;
   }
+  // Takes priority over an equipped enchant's own proc if a weapon somehow
+  // has both (see ItemDef.innateProc's doc comment).
+  if (innateWeaponProc) totals.weaponProc = innateWeaponProc;
   return totals;
 }
 
