@@ -1075,11 +1075,16 @@ export function advanceCombat(state: CombatState, ctx: TickContext, deltaSeconds
         enemy.bossPhaseState.regenPctPerSecond = phase.regenPctPerSecond ?? 0;
         const addsMonster = phase.addsMonsterId ? MONSTERS[phase.addsMonsterId] : undefined;
         if (addsMonster) {
-          // A flat, deliberately small HP multiplier (NOT the dungeon's own
-          // monsterHpMultiplier, which this spawn bypasses entirely) — these
-          // are meant to read as "6 low-HP minions," not 6 full-strength
-          // copies of their open-world selves.
-          const adds = spawnEnemyWave(addsMonster, ctx.playerLevel, ctx.playerCombatType, phase.addsCount ?? 1, 0.15);
+          // Flat, deliberately small HP AND damage multipliers (NOT the
+          // dungeon's own monsterHpMultiplier/monsterDamageMultiplier, which
+          // this spawn bypasses entirely) — these are meant to read as "6
+          // low-HP minions" that pressure kill SPEED (via the regen above),
+          // not 6 full-strength copies of their open-world selves capable of
+          // bursting the party down on their own. A live playtest of this
+          // exact phase caught the first version of this spawn (HP scaled
+          // down, damage left at 1x) nearly one-shotting every companion —
+          // see this commit's own history.
+          const adds = spawnEnemyWave(addsMonster, ctx.playerLevel, ctx.playerCombatType, phase.addsCount ?? 1, 0.15, 0.15);
           state.enemies.push(...adds);
         }
         events.push({ message: `${enemy.name} stops attacking and begins to regenerate!`, kind: 'status' });
