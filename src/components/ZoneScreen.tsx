@@ -52,6 +52,15 @@ export function ZoneScreen({
   // The companion wage (see gameData/companions.ts's dungeonCompanionFee) is
   // charged here, up front, before the run starts — failing to pay blocks
   // entry entirely rather than letting the party in for free.
+  // Equipment Rarity overhaul's Part 8 — recalls a party left farming a
+  // dungeon offline (see DungeonScreen.tsx's handleFarmOffline) without
+  // starting a new run.
+  async function handleRecallParty() {
+    if (!user) return;
+    await stopActivity(user.uid);
+    await refetch();
+  }
+
   async function handleEnterDungeon(dungeonId: string) {
     if (!user) return;
     setFeeError(null);
@@ -97,7 +106,7 @@ export function ZoneScreen({
             <li key={monsterId} className="monster-list-item">
               <div className="monster-row-main">
                 <span className="monster-row-info">
-                  {monster.name} (<MonsterLevelBadge monsterLevel={monster.level} playerLevel={character.level} />{' '}
+                  {monster.name} (<MonsterLevelBadge monsterLevel={monster.level} playerLevel={character.level} isElite={monster.isElite} />{' '}
                   <CombatTypeBadge monsterType={monster.combatType} playerType={playerCombatType} />)
                 </span>
                 <div className="monster-row-actions">
@@ -156,6 +165,12 @@ export function ZoneScreen({
                   {!meetsLevel && <p className="error">Requires character level {dungeon.levelRange[0]}.</p>}
                   {meetsLevel && readyForDungeon && !canAffordFee && <p className="error">Need {fee} gold to pay your party first.</p>}
                   {feeError && <p className="error">{feeError}</p>}
+                  {character.currentActivity.type === 'dungeon' && character.currentActivity.targetId === dungeon.id && (
+                    <p>
+                      <small>Your party is farming this dungeon while you’re away.</small>{' '}
+                      <button onClick={() => void handleRecallParty()}>Recall Party</button>
+                    </p>
+                  )}
                 </li>
               </ul>
             </div>

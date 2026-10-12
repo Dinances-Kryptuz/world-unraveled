@@ -7,7 +7,7 @@
 // simulation reuses the player's real Combat Setup, so offline results
 // reflect the same build that fights live.
 import type { ClassId, SpecDef, SpecId, BaseStat } from '../gameData/classStats';
-import { maxHp } from '../gameData/combatFormulas';
+import { maxHp, DUNGEON_TRASH_DAMAGE_MULTIPLIER, DUNGEON_BOSS_DAMAGE_MULTIPLIER } from '../gameData/combatFormulas';
 import type { TalentBonusTotals } from '../utils/talentEvaluator';
 import type { BuffTotals } from '../gameData/buffs';
 import type { EquipmentSlot, Monster } from '../gameData/types';
@@ -43,6 +43,9 @@ export interface OfflineCombatInput {
   trainedAbilityIds: string[];
   savedAbilityConditions: Record<string, ConditionGroup>;
   disabledAbilityIds: string[];
+  // Attribute/Specialization overhaul's Shield Block Value — see
+  // EncounterSetupInput.hasShieldEquipped's doc comment.
+  hasShieldEquipped?: boolean;
   monster: Monster;
   // Same as EncounterSetupInput.companions — each one's `level` is
   // overwritten on every buildInput() call (including after a
@@ -151,6 +154,7 @@ export function simulateOfflineCombat(input: OfflineCombatInput): OfflineCombatR
       trainedAbilityIds: input.trainedAbilityIds,
       savedAbilityConditions: input.savedAbilityConditions,
       disabledAbilityIds: input.disabledAbilityIds,
+      hasShieldEquipped: input.hasShieldEquipped,
       companions: input.companions?.map((c) => ({ ...c, level })),
       ...enchantTotals,
     };
@@ -285,5 +289,230 @@ export function simulateOfflineCombat(input: OfflineCombatInput): OfflineCombatR
     simulatedCombatSeconds: elapsed,
     finalConsumableState: ctx.consumableState,
     enchantTriggerCounts: { offensiveAction: offensiveActionCount, damageTaken: damageTakenCount },
+  };
+}
+
+// Equipment Rarity overhaul's Part 8 — offline/overnight dungeon farming.
+// A sibling to simulateOfflineCombat above (same tick-by-tick engine,
+// MAX_TICKS/TICK_SECONDS, consumable/enchant-charge threading, level-up
+// rebuild), but fights a FIXED SEQUENCE of stages instead of one monster
+// respawning as itself, and includes the party's companions — mirroring
+// DungeonScreen.tsx's live stage-sequencing (nextMonster/encounterSize/
+// monsterHpMultiplier/monsterDamageMultiplier) exactly, including its
+// one-tick-stale wave-sizing on a stage transition (this function rebuilds
+// those three ctx fields from whatever stage is current BEFORE each tick's
+// advanceCombat call, same as DungeonScreen's own per-tick ctx construction
+// — see the loop below), so offline farming behaves identically to a live
+// session rather than a separate approximation.
+//
+// Deliberately decoupled from gameData/dungeons.ts and gameData/monsters.ts
+// (takes already-resolved Monster[] stages rather than a dungeonId) — same
+// "caller resolves data, this module just simulates" posture
+// simulateOfflineCombat already has for its own `monster` param. The
+// caller (WelcomeBackScreen) is responsible for folding any Feast stat
+// bonuses into equipmentBonuses/each companion's equipmentBonuses before
+// calling this, exactly like DungeonScreen's buildEncounterInput does live
+// — this function has no Feast-specific logic of its own, same posture as
+// it already has no shirt-specific logic (goldFindPct is pre-resolved too).
+export interface OfflineDungeonCombatInput extends Omit<OfflineCombatInput, 'monster'> {
+  // Ordered monster defs for each dungeon stage (Dungeon.stages resolved
+  // through MONSTERS by the caller) — the last entry is the boss.
+  stages: Monster[];
+  // Dungeon.combatType/encounterSize — see DungeonScreen.tsx's
+  // currentEncounterSize for the exact same "never the boss stage" rule
+  // this mirrors.
+  dungeonCombatType?: 'single_target' | 'multi_target' | 'dot_heavy';
+  dungeonEncounterSize?: number;
+}
+
+export interface OfflineDungeonCombatResult extends OfflineCombatResult {
+  // How many times the whole stage sequence looped back to stage 0 after
+  // killing the boss during this window — the lifetime total
+  // Character.dungeonClears tracks (same meaning as DungeonScreen's own
+  // pendingDungeonClearsRef, just accumulated for the whole offline window
+  // in one go instead of per-autosave).
+  dungeonClearsGained: number;
+}
+
+export function simulateOfflineDungeonCombat(input: OfflineDungeonCombatInput): OfflineDungeonCombatResult {
+  const progress = resolveElapsedProgress(input.startedAt, input.now);
+  const combatSecondsBudget = progress.effectiveHours * 3600;
+
+  const enchantments = input.enchantments ?? {};
+  const charges: Partial<Record<EquipmentSlot, number>> = { ...(input.enchantmentCharges ?? {}) };
+
+  // Same "never the boss stage" rule as DungeonScreen's currentEncounterSize.
+  function encounterSizeFor(monster: Monster): number {
+    if (input.dungeonCombatType !== 'multi_target' || monster.isBoss) return 1;
+    return input.dungeonEncounterSize ?? 2;
+  }
+  // Same party-size-divided-across-the-wave rule as currentMonsterHpMultiplier.
+  function hpMultiplierFor(monster: Monster, companionCount: number): number {
+    return (1 + companionCount) / encounterSizeFor(monster);
+  }
+  // Same fixed (not party-size-scaled) rule as currentMonsterDamageMultiplier.
+  function damageMultiplierFor(monster: Monster): number {
+    return monster.isBoss ? DUNGEON_BOSS_DAMAGE_MULTIPLIER : DUNGEON_TRASH_DAMAGE_MULTIPLIER;
+  }
+
+  function buildInput(level: number, currentHp: number, monster: Monster): EncounterSetupInput {
+    const enchantTotals = buildActiveEnchantTotals(enchantments, charges);
+    const companionCount = input.companions?.length ?? 0;
+    return {
+      cls: input.cls,
+      level,
+      specId: input.specId,
+      specDef: input.specDef,
+      talentTotals: input.talentTotals,
+      buffTotals: input.buffTotals,
+      extraDamageTakenPct: input.extraDamageTakenPct,
+      equipmentBonuses: input.equipmentBonuses,
+      currentHp,
+      monster,
+      savedEquippedAbilityIds: input.savedEquippedAbilityIds,
+      trainedAbilityIds: input.trainedAbilityIds,
+      savedAbilityConditions: input.savedAbilityConditions,
+      disabledAbilityIds: input.disabledAbilityIds,
+      hasShieldEquipped: input.hasShieldEquipped,
+      companions: input.companions?.map((c) => ({ ...c, level })),
+      monsterHpMultiplier: hpMultiplierFor(monster, companionCount),
+      monsterDamageMultiplier: damageMultiplierFor(monster),
+      encounterSize: encounterSizeFor(monster),
+      ...enchantTotals,
+    };
+  }
+
+  function decrementCharges(offensiveActions: number, damageTaken: number, kills: number): boolean {
+    let anyJustExhausted = false;
+    for (const [slot, enchantId] of Object.entries(enchantments) as [EquipmentSlot, string | undefined][]) {
+      if (!enchantId) continue;
+      const enchant = ENCHANTS[enchantId];
+      const current = charges[slot];
+      if (!enchant || current === undefined || current <= 0) continue;
+      const count =
+        enchant.category === 'offensive' ? offensiveActions : enchant.category === 'defensive' ? damageTaken : kills;
+      if (count <= 0) continue;
+      const next = Math.max(0, current - count);
+      charges[slot] = next;
+      if (next === 0) anyJustExhausted = true;
+    }
+    return anyJustExhausted;
+  }
+
+  let level = input.startingLevel;
+  let xpTotal = input.startingXp;
+  let goldGained = 0;
+  let voidShardsGained = 0;
+  let monstersDefeated = 0;
+  let dungeonClearsGained = 0;
+  let forcedRetreat = false;
+  const lootTotals: Record<string, number> = {};
+  let offensiveActionCount = 0;
+  let damageTakenCount = 0;
+
+  let stageIndex = 0;
+  let currentMonster = input.stages[0];
+
+  const state: CombatState = createEncounterState(buildInput(level, input.startingHp, currentMonster));
+
+  // Mirrors DungeonScreen's nextMonster — advances the stage (looping back
+  // to the first after the boss) and tallies a full clear.
+  function nextMonster(justDefeated: Monster): Monster {
+    if (justDefeated.isBoss) dungeonClearsGained++;
+    stageIndex = (stageIndex + 1) % input.stages.length;
+    currentMonster = input.stages[stageIndex];
+    return currentMonster;
+  }
+
+  const ctx: TickContext = {
+    monster: currentMonster,
+    playerLevel: level,
+    playerCombatType: input.specDef.combatType,
+    nextMonster,
+    encounterSize: encounterSizeFor(currentMonster),
+    monsterHpMultiplier: hpMultiplierFor(currentMonster, input.companions?.length ?? 0),
+    monsterDamageMultiplier: damageMultiplierFor(currentMonster),
+    consumableState: input.consumableState,
+    goldFindPct: input.goldFindPct,
+  };
+
+  let elapsed = 0;
+  let ticks = 0;
+  while (elapsed < combatSecondsBudget && ticks < MAX_TICKS) {
+    // Rebuild the wave-shape fields from whatever stage is current BEFORE
+    // this tick's advanceCombat call — same per-tick ctx construction (and
+    // same one-tick staleness on a stage transition) as DungeonScreen's
+    // live interval handler. See this function's own doc comment above.
+    ctx.monster = currentMonster;
+    ctx.playerLevel = level;
+    ctx.encounterSize = encounterSizeFor(currentMonster);
+    ctx.monsterHpMultiplier = hpMultiplierFor(currentMonster, state.party.length - 1);
+    ctx.monsterDamageMultiplier = damageMultiplierFor(currentMonster);
+
+    const result = advanceCombat(state, ctx, TICK_SECONDS);
+    elapsed += TICK_SECONDS;
+    ticks++;
+
+    let tickOffensiveActions = 0;
+    let tickDamageTaken = 0;
+    for (const event of result.events) {
+      if (event.kind === 'damage_out' || event.kind === 'miss_out') {
+        offensiveActionCount++;
+        tickOffensiveActions++;
+      } else if (event.kind === 'damage_in') {
+        damageTakenCount++;
+        tickDamageTaken++;
+      }
+    }
+
+    for (const kill of result.kills) {
+      monstersDefeated++;
+      xpTotal += kill.xpGained;
+      goldGained += kill.goldGained;
+      voidShardsGained += kill.voidShardsGained;
+      for (const drop of kill.loot) {
+        lootTotals[drop.itemId] = (lootTotals[drop.itemId] ?? 0) + drop.quantity;
+      }
+    }
+
+    const anyExhausted = decrementCharges(tickOffensiveActions, tickDamageTaken, result.kills.length);
+
+    if (result.playerDied) {
+      forcedRetreat = true;
+      break;
+    }
+
+    let leveledUp = false;
+    while (level < MAX_CHARACTER_LEVEL && xpTotal >= characterXpForLevelV2(level + 1)) {
+      level++;
+      leveledUp = true;
+    }
+    if (leveledUp || anyExhausted) {
+      ctx.playerLevel = level;
+      const currentPlayer = state.party.find((p) => p.isPlayer)!;
+      const enchantTotals = buildActiveEnchantTotals(enchantments, charges);
+      const freshMaxHp = maxHp(input.cls, level, input.equipmentBonuses, input.talentTotals.hpMultPct, enchantTotals.flatHpBonus);
+      const freshParty = [createPlayerCombatant(buildInput(level, leveledUp ? freshMaxHp : currentPlayer.hp, currentMonster))];
+      for (const companion of input.companions ?? []) {
+        freshParty.push(createCompanionCombatant({ ...companion, level }, currentMonster));
+      }
+      state.party = freshParty;
+    }
+  }
+
+  const player = state.party.find((p) => p.isPlayer)!;
+  return {
+    monstersDefeated,
+    xpGained: xpTotal - input.startingXp,
+    goldGained: Math.round(goldGained),
+    voidShardsGained: Math.round(voidShardsGained),
+    loot: Object.entries(lootTotals).map(([itemId, quantity]) => ({ itemId, quantity })),
+    hpAfter: player.hp,
+    finalLevel: level,
+    forcedRetreat,
+    simulatedCombatSeconds: elapsed,
+    finalConsumableState: ctx.consumableState,
+    enchantTriggerCounts: { offensiveAction: offensiveActionCount, damageTaken: damageTakenCount },
+    dungeonClearsGained,
   };
 }

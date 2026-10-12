@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useCharacter } from '../hooks/useCharacter';
-import { pickTalent, respecTalents, getRespecCost } from '../firebase/character';
+import { pickTalent, respecTalents, getRespecCost, respecSpec, getSpecRespecCost } from '../firebase/character';
 import { unlockedRows } from '../utils/talentEvaluator';
 import type { TalentColumn } from '../gameData/talents';
+import { SPECS, SPEC_LABELS, type SpecId } from '../gameData/classStats';
 
 const COLUMN_LABELS: Record<TalentColumn, string> = {
   damage: '⚔️ Damage',
@@ -16,10 +17,20 @@ export function TalentScreen() {
   const { character, refetch } = useCharacter();
   const [respeccing, setRespeccing] = useState(false);
   const [respecError, setRespecError] = useState<string | null>(null);
+  const [specRespeccing, setSpecRespeccing] = useState(false);
+  const [specRespecError, setSpecRespecError] = useState<string | null>(null);
+  const [confirmingSpec, setConfirmingSpec] = useState<SpecId | null>(null);
 
   if (!character || !character.spec) return null;
 
   const rows = unlockedRows(character.spec, character.level);
+  // Attribute/Specialization overhaul — every OTHER spec of this character's
+  // own class (never a different class, per the design brief's explicit
+  // "not the class itself" rule — SPECS[id].class filters that out by
+  // construction, nothing to additionally check here).
+  const otherClassSpecs = (Object.keys(SPECS) as SpecId[]).filter(
+    (id) => SPECS[id].class === character.class && id !== character.spec
+  );
 
   async function handlePick(rowLevel: number, column: TalentColumn) {
     if (!user) return;
@@ -40,6 +51,20 @@ export function TalentScreen() {
     setRespeccing(false);
   }
 
+  async function handleRespecSpec(newSpec: SpecId) {
+    if (!user) return;
+    setSpecRespeccing(true);
+    setSpecRespecError(null);
+    const result = await respecSpec(user.uid, newSpec);
+    if (!result.success) {
+      setSpecRespecError(result.reason ?? 'Spec change failed.');
+    } else {
+      setConfirmingSpec(null);
+      await refetch();
+    }
+    setSpecRespeccing(false);
+  }
+
   return (
     <div className="talent-screen">
       <h2>Talents</h2>
@@ -48,6 +73,42 @@ export function TalentScreen() {
         {respeccing ? 'Respeccing…' : `Respec (${getRespecCost(character.respecCount)} gold)`}
       </button>
       {respecError && <p className="error">{respecError}</p>}
+
+      {otherClassSpecs.length > 0 && (
+        <div className="spec-respec-section">
+          <h3>Change Specialization</h3>
+          <p>
+            <small>
+              Switching specs resets your talent tree AND unlearns every spell/ability you've trained — you'll need
+              to pay the Class Trainer to learn them all back. The gold cost below grows each time you switch,
+              separately from the talent respec cost above.
+            </small>
+          </p>
+          {otherClassSpecs.map((specId) => (
+            <div key={specId}>
+              {confirmingSpec === specId ? (
+                <>
+                  <span>
+                    Become {SPEC_LABELS[specId]} for {getSpecRespecCost(character.specRespecCount ?? 0)} gold? This
+                    resets your talents and unlearns all your abilities.
+                  </span>
+                  <button onClick={() => handleRespecSpec(specId)} disabled={specRespeccing}>
+                    {specRespeccing ? 'Switching…' : 'Confirm'}
+                  </button>
+                  <button onClick={() => setConfirmingSpec(null)} disabled={specRespeccing}>
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <button onClick={() => setConfirmingSpec(specId)}>
+                  Become {SPEC_LABELS[specId]} ({getSpecRespecCost(character.specRespecCount ?? 0)} gold)
+                </button>
+              )}
+            </div>
+          ))}
+          {specRespecError && <p className="error">{specRespecError}</p>}
+        </div>
+      )}
 
       <ul>
         {rows.map((row) => {

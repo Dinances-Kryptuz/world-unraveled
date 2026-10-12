@@ -17,7 +17,12 @@ export type ProfessionId =
   | 'enchanting'
   | 'cooking';
 
-export type ActivityType = 'combat' | 'gathering' | 'crafting' | 'fishing' | 'disenchanting';
+// 'dungeon' (Equipment Rarity overhaul's Part 8) — leaving a dungeon party
+// to farm offline/overnight. targetId holds the dungeonId (gameData/
+// dungeons.ts), same role 'combat' gives it for a monster id. See
+// CurrentActivity.dungeonFeastStatBonuses and DungeonScreen.tsx's
+// handleFarmOffline.
+export type ActivityType = 'combat' | 'gathering' | 'crafting' | 'fishing' | 'disenchanting' | 'dungeon';
 
 // 'tool' is a 7th-slot-adjacent equip slot for profession tools (mining
 // pick, skinning knife, fishing rod) — reuses the exact same equip/unequip
@@ -257,6 +262,14 @@ export interface Monster {
   // AskUserQuestion resolution in this session's history: "add
   // Monster.creatureType, tag beasts now [only]").
   creatureType?: 'beast' | 'demon';
+  // Combat/Rarity overhaul — a tougher open-world variant of a normal zone
+  // monster. Absent/false behaves exactly like every monster before this
+  // field existed. See combatFormulas.ts's ELITE_* multipliers for the
+  // actual HP/damage/armor/XP scaling (applied in combatEngine/engine.ts's
+  // buildMonsterProfile/createMonsterCombatant/rollKillReward) — elites
+  // reuse the same level-based formulas as everything else, just scaled up,
+  // rather than a separate stat system.
+  isElite?: boolean;
 }
 
 export type DamageSchool = 'physical' | 'fire' | 'shadow';
@@ -381,6 +394,15 @@ export interface EquippedItemRef {
   rolls?: Partial<Record<import('./classStats').BaseStat, number>>;
 }
 
+// Equipment Rarity overhaul — WoW-Classic-style item quality tiers, a
+// DIFFERENT axis from RecipeRarity below (which describes how hard a
+// *recipe* is to obtain, not the *item's* own power tier). Gray/white are
+// new, minor normal-monster-drop content; green is the existing crafted
+// randomized-stat system; blue/purple are dungeon-sourced fixed-stat gear
+// (plus an advanced "masterwork" crafted recipe tier for blue); orange is
+// reserved, zero content yet (future raid/legendary).
+export type ItemRarity = 'gray' | 'white' | 'green' | 'blue' | 'purple' | 'orange';
+
 export interface ItemDef {
   id: string;
   name: string;
@@ -420,6 +442,25 @@ export interface ItemDef {
   // see items.ts's damaged-item convention). Points at the real item a
   // Blacksmith/Leatherworking/Tailoring repair recipe turns it into.
   repairsIntoItemId?: string;
+  // Only present on the plain (non-"sacred") *_shield offhand items —
+  // Attribute/Specialization overhaul's Shield Block Value (see
+  // combatFormulas.ts's shieldBlockValue). Deliberately NOT inferred from
+  // id/name pattern-matching at combat time (that would silently re-tag any
+  // future reskin); this is the one explicit source of truth.
+  isShield?: boolean;
+  // Equipment Rarity overhaul — explicit override for this item's rarity
+  // tier. Absent means "infer it" (see gameData/itemRarity.ts's
+  // inferItemRarity) rather than "no rarity" — every equippable item has
+  // SOME rarity for display purposes, but only items where inference would
+  // guess wrong (fixed-stat dungeon drops, the two repaired boss weapons,
+  // the small new gray/white monster-drop set) need to say so explicitly.
+  rarity?: ItemRarity;
+  // Reserved for future Legendary (orange) raid content — a short machine
+  // key naming a unique on-equip/on-proc effect this specific item grants,
+  // outside the normal statBonuses system. No current item sets this; kept
+  // here now (architecture-only, per the design brief) so a future
+  // legendary doesn't need a schema change to exist.
+  uniqueEffect?: string;
   sellValue: number;
 }
 

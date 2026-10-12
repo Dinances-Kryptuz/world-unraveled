@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useCharacter } from '../hooks/useCharacter';
-import { applyCombatResult, setCharacterLevel, getCharacter, advanceQuests } from '../firebase/character';
+import { applyCombatResult, setCharacterLevel, getCharacter, advanceQuests, startActivity } from '../firebase/character';
 import { subscribeToInventory } from '../firebase/inventory';
 import {
   recordConsumableUse,
@@ -11,12 +11,13 @@ import {
   applyConsumableAutomationUsage,
   consumeFeast,
 } from '../firebase/consumables';
-import type { BaseStat } from '../gameData/classStats';
+import { statAtLevel, type BaseStat } from '../gameData/classStats';
 import { consumeEnchantCharges } from '../firebase/enchanting';
 import { DUNGEONS } from '../gameData/dungeons';
 import { MONSTERS } from '../gameData/monsters';
 import { notify } from '../utils/notifications';
 import { ITEMS } from '../gameData/items';
+import { inferItemRarity, RARITY_COLORS } from '../gameData/itemRarity';
 import { resolveSpecDef, getExtraDamageTakenPct } from '../gameData/combatProfileWithTalents';
 import { evaluateTalents, EMPTY_TALENT_TOTALS } from '../utils/talentEvaluator';
 import { evaluateActiveBuffs } from '../gameData/buffs';
@@ -26,8 +27,14 @@ import {
   type ConsumableAutomationRuntimeState,
 } from '../gameData/consumableAutomation';
 import { resolveActiveCompanionSetups, type CompanionCombatSetup } from '../gameData/companions';
-import { maxHp, resolveCurrentHp, ATTACK_INTERVAL_SECONDS } from '../gameData/combatFormulas';
-import { getEquipmentStatBonuses } from '../gameData/equipmentStats';
+import {
+  maxHp,
+  resolveCurrentHp,
+  ATTACK_INTERVAL_SECONDS,
+  DUNGEON_TRASH_DAMAGE_MULTIPLIER,
+  DUNGEON_BOSS_DAMAGE_MULTIPLIER,
+} from '../gameData/combatFormulas';
+import { getEquipmentStatBonuses, isShieldEquipped } from '../gameData/equipmentStats';
 import { buildActiveEnchantTotals } from '../gameData/enchanting';
 import { characterXpForLevelV2, MAX_CHARACTER_LEVEL } from '../gameData/xpTables';
 import { checkAndUnlockNextSlot, resolveActiveAltSetups } from '../firebase/characterSlots';
@@ -86,6 +93,13 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
   const secondsSinceSaveRef = useRef(0);
 
   const [bankedTotals, setBankedTotals] = useState<SessionTotals>(EMPTY_TOTALS);
+  // Equipment Rarity overhaul — a small rarity-colored "recent loot" strip.
+  // Combat events (CombatLog) never carried loot item ids (only text), and
+  // there was previously no in-page surface for loot at all beyond the OS
+  // notify() toast (plain text, can't be colored) — this is new, not a
+  // restyle of something that already rendered.
+  const [recentLoot, setRecentLoot] = useState<{ itemId: string; quantity: number }[]>([]);
+  const MAX_RECENT_LOOT = 8;
   const [fullClears, setFullClears] = useState(0);
   const [log, setLog] = useState<CombatEvent[]>([]);
   const [retreated, setRetreated] = useState(false);
@@ -224,6 +238,15 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
     return (1 + companionCount) / currentEncounterSize();
   }
 
+  // Combat/Rarity overhaul — the damage-side counterpart. Deliberately NOT
+  // scaled by party size (unlike HP above): a dungeon's per-hit threat is
+  // meant to challenge an undergeared party member regardless of how many
+  // allies are along, not just add up to a bigger total HP bar to chew
+  // through.
+  function currentMonsterDamageMultiplier(): number {
+    return currentMonsterRef.current.isBoss ? DUNGEON_BOSS_DAMAGE_MULTIPLIER : DUNGEON_TRASH_DAMAGE_MULTIPLIER;
+  }
+
   function buildEncounterInput(c: Character): EncounterSetupInput {
     const specDef = resolveSpecDef(c.class, c.spec);
     const talentTotals = c.spec ? evaluateTalents(c.spec, c.talentPicks).totals : EMPTY_TALENT_TOTALS;
@@ -243,7 +266,8 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
     const equipmentBonuses = getEquipmentStatBonuses(c.equipment, c.enchantments, c.enchantmentCharges);
     const enchantTotals = buildActiveEnchantTotals(c.enchantments, c.enchantmentCharges);
     const charMaxHp = maxHp(c.class, c.level, equipmentBonuses, talentTotals.hpMultPct, enchantTotals.flatHpBonus);
-    const currentHp = resolveCurrentHp(c.currentHp, charMaxHp, c.hpCheckpointAt, new Date());
+    const totalSpi = statAtLevel(c.class, 'SPI', c.level) + (equipmentBonuses.SPI ?? 0);
+    const currentHp = resolveCurrentHp(c.currentHp, charMaxHp, c.hpCheckpointAt, new Date(), totalSpi);
     // Feasts are party-wide — each companion/alt gets the exact same
     // feastStatBonuses folded into its OWN equipmentBonuses, which
     // buildCompanionProfile (combatEngine/engine.ts) already reads into
@@ -275,6 +299,7 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
       trainedAbilityIds: c.trainedAbilityIds,
       savedAbilityConditions: c.abilityConditions,
       disabledAbilityIds: c.disabledAbilityIds,
+      hasShieldEquipped: isShieldEquipped(c.equipment),
       companions,
       ...enchantTotals,
       // A dungeon is fixed-size group content (REQUIRED_DUNGEON_PARTY_SIZE,
@@ -288,6 +313,7 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
       // across the wave for a multi_target stage — see
       // currentMonsterHpMultiplier.
       monsterHpMultiplier: currentMonsterHpMultiplier(companions.length),
+      monsterDamageMultiplier: currentMonsterDamageMultiplier(),
       encounterSize: currentEncounterSize(),
     };
   }
@@ -304,6 +330,7 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
     setBankedTotals(EMPTY_TOTALS);
     setFullClears(0);
     setLog([]);
+    setRecentLoot([]);
     setRetreated(false);
     retreatedRef.current = false;
     pendingKillsRef.current = [];
@@ -370,12 +397,17 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
         nextMonster,
         encounterSize: currentEncounterSize(),
         monsterHpMultiplier: currentMonsterHpMultiplier(companionCount),
+        monsterDamageMultiplier: currentMonsterDamageMultiplier(),
         consumableState: consumableStateRef.current,
         goldFindPct: goldFindPctRef.current,
       };
       const result = advanceCombat(combatStateRef.current, ctx, 1);
       pendingKillsRef.current.push(...result.kills);
       notifyKills(result.kills);
+      if (result.kills.some((k) => k.loot.length > 0)) {
+        const newDrops = result.kills.flatMap((k) => k.loot);
+        setRecentLoot((prev) => [...newDrops, ...prev].slice(0, MAX_RECENT_LOOT));
+      }
       mergeQuestSignals(pendingQuestSignalsRef.current, result.questSignals);
       for (const event of result.events) {
         if (event.kind === 'damage_out') {
@@ -547,6 +579,28 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
     onExit();
   }
 
+  // Equipment Rarity overhaul's Part 8 — leaves the party farming this same
+  // dungeon while the player is away, instead of just abandoning the run.
+  // Banks whatever this session already earned (same as a normal exit),
+  // then writes a 'dungeon' currentActivity anchored at now so the next
+  // long-absence WelcomeBackScreen can simulate the stage sequence offline
+  // (see combatEngine/offlineCombat.ts's simulateOfflineDungeonCombat).
+  // Companions/alts are re-resolved fresh from the character at that later
+  // point (not snapshotted here) — same posture live entry already has.
+  async function handleFarmOffline() {
+    if (!user || retreatedRef.current) return;
+    if (!retreatedRef.current) await autosave();
+    await startActivity(user.uid, {
+      type: 'dungeon',
+      targetId: dungeonId,
+      zoneId: dungeon.zoneId,
+      equippedShirtItemId: equippedItemId(character.equipment.shirt),
+      dungeonFeastStatBonuses: feastStatBonusesRef.current,
+    });
+    await refetch();
+    onExit();
+  }
+
   function handleManualUse(abilityId: string) {
     const state = combatStateRef.current;
     if (!state || retreatedRef.current) return;
@@ -557,6 +611,7 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
       nextMonster,
       encounterSize: currentEncounterSize(),
       monsterHpMultiplier: currentMonsterHpMultiplier(state.party.length - 1),
+      monsterDamageMultiplier: currentMonsterDamageMultiplier(),
       consumableState: consumableStateRef.current,
       goldFindPct: goldFindPctRef.current,
     };
@@ -671,7 +726,7 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
       </p>
       <h3>
         {monster.isBoss ? '☠ ' : ''}
-        {monster.name} — <MonsterLevelBadge monsterLevel={monster.level} playerLevel={character.level} />
+        {monster.name} — <MonsterLevelBadge monsterLevel={monster.level} playerLevel={character.level} isElite={monster.isElite} />
       </h3>
 
       {!retreated && (
@@ -734,7 +789,27 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
         </p>
       )}
 
+      {recentLoot.length > 0 && (
+        <div className="dungeon-recent-loot">
+          <strong>Recent loot:</strong>{' '}
+          {recentLoot.map((drop, i) => {
+            const dropItem = ITEMS[drop.itemId];
+            const rarity = dropItem ? inferItemRarity(dropItem) : null;
+            return (
+              <span key={i} style={{ color: rarity ? RARITY_COLORS[rarity] : undefined, marginRight: 8 }}>
+                {drop.quantity}x {dropItem?.name ?? drop.itemId}
+              </span>
+            );
+          })}
+        </div>
+      )}
+
       <button onClick={handleExit}>Exit Dungeon</button>
+      {!retreated && (
+        <button onClick={() => void handleFarmOffline()} title="Leave your party here to keep clearing this dungeon while you're away.">
+          Leave Party Farming (Offline)
+        </button>
+      )}
 
       <CombatLog events={log} />
     </div>

@@ -644,7 +644,7 @@ export const ZONES: Record<string, Zone> = {
       'A peaceful farming region surrounded by forests and rolling hills. It is the first place new adventurers learn to fight, gather, and explore.',
     levelRange: [1, 15],
     unlockRequirement: { type: 'none' },
-    monsterIds: ['greenhorn_boar', 'forest_wolf', 'wild_kobold', 'thornback_hare'],
+    monsterIds: ['greenhorn_boar', 'forest_wolf', 'wild_kobold', 'thornback_hare', 'greenhollow_alpha_boar'],
     gatherNodeIds: [
       'greenhollow_copper_vein', 'greenhollow_peacebloom_patch', 'greenhollow_silverleaf_patch',
       'greenhollow_earthroot_patch', 'greenhollow_skinning_grounds',
@@ -661,7 +661,7 @@ export const ZONES: Record<string, Zone> = {
       'Windswept slopes and broken rock rising above Greenhollow Fields. Jackals and goats roam the lower trails; bandits and worse hold the higher ground.',
     levelRange: [8, 25],
     unlockRequirement: { type: 'characterLevel', level: 8 },
-    monsterIds: ['ridge_jackal', 'craggy_goat', 'rubble_crawler', 'highland_bandit', 'crag_wolf_alpha'],
+    monsterIds: ['ridge_jackal', 'craggy_goat', 'rubble_crawler', 'highland_bandit', 'crag_wolf_alpha', 'foothills_warg'],
     gatherNodeIds: [
       'stonecrag_tin_vein', 'stonecrag_silver_vein', 'stonecrag_mageroyal_patch', 'stonecrag_briarthorn_patch',
       'stonecrag_bruiseweed_patch', 'stonecrag_skinning_grounds',
@@ -679,7 +679,7 @@ export const ZONES: Record<string, Zone> = {
       'A volcanic highland beyond Stonecrag, scarred by old fissures that still breathe heat. Fire-hardened wolves and raiders hold the ridge, and an ancient dwarven forge lies cracked open at its heart.',
     levelRange: [25, 40],
     unlockRequirement: { type: 'characterLevel', level: 25 },
-    monsterIds: ['cinder_wolf', 'ashwing_bat', 'molten_crawler', 'ridgeback_marauder', 'scorched_drake'],
+    monsterIds: ['cinder_wolf', 'ashwing_bat', 'molten_crawler', 'ridgeback_marauder', 'scorched_drake', 'emberfall_firedrake'],
     gatherNodeIds: [
       'emberfall_iron_vein', 'emberfall_kingsblood_patch', 'emberfall_liferoot_patch', 'emberfall_goldthorn_patch',
       'emberfall_skinning_grounds',
@@ -697,7 +697,7 @@ export const ZONES: Record<string, Zone> = {
       'Once a thriving dwarven mining city, Cinderfall was swallowed by fire and ash generations ago. Its ruins are now home to scavengers, restless spirits, and constructs still obeying orders no living dwarf gave.',
     levelRange: [30, 44],
     unlockRequirement: { type: 'characterLevel', level: 30 },
-    monsterIds: ['ash_wraith', 'cinder_scavenger', 'ashforge_golem', 'ember_stalker', 'ruin_marauder'],
+    monsterIds: ['ash_wraith', 'cinder_scavenger', 'ashforge_golem', 'ember_stalker', 'ruin_marauder', 'cinderfall_ashlord'],
     gatherNodeIds: [
       'cinderfall_ore_seam', 'cinderfall_gold_vein', 'cinderfall_khadgars_whisker_patch', 'cinderfall_firebloom_patch',
       'cinderfall_sungrass_patch', 'cinderfall_skinning_grounds',
@@ -715,7 +715,7 @@ export const ZONES: Record<string, Zone> = {
       'A massive rift has torn open the earth here, spilling lava and heat into the world above. Cultists who worship the stirring fire below have made this place their own, and the land itself seems to answer their call.',
     levelRange: [40, 54],
     unlockRequirement: { type: 'characterLevel', level: 40 },
-    monsterIds: ['cultist_adept', 'living_ember', 'scaleback_drake', 'cultist_zealot', 'magma_hound'],
+    monsterIds: ['cultist_adept', 'living_ember', 'scaleback_drake', 'cultist_zealot', 'magma_hound', 'molten_scar_behemoth'],
     gatherNodeIds: [
       'molten_scar_brimstone_vein', 'molten_scar_blindweed_patch', 'molten_scar_ghost_mushroom_patch',
       'molten_scar_gromsblood_patch', 'molten_scar_skinning_grounds',
@@ -733,7 +733,7 @@ export const ZONES: Record<string, Zone> = {
       'At the world’s molten heart lies a crater no living thing should call home — yet the fire’s servants gather here in growing numbers, drawn by a power stirring after ages of sleep. This is the frontier of what’s still to come.',
     levelRange: [48, 60],
     unlockRequirement: { type: 'characterLevel', level: 48 },
-    monsterIds: ['emberlord_cultist', 'flamewalker', 'charhide_behemoth', 'ashfall_harbinger', 'emberguard_sentinel'],
+    monsterIds: ['emberlord_cultist', 'flamewalker', 'charhide_behemoth', 'ashfall_harbinger', 'emberguard_sentinel', 'cinderheart_ember_wyrm'],
     gatherNodeIds: [
       'cinderheart_ore_vein', 'cinderheart_platinum_vein', 'cinderheart_dreamfoil_patch',
       'cinderheart_mountain_silversage_patch', 'cinderheart_black_lotus_patch', 'cinderheart_skinning_grounds',

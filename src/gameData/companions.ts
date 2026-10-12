@@ -2,7 +2,7 @@ import type { ClassId, SpecDef, SpecId } from './classStats';
 import { SPECS } from './classStats';
 import type { BaseStat } from './classStats';
 import type { EquipmentSlot, EquippedItemRef } from './types';
-import { getEquipmentStatBonuses } from './equipmentStats';
+import { getEquipmentStatBonuses, isShieldEquipped } from './equipmentStats';
 import { evaluateTalents, EMPTY_TALENT_TOTALS, type TalentBonusTotals } from '../utils/talentEvaluator';
 import type { TalentPicks } from './talents';
 import type { Character } from '../types/character';
@@ -210,6 +210,10 @@ export interface CompanionCombatSetup {
   specDef: SpecDef;
   level: number;
   equipmentBonuses: Partial<Record<BaseStat, number>>;
+  // Attribute/Specialization overhaul's Shield Block Value — whether this
+  // companion currently has a genuine shield (ItemDef.isShield) equipped in
+  // its offhand. See gameData/equipmentStats.ts's isShieldEquipped.
+  hasShieldEquipped?: boolean;
   // Alt-recruit only (see buildAltCombatSetup) — a real character's own
   // talent bonuses, applied the same way buildPlayerProfile applies them for
   // the live player. Undefined (every ordinary hired companion) behaves
@@ -268,6 +272,7 @@ export function buildAltCombatSetup(slot: number, alt: AltCharacterSnapshot): Co
     specDef: SPECS[specId],
     level: alt.level,
     equipmentBonuses: getEquipmentStatBonuses(alt.equipment, alt.enchantments, alt.enchantmentCharges),
+    hasShieldEquipped: isShieldEquipped(alt.equipment),
     talentTotals,
     savedEquippedAbilityIds: alt.equippedAbilityIds ?? [],
   };
@@ -307,6 +312,7 @@ export function resolveActiveCompanionSetups(character: Character): CompanionCom
       specDef: SPECS[def.specId],
       level: character.level,
       equipmentBonuses: getEquipmentStatBonuses(state.equipment),
+      hasShieldEquipped: isShieldEquipped(state.equipment),
     });
   }
   return setups;

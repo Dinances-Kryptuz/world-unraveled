@@ -353,7 +353,7 @@ export const RECIPES: Record<string, Recipe> = {
     materials: [{ itemId: 'emberscar_leather', quantity: 3 }, { itemId: 'emberscar_hide', quantity: 2 }],
     craftSeconds: 10.7, xpAward: 92,
     materialId: 'emberscar_leather',
-    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+    source: 'monster_drop', rarity: 'uncommon', learnedAutomatically: false,
   },
   emberscar_leather_chest: {
     id: 'emberscar_leather_chest', name: 'Emberscar Leather Chestplate', profession: 'leatherworking', requiredSkill: 86,
@@ -377,7 +377,7 @@ export const RECIPES: Record<string, Recipe> = {
     materials: [{ itemId: 'emberscar_leather', quantity: 4 }],
     craftSeconds: 10.7, xpAward: 92,
     materialId: 'emberscar_leather',
-    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+    source: 'monster_drop', rarity: 'uncommon', learnedAutomatically: false,
   },
   emberscar_leather_boots: {
     id: 'emberscar_leather_boots', name: 'Emberscar Leather Boots', profession: 'leatherworking', requiredSkill: 86,
@@ -1382,21 +1382,21 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'elixir_of_giants', resultQuantity: 1,
     materials: [{ itemId: 'gromsblood', quantity: 2 }, { itemId: 'ghost_mushroom', quantity: 1 }],
     alchemyZoneId: 'molten_scar', craftSeconds: 16, xpAward: 83,
-    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+    source: 'monster_drop', rarity: 'uncommon', learnedAutomatically: false,
   },
   elixir_of_shadow_power: {
     id: 'elixir_of_shadow_power', name: 'Elixir of Shadow Power', profession: 'alchemy', requiredSkill: 81,
     resultItemId: 'elixir_of_shadow_power', resultQuantity: 1,
     materials: [{ itemId: 'ghost_mushroom', quantity: 2 }, { itemId: 'arthas_tears', quantity: 1 }],
     alchemyZoneId: 'molten_scar', craftSeconds: 17, xpAward: 87,
-    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+    source: 'monster_drop', rarity: 'uncommon', learnedAutomatically: false,
   },
   greater_shadow_protection_potion: {
     id: 'greater_shadow_protection_potion', name: 'Greater Shadow Protection Potion', profession: 'alchemy', requiredSkill: 84,
     resultItemId: 'greater_shadow_protection_potion', resultQuantity: 1,
     materials: [{ itemId: 'gromsblood', quantity: 2 }, { itemId: 'arthas_tears', quantity: 1 }],
     alchemyZoneId: 'molten_scar', craftSeconds: 17, xpAward: 90,
-    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+    source: 'monster_drop', rarity: 'uncommon', learnedAutomatically: false,
   },
 
   supreme_healing_potion: {
@@ -1418,21 +1418,21 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'elixir_of_the_mongoose', resultQuantity: 1,
     materials: [{ itemId: 'mountain_silversage', quantity: 2 }, { itemId: 'plaguebloom', quantity: 1 }],
     alchemyZoneId: 'cinderheart_crater', craftSeconds: 18, xpAward: 101,
-    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+    source: 'monster_drop', rarity: 'uncommon', learnedAutomatically: false,
   },
   greater_arcane_elixir: {
     id: 'greater_arcane_elixir', name: 'Greater Arcane Elixir', profession: 'alchemy', requiredSkill: 97,
     resultItemId: 'greater_arcane_elixir', resultQuantity: 1,
     materials: [{ itemId: 'dreamfoil', quantity: 2 }, { itemId: 'mountain_silversage', quantity: 1 }],
     alchemyZoneId: 'cinderheart_crater', craftSeconds: 19, xpAward: 104,
-    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+    source: 'monster_drop', rarity: 'uncommon', learnedAutomatically: false,
   },
   flask_of_supreme_power: {
     id: 'flask_of_supreme_power', name: 'Flask of Supreme Power', profession: 'alchemy', requiredSkill: 100,
     resultItemId: 'flask_of_supreme_power', resultQuantity: 1,
     materials: [{ itemId: 'black_lotus', quantity: 2 }, { itemId: 'dreamfoil', quantity: 2 }, { itemId: 'plaguebloom', quantity: 1 }],
     alchemyZoneId: 'cinderheart_crater', craftSeconds: 19, xpAward: 107,
-    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+    source: 'monster_drop', rarity: 'uncommon', learnedAutomatically: false,
   },
 
   // ── Emberfall Ridge smithing ──────────────────────────────────────────
@@ -2389,14 +2389,14 @@ export const RECIPES: Record<string, Recipe> = {
     resultItemId: 'obsidian_battleaxe', resultQuantity: 1,
     materials: [{ itemId: 'obsidian_bar', quantity: 6 }],
     craftSeconds: 11.3, xpAward: 33,
-    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+    source: 'monster_drop', rarity: 'uncommon', learnedAutomatically: false,
   },
   sacred_obsidian_battleaxe: {
     id: 'sacred_obsidian_battleaxe', name: 'Sacred Obsidian Battleaxe', profession: 'smithing', requiredSkill: 19,
     resultItemId: 'sacred_obsidian_battleaxe', resultQuantity: 1,
     materials: [{ itemId: 'obsidian_bar', quantity: 6 }],
     craftSeconds: 11.3, xpAward: 33,
-    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+    source: 'monster_drop', rarity: 'uncommon', learnedAutomatically: false,
   },
   silver_necklace: {
     id: 'silver_necklace', name: 'Silver Necklace', profession: 'smithing', requiredSkill: 4,
@@ -2436,7 +2436,7 @@ export const RECIPES: Record<string, Recipe> = {
     materials: [{ itemId: 'platinum_bar', quantity: 2 }],
     craftSeconds: 11.3, xpAward: 33,
     materialId: 'platinum',
-    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+    source: 'monster_drop', rarity: 'uncommon', learnedAutomatically: false,
   },
   platinum_ring: {
     id: 'platinum_ring', name: 'Platinum Ring', profession: 'smithing', requiredSkill: 19,
@@ -2444,7 +2444,7 @@ export const RECIPES: Record<string, Recipe> = {
     materials: [{ itemId: 'platinum_bar', quantity: 2 }],
     craftSeconds: 11.3, xpAward: 33,
     materialId: 'platinum',
-    source: 'trainer', rarity: 'common', learnedAutomatically: true,
+    source: 'monster_drop', rarity: 'uncommon', learnedAutomatically: false,
   },
 
   // ── Enchanting overhaul — Wand/Staff/Book equipment (6 zones x 3 types),

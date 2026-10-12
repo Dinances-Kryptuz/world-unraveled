@@ -1,10 +1,11 @@
 import type { ItemDef } from './types';
+import { DUNGEON_LOOT_ITEMS } from './dungeonLoot';
 
 // V1 has zero stat variance: every unit of a given item is identical.
 // This is what lets inventory be a simple { itemId: quantity } map instead
 // of tracking per-item instances.
 
-export const ITEMS: Record<string, ItemDef> = {
+const STATIC_ITEMS: Record<string, ItemDef> = {
   // ── Starter gear — granted directly at character creation (see
   // firebase/character.ts's createCharacter), not sold, gathered, or
   // crafted. A level-1 character fighting bare-handed dies to the first
@@ -1594,17 +1595,17 @@ export const ITEMS: Record<string, ItemDef> = {
   chieftains_warhammer: {
     id: 'chieftains_warhammer', name: "Chieftain's Warhammer", type: 'equipment',
     description: 'The warhammer of the Kobold Warrens’ chieftain — heavier and better balanced than anything else this side of the Warrens.',
-    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 8 }, sellValue: 45,
+    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 8 }, rarity: 'blue', sellValue: 45,
   },
   chieftains_seal: {
     id: 'chieftains_seal', name: "Chieftain's Seal", type: 'equipment',
     description: 'A plain band the Kobold Chieftain wore into every fight — worn smooth, but still solid.',
-    stackable: true, equipSlot: 'ring', statBonuses: { STA: 3 }, sellValue: 15,
+    stackable: true, equipSlot: 'ring', statBonuses: { STA: 3 }, rarity: 'blue', sellValue: 15,
   },
   warlords_signet: {
     id: 'warlords_signet', name: "Warlord's Signet", type: 'equipment',
     description: 'A heavy signet ring taken from the Alpha Warlord of the Stonecrag Depths.',
-    stackable: true, equipSlot: 'ring', statBonuses: { STA: 4, STR: 4 }, sellValue: 50,
+    stackable: true, equipSlot: 'ring', statBonuses: { STA: 4, STR: 4 }, rarity: 'blue', sellValue: 50,
   },
 
   // ── Consumables — vendor-bought basics; see Alchemy below for the
@@ -1956,12 +1957,12 @@ export const ITEMS: Record<string, ItemDef> = {
   kaldrun_warhammer: {
     id: 'kaldrun_warhammer', name: "Kaldrun's Warhammer", type: 'equipment',
     description: "The Forgemaster's own warhammer — heavier and better balanced than anything else on the ridge.",
-    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 12, STA: 3 }, sellValue: 70,
+    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 12, STA: 3 }, rarity: 'blue', sellValue: 70,
   },
   kaldrun_tempered_band: {
     id: 'kaldrun_tempered_band', name: "Kaldrun's Tempered Band", type: 'equipment',
     description: "A heavy ring quenched in the Forgemaster's own fire, matching the ember-set rings the ridge's drakes carry.",
-    stackable: true, equipSlot: 'ring', statBonuses: { STR: 7 }, sellValue: 44,
+    stackable: true, equipSlot: 'ring', statBonuses: { STR: 7 }, rarity: 'blue', sellValue: 44,
   },
 
   // ── Cinderfall Depths materials ───────────────────────────────────────
@@ -2075,12 +2076,12 @@ export const ITEMS: Record<string, ItemDef> = {
   overseers_greatmace: {
     id: 'overseers_greatmace', name: "Overseer's Greatmace", type: 'equipment',
     description: 'The ceremonial mace of the Ashen Overseer — too heavy for most, and twice as deadly.',
-    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 14, STA: 4 }, sellValue: 80,
+    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 14, STA: 4 }, rarity: 'blue', sellValue: 80,
   },
   overseers_band: {
     id: 'overseers_band', name: "Overseer's Band", type: 'equipment',
     description: 'A plain ash-blackened ring the Overseer wore under its gauntlet — solid, and built to outlast whoever wears it.',
-    stackable: true, equipSlot: 'ring', statBonuses: { STA: 8 }, sellValue: 60,
+    stackable: true, equipSlot: 'ring', statBonuses: { STA: 8 }, rarity: 'blue', sellValue: 60,
   },
   emberpetal_tonic: {
     id: 'emberpetal_tonic', name: 'Emberpetal Tonic', type: 'consumable',
@@ -2190,7 +2191,7 @@ export const ITEMS: Record<string, ItemDef> = {
   heralds_ember_band: {
     id: 'heralds_ember_band', name: "Herald's Ember Band", type: 'equipment',
     description: 'A ring taken from the Molten Herald, still warm as a living coal.',
-    stackable: true, equipSlot: 'ring', statBonuses: { INT: 12, STA: 3 }, sellValue: 95,
+    stackable: true, equipSlot: 'ring', statBonuses: { INT: 12, STA: 3 }, rarity: 'blue', sellValue: 95,
   },
   magma_forged_band: {
     id: 'magma_forged_band', name: 'Magma-Forged Band', type: 'equipment',
@@ -2328,7 +2329,7 @@ export const ITEMS: Record<string, ItemDef> = {
   pyraxis_warblade: {
     id: 'pyraxis_warblade', name: "Pyraxis's Warblade", type: 'equipment',
     description: 'The warblade of Pyraxis, Warden of the Cinderheart — forged in fire older than the world above.',
-    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 18, STA: 5 }, sellValue: 140,
+    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 18, STA: 5 }, rarity: 'blue', sellValue: 140,
   },
 
   // ── Damaged dungeon boss drops — unequippable (no equipSlot) until a
@@ -4005,7 +4006,7 @@ export const ITEMS: Record<string, ItemDef> = {
   copper_shield: {
     id: 'copper_shield', name: 'Copper Shield', type: 'equipment',
     description: 'An orange shield forged from Copper by a skilled blacksmith.',
-    stackable: true, equipSlot: 'offhand', statBonuses: { STA: 3, STR: 3 }, sellValue: 18,
+    stackable: true, equipSlot: 'offhand', armorType: 'plate', statBonuses: { STA: 3, STR: 3 }, isShield: true, sellValue: 18,
   },
   sacred_copper_shield: {
     id: 'sacred_copper_shield', name: 'Copper-Bound Tome', type: 'equipment',
@@ -4090,7 +4091,7 @@ export const ITEMS: Record<string, ItemDef> = {
   bronze_shield: {
     id: 'bronze_shield', name: 'Bronze Shield', type: 'equipment',
     description: 'A brown shield forged from Bronze by a skilled blacksmith.',
-    stackable: true, equipSlot: 'offhand', statBonuses: { STA: 6, STR: 5 }, sellValue: 32,
+    stackable: true, equipSlot: 'offhand', armorType: 'plate', statBonuses: { STA: 6, STR: 5 }, isShield: true, sellValue: 32,
   },
   sacred_bronze_shield: {
     id: 'sacred_bronze_shield', name: 'Bronze-Rimmed Orb', type: 'equipment',
@@ -4175,7 +4176,7 @@ export const ITEMS: Record<string, ItemDef> = {
   iron_shield: {
     id: 'iron_shield', name: 'Iron Shield', type: 'equipment',
     description: 'A dark gray shield forged from Iron by a skilled blacksmith.',
-    stackable: true, equipSlot: 'offhand', statBonuses: { STA: 7, STR: 6 }, sellValue: 44,
+    stackable: true, equipSlot: 'offhand', armorType: 'plate', statBonuses: { STA: 7, STR: 6 }, isShield: true, sellValue: 44,
   },
   sacred_iron_shield: {
     id: 'sacred_iron_shield', name: 'Iron-Clasped Tome', type: 'equipment',
@@ -4260,7 +4261,7 @@ export const ITEMS: Record<string, ItemDef> = {
   steel_shield: {
     id: 'steel_shield', name: 'Steel Shield', type: 'equipment',
     description: 'A light gray shield forged from Steel by a skilled blacksmith.',
-    stackable: true, equipSlot: 'offhand', statBonuses: { STA: 9, STR: 7 }, sellValue: 56,
+    stackable: true, equipSlot: 'offhand', armorType: 'plate', statBonuses: { STA: 9, STR: 7 }, isShield: true, sellValue: 56,
   },
   sacred_steel_shield: {
     id: 'sacred_steel_shield', name: 'Steel-Banded Orb', type: 'equipment',
@@ -4345,7 +4346,7 @@ export const ITEMS: Record<string, ItemDef> = {
   mithril_shield: {
     id: 'mithril_shield', name: 'Mithril Shield', type: 'equipment',
     description: 'A dark blue shield forged from Mithril by a skilled blacksmith.',
-    stackable: true, equipSlot: 'offhand', statBonuses: { STA: 10, STR: 9 }, sellValue: 68,
+    stackable: true, equipSlot: 'offhand', armorType: 'plate', statBonuses: { STA: 10, STR: 9 }, isShield: true, sellValue: 68,
   },
   sacred_mithril_shield: {
     id: 'sacred_mithril_shield', name: 'Mithril-Bound Tome', type: 'equipment',
@@ -4430,7 +4431,7 @@ export const ITEMS: Record<string, ItemDef> = {
   thorium_shield: {
     id: 'thorium_shield', name: 'Thorium Shield', type: 'equipment',
     description: 'A light teal shield forged from Thorium by a skilled blacksmith.',
-    stackable: true, equipSlot: 'offhand', statBonuses: { STA: 12, STR: 10 }, sellValue: 84,
+    stackable: true, equipSlot: 'offhand', armorType: 'plate', statBonuses: { STA: 12, STR: 10 }, isShield: true, sellValue: 84,
   },
   sacred_thorium_shield: {
     id: 'sacred_thorium_shield', name: 'Thorium-Rimmed Orb', type: 'equipment',
@@ -4515,7 +4516,7 @@ export const ITEMS: Record<string, ItemDef> = {
   obsidian_shield: {
     id: 'obsidian_shield', name: 'Obsidian Shield', type: 'equipment',
     description: 'A black shield forged from Obsidian by a skilled blacksmith.',
-    stackable: true, equipSlot: 'offhand', statBonuses: { STA: 14, STR: 12 }, sellValue: 104,
+    stackable: true, equipSlot: 'offhand', armorType: 'plate', statBonuses: { STA: 14, STR: 12 }, isShield: true, sellValue: 104,
   },
   sacred_obsidian_shield: {
     id: 'sacred_obsidian_shield', name: 'Obsidian-Clasped Tome', type: 'equipment',
@@ -4647,4 +4648,149 @@ export const ITEMS: Record<string, ItemDef> = {
     stackable: true, equipSlot: 'ring', statBonuses: { INT: 7, SPI: 6 }, sellValue: 68,
   },
 
+  // ── Equipment Rarity overhaul — gray/white normal-monster drops ───────
+  // One gray (1 weak stat) + one white (2 weak stats) item per zone,
+  // deliberately modest — primarily useful for early progression/selling,
+  // never meant to compete with the zone's own crafted green gear (see
+  // each zone's green chest-slot minimum in equipmentRolls.ts's
+  // ARMOR_STAT_RANGES for the comparison: every value below sits well
+  // under it). necklace/belt chosen because neither ever has an armorType
+  // (gameData/types.ts), so these drop usable by any class with zero
+  // itemization-restriction edge cases.
+  gray_necklace_z1: {
+    id: 'gray_necklace_z1', name: 'Frayed Necklace', type: 'equipment',
+    description: 'A plain cord necklace, barely holding together.',
+    stackable: true, equipSlot: 'necklace', statBonuses: { STA: 2 }, rarity: 'gray', sellValue: 2,
+  },
+  white_belt_z1: {
+    id: 'white_belt_z1', name: 'Tattered Belt', type: 'equipment',
+    description: 'A worn leather belt, patched more than once.',
+    stackable: true, equipSlot: 'belt', statBonuses: { STA: 1, STR: 1 }, rarity: 'white', sellValue: 4,
+  },
+  gray_necklace_z2: {
+    id: 'gray_necklace_z2', name: 'Chipped Necklace', type: 'equipment',
+    description: 'A rough stone pendant on a leather cord.',
+    stackable: true, equipSlot: 'necklace', statBonuses: { STA: 3 }, rarity: 'gray', sellValue: 4,
+  },
+  white_belt_z2: {
+    id: 'white_belt_z2', name: 'Worn Hide Belt', type: 'equipment',
+    description: 'A sturdier hide belt, stained from the foothills.',
+    stackable: true, equipSlot: 'belt', statBonuses: { STA: 2, STR: 2 }, rarity: 'white', sellValue: 8,
+  },
+  gray_necklace_z3: {
+    id: 'gray_necklace_z3', name: 'Scorched Necklace', type: 'equipment',
+    description: 'A necklace singed by the ridge’s heat but still intact.',
+    stackable: true, equipSlot: 'necklace', statBonuses: { STA: 4 }, rarity: 'gray', sellValue: 6,
+  },
+  white_belt_z3: {
+    id: 'white_belt_z3', name: 'Singed Belt', type: 'equipment',
+    description: 'A belt scorched dark by the ridge’s heat, still holding its shape.',
+    stackable: true, equipSlot: 'belt', statBonuses: { STA: 2, STR: 2 }, rarity: 'white', sellValue: 12,
+  },
+  gray_necklace_z4: {
+    id: 'gray_necklace_z4', name: 'Ash-Dusted Necklace', type: 'equipment',
+    description: 'A necklace caked in fine cinderfall ash.',
+    stackable: true, equipSlot: 'necklace', statBonuses: { STA: 5 }, rarity: 'gray', sellValue: 8,
+  },
+  white_belt_z4: {
+    id: 'white_belt_z4', name: 'Ashhide Belt', type: 'equipment',
+    description: 'A belt cut from tough ash-hide, built for the depths.',
+    stackable: true, equipSlot: 'belt', statBonuses: { STA: 3, STR: 3 }, rarity: 'white', sellValue: 16,
+  },
+  gray_necklace_z5: {
+    id: 'gray_necklace_z5', name: 'Cracked Obsidian Necklace', type: 'equipment',
+    description: 'A necklace strung with a fissured shard of black glass.',
+    stackable: true, equipSlot: 'necklace', statBonuses: { STA: 6 }, rarity: 'gray', sellValue: 10,
+  },
+  white_belt_z5: {
+    id: 'white_belt_z5', name: 'Scaleback Belt', type: 'equipment',
+    description: 'A belt cut from tough scaleback hide.',
+    stackable: true, equipSlot: 'belt', statBonuses: { STA: 3, STR: 3 }, rarity: 'white', sellValue: 20,
+  },
+  gray_necklace_z6: {
+    id: 'gray_necklace_z6', name: 'Emberlord’s Lost Pendant', type: 'equipment',
+    description: 'A charm dropped by one of the crater’s lesser cultists.',
+    stackable: true, equipSlot: 'necklace', statBonuses: { STA: 8 }, rarity: 'gray', sellValue: 14,
+  },
+  white_belt_z6: {
+    id: 'white_belt_z6', name: 'Emberscale Belt', type: 'equipment',
+    description: 'A belt cut from emberscale hide, warm to the touch.',
+    stackable: true, equipSlot: 'belt', statBonuses: { STA: 4, STR: 4 }, rarity: 'white', sellValue: 28,
+  },
+
+  // ── Recipe-discovery overhaul (RARITY-6) — these 12 recipes were flipped
+  // from source:'trainer'/learnedAutomatically:true to source:'monster_drop'
+  // (see recipes.ts) so they must now be learned from a dropped 'recipe'
+  // item instead. Placed on normal/elite monsters in cinderfall_depths,
+  // molten_scar, and cinderheart_crater — see those monsters' lootTable
+  // entries in monsters.ts.
+  formula_obsidian_battleaxe: {
+    id: 'formula_obsidian_battleaxe', name: 'Formula: Obsidian Battleaxe', type: 'recipe',
+    description: 'A soot-stained smithing formula. Use to learn the recipe.',
+    stackable: true, teachesRecipeId: 'obsidian_battleaxe', sellValue: 0,
+  },
+  formula_sacred_obsidian_battleaxe: {
+    id: 'formula_sacred_obsidian_battleaxe', name: 'Formula: Sacred Obsidian Battleaxe', type: 'recipe',
+    description: 'A soot-stained smithing formula, blessed before the forge. Use to learn the recipe.',
+    stackable: true, teachesRecipeId: 'sacred_obsidian_battleaxe', sellValue: 0,
+  },
+  formula_elixir_of_giants: {
+    id: 'formula_elixir_of_giants', name: 'Formula: Elixir of Giants', type: 'recipe',
+    description: 'A charred alchemy formula. Use to learn the recipe.',
+    stackable: true, teachesRecipeId: 'elixir_of_giants', sellValue: 0,
+  },
+  formula_elixir_of_shadow_power: {
+    id: 'formula_elixir_of_shadow_power', name: 'Formula: Elixir of Shadow Power', type: 'recipe',
+    description: 'A charred alchemy formula. Use to learn the recipe.',
+    stackable: true, teachesRecipeId: 'elixir_of_shadow_power', sellValue: 0,
+  },
+  formula_platinum_ring: {
+    id: 'formula_platinum_ring', name: 'Formula: Platinum Ring', type: 'recipe',
+    description: 'A soot-stained smithing formula. Use to learn the recipe.',
+    stackable: true, teachesRecipeId: 'platinum_ring', sellValue: 0,
+  },
+  formula_greater_shadow_protection_potion: {
+    id: 'formula_greater_shadow_protection_potion', name: 'Formula: Greater Shadow Protection Potion', type: 'recipe',
+    description: 'A charred alchemy formula. Use to learn the recipe.',
+    stackable: true, teachesRecipeId: 'greater_shadow_protection_potion', sellValue: 0,
+  },
+  formula_elixir_of_the_mongoose: {
+    id: 'formula_elixir_of_the_mongoose', name: 'Formula: Elixir of the Mongoose', type: 'recipe',
+    description: 'A charred alchemy formula. Use to learn the recipe.',
+    stackable: true, teachesRecipeId: 'elixir_of_the_mongoose', sellValue: 0,
+  },
+  formula_greater_arcane_elixir: {
+    id: 'formula_greater_arcane_elixir', name: 'Formula: Greater Arcane Elixir', type: 'recipe',
+    description: 'A charred alchemy formula. Use to learn the recipe.',
+    stackable: true, teachesRecipeId: 'greater_arcane_elixir', sellValue: 0,
+  },
+  formula_flask_of_supreme_power: {
+    id: 'formula_flask_of_supreme_power', name: 'Formula: Flask of Supreme Power', type: 'recipe',
+    description: 'A charred alchemy formula. Use to learn the recipe.',
+    stackable: true, teachesRecipeId: 'flask_of_supreme_power', sellValue: 0,
+  },
+  formula_emberscar_leather_helm: {
+    id: 'formula_emberscar_leather_helm', name: 'Formula: Emberscar Leather Helm', type: 'recipe',
+    description: 'A scorched leatherworking pattern. Use to learn the recipe.',
+    stackable: true, teachesRecipeId: 'emberscar_leather_helm', sellValue: 0,
+  },
+  formula_emberscar_leather_legs: {
+    id: 'formula_emberscar_leather_legs', name: 'Formula: Emberscar Leather Legplates', type: 'recipe',
+    description: 'A scorched leatherworking pattern. Use to learn the recipe.',
+    stackable: true, teachesRecipeId: 'emberscar_leather_legs', sellValue: 0,
+  },
+  formula_platinum_necklace: {
+    id: 'formula_platinum_necklace', name: 'Formula: Platinum Necklace', type: 'recipe',
+    description: 'A soot-stained smithing formula. Use to learn the recipe.',
+    stackable: true, teachesRecipeId: 'platinum_necklace', sellValue: 0,
+  },
+
 };
+
+// Combat/Rarity overhaul — dungeon blue/purple fixed-stat equipment is
+// generated (not hand-authored) by gameData/dungeonLoot.ts, from a compact
+// per-dungeon slot/rarity table and the 8-specialization stat-weight
+// template, rather than ~180 individual literal item entries. Merged in
+// here so every existing caller of ITEMS (equip, crafting, loot, tooltips)
+// needs zero changes to see them.
+export const ITEMS: Record<string, ItemDef> = { ...STATIC_ITEMS, ...DUNGEON_LOOT_ITEMS };

@@ -91,6 +91,14 @@ export interface CurrentActivity {
   // snapshotted once at encounter/batch setup everywhere else in this
   // codebase. Absent/null means no shirt was equipped when it started.
   equippedShirtItemId?: string | null;
+  // Only set when type === 'dungeon' — a SNAPSHOT of whichever Feast's
+  // consumableEffect.feastStatBonuses (if any) was chosen at the moment the
+  // party was left to farm (see DungeonScreen.tsx's handleFarmOffline),
+  // same "fixed for the activity's whole duration" posture as
+  // equippedShirtItemId above. Combat's regular 'combat' activity type has
+  // no Feast concept (open-world solo grinding never offers one), so this
+  // is dungeon-only. Absent/undefined means no Feast was active.
+  dungeonFeastStatBonuses?: Partial<Record<BaseStat, number>>;
 }
 
 // A named snapshot of an equipped-ability loadout + its conditions (Phase 7)
@@ -148,6 +156,14 @@ export interface Character {
   currentHp: number;
   hpCheckpointAt: Date;
   respecCount: number;
+  // Attribute/Specialization overhaul's spec respec — a SEPARATE growing-
+  // cost counter from respecCount above (talent-tree respec keeps its own
+  // independent cost curve; switching specs entirely is its own, bigger
+  // decision with its own curve — see firebase/character.ts's
+  // getSpecRespecCost). Absent means never respecced specs yet (0), same
+  // "absence is the zero state" convention as every other optional counter
+  // in this type.
+  specRespecCount?: number;
   equipment: Record<EquipmentSlot, EquippedItemRef | null>;
   // Only professions actually learned (see firebase/professions.ts's
   // learnProfession) have a key here — Partial, not a full Record, since an

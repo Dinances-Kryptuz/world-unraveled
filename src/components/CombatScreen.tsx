@@ -23,7 +23,8 @@ import {
 } from '../gameData/consumableAutomation';
 import { maxHp, resolveCurrentHp, ATTACK_INTERVAL_SECONDS } from '../gameData/combatFormulas';
 import { AUTOSAVE_INTERVAL_SECONDS } from '../gameData/activityEngine';
-import { getEquipmentStatBonuses } from '../gameData/equipmentStats';
+import { getEquipmentStatBonuses, isShieldEquipped } from '../gameData/equipmentStats';
+import { statAtLevel } from '../gameData/classStats';
 import { buildActiveEnchantTotals } from '../gameData/enchanting';
 import { characterXpForLevelV2, MAX_CHARACTER_LEVEL } from '../gameData/xpTables';
 import { checkAndUnlockNextSlot } from '../firebase/characterSlots';
@@ -152,7 +153,8 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
     const enchantTotals = buildActiveEnchantTotals(c.enchantments, c.enchantmentCharges);
     const charMaxHp = maxHp(c.class, c.level, equipmentBonuses, talentTotals.hpMultPct, enchantTotals.flatHpBonus);
     const startedAt = c.currentActivity.startedAt ?? new Date();
-    const currentHp = resolveCurrentHp(c.currentHp, charMaxHp, c.hpCheckpointAt, startedAt);
+    const totalSpi = statAtLevel(c.class, 'SPI', c.level) + (equipmentBonuses.SPI ?? 0);
+    const currentHp = resolveCurrentHp(c.currentHp, charMaxHp, c.hpCheckpointAt, startedAt, totalSpi);
     return {
       cls: c.class,
       level: c.level,
@@ -168,6 +170,7 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
       trainedAbilityIds: c.trainedAbilityIds,
       savedAbilityConditions: c.abilityConditions,
       disabledAbilityIds: c.disabledAbilityIds,
+      hasShieldEquipped: isShieldEquipped(c.equipment),
       // Companions only fight in dungeons (see DungeonScreen.tsx) — open-
       // world combat is always solo, per an explicit product decision: a
       // companion that tagged along on ordinary zone grinding made "bring
@@ -532,7 +535,7 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
   return (
     <div className="combat-screen">
       <h2>
-        Fighting {monster.name} — <MonsterLevelBadge monsterLevel={monster.level} playerLevel={character.level} />
+        Fighting {monster.name} — <MonsterLevelBadge monsterLevel={monster.level} playerLevel={character.level} isElite={monster.isElite} />
       </h2>
 
       {!retreated && (

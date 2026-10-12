@@ -2,7 +2,7 @@ import { doc, getDoc, setDoc, updateDoc, serverTimestamp, Timestamp, increment, 
 import { db } from './config';
 import type { Character, CombatPreset, MaterialMasteryState, ZoneMasteryState, InventorySortPrefs } from '../types/character';
 import type { ProfessionId, EquipmentSlot, EquippedItemRef } from '../gameData/types';
-import type { ClassId, SpecId } from '../gameData/classStats';
+import type { ClassId, SpecId, BaseStat } from '../gameData/classStats';
 import type { TalentColumn } from '../gameData/talents';
 import { PROFESSION_CATEGORY, tierForLevel } from '../gameData/professionTiers';
 import {
@@ -16,7 +16,7 @@ import { DEFAULT_ZONE_ID, ZONES } from '../gameData/zones';
 import { abilityTrainingCost, abilityTrainingZoneId } from '../gameData/abilityTraining';
 import type { TravelState } from '../gameData/travel';
 import { maxHp } from '../gameData/combatFormulas';
-import { canClassEquip } from '../gameData/classStats';
+import { canClassEquip, SPECS } from '../gameData/classStats';
 import { ITEMS } from '../gameData/items';
 import { getEquipmentStatBonuses, isTwoHandedWeapon, canEquipInOffhand, equippedItemId } from '../gameData/equipmentStats';
 import { maxEquippedSlots, unlockedAbilities, effectiveLoadout, MAX_COMBAT_PRESETS } from '../combatEngine/progression';
@@ -353,7 +353,7 @@ export async function createCharacter(uid: string, name: string, characterClass:
 export async function startActivity(
   uid: string,
   activity: {
-    type: 'combat' | 'gathering' | 'crafting' | 'fishing' | 'disenchanting';
+    type: 'combat' | 'gathering' | 'crafting' | 'fishing' | 'disenchanting' | 'dungeon';
     targetId: string;
     zoneId: string;
     // Only meaningful for 'disenchanting' — the stack size chosen on the
@@ -377,6 +377,9 @@ export async function startActivity(
     // equippedItemId(character.equipment.shirt) — undefined/null both mean
     // "no shirt."
     equippedShirtItemId?: string | null;
+    // Only meaningful for 'dungeon' — see CurrentActivity.dungeonFeastStatBonuses's
+    // doc comment.
+    dungeonFeastStatBonuses?: Partial<Record<BaseStat, number>>;
   }
 ): Promise<void> {
   await updateDoc(doc(db, 'characters', uid), {
@@ -389,6 +392,7 @@ export async function startActivity(
       ...(activity.instanceId !== undefined ? { disenchantInstanceId: activity.instanceId } : {}),
       ...(activity.disenchantQueue !== undefined ? { disenchantQueue: activity.disenchantQueue } : {}),
       equippedShirtItemId: activity.equippedShirtItemId ?? null,
+      ...(activity.dungeonFeastStatBonuses !== undefined ? { dungeonFeastStatBonuses: activity.dungeonFeastStatBonuses } : {}),
     },
   });
 }
@@ -1214,6 +1218,60 @@ export async function respecTalents(uid: string): Promise<{ success: boolean; re
     gold: increment(-cost),
     talentPicks: {},
     respecCount: increment(1),
+  });
+  return { success: true };
+}
+
+// Attribute/Specialization overhaul — a SEPARATE growing-cost counter from
+// getRespecCost/respecCount above. "Grows each time just like the talent
+// tree respec cost" (per the design brief) means the same doubling-curve
+// SHAPE, not the same running total: switching specs entirely is a bigger
+// decision than a talent respec, so this starts from a higher base and cap
+// — tracked independently (Character.specRespecCount) so spending on one
+// never discounts (or inflates) the other.
+export function getSpecRespecCost(specRespecCount: number): number {
+  return Math.min(10000, 300 * Math.pow(2, specRespecCount));
+}
+
+// Switches a character to a different spec of the SAME class — Warrior
+// Tank <-> DPS, Priest Holy <-> Shadow, Paladin Protection <-> Holy. Per the
+// design brief: "You should not be able to respec the class itself, just
+// between class talents" — enforced below by requiring SPECS[newSpec].class
+// to match the character's own class, so this can never be used as a
+// backdoor class change. Spends getSpecRespecCost(specRespecCount) gold
+// (growing each use, same curve shape as respecTalents's own cost), then —
+// per "resetting spec should reset your talent tree and unlearn all your
+// skills, requir[ing] gold to learn them all back" — clears talentPicks AND
+// trainedAbilityIds (every ability must be re-bought at the Class Trainer,
+// same gold-gated flow a brand-new character already goes through) and the
+// now-stale equipped loadout that referenced them (equippedAbilityIds/
+// abilityConditions/disabledAbilityIds) — never respecCount itself, which
+// governs the UNRELATED ordinary talent-respec cost curve and keeps growing
+// on its own independent of how many times a player has swapped specs.
+export async function respecSpec(uid: string, newSpec: SpecId): Promise<{ success: boolean; reason?: string }> {
+  const character = await getCharacter(uid);
+  if (!character) return { success: false, reason: 'Character not found.' };
+  if (!character.spec) return { success: false, reason: 'Choose your first spec at the Spec Selection screen.' };
+  if (SPECS[newSpec].class !== character.class) {
+    return { success: false, reason: 'You can only respec between specs of your own class.' };
+  }
+  if (newSpec === character.spec) return { success: false, reason: 'You are already that spec.' };
+
+  const specRespecCount = character.specRespecCount ?? 0;
+  const cost = getSpecRespecCost(specRespecCount);
+  if (character.gold < cost) {
+    return { success: false, reason: `Not enough gold (need ${cost}).` };
+  }
+
+  await updateDoc(doc(db, 'characters', uid), {
+    spec: newSpec,
+    gold: increment(-cost),
+    specRespecCount: increment(1),
+    talentPicks: {},
+    trainedAbilityIds: [],
+    equippedAbilityIds: [],
+    abilityConditions: {},
+    disabledAbilityIds: [],
   });
   return { success: true };
 }

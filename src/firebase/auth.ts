@@ -28,6 +28,16 @@ async function ensureUserDoc(user: User): Promise<void> {
  * their users/{uid} account doc. Does NOT create characters/{uid} — that
  * happens during character creation (step 3), since a signed-in user with
  * no character yet is a valid, expected state (routes to char-creation screen).
+ *
+ * Reverted from signInWithRedirect back to signInWithPopup: redirect was
+ * tried as a fix for a "Missing or insufficient permissions" report that
+ * turned out to be a stale Firestore rules deploy, not an auth problem —
+ * but redirect itself turned out to loop inside Google's own sign-in pages
+ * across multiple browsers (Firefox AND Edge), never even completing.
+ * Popup was already getting players all the way into the app; it's the
+ * more reliable choice here even though it has its own, narrower edge
+ * cases (e.g. storage partitioning under max-strict browser privacy
+ * settings) that popups have always had.
  */
 export async function signInWithGoogle(): Promise<User> {
   const result = await signInWithPopup(auth, googleProvider);
