@@ -147,6 +147,21 @@ export const CLASS_LABELS: Record<ClassId, string> = {
   mage: 'Mage',
 };
 
+// Name color-coding (player characters and companions alike) — same
+// "recognizable color per category" convention as itemRarity.ts's
+// RARITY_COLORS, just keyed by class instead of rarity. White/pink/cyan
+// all measure well under WCAG AA contrast against this game's light
+// parchment backgrounds on their own (~1.1-1.9:1 vs. the 4.5:1 minimum) —
+// components/ClassColoredName.tsx fixes this with a dark text outline at
+// the display site rather than by picking different, less-true-to-the-
+// name hexes here.
+export const CLASS_NAME_COLORS: Record<ClassId, string> = {
+  warrior: '#8b5a2b',
+  priest: '#ffffff',
+  paladin: '#f58cba',
+  mage: '#19c3d6',
+};
+
 // Which armor types each class can equip. Priest is cloth-only; the two
 // physical classes can wear anything (cloth included, just off-stat for
 // them) — matches the classic "plate/mail wearer can always drop down to

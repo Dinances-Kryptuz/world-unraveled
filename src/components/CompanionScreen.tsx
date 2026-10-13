@@ -9,6 +9,7 @@ import type { RosterSlotSummary } from '../gameData/characterSlots';
 import { CLASS_LABELS, SPEC_LABELS, type ClassId, type SpecId } from '../gameData/classStats';
 import { ZONES } from '../gameData/zones';
 import { EquipmentPaperDoll } from './EquipmentPaperDoll';
+import { ClassColoredName } from './ClassColoredName';
 import type { Inventory } from '../types/character';
 import type { EquipmentSlot } from '../gameData/types';
 
@@ -108,7 +109,7 @@ export function CompanionScreen() {
               const zoneName = ZONES[def.recruitZoneId]?.name ?? def.recruitZoneId;
               return (
                 <li key={def.id}>
-                  <strong>{def.name}</strong> — {CLASS_LABELS[def.class]} ({SPEC_LABELS[def.specId]}).{' '}
+                  <strong><ClassColoredName name={def.name} cls={def.class} /></strong> — {CLASS_LABELS[def.class]} ({SPEC_LABELS[def.specId]}).{' '}
                   {def.description} Found in {zoneName}. Costs {def.recruitGoldCost} gold, requires level{' '}
                   {def.requiredCharacterLevel}.
                   <button onClick={() => handleRecruit(def.id)} disabled={!check.ok || alreadyRecruited}>
@@ -138,7 +139,7 @@ export function CompanionScreen() {
               const partyFull = groupHeadcount >= MAX_ACTIVE_COMPANIONS;
               return (
                 <li key={r.slot}>
-                  <strong>{r.name}</strong> — {CLASS_LABELS[r.class as ClassId]}
+                  <strong><ClassColoredName name={r.name} cls={r.class as ClassId} /></strong> — {CLASS_LABELS[r.class as ClassId]}
                   {r.spec ? ` (${SPEC_LABELS[r.spec as SpecId]})` : ''}, level {r.level}
                   {isActive ? (
                     <button onClick={() => handleRemoveAltFromParty(r.slot)}>Remove from party</button>
@@ -160,13 +161,25 @@ export function CompanionScreen() {
       ) : (
         <>
           <p>
-            Party: <strong>You</strong>
-            {character.activeCompanionIds.map((id) => `, ${COMPANIONS[id]?.name ?? id}`).join('')}
+            Party: <strong><ClassColoredName name="You" cls={character.class} /></strong>
+            {character.activeCompanionIds.map((id) => {
+              const comp = COMPANIONS[id];
+              return (
+                <span key={id}>
+                  {', '}
+                  {comp ? <ClassColoredName name={comp.name} cls={comp.class} /> : id}
+                </span>
+              );
+            })}
             {character.activeAltSlots
               .map((slot) => roster.find((r) => r.slot === slot))
               .filter((r): r is RosterSlotSummary => !!r)
-              .map((r) => `, ${r.name}`)
-              .join('')} —{' '}
+              .map((r) => (
+                <span key={r.slot}>
+                  {', '}
+                  <ClassColoredName name={r.name} cls={r.class as ClassId} />
+                </span>
+              ))} —{' '}
             {groupHeadcount + 1} / {REQUIRED_DUNGEON_PARTY_SIZE}
             {groupHeadcount === MAX_ACTIVE_COMPANIONS
               ? ' (full — ready for a dungeon)'
@@ -181,7 +194,7 @@ export function CompanionScreen() {
             return (
               <div key={companionId} className="companion-card">
                 <h4>
-                  {def.name} — {CLASS_LABELS[def.class]} ({SPEC_LABELS[def.specId]}), level {character.level}
+                  <ClassColoredName name={def.name} cls={def.class} /> — {CLASS_LABELS[def.class]} ({SPEC_LABELS[def.specId]}), level {character.level}
                 </h4>
                 {isActive ? (
                   <button onClick={() => handleRemoveFromParty(companionId)}>Remove from party</button>
