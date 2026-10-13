@@ -3,7 +3,7 @@ import { ZONE_TIER } from './zones';
 // Pure mount data — no Firestore here, same split as bank.ts (gating/cost
 // math) vs firebase/mounts.ts (the writer). A mount is a permanent gold
 // sink from the Mount Trainer that cuts flight time (gameData/travel.ts's
-// travelMinutes), not an inventory item — see Character.mounts.
+// travelSeconds), not an inventory item — see Character.mounts.
 //
 // Five ranks, same naming convention as profession tiers
 // (professionTiers.ts), each trainable starting one zone later —
@@ -20,7 +20,7 @@ export interface MountDef {
   rank: 'apprentice' | 'journeyman' | 'expert' | 'artisan' | 'master';
   description: string;
   cost: number;
-  // Percent reduction applied to travelMinutes' base duration, e.g. 50
+  // Percent reduction applied to travelSeconds' base duration, e.g. 50
   // means flights take half as long.
   speedBonusPct: number;
   // Which zone the character must be standing in to train this rank — see

@@ -399,7 +399,7 @@ export interface Character {
   masteryXpNotificationsEnabled: boolean;
   // Owned mount ids (gameData/mounts.ts) — a permanent gold-sink purchase
   // from the Mount Trainer that discounts zone-travel flight time
-  // (gameData/travel.ts's travelMinutes). Mounts don't stack; see
+  // (gameData/travel.ts's travelSeconds). Mounts don't stack; see
   // bestMountSpeedBonusPct for how an owned mount's bonus is applied.
   mounts: string[];
   // Abilities actually paid for at the Class Trainer's Spells & Abilities

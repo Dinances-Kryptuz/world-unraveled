@@ -2,7 +2,7 @@ import { signOut } from '../firebase/auth';
 import { CLASS_LABELS, SPEC_LABELS } from '../gameData/classStats';
 import { getTitle } from '../gameData/titles';
 import { ZONES, isZoneUnlocked } from '../gameData/zones';
-import { travelMinutes } from '../gameData/travel';
+import { formatTravelMinutes } from '../gameData/travel';
 import { bestMountSpeedBonusPct } from '../gameData/mounts';
 import { ActiveBuffsBar } from './ActiveBuffsBar';
 import type { Character } from '../types/character';
@@ -72,7 +72,7 @@ export function TopBar({
         {Object.values(ZONES).map((z) => {
           const unlocked = isZoneUnlocked(z, character.level);
           const isCurrent = z.id === character.currentZoneId;
-          const minutes = isCurrent ? 0 : travelMinutes(speedBonusPct);
+          const minutes = isCurrent ? '0' : formatTravelMinutes(speedBonusPct);
           const clickable = unlocked && !isCurrent && !traveling;
           let title: string | undefined;
           if (!unlocked) {
