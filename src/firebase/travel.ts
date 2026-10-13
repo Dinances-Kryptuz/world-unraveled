@@ -1,7 +1,7 @@
 import { doc, updateDoc, Timestamp } from 'firebase/firestore';
 import { db } from './config';
 import type { Character } from '../types/character';
-import { travelMinutes } from '../gameData/travel';
+import { travelSeconds } from '../gameData/travel';
 import { bestMountSpeedBonusPct } from '../gameData/mounts';
 
 // Both departedAt and arrivesAt come from the same client clock rather than
@@ -21,9 +21,9 @@ export async function startTravel(
     return { success: false, reason: 'Finish your current activity before traveling.' };
   }
 
-  const minutes = travelMinutes(bestMountSpeedBonusPct(character.mounts));
+  const seconds = travelSeconds(bestMountSpeedBonusPct(character.mounts));
   const departedAt = new Date();
-  const arrivesAt = new Date(departedAt.getTime() + minutes * 60_000);
+  const arrivesAt = new Date(departedAt.getTime() + seconds * 1_000);
 
   await updateDoc(doc(db, 'characters', uid), {
     travel: {
