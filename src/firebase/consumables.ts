@@ -3,10 +3,7 @@ import { db } from './config';
 import { getCharacter } from './character';
 import { getInventory } from './inventory';
 import { ITEMS } from '../gameData/items';
-import { maxHp, resolveCurrentHp } from '../gameData/combatFormulas';
-import { getEquipmentStatBonuses } from '../gameData/equipmentStats';
-import { buildActiveEnchantTotals } from '../gameData/enchanting';
-import { evaluateTalents, EMPTY_TALENT_TOTALS } from '../utils/talentEvaluator';
+import { resolveCombatProfile } from '../gameData/resolveCombatProfile';
 import type { Character, ConsumableAutomationSettings } from '../types/character';
 import type { ItemDef, BuffCategory } from '../gameData/types';
 import { BUFF_CATEGORY_TRIGGER } from '../gameData/buffs';
@@ -153,17 +150,14 @@ export async function useConsumableOutOfCombat(uid: string, itemId: string): Pro
     ...buffUpdateForItem(item, itemId, now),
   };
   if (item.consumableEffect.healAmount !== undefined || item.consumableEffect.recoveryFood) {
-    const equipBonuses = getEquipmentStatBonuses(character.equipment, character.enchantments, character.enchantmentCharges);
-    const talentTotals = character.spec ? evaluateTalents(character.spec, character.talentPicks).totals : EMPTY_TALENT_TOTALS;
-    const enchantTotals = buildActiveEnchantTotals(character.enchantments, character.enchantmentCharges);
-    const charMaxHp = maxHp(character.class, character.level, equipBonuses, talentTotals.hpMultPct, enchantTotals.flatHpBonus);
+    const { maxHp: charMaxHp, currentHp } = resolveCombatProfile(character, now);
     // Recovery Food's manual use heals to FULL, overriding healAmount —
     // there's no live Combatant.actionReadyIn to reset out of combat (see
     // CombatScreen's handleUseConsumable for the in-combat path, which
     // resets it), so this is just the heal half of the effect.
     characterUpdate.currentHp = item.consumableEffect.recoveryFood
       ? charMaxHp
-      : Math.min(charMaxHp, resolveCurrentHp(character.currentHp, charMaxHp, character.hpCheckpointAt, now) + item.consumableEffect.healAmount!);
+      : Math.min(charMaxHp, currentHp + item.consumableEffect.healAmount!);
     characterUpdate.hpCheckpointAt = serverTimestamp();
   }
   if (item.consumableEffect.bagCapacityBonus !== undefined) {

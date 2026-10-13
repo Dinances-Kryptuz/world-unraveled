@@ -38,6 +38,12 @@ import { EMPTY_TALENT_TOTALS, type TalentBonusTotals } from '../utils/talentEval
 import type { BuffTotals } from '../gameData/buffs';
 import type { CompanionCombatSetup } from '../gameData/companions';
 import type { DamageSchool, Monster } from '../gameData/types';
+// The Citadel of Krypt — the one place engine.ts looks a monster up by id
+// itself rather than receiving an already-resolved Monster object from its
+// caller (BossPhaseTrigger.addsMonsterId is a plain string id baked into
+// Krypt's own Monster def). Safe: gameData/monsters.ts has no dependency on
+// combatEngine/ at all, so this doesn't create a cycle.
+import { MONSTERS } from '../gameData/monsters';
 import { combatTypeModifier, type CombatType } from '../gameData/combatTriangle';
 import type { ConsumableAutomationRuntimeState } from '../gameData/consumableAutomation';
 import { ABILITIES, BASIC_ATTACK_BY_CLASS } from './abilities';
@@ -176,16 +182,51 @@ function mergeStatBonuses(
   return merged;
 }
 
-function buildPlayerProfile(input: EncounterSetupInput): CasterProfile {
-  const { cls, level, specId, specDef, talentTotals, buffTotals, extraDamageTakenPct, monster } = input;
-  const equipmentBonuses = mergeStatBonuses(input.equipmentBonuses, buffTotals.statBonuses);
-  const diff = monster.level - level;
-  const survCoefFinal = specDef.survivabilityCoef * (1 + talentTotals.survCoefMultPct / 100);
+// Shared by buildPlayerProfile/buildCompanionProfile below — the derived-
+// stat pipeline (stat totals, armor/avoidance BASE before each caller's own
+// buff/enchant-only addends, shield block, crit/dodge, and the 4 spec-
+// identity passives) is identical between a player and a companion; only
+// buff/enchant/talent SOURCES differ (a companion has no buffTotals and,
+// unless it's a recruited alt, no talentTotals — see buildCompanionProfile's
+// own doc comment). Each caller adds its own buff-only avoidance addend and
+// flat-armor addend on top of this core's unclamped `avoidanceBase`/
+// `armorBase` before using them, rather than this function clamping/adding
+// those in for only one of its two callers.
+interface CasterStatsCore {
+  totalAgi: number;
+  totalStr: number;
+  totalInt: number;
+  totalSpi: number;
+  armorBase: number;
+  avoidanceBase: number;
+  shieldBlock: number;
+  critChance: number;
+  dodgeChance: number;
+  shadowPriestDamageBonus: number;
+  holyPriestHealingBonus: number;
+  manaCostReductionPct: number;
+  healingPowerMult: number;
+  manaRegenMult: number;
+}
+
+function buildCasterStatsCore(
+  cls: ClassId,
+  level: number,
+  specId: SpecId | null,
+  specDef: SpecDef,
+  equipmentBonuses: Partial<Record<BaseStat, number>>,
+  hasShieldEquipped: boolean,
+  survCoefMultPct: number,
+  armorMultPct: number,
+  avoidanceAddPct: number,
+  healingPowerFlatBonus: number
+): CasterStatsCore {
+  const survCoefFinal = specDef.survivabilityCoef * (1 + survCoefMultPct / 100);
   const effectiveSta = statAtLevel(cls, 'STA', level) + (equipmentBonuses.STA ?? 0);
   const totalAgi = statAtLevel(cls, 'AGI', level) + (equipmentBonuses.AGI ?? 0);
   const totalStr = statAtLevel(cls, 'STR', level) + (equipmentBonuses.STR ?? 0);
   const totalInt = statAtLevel(cls, 'INT', level) + (equipmentBonuses.INT ?? 0);
-  const totalSpi = statAtLevel(cls, 'SPI', level) + (equipmentBonuses.SPI ?? 0) + (input.healingPowerFlatBonus ?? 0);
+  const totalSpi = statAtLevel(cls, 'SPI', level) + (equipmentBonuses.SPI ?? 0) + healingPowerFlatBonus;
   // Shield-tank spec passive — Shield Block Value scales further for the
   // two specs actually built to stand behind a shield (see combatFormulas.
   // ts's SHIELD_TANK_SPEC_BLOCK_BONUS_PCT doc comment); every other spec
@@ -193,24 +234,11 @@ function buildPlayerProfile(input: EncounterSetupInput): CasterProfile {
   // the spec bonus.
   const isShieldTankSpec = specId === 'warrior_tank' || specId === 'prot_paladin';
   const shieldBlock =
-    shieldBlockValue(totalStr, input.hasShieldEquipped ?? false) * (isShieldTankSpec ? 1 + SHIELD_TANK_SPEC_BLOCK_BONUS_PCT / 100 : 1);
-  // flatArmorBonus (the Defense family of enchants — Minor/Lesser/.../Ember
-  // Defense) is the closest existing lever to the design brief's flat
-  // "Defense" stat, which this engine doesn't otherwise model — folded in
-  // post-multiplier, same flat-addend posture as flatHpBonus/flatManaBonus.
-  // armorFromAgi (AGI's third job, ATTR overhaul) is likewise a flat addend.
-  const armor =
-    effectiveSta * 2 * survCoefFinal * (1 + talentTotals.armorMultPct / 100) +
-    (input.flatArmorBonus ?? 0) +
-    armorFromAgi(totalAgi);
-  const avoidance = Math.min(
-    0.75,
-    specDef.avoidance + talentTotals.avoidanceAddPct / 100 + buffTotals.avoidanceAddPct / 100
-  );
-  const damageTakenMult =
-    Math.max(0.05, 1 - talentTotals.flatDmgTakenPct / 100) *
-    (1 - buffTotals.mitigationMultiplierPct / 100) *
-    (1 + extraDamageTakenPct / 100);
+    shieldBlockValue(totalStr, hasShieldEquipped) * (isShieldTankSpec ? 1 + SHIELD_TANK_SPEC_BLOCK_BONUS_PCT / 100 : 1);
+  // armorFromAgi (AGI's third job, ATTR overhaul) is a flat addend; each
+  // caller adds its own further flat addend (e.g. flatArmorBonus) on top.
+  const armorBase = effectiveSta * 2 * survCoefFinal * (1 + armorMultPct / 100) + armorFromAgi(totalAgi);
+  const avoidanceBase = specDef.avoidance + avoidanceAddPct / 100;
   // Shadow Priest spec passive — a sliver of SPI (its class's own healing
   // stat) converts into bonus damage instead, folded directly into
   // damageCoef since this is a static per-encounter multiplier, not a
@@ -238,6 +266,55 @@ function buildPlayerProfile(input: EncounterSetupInput): CasterProfile {
       : 0;
 
   return {
+    totalAgi,
+    totalStr,
+    totalInt,
+    totalSpi,
+    armorBase,
+    avoidanceBase,
+    shieldBlock,
+    critChance: critChanceFromAgi(totalAgi) + critChanceFromInt(totalInt) + warriorDpsCritBonus,
+    dodgeChance: dodgeChanceFromAgi(totalAgi),
+    shadowPriestDamageBonus,
+    holyPriestHealingBonus,
+    manaCostReductionPct,
+    // healingPowerFlatBonus (the Healing Power enchant) is a flat
+    // SPI-equivalent addend fed into the SAME formula an SPI stat point
+    // already uses (totalSpi, above), rather than a second multiplier
+    // stacked on top.
+    healingPowerMult: healingPowerMultiplier(totalSpi) * holyPriestHealingBonus,
+    manaRegenMult: manaRegenMultiplier(totalSpi),
+  };
+}
+
+function buildPlayerProfile(input: EncounterSetupInput): CasterProfile {
+  const { cls, level, specId, specDef, talentTotals, buffTotals, extraDamageTakenPct, monster } = input;
+  const equipmentBonuses = mergeStatBonuses(input.equipmentBonuses, buffTotals.statBonuses);
+  const diff = monster.level - level;
+  const core = buildCasterStatsCore(
+    cls,
+    level,
+    specId,
+    specDef,
+    equipmentBonuses,
+    input.hasShieldEquipped ?? false,
+    talentTotals.survCoefMultPct,
+    talentTotals.armorMultPct,
+    talentTotals.avoidanceAddPct,
+    input.healingPowerFlatBonus ?? 0
+  );
+  // flatArmorBonus (the Defense family of enchants — Minor/Lesser/.../Ember
+  // Defense) is the closest existing lever to the design brief's flat
+  // "Defense" stat, which this engine doesn't otherwise model — folded in
+  // post-multiplier, same flat-addend posture as flatHpBonus/flatManaBonus.
+  const armor = core.armorBase + (input.flatArmorBonus ?? 0);
+  const avoidance = Math.min(0.75, core.avoidanceBase + buffTotals.avoidanceAddPct / 100);
+  const damageTakenMult =
+    Math.max(0.05, 1 - talentTotals.flatDmgTakenPct / 100) *
+    (1 - buffTotals.mitigationMultiplierPct / 100) *
+    (1 + extraDamageTakenPct / 100);
+
+  return {
     // flatDamageBonus (Spell/Attack Power, Striking/Impact enchants) folds
     // in PRE-coefficient, same posture as every other term in normalizedHit
     // — see EncounterSetupInput.flatDamageBonus's doc comment for why this
@@ -254,7 +331,7 @@ function buildPlayerProfile(input: EncounterSetupInput): CasterProfile {
       combatTypeModifier(specDef.combatType, monster.combatType) *
       (1 + talentTotals.flatDmgPct / 100) *
       (1 + buffTotals.damageMultiplierPct / 100) *
-      shadowPriestDamageBonus,
+      core.shadowPriestDamageBonus,
     // 1 + hitChanceBonusPct/100 — an Alchemy hit-chance potion's only effect.
     // See the levelGapAccuracy calc in useAbility below, the one place this
     // is actually read for the player (unused for monsters, who always
@@ -264,15 +341,12 @@ function buildPlayerProfile(input: EncounterSetupInput): CasterProfile {
     armor,
     damageTakenMult,
     damageSchool: 'physical',
-    critChance: critChanceFromAgi(totalAgi) + critChanceFromInt(totalInt) + warriorDpsCritBonus,
-    dodgeChance: dodgeChanceFromAgi(totalAgi),
+    critChance: core.critChance,
+    dodgeChance: core.dodgeChance,
     healFrac: specDef.healFrac + talentTotals.healFracAddPct / 100,
     passiveHealPct:
       (specDef.passiveHealPct + talentTotals.passiveHealAddPct / 100) * (1 + talentTotals.healMultPct / 100),
-    // healingPowerFlatBonus (the Healing Power enchant) is a flat
-    // SPI-equivalent addend fed into the SAME formula an SPI stat point
-    // already uses, rather than a second multiplier stacked on top.
-    healingPowerMult: healingPowerMultiplier(totalSpi) * holyPriestHealingBonus,
+    healingPowerMult: core.healingPowerMult,
     hastePct: input.hastePct ?? 0,
     beastDamageBonusPct: input.beastDamageBonusPct ?? 0,
     demonDamageBonusPct: input.demonDamageBonusPct ?? 0,
@@ -280,52 +354,36 @@ function buildPlayerProfile(input: EncounterSetupInput): CasterProfile {
     fireResistancePct: input.fireResistancePct ?? 0,
     shadowResistancePct: input.shadowResistancePct ?? 0,
     weaponProc: input.weaponProc,
-    shieldBlockValue: shieldBlock,
-    manaRegenMult: manaRegenMultiplier(totalSpi),
-    manaCostReductionPct,
+    shieldBlockValue: core.shieldBlock,
+    manaRegenMult: core.manaRegenMult,
+    manaCostReductionPct: core.manaCostReductionPct,
   };
 }
 
 // A companion fights at the player's level with its own fixed spec and
 // whatever gear is equipped to it, but — unlike the player — has no
-// talents or active buffs (V1 scope cut; see gameData/companions.ts's doc
-// comment). accuracy is set directly to the level-gap value here (rather
-// than treated as a bonus added on top of it, the player's convention)
-// because computeEffectDamage reads a non-player attacker's profile.accuracy
-// straight through as its hit chance.
+// buffTotals and, unless it's a recruited alt (companions.ts's
+// buildAltCombatSetup), no talentTotals either (V1 scope cut; see
+// gameData/companions.ts's doc comment). accuracy is set directly to the
+// level-gap value here (rather than treated as a bonus added on top of it,
+// the player's convention) because computeEffectDamage reads a non-player
+// attacker's profile.accuracy straight through as its hit chance.
 function buildCompanionProfile(companion: CompanionCombatSetup, monster: Monster): CasterProfile {
   const { cls, level, specId, specDef, equipmentBonuses } = companion;
-  // Only an alt recruit ever has talentTotals (see companions.ts's
-  // buildAltCombatSetup) — an ordinary hired companion falls back to the
-  // same "no talents" baseline it always had, so this is a no-op change for
-  // every companion that isn't a recruited alt.
   const totals = companion.talentTotals ?? EMPTY_TALENT_TOTALS;
   const diff = monster.level - level;
-  const survCoefFinal = specDef.survivabilityCoef * (1 + totals.survCoefMultPct / 100);
-  const effectiveSta = statAtLevel(cls, 'STA', level) + (equipmentBonuses.STA ?? 0);
-  const totalAgi = statAtLevel(cls, 'AGI', level) + (equipmentBonuses.AGI ?? 0);
-  const totalStr = statAtLevel(cls, 'STR', level) + (equipmentBonuses.STR ?? 0);
-  const totalInt = statAtLevel(cls, 'INT', level) + (equipmentBonuses.INT ?? 0);
-  const totalSpi = statAtLevel(cls, 'SPI', level) + (equipmentBonuses.SPI ?? 0);
-  const armor = effectiveSta * 2 * survCoefFinal * (1 + totals.armorMultPct / 100) + armorFromAgi(totalAgi);
-  const avoidance = Math.min(0.75, specDef.avoidance + totals.avoidanceAddPct / 100);
-  const isShieldTankSpec = specId === 'warrior_tank' || specId === 'prot_paladin';
-  const shieldBlock =
-    shieldBlockValue(totalStr, companion.hasShieldEquipped ?? false) *
-    (isShieldTankSpec ? 1 + SHIELD_TANK_SPEC_BLOCK_BONUS_PCT / 100 : 1);
-  const shadowPriestDamageBonus =
-    specId === 'shadow_priest' ? 1 + (totalSpi * SHADOW_PRIEST_SPI_DAMAGE_PCT_PER_POINT) / 100 : 1;
-  const warriorDpsCritBonus =
-    specId === 'warrior_dps' ? Math.max(0, (totalStr * WARRIOR_DPS_STR_CRIT_PCT_PER_POINT) / 100) : 0;
-  const holyPriestHealingBonus =
-    specId === 'holy_priest' ? 1 + (totalSpi * HOLY_PRIEST_SPI_HEALING_BONUS_PCT_PER_POINT) / 100 : 1;
-  const manaCostReductionPct =
-    specId === 'prot_paladin'
-      ? Math.min(
-          PROT_PALADIN_MANA_COST_REDUCTION_CAP_PCT,
-          totalInt * PROT_PALADIN_INT_MANA_COST_REDUCTION_PCT_PER_POINT
-        )
-      : 0;
+  const core = buildCasterStatsCore(
+    cls,
+    level,
+    specId,
+    specDef,
+    equipmentBonuses,
+    companion.hasShieldEquipped ?? false,
+    totals.survCoefMultPct,
+    totals.armorMultPct,
+    totals.avoidanceAddPct,
+    0
+  );
   return {
     normalizedHit: baseDamage(cls, level, equipmentBonuses),
     damageCoef:
@@ -333,27 +391,30 @@ function buildCompanionProfile(companion: CompanionCombatSetup, monster: Monster
       playerDamageModifier(diff) *
       combatTypeModifier(specDef.combatType, monster.combatType) *
       (1 + totals.flatDmgPct / 100) *
-      shadowPriestDamageBonus,
+      core.shadowPriestDamageBonus,
     accuracy: playerAccuracy(diff),
-    avoidance,
-    armor,
+    avoidance: Math.min(0.75, core.avoidanceBase),
+    armor: core.armorBase,
     damageTakenMult: Math.max(0.05, 1 - totals.flatDmgTakenPct / 100),
     damageSchool: 'physical',
-    critChance: critChanceFromAgi(totalAgi) + critChanceFromInt(totalInt) + warriorDpsCritBonus,
-    dodgeChance: dodgeChanceFromAgi(totalAgi),
+    critChance: core.critChance,
+    dodgeChance: core.dodgeChance,
     healFrac: specDef.healFrac + totals.healFracAddPct / 100,
     passiveHealPct: (specDef.passiveHealPct + totals.passiveHealAddPct / 100) * (1 + totals.healMultPct / 100),
-    healingPowerMult: healingPowerMultiplier(totalSpi) * holyPriestHealingBonus,
+    healingPowerMult: core.healingPowerMult,
     hastePct: 0, // no companion Combat Setup screen to equip a Haste enchant through in this V1
     beastDamageBonusPct: 0,
     demonDamageBonusPct: 0,
     flatDamageReduction: 0,
-    fireResistancePct: 0,
+    // The Citadel of Krypt — companions have no enchantments storage, so this
+    // is innate-item-only (see CompanionCombatSetup.fireResistancePct's doc
+    // comment); 0 for every companion before Citadel's weapons existed.
+    fireResistancePct: companion.fireResistancePct ?? 0,
     shadowResistancePct: 0,
     // weaponProc stays undefined — companions have no enchantments storage.
-    shieldBlockValue: shieldBlock,
-    manaRegenMult: manaRegenMultiplier(totalSpi),
-    manaCostReductionPct,
+    shieldBlockValue: core.shieldBlock,
+    manaRegenMult: core.manaRegenMult,
+    manaCostReductionPct: core.manaCostReductionPct,
   };
 }
 
@@ -369,7 +430,14 @@ function buildMonsterProfile(
   return {
     normalizedHit: monsterBaseDamage(monster.level),
     damageCoef:
-      enemyDamageModifier(diff) * combatTypeModifier(monster.combatType, playerCombatType) * eliteDamageMult * damageMultiplier,
+      enemyDamageModifier(diff) *
+      combatTypeModifier(monster.combatType, playerCombatType) *
+      eliteDamageMult *
+      damageMultiplier *
+      // The Citadel of Krypt — a generic per-monster archetype scale,
+      // independent of isElite (see Monster.damageMultiplier's doc
+      // comment). 1 for every monster before this field existed.
+      (monster.damageMultiplier ?? 1),
     accuracy: 1, // monsters always attempt to hit; only the player's avoidance can prevent it
     avoidance: 0, // monsters have no avoidance stat in the existing balance model
     armor: monsterArmor(monster.level) * eliteArmorMult,
@@ -401,7 +469,9 @@ function createMonsterCombatant(
   hpMultiplier: number = 1,
   damageMultiplier: number = 1
 ): Combatant {
-  const hp = Math.round(monsterHp(monster.level) * hpMultiplier * (monster.isElite ? ELITE_HP_MULTIPLIER : 1));
+  const hp = Math.round(
+    monsterHp(monster.level) * hpMultiplier * (monster.isElite ? ELITE_HP_MULTIPLIER : 1) * (monster.hpMultiplier ?? 1)
+  );
   return {
     id: `enemy-${idSuffix}`,
     name: monster.name,
@@ -425,6 +495,13 @@ function createMonsterCombatant(
     basicAttackId: 'monster_basic_attack',
     profile: buildMonsterProfile(monster, playerLevel, playerCombatType, damageMultiplier),
     threatWeight: 1,
+    // The Citadel of Krypt — only ever set on a monster with its own
+    // bossPhases; every other monster (including every other boss) gets
+    // undefined, same zero-behavior-change posture as every optional field
+    // above. See advanceCombat's own "Boss phase triggers" step.
+    bossPhaseState: monster.bossPhases
+      ? { phases: monster.bossPhases, triggeredHpPcts: [], paused: false, regenPctPerSecond: 0, enrageActive: false, enrageRampPctPerSecond: 0 }
+      : undefined,
   };
 }
 
@@ -548,9 +625,14 @@ export function createEncounterState(input: EncounterSetupInput): CombatState {
 
 // Exported so the UI can resolve any ability id (player or monster) to its
 // display name/description in one place — StatusBadges and AbilityBar both
-// need this, and neither should have to know which registry an id came from.
+// need this, and neither should have to know which registry an id came
+// from. A module-level constant, not rebuilt per call — ABILITIES/
+// MONSTER_ABILITIES/MONSTER_BASIC_ATTACK are all static imports that never
+// change at runtime, but this used to be reconstructed from scratch on
+// every advanceCombat tick and every manual ability use (both hot paths).
+const ALL_ABILITIES: Record<string, Ability> = { ...ABILITIES, ...MONSTER_ABILITIES, monster_basic_attack: MONSTER_BASIC_ATTACK };
 export function abilitiesById(): Record<string, Ability> {
-  return { ...ABILITIES, ...MONSTER_ABILITIES, monster_basic_attack: MONSTER_BASIC_ATTACK };
+  return ALL_ABILITIES;
 }
 
 // Sum of a combatant's active buffs' percentages — Battle Cry and
@@ -572,6 +654,30 @@ function buffDamageTakenMult(c: Combatant): number {
 function upsertBuff(c: Combatant, buff: ActiveBuff): void {
   c.buffs = c.buffs.filter((b) => b.abilityId !== buff.abilityId);
   c.buffs.push(buff);
+}
+
+// Lightningfury's chain-lightning proc — "reduces their defense by 10%,
+// stacking up to 3 times" is modeled as damageTakenPct on the EXISTING
+// ActiveBuff mechanism (the same field Krypt's own self-buffs and the
+// Crusader proc already use, just applied to an enemy instead of an ally —
+// buffDamageTakenMultiplier already reads c.buffs generically regardless of
+// which side c is on), not a new armor-specific field. upsertBuff alone
+// would just REPLACE the existing stack at a flat value each proc, so this
+// reads the current stack count back out of the existing buff (if any)
+// before re-applying, refreshing duration either way.
+const CHAIN_LIGHTNING_DEBUFF_PCT_PER_STACK = 10;
+const CHAIN_LIGHTNING_MAX_STACKS = 3;
+const CHAIN_LIGHTNING_MAX_TARGETS = 2;
+function applyChainLightningDebuff(target: Combatant): void {
+  const existing = target.buffs.find((b) => b.abilityId === 'lightningfury_chain_debuff');
+  const currentStacks = existing ? Math.round(existing.damageTakenPct / CHAIN_LIGHTNING_DEBUFF_PCT_PER_STACK) : 0;
+  const nextStacks = Math.min(CHAIN_LIGHTNING_MAX_STACKS, currentStacks + 1);
+  upsertBuff(target, {
+    abilityId: 'lightningfury_chain_debuff',
+    remainingSeconds: 15,
+    damageDealtPct: 0,
+    damageTakenPct: CHAIN_LIGHTNING_DEBUFF_PCT_PER_STACK * nextStacks,
+  });
 }
 
 // Crusader's temporary Strength buff, approximated as a flat damageDealtPct
@@ -956,7 +1062,10 @@ export function advanceCombat(state: CombatState, ctx: TickContext, deltaSeconds
   // action timer doesn't advance at all (matches "your swing timer freezes
   // during a stun," not "swings bank up and all fire the instant it ends").
   for (const c of allCombatants) {
-    if (!c.isAlive || c.stunnedSeconds > 0) continue;
+    // The Citadel of Krypt — a paused boss (its 50% add phase) doesn't act
+    // at all until its adds are dead, same "action timer doesn't advance"
+    // treatment as a stun.
+    if (!c.isAlive || c.stunnedSeconds > 0 || c.bossPhaseState?.paused) continue;
     // Haste enchant — see CasterProfile.hastePct's doc comment. 0 for
     // everyone except possibly the player, so this is a no-op divide-by-1
     // for every other combatant, same cadence as before this field existed.
@@ -970,6 +1079,62 @@ export function advanceCombat(state: CombatState, ctx: TickContext, deltaSeconds
       }
       useAbility(state, c, picked.ability, picked.targetId, ctx, events, kills, questSignals);
       c.actionReadyIn += attackInterval;
+    }
+  }
+
+  // 2.5. The Citadel of Krypt — boss phase triggers (Monster.bossPhases).
+  // Runs after this tick's damage so a threshold crossed by THIS tick's
+  // hits fires immediately, not one tick late. Three parts, each a plain
+  // loop over state.enemies (bossPhaseState is only ever set on a monster
+  // with bossPhases, so this is a zero-cost no-op for every other fight):
+  for (const enemy of state.enemies) {
+    if (!enemy.isAlive || !enemy.bossPhaseState) continue;
+    const phases = enemy.bossPhaseState.phases;
+    const hpPct = (enemy.hp / enemy.maxHp) * 100;
+    for (const phase of phases) {
+      if (enemy.bossPhaseState.triggeredHpPcts.includes(phase.hpPct) || hpPct > phase.hpPct) continue;
+      enemy.bossPhaseState.triggeredHpPcts.push(phase.hpPct);
+      if (phase.kind === 'adds_and_regen') {
+        enemy.bossPhaseState.paused = true;
+        enemy.bossPhaseState.regenPctPerSecond = phase.regenPctPerSecond ?? 0;
+        const addsMonster = phase.addsMonsterId ? MONSTERS[phase.addsMonsterId] : undefined;
+        if (addsMonster) {
+          // Flat, deliberately small HP AND damage multipliers (NOT the
+          // dungeon's own monsterHpMultiplier/monsterDamageMultiplier, which
+          // this spawn bypasses entirely) — these are meant to read as "6
+          // low-HP minions" that pressure kill SPEED (via the regen above),
+          // not 6 full-strength copies of their open-world selves capable of
+          // bursting the party down on their own. A live playtest of this
+          // exact phase caught the first version of this spawn (HP scaled
+          // down, damage left at 1x) nearly one-shotting every companion —
+          // see this commit's own history.
+          const adds = spawnEnemyWave(addsMonster, ctx.playerLevel, ctx.playerCombatType, phase.addsCount ?? 1, 0.15, 0.15);
+          state.enemies.push(...adds);
+        }
+        events.push({ message: `${enemy.name} stops attacking and begins to regenerate!`, kind: 'status' });
+      } else if (phase.kind === 'enrage') {
+        enemy.bossPhaseState.enrageActive = true;
+        enemy.bossPhaseState.enrageRampPctPerSecond = phase.rampPctPerSecond ?? 0;
+        events.push({ message: `${enemy.name} enrages — its attacks grow stronger by the second!`, kind: 'status' });
+      }
+    }
+    // Regen + resume-check for a currently-paused boss — every OTHER living
+    // enemy is, by construction, one of this phase's own adds (Krypt's own
+    // encounter never has more than one enemy before this fires).
+    if (enemy.bossPhaseState.paused) {
+      enemy.hp = Math.min(enemy.maxHp, enemy.hp + enemy.maxHp * (enemy.bossPhaseState.regenPctPerSecond / 100) * deltaSeconds);
+      const addsStillAlive = state.enemies.some((e) => e.id !== enemy.id && e.isAlive);
+      if (!addsStillAlive) {
+        enemy.bossPhaseState.paused = false;
+        enemy.bossPhaseState.regenPctPerSecond = 0;
+        events.push({ message: `${enemy.name} resumes its attack!`, kind: 'status' });
+      }
+    }
+    // Enrage ramp — compounds profile.damageCoef IN PLACE every tick rather
+    // than computing an absolute multiplier from a stored trigger time (see
+    // Combatant.bossPhaseState's own doc comment for why that's safe here).
+    if (enemy.bossPhaseState.enrageActive) {
+      enemy.profile.damageCoef *= 1 + (enemy.bossPhaseState.enrageRampPctPerSecond / 100) * deltaSeconds;
     }
   }
 
@@ -1126,6 +1291,32 @@ export function useAbility(
             events.push({ message: `${source.name}'s weapon enchant drains life from ${target.name}.`, kind: 'status' });
           } else if (procTriggered === 'crusader') {
             events.push({ message: `${source.name} is empowered by a Crusader enchant.`, kind: 'status' });
+          } else if (procTriggered === 'chain_lightning') {
+            // Lightningfury — chains bonus damage (power% of this hit) to up
+            // to 2 OTHER alive enemies on the same side as `target`, and
+            // stacks the defense-reduction debuff (see
+            // applyChainLightningDebuff below) on every enemy it touches,
+            // target included. Never re-triggers computeEffectDamage (so
+            // this can't itself proc again), same "procs don't chain to
+            // other procs" rule fiery_weapon's bonus damage already follows.
+            events.push({ message: `${source.name}'s blade arcs with lightning!`, kind: 'status' });
+            if (target.isAlive) applyChainLightningDebuff(target);
+            const chainPower = (source.profile.weaponProc?.power ?? 0) / 100;
+            const others = resolvedSide.filter((c) => c.id !== target.id && c.isAlive);
+            for (const chained of others.slice(0, CHAIN_LIGHTNING_MAX_TARGETS)) {
+              const chainAmount = Math.round(amount * chainPower);
+              chained.hp = Math.max(0, chained.hp - chainAmount);
+              applyChainLightningDebuff(chained);
+              events.push({
+                message: `Lightning arcs to ${chained.name} for ${chainAmount} damage.`,
+                kind: chained.isPlayer ? 'damage_in' : 'damage_out',
+              });
+              if (chained.hp <= 0 && chained.isAlive) {
+                chained.isAlive = false;
+                events.push({ message: `${chained.name} is defeated!`, kind: 'death' });
+                if (!chained.isPlayer) kills.push(rollKillReward(ctx.monster, levelDiff, ctx.goldFindPct));
+              }
+            }
           }
           // healFrac (Shadow Priest's "sustain from the damage you deal," per
           // its own spec blurb) was computed onto the profile since Phase 1

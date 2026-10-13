@@ -13,18 +13,16 @@ import { MONSTERS } from '../gameData/monsters';
 import { GATHER_NODES, FISHING_HOLES } from '../gameData/zones';
 import { RECIPES } from '../gameData/recipes';
 import { ITEMS } from '../gameData/items';
-import { disenchantRequiredSkill, disenchantXpAward, disenchantYieldRange, buildActiveEnchantTotals } from '../gameData/enchanting';
+import { disenchantRequiredSkill, disenchantXpAward, disenchantYieldRange } from '../gameData/enchanting';
 import { resolveSpecDef, getExtraDamageTakenPct } from '../gameData/combatProfileWithTalents';
+import { resolveCombatProfile } from '../gameData/resolveCombatProfile';
 import { simulateOfflineCombat, simulateOfflineDungeonCombat } from '../combatEngine/offlineCombat';
 import { DUNGEONS } from '../gameData/dungeons';
 import { resolveActiveCompanionSetups } from '../gameData/companions';
 import { resolveActiveAltSetups } from '../firebase/characterSlots';
-import { evaluateTalents, EMPTY_TALENT_TOTALS } from '../utils/talentEvaluator';
-import { maxHp, resolveCurrentHp } from '../gameData/combatFormulas';
-import { getEquipmentStatBonuses, isShieldEquipped } from '../gameData/equipmentStats';
-import { statAtLevel, type BaseStat } from '../gameData/classStats';
+import { isShieldEquipped, getInnateWeaponProc } from '../gameData/equipmentStats';
+import { type BaseStat } from '../gameData/classStats';
 import { getProfessionState, maxSkillForUnlockedTier, PROFESSION_CATEGORY } from '../gameData/professionTiers';
-import { evaluateActiveBuffs } from '../gameData/buffs';
 import { getInventory } from '../firebase/inventory';
 import { applyCombatResult, setCharacterLevel } from '../firebase/character';
 import { applyConsumableAutomationUsage } from '../firebase/consumables';
@@ -85,16 +83,13 @@ export function WelcomeBackScreen({
       if (activity.type === 'combat') {
         const monster = MONSTERS[activity.targetId];
         const specDef = resolveSpecDef(character.class, character.spec);
-        const talentTotals = character.spec
-          ? evaluateTalents(character.spec, character.talentPicks).totals
-          : EMPTY_TALENT_TOTALS;
-        const buffTotals = evaluateActiveBuffs(character.activeBuffs, now);
         const extraDmgTaken = getExtraDamageTakenPct(character.spec, character.talentPicks);
-        const equipBonuses = getEquipmentStatBonuses(character.equipment, character.enchantments, character.enchantmentCharges);
-        const enchantTotals = buildActiveEnchantTotals(character.enchantments, character.enchantmentCharges);
-        const charMaxHp = maxHp(character.class, character.level, equipBonuses, talentTotals.hpMultPct, enchantTotals.flatHpBonus);
-        const totalSpi = statAtLevel(character.class, 'SPI', character.level) + (equipBonuses.SPI ?? 0);
-        const startingHp = resolveCurrentHp(character.currentHp, charMaxHp, character.hpCheckpointAt, activity.startedAt, totalSpi);
+        const {
+          equipmentBonuses: equipBonuses,
+          talentTotals,
+          buffTotals,
+          currentHp: startingHp,
+        } = resolveCombatProfile(character, now, { hpAt: activity.startedAt });
         // Herbalism/Alchemy overhaul's Part 8 automation — built from
         // inventory as of the moment the player went offline (activity.
         // startedAt is also what cooldownRemaining is measured from, see
@@ -122,6 +117,7 @@ export function WelcomeBackScreen({
           savedAbilityConditions: character.abilityConditions,
           disabledAbilityIds: character.disabledAbilityIds,
           hasShieldEquipped: isShieldEquipped(character.equipment),
+          innateWeaponProc: getInnateWeaponProc(character.equipment),
           monster,
           consumableState,
           goldFindPct: shirtBonusPct(shirtBonusForItemId(activity.equippedShirtItemId), 'gold_find'),
@@ -196,21 +192,18 @@ export function WelcomeBackScreen({
         // CurrentActivity.dungeonFeastStatBonuses).
         const dungeon = DUNGEONS[activity.targetId];
         const specDef = resolveSpecDef(character.class, character.spec);
-        const talentTotals = character.spec
-          ? evaluateTalents(character.spec, character.talentPicks).totals
-          : EMPTY_TALENT_TOTALS;
-        const buffTotals = evaluateActiveBuffs(character.activeBuffs, now);
+        const {
+          equipmentBonuses: equipBonuses,
+          talentTotals,
+          buffTotals,
+          currentHp: startingHp,
+        } = resolveCombatProfile(character, now, { hpAt: activity.startedAt });
         const feastBonuses = activity.dungeonFeastStatBonuses ?? {};
         for (const [stat, value] of Object.entries(feastBonuses)) {
           const key = stat as BaseStat;
           buffTotals.statBonuses[key] = (buffTotals.statBonuses[key] ?? 0) + (value ?? 0);
         }
         const extraDmgTaken = getExtraDamageTakenPct(character.spec, character.talentPicks);
-        const equipBonuses = getEquipmentStatBonuses(character.equipment, character.enchantments, character.enchantmentCharges);
-        const enchantTotals = buildActiveEnchantTotals(character.enchantments, character.enchantmentCharges);
-        const charMaxHp = maxHp(character.class, character.level, equipBonuses, talentTotals.hpMultPct, enchantTotals.flatHpBonus);
-        const totalSpi = statAtLevel(character.class, 'SPI', character.level) + (equipBonuses.SPI ?? 0);
-        const startingHp = resolveCurrentHp(character.currentHp, charMaxHp, character.hpCheckpointAt, activity.startedAt, totalSpi);
         const offlineInventory = user ? await getInventory(user.uid) : { items: {} };
         const consumableState = buildConsumableAutomationState(character, offlineInventory, activity.startedAt);
         const companions = [...resolveActiveCompanionSetups(character), ...(user ? await resolveActiveAltSetups(user.uid, character) : [])].map(
@@ -245,6 +238,7 @@ export function WelcomeBackScreen({
           savedAbilityConditions: character.abilityConditions,
           disabledAbilityIds: character.disabledAbilityIds,
           hasShieldEquipped: isShieldEquipped(character.equipment),
+          innateWeaponProc: getInnateWeaponProc(character.equipment),
           stages: dungeon.stages.map((id) => MONSTERS[id]),
           dungeonCombatType: dungeon.combatType,
           dungeonEncounterSize: dungeon.encounterSize,

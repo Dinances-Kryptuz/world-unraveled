@@ -1,5 +1,7 @@
 import type { ItemDef } from './types';
 import { DUNGEON_LOOT_ITEMS } from './dungeonLoot';
+import { TOWER_LOOT_ITEMS } from './towerLoot';
+import { CITADEL_LOOT_ITEMS } from './citadelLoot';
 
 // V1 has zero stat variance: every unit of a given item is identical.
 // This is what lets inventory be a simple { itemId: quantity } map instead
@@ -3423,6 +3425,53 @@ const STATIC_ITEMS: Record<string, ItemDef> = {
     scrollEnchantId: 'enchant_mighty_agility', sellValue: 18,
   },
 
+  // ── The Citadel of Krypt — Ember Orb/Eye, loot-dropped (never crafted;
+  // see monsters.ts's embermite_broodmother/citadel_cultist_summoner
+  // lootTables), otherwise an ordinary enchant_scroll item like every one
+  // above. sellValue 0 — these are meant to be used, not vendored; a player
+  // who already maxed that slot's resist can still just not use a
+  // duplicate, same as any other scroll.
+  citadel_ember_orb_ring: {
+    id: 'citadel_ember_orb_ring', name: 'Ember Orb', type: 'enchant_scroll',
+    description: 'Use on an equipped ring item to apply the Ember Orb enchant (+10% fire resistance).', stackable: true,
+    scrollEnchantId: 'enchant_citadel_ember_orb_ring', sellValue: 0,
+  },
+  citadel_ember_orb_ring2: {
+    id: 'citadel_ember_orb_ring2', name: 'Ember Orb', type: 'enchant_scroll',
+    description: 'Use on an equipped ring item to apply the Ember Orb enchant (+10% fire resistance).', stackable: true,
+    scrollEnchantId: 'enchant_citadel_ember_orb_ring2', sellValue: 0,
+  },
+  citadel_ember_orb_necklace: {
+    id: 'citadel_ember_orb_necklace', name: 'Ember Orb', type: 'enchant_scroll',
+    description: 'Use on an equipped necklace item to apply the Ember Orb enchant (+10% fire resistance).', stackable: true,
+    scrollEnchantId: 'enchant_citadel_ember_orb_necklace', sellValue: 0,
+  },
+  citadel_ember_eye_helmet: {
+    id: 'citadel_ember_eye_helmet', name: 'Ember Eye', type: 'enchant_scroll',
+    description: 'Use on an equipped helm item to apply the Ember Eye enchant (+10% fire resistance).', stackable: true,
+    scrollEnchantId: 'enchant_citadel_ember_eye_helmet', sellValue: 0,
+  },
+  citadel_ember_eye_chest: {
+    id: 'citadel_ember_eye_chest', name: 'Ember Eye', type: 'enchant_scroll',
+    description: 'Use on an equipped chest item to apply the Ember Eye enchant (+10% fire resistance).', stackable: true,
+    scrollEnchantId: 'enchant_citadel_ember_eye_chest', sellValue: 0,
+  },
+  citadel_ember_eye_shoulders: {
+    id: 'citadel_ember_eye_shoulders', name: 'Ember Eye', type: 'enchant_scroll',
+    description: 'Use on an equipped shoulders item to apply the Ember Eye enchant (+10% fire resistance).', stackable: true,
+    scrollEnchantId: 'enchant_citadel_ember_eye_shoulders', sellValue: 0,
+  },
+  citadel_ember_eye_legs: {
+    id: 'citadel_ember_eye_legs', name: 'Ember Eye', type: 'enchant_scroll',
+    description: 'Use on an equipped legs item to apply the Ember Eye enchant (+10% fire resistance).', stackable: true,
+    scrollEnchantId: 'enchant_citadel_ember_eye_legs', sellValue: 0,
+  },
+  citadel_ember_eye_gloves: {
+    id: 'citadel_ember_eye_gloves', name: 'Ember Eye', type: 'enchant_scroll',
+    description: 'Use on an equipped gloves item to apply the Ember Eye enchant (+10% fire resistance).', stackable: true,
+    scrollEnchantId: 'enchant_citadel_ember_eye_gloves', sellValue: 0,
+  },
+
   // ── Alchemy potions — healAmount/manaAmount potions stay simple instant
   // active-use items (health_potion/emberpetal_tonic/etc. above); these are
   // the buff-category potions the profession overhaul adds. Only one buff
@@ -4793,4 +4842,9 @@ const STATIC_ITEMS: Record<string, ItemDef> = {
 // template, rather than ~180 individual literal item entries. Merged in
 // here so every existing caller of ITEMS (equip, crafting, loot, tooltips)
 // needs zero changes to see them.
-export const ITEMS: Record<string, ItemDef> = { ...STATIC_ITEMS, ...DUNGEON_LOOT_ITEMS };
+export const ITEMS: Record<string, ItemDef> = {
+  ...STATIC_ITEMS,
+  ...DUNGEON_LOOT_ITEMS,
+  ...TOWER_LOOT_ITEMS,
+  ...CITADEL_LOOT_ITEMS,
+};

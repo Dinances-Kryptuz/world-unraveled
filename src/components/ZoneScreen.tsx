@@ -122,6 +122,11 @@ export function ZoneScreen({
 
       {Object.values(DUNGEONS)
         .filter((d) => d.zoneId === zone.id)
+        // The Citadel of Krypt's Full Citadel chase run — hidden entirely
+        // (not just disabled) until its own prerequisite dungeon has been
+        // cleared at least once. See gameData/types.ts's Dungeon.
+        // unlockedAfterDungeonId doc comment.
+        .filter((d) => !d.unlockedAfterDungeonId || (character.dungeonClears[d.unlockedAfterDungeonId] ?? 0) > 0)
         .map((dungeon) => {
           const groupHeadcount = character.activeCompanionIds.length + character.activeAltSlots.length;
           const partySize = groupHeadcount + 1;

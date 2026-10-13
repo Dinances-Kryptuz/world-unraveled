@@ -1,5 +1,6 @@
 import { MATERIALS, LEATHER_MATERIALS, CLOTH_MATERIALS, WOOD_MATERIALS } from './materials';
 import { ZONES } from './zones';
+import { TOWER_MILESTONE_FLOORS } from './towerLoot';
 
 // A player-selectable cosmetic title — purely display, no stat/combat/
 // crafting effect (see types/character.ts's equippedTitleId doc comment).
@@ -79,6 +80,12 @@ function generateChefTitles(): TitleDef[] {
   return Object.values(ZONES).map((zone) => ({ id: `chef_${zone.id}`, name: `Master Chef of ${zone.name}` }));
 }
 
+// Mirrors achievements.ts's generateTowerAchievements exactly (same ids,
+// same names) over TOWER_MILESTONE_FLOORS instead of ZONES.
+function generateTowerTitles(): TitleDef[] {
+  return TOWER_MILESTONE_FLOORS.map((floor) => ({ id: `tower_floor_${floor}`, name: `Floor ${floor} Conqueror` }));
+}
+
 export const TITLES: TitleDef[] = [
   ...generateMaterialTitles(),
   { id: 'master_blacksmith', name: 'Master Blacksmith' },
@@ -98,6 +105,12 @@ export const TITLES: TitleDef[] = [
   { id: 'grandmaster_enchanter', name: 'Grandmaster Enchanter' },
   ...generateChefTitles(),
   { id: 'grandmaster_chef', name: 'Grandmaster Chef' },
+  ...generateTowerTitles(),
+  // Mirrors achievements.ts's CITADEL_LEVEL_ACHIEVEMENTS exactly (same ids).
+  { id: 'citadel_level_1_cleared', name: 'Into the Citadel' },
+  { id: 'citadel_level_2_cleared', name: 'Cultist Hunter' },
+  { id: 'citadel_level_3_cleared', name: 'Firelord\'s Bane' },
+  { id: 'citadel_full_cleared', name: 'Unbroken' },
 ];
 
 const TITLES_BY_ID: Record<string, TitleDef> = Object.fromEntries(TITLES.map((t) => [t.id, t]));

@@ -3,7 +3,7 @@
 // code, but never imports either. See src/combatEngine/README.md for the
 // shape of the whole system.
 import type { ClassId, SpecId } from '../gameData/classStats';
-import type { DamageSchool } from '../gameData/types';
+import type { BossPhaseTrigger, DamageSchool } from '../gameData/types';
 
 export type ResourceType = 'rage' | 'mana' | 'holyPower';
 
@@ -158,6 +158,29 @@ export interface Combatant {
   // threatWeight and targeting.ts's weighted pick) — always 1 for a monster,
   // since nothing on the party side differentiates among enemies yet.
   threatWeight: number;
+  // The Citadel of Krypt — live, in-combat state for Monster.bossPhases
+  // (see that field's own doc comment), set only on a combatant spawned
+  // from a monster that has bossPhases; undefined for literally everyone
+  // else (every player, companion, and the ~40 monsters before Citadel).
+  // `paused` freezes this combatant out of the action-readiness loop in
+  // advanceCombat (same mechanism as stunnedSeconds > 0) while its adds are
+  // alive; `enrageActive` ramps profile.damageCoef IN PLACE by
+  // enrageRampPctPerSecond% every tick once set, which is what makes the
+  // ramp compound correctly without separately tracking an elapsed-since-
+  // trigger timestamp.
+  bossPhaseState?: {
+    // Copied straight from Monster.bossPhases at spawn time (not re-read
+    // from TickContext.monster each tick) so this never depends on
+    // ctx.monster still pointing at the same definition this combatant was
+    // actually built from — robust even if this primitive is later reused
+    // inside a dungeon that also rotates stages via ctx.nextMonster.
+    phases: BossPhaseTrigger[];
+    triggeredHpPcts: number[];
+    paused: boolean;
+    regenPctPerSecond: number;
+    enrageActive: boolean;
+    enrageRampPctPerSecond: number;
+  };
 }
 
 // Raw per-side stats rather than a pre-mixed matchup number — mitigation is
@@ -277,7 +300,7 @@ export interface CasterProfile {
 // "skip Icy Chill's slow proc" resolution — no attack-speed-debuff concept
 // exists on the DEFENDER side of this engine, only the player's own
 // hastePct lever).
-export type EnchantProcKind = 'fiery_weapon' | 'lifestealing' | 'icy_chill' | 'crusader';
+export type EnchantProcKind = 'fiery_weapon' | 'lifestealing' | 'icy_chill' | 'crusader' | 'chain_lightning';
 
 export interface EnchantWeaponProc {
   kind: EnchantProcKind;

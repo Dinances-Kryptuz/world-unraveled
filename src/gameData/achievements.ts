@@ -12,6 +12,7 @@ import { HERBALISM_ZONE_MASTERY_THRESHOLD, FISHING_ZONE_MASTERY_THRESHOLD } from
 import { ALCHEMY_ZONE_MASTERY_THRESHOLD } from './alchemyMastery';
 import { ENCHANTING_ZONE_MASTERY_THRESHOLD } from './enchantingMastery';
 import { COOKING_ZONE_MASTERY_THRESHOLD } from './cookingMastery';
+import { TOWER_MILESTONE_FLOORS } from './towerLoot';
 
 // Snapshot-checked, not event-driven: each check() reads CURRENT persisted
 // state and either is or isn't true right now. "Unlocked" is still
@@ -254,6 +255,53 @@ const GRANDMASTER_ENCHANTER_ACHIEVEMENT: AchievementDef = {
   check: (c) => Object.values(ZONES).every((z) => isEnchantingZoneMastered(c, z.id)),
 };
 
+// One "Floor N Conqueror" achievement per gameData/towerLoot.ts milestone
+// floor — fully data-driven like every generator above, reading
+// TOWER_MILESTONE_FLOORS instead of hand-listing 10/20/.../100. Checked
+// against towerHighestFloor (a lifetime personal-best, per types/character.ts's
+// doc comment on that field), so this can never be revoked by the 3-fail
+// drop-back rule even though that rule can temporarily lower the field —
+// checkNewlyUnlocked (firebase side) only ever adds ids, never removes one.
+function generateTowerAchievements(): AchievementDef[] {
+  return TOWER_MILESTONE_FLOORS.map((floor) => ({
+    id: `tower_floor_${floor}`,
+    name: `Floor ${floor} Conqueror`,
+    description: `Reach floor ${floor} of the Tower of Infinity.`,
+    check: (c: Character) => (c.towerHighestFloor ?? 0) >= floor,
+  }));
+}
+
+// The Citadel of Krypt — reuses Character.dungeonClears exactly like any
+// other dungeon's own achievements would (Citadel Levels 1-3 are, under the
+// hood, just three more Dungeon entries — see dungeons.ts's own doc
+// comment), so no new Character field was needed for any of this.
+const CITADEL_LEVEL_ACHIEVEMENTS: AchievementDef[] = [
+  {
+    id: 'citadel_level_1_cleared',
+    name: 'Into the Citadel',
+    description: 'Clear the Citadel of Krypt: Outer Swarm.',
+    check: (c) => (c.dungeonClears['citadel_level_1'] ?? 0) > 0,
+  },
+  {
+    id: 'citadel_level_2_cleared',
+    name: 'The Cultist Halls',
+    description: 'Clear the Citadel of Krypt: Cultist Halls.',
+    check: (c) => (c.dungeonClears['citadel_level_2'] ?? 0) > 0,
+  },
+  {
+    id: 'citadel_level_3_cleared',
+    name: 'The Firelord Falls',
+    description: 'Defeat Krypt the Firelord.',
+    check: (c) => (c.dungeonClears['citadel_level_3'] ?? 0) > 0,
+  },
+  {
+    id: 'citadel_full_cleared',
+    name: 'The Unbroken Citadel',
+    description: 'Clear the full Citadel of Krypt — all three levels — in a single run.',
+    check: (c) => (c.dungeonClears['citadel_full'] ?? 0) > 0,
+  },
+];
+
 export const ACHIEVEMENTS: AchievementDef[] = [
   ...generateMasteryAchievements(),
   MASTER_BLACKSMITH_ACHIEVEMENT,
@@ -273,6 +321,8 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   GRANDMASTER_ENCHANTER_ACHIEVEMENT,
   ...generateChefAchievements(),
   GRANDMASTER_CHEF_ACHIEVEMENT,
+  ...generateTowerAchievements(),
+  ...CITADEL_LEVEL_ACHIEVEMENTS,
   { id: 'first_steps', name: 'First Steps', description: 'Reach character level 5.', check: (c) => c.level >= 5 },
   { id: 'adventurer', name: 'Adventurer', description: 'Reach character level 25.', check: (c) => c.level >= 25 },
   { id: 'veteran', name: 'Veteran', description: 'Reach character level 40.', check: (c) => c.level >= 40 },

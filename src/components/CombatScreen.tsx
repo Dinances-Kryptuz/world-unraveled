@@ -14,18 +14,15 @@ import { consumeEnchantCharges } from '../firebase/enchanting';
 import { MONSTERS } from '../gameData/monsters';
 import { ITEMS } from '../gameData/items';
 import { resolveSpecDef, getExtraDamageTakenPct } from '../gameData/combatProfileWithTalents';
-import { evaluateTalents, EMPTY_TALENT_TOTALS } from '../utils/talentEvaluator';
-import { evaluateActiveBuffs } from '../gameData/buffs';
+import { resolveCombatProfile } from '../gameData/resolveCombatProfile';
 import {
   buildConsumableAutomationState,
   emptyConsumableAutomationState,
   type ConsumableAutomationRuntimeState,
 } from '../gameData/consumableAutomation';
-import { maxHp, resolveCurrentHp, ATTACK_INTERVAL_SECONDS } from '../gameData/combatFormulas';
+import { ATTACK_INTERVAL_SECONDS } from '../gameData/combatFormulas';
 import { AUTOSAVE_INTERVAL_SECONDS } from '../gameData/activityEngine';
-import { getEquipmentStatBonuses, isShieldEquipped } from '../gameData/equipmentStats';
-import { statAtLevel } from '../gameData/classStats';
-import { buildActiveEnchantTotals } from '../gameData/enchanting';
+import { isShieldEquipped } from '../gameData/equipmentStats';
 import { characterXpForLevelV2, MAX_CHARACTER_LEVEL } from '../gameData/xpTables';
 import { checkAndUnlockNextSlot } from '../firebase/characterSlots';
 import type { QuestEvent } from '../gameData/questEngine';
@@ -146,15 +143,11 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
 
   function buildEncounterInput(c: Character): EncounterSetupInput {
     const specDef = resolveSpecDef(c.class, c.spec);
-    const talentTotals = c.spec ? evaluateTalents(c.spec, c.talentPicks).totals : EMPTY_TALENT_TOTALS;
-    const buffTotals = evaluateActiveBuffs(c.activeBuffs, new Date());
     const extraDamageTakenPct = getExtraDamageTakenPct(c.spec, c.talentPicks);
-    const equipmentBonuses = getEquipmentStatBonuses(c.equipment, c.enchantments, c.enchantmentCharges);
-    const enchantTotals = buildActiveEnchantTotals(c.enchantments, c.enchantmentCharges);
-    const charMaxHp = maxHp(c.class, c.level, equipmentBonuses, talentTotals.hpMultPct, enchantTotals.flatHpBonus);
     const startedAt = c.currentActivity.startedAt ?? new Date();
-    const totalSpi = statAtLevel(c.class, 'SPI', c.level) + (equipmentBonuses.SPI ?? 0);
-    const currentHp = resolveCurrentHp(c.currentHp, charMaxHp, c.hpCheckpointAt, startedAt, totalSpi);
+    const { equipmentBonuses, talentTotals, buffTotals, enchantTotals, currentHp } = resolveCombatProfile(c, new Date(), {
+      hpAt: startedAt,
+    });
     return {
       cls: c.class,
       level: c.level,
@@ -381,10 +374,7 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
       }
       let restoredHp: number | null = null;
       if (newLevel !== fresh.level) {
-        const equipBonuses = getEquipmentStatBonuses(fresh.equipment, fresh.enchantments, fresh.enchantmentCharges);
-        const freshTalentTotals = fresh.spec ? evaluateTalents(fresh.spec, fresh.talentPicks).totals : EMPTY_TALENT_TOTALS;
-        const freshEnchantTotals = buildActiveEnchantTotals(fresh.enchantments, fresh.enchantmentCharges);
-        restoredHp = maxHp(fresh.class, newLevel, equipBonuses, freshTalentTotals.hpMultPct, freshEnchantTotals.flatHpBonus);
+        restoredHp = resolveCombatProfile(fresh, new Date(), { level: newLevel }).maxHp;
         await setCharacterLevel(currentUser.uid, newLevel, restoredHp);
         player.hp = restoredHp;
         player.maxHp = restoredHp;
