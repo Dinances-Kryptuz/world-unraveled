@@ -2460,10 +2460,18 @@ export const RECIPES: Record<string, Recipe> = {
   // consumes 2 units of that zone's own cloth tier as a secondary
   // ingredient (no Mastery contribution of its own — only the Wood,
   // tagged via materialId, feeds this zone's combined track).
+  //
+  // Every type also consumes that zone's own Enchanting dust (the
+  // disenchanting byproduct already used by this zone's scroll recipes —
+  // see enchanting.ts's ZONE_DISENCHANT_MATERIALS: strange/soul/vision/
+  // dream/illusion/ember dust for zones 1-6) as a secondary ingredient, not
+  // just Wood — these are enchanted implements, so they should cost actual
+  // enchanting materials, the same way every scroll recipe already does.
+  // No Mastery contribution of its own, same as the Book's cloth above.
   rough_wand: {
     id: 'rough_wand', name: 'Rough Wand', profession: 'enchanting', requiredSkill: 1,
     resultItemId: 'rough_wand', resultQuantity: 1,
-    materials: [{ itemId: 'simple_wood', quantity: 3 }],
+    materials: [{ itemId: 'simple_wood', quantity: 3 }, { itemId: 'strange_dust', quantity: 2 }],
     craftSeconds: 8, xpAward: 10,
     materialId: 'simple_wood',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
@@ -2471,7 +2479,7 @@ export const RECIPES: Record<string, Recipe> = {
   rough_staff: {
     id: 'rough_staff', name: 'Rough Staff', profession: 'enchanting', requiredSkill: 1,
     resultItemId: 'rough_staff', resultQuantity: 1,
-    materials: [{ itemId: 'simple_wood', quantity: 5 }],
+    materials: [{ itemId: 'simple_wood', quantity: 5 }, { itemId: 'strange_dust', quantity: 3 }],
     craftSeconds: 8, xpAward: 10,
     materialId: 'simple_wood',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
@@ -2479,7 +2487,7 @@ export const RECIPES: Record<string, Recipe> = {
   rough_tome: {
     id: 'rough_tome', name: 'Rough Tome', profession: 'enchanting', requiredSkill: 1,
     resultItemId: 'rough_tome', resultQuantity: 1,
-    materials: [{ itemId: 'simple_wood', quantity: 3 }, { itemId: 'linen_cloth', quantity: 2 }],
+    materials: [{ itemId: 'simple_wood', quantity: 3 }, { itemId: 'linen_cloth', quantity: 2 }, { itemId: 'strange_dust', quantity: 2 }],
     craftSeconds: 8, xpAward: 10,
     materialId: 'simple_wood',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
@@ -2487,7 +2495,7 @@ export const RECIPES: Record<string, Recipe> = {
   aged_wand: {
     id: 'aged_wand', name: 'Aged Wand', profession: 'enchanting', requiredSkill: 18,
     resultItemId: 'aged_wand', resultQuantity: 1,
-    materials: [{ itemId: 'star_wood', quantity: 3 }],
+    materials: [{ itemId: 'star_wood', quantity: 3 }, { itemId: 'soul_dust', quantity: 2 }],
     craftSeconds: 8.5, xpAward: 13,
     materialId: 'star_wood',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
@@ -2495,7 +2503,7 @@ export const RECIPES: Record<string, Recipe> = {
   aged_staff: {
     id: 'aged_staff', name: 'Aged Staff', profession: 'enchanting', requiredSkill: 18,
     resultItemId: 'aged_staff', resultQuantity: 1,
-    materials: [{ itemId: 'star_wood', quantity: 5 }],
+    materials: [{ itemId: 'star_wood', quantity: 5 }, { itemId: 'soul_dust', quantity: 3 }],
     craftSeconds: 8.5, xpAward: 13,
     materialId: 'star_wood',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
@@ -2503,7 +2511,7 @@ export const RECIPES: Record<string, Recipe> = {
   aged_tome: {
     id: 'aged_tome', name: 'Aged Tome', profession: 'enchanting', requiredSkill: 18,
     resultItemId: 'aged_tome', resultQuantity: 1,
-    materials: [{ itemId: 'star_wood', quantity: 3 }, { itemId: 'wool_cloth', quantity: 2 }],
+    materials: [{ itemId: 'star_wood', quantity: 3 }, { itemId: 'wool_cloth', quantity: 2 }, { itemId: 'soul_dust', quantity: 2 }],
     craftSeconds: 8.5, xpAward: 13,
     materialId: 'star_wood',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
@@ -2511,7 +2519,7 @@ export const RECIPES: Record<string, Recipe> = {
   heartwood_wand: {
     id: 'heartwood_wand', name: 'Heartwood Wand', profession: 'enchanting', requiredSkill: 35,
     resultItemId: 'heartwood_wand', resultQuantity: 1,
-    materials: [{ itemId: 'mystic_wood', quantity: 3 }],
+    materials: [{ itemId: 'mystic_wood', quantity: 3 }, { itemId: 'vision_dust', quantity: 2 }],
     craftSeconds: 9.6, xpAward: 23,
     materialId: 'mystic_wood',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
@@ -2519,7 +2527,7 @@ export const RECIPES: Record<string, Recipe> = {
   heartwood_staff: {
     id: 'heartwood_staff', name: 'Heartwood Staff', profession: 'enchanting', requiredSkill: 35,
     resultItemId: 'heartwood_staff', resultQuantity: 1,
-    materials: [{ itemId: 'mystic_wood', quantity: 5 }],
+    materials: [{ itemId: 'mystic_wood', quantity: 5 }, { itemId: 'vision_dust', quantity: 3 }],
     craftSeconds: 9.6, xpAward: 23,
     materialId: 'mystic_wood',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
@@ -2527,7 +2535,7 @@ export const RECIPES: Record<string, Recipe> = {
   heartwood_tome: {
     id: 'heartwood_tome', name: 'Heartwood Tome', profession: 'enchanting', requiredSkill: 35,
     resultItemId: 'heartwood_tome', resultQuantity: 1,
-    materials: [{ itemId: 'mystic_wood', quantity: 3 }, { itemId: 'silk_cloth', quantity: 2 }],
+    materials: [{ itemId: 'mystic_wood', quantity: 3 }, { itemId: 'silk_cloth', quantity: 2 }, { itemId: 'vision_dust', quantity: 2 }],
     craftSeconds: 9.6, xpAward: 23,
     materialId: 'mystic_wood',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
@@ -2535,7 +2543,7 @@ export const RECIPES: Record<string, Recipe> = {
   ironwood_wand: {
     id: 'ironwood_wand', name: 'Ironwood Wand', profession: 'enchanting', requiredSkill: 52,
     resultItemId: 'ironwood_wand', resultQuantity: 1,
-    materials: [{ itemId: 'enchanted_hardwood', quantity: 3 }],
+    materials: [{ itemId: 'enchanted_hardwood', quantity: 3 }, { itemId: 'dream_dust', quantity: 2 }],
     craftSeconds: 9.8, xpAward: 40,
     materialId: 'enchanted_hardwood',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
@@ -2543,7 +2551,7 @@ export const RECIPES: Record<string, Recipe> = {
   ironwood_staff: {
     id: 'ironwood_staff', name: 'Ironwood Staff', profession: 'enchanting', requiredSkill: 52,
     resultItemId: 'ironwood_staff', resultQuantity: 1,
-    materials: [{ itemId: 'enchanted_hardwood', quantity: 5 }],
+    materials: [{ itemId: 'enchanted_hardwood', quantity: 5 }, { itemId: 'dream_dust', quantity: 3 }],
     craftSeconds: 9.8, xpAward: 40,
     materialId: 'enchanted_hardwood',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
@@ -2551,7 +2559,7 @@ export const RECIPES: Record<string, Recipe> = {
   ironwood_tome: {
     id: 'ironwood_tome', name: 'Ironwood Tome', profession: 'enchanting', requiredSkill: 52,
     resultItemId: 'ironwood_tome', resultQuantity: 1,
-    materials: [{ itemId: 'enchanted_hardwood', quantity: 3 }, { itemId: 'mageweave_cloth', quantity: 2 }],
+    materials: [{ itemId: 'enchanted_hardwood', quantity: 3 }, { itemId: 'mageweave_cloth', quantity: 2 }, { itemId: 'dream_dust', quantity: 2 }],
     craftSeconds: 9.8, xpAward: 40,
     materialId: 'enchanted_hardwood',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
@@ -2559,7 +2567,7 @@ export const RECIPES: Record<string, Recipe> = {
   charwood_wand: {
     id: 'charwood_wand', name: 'Charwood Wand', profession: 'enchanting', requiredSkill: 69,
     resultItemId: 'charwood_wand', resultQuantity: 1,
-    materials: [{ itemId: 'ancient_runewood', quantity: 3 }],
+    materials: [{ itemId: 'ancient_runewood', quantity: 3 }, { itemId: 'illusion_dust', quantity: 2 }],
     craftSeconds: 10, xpAward: 53,
     materialId: 'ancient_runewood',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
@@ -2567,7 +2575,7 @@ export const RECIPES: Record<string, Recipe> = {
   charwood_staff: {
     id: 'charwood_staff', name: 'Charwood Staff', profession: 'enchanting', requiredSkill: 69,
     resultItemId: 'charwood_staff', resultQuantity: 1,
-    materials: [{ itemId: 'ancient_runewood', quantity: 5 }],
+    materials: [{ itemId: 'ancient_runewood', quantity: 5 }, { itemId: 'illusion_dust', quantity: 3 }],
     craftSeconds: 10, xpAward: 53,
     materialId: 'ancient_runewood',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
@@ -2575,7 +2583,7 @@ export const RECIPES: Record<string, Recipe> = {
   charwood_tome: {
     id: 'charwood_tome', name: 'Charwood Tome', profession: 'enchanting', requiredSkill: 69,
     resultItemId: 'charwood_tome', resultQuantity: 1,
-    materials: [{ itemId: 'ancient_runewood', quantity: 3 }, { itemId: 'runecloth', quantity: 2 }],
+    materials: [{ itemId: 'ancient_runewood', quantity: 3 }, { itemId: 'runecloth', quantity: 2 }, { itemId: 'illusion_dust', quantity: 2 }],
     craftSeconds: 10, xpAward: 53,
     materialId: 'ancient_runewood',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
@@ -2583,7 +2591,7 @@ export const RECIPES: Record<string, Recipe> = {
   emberwood_wand: {
     id: 'emberwood_wand', name: 'Emberwood Wand', profession: 'enchanting', requiredSkill: 86,
     resultItemId: 'emberwood_wand', resultQuantity: 1,
-    materials: [{ itemId: 'emberheart_wood', quantity: 3 }],
+    materials: [{ itemId: 'emberheart_wood', quantity: 3 }, { itemId: 'ember_dust', quantity: 2 }],
     craftSeconds: 10.7, xpAward: 92,
     materialId: 'emberheart_wood',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
@@ -2591,7 +2599,7 @@ export const RECIPES: Record<string, Recipe> = {
   emberwood_staff: {
     id: 'emberwood_staff', name: 'Emberwood Staff', profession: 'enchanting', requiredSkill: 86,
     resultItemId: 'emberwood_staff', resultQuantity: 1,
-    materials: [{ itemId: 'emberheart_wood', quantity: 5 }],
+    materials: [{ itemId: 'emberheart_wood', quantity: 5 }, { itemId: 'ember_dust', quantity: 3 }],
     craftSeconds: 10.7, xpAward: 92,
     materialId: 'emberheart_wood',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
@@ -2599,7 +2607,7 @@ export const RECIPES: Record<string, Recipe> = {
   emberwood_tome: {
     id: 'emberwood_tome', name: 'Emberwood Tome', profession: 'enchanting', requiredSkill: 86,
     resultItemId: 'emberwood_tome', resultQuantity: 1,
-    materials: [{ itemId: 'emberheart_wood', quantity: 3 }, { itemId: 'ember_cloth', quantity: 2 }],
+    materials: [{ itemId: 'emberheart_wood', quantity: 3 }, { itemId: 'ember_cloth', quantity: 2 }, { itemId: 'ember_dust', quantity: 2 }],
     craftSeconds: 10.7, xpAward: 92,
     materialId: 'emberheart_wood',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
