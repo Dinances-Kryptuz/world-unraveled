@@ -92,7 +92,14 @@ export function towerDamageSchoolForAffixes(affixes: TowerAffixId[]): DamageScho
 // difficulty comes from the multiplier layer above, never from inflating
 // Monster.level past the range every other formula in this game was
 // actually tested against.
+//
+// `id` is stable PER ARCHETYPE, not per floor — this is what lets
+// MonsterPortrait.tsx's art lookup (keyed by exact monster id) and
+// monsterIcons.ts's emoji fallback work with just 8 entries/images total
+// instead of needing one per floor. Floor 9 reuses archetype 1's id (and
+// therefore its art/icon) exactly like it already reuses its flavor text.
 interface TowerGuardianArchetype {
+  id: string;
   name: string;
   creatureType?: 'beast' | 'demon';
   combatType: CombatType;
@@ -101,14 +108,14 @@ interface TowerGuardianArchetype {
 }
 
 const TOWER_GUARDIAN_ARCHETYPES: TowerGuardianArchetype[] = [
-  { name: 'Warden of Greenhollow', creatureType: 'beast', combatType: 'melee', abilityName: 'Verdant Ruin', abilityDescription: 'A crushing blow wrapped in choking, living thorns.' },
-  { name: 'Warden of the Foothills', combatType: 'ranged', abilityName: 'Stone Avalanche', abilityDescription: 'A rockslide summoned from the crags above.' },
-  { name: 'Warden of Emberfall', combatType: 'magic', abilityName: 'Ridgefire Surge', abilityDescription: 'A wave of superheated air sweeping the chamber.' },
-  { name: 'Warden of Cinderfall', combatType: 'melee', abilityName: "Ashen Executioner's Blow", abilityDescription: 'A two-handed strike meant to end a fight in one hit.' },
-  { name: 'Warden of the Molten Scar', combatType: 'ranged', abilityName: 'Scarfire Barrage', abilityDescription: 'Molten shrapnel hurled in every direction.' },
-  { name: 'Warden of Cinderheart', creatureType: 'demon', combatType: 'magic', abilityName: "Cinderheart's Judgment", abilityDescription: "A blast of the crater's own buried power." },
-  { name: 'Voidtouched Warden', creatureType: 'demon', combatType: 'magic', abilityName: 'Hollow Reckoning', abilityDescription: 'An attack that seems to come from everywhere at once.' },
-  { name: 'Infinity-Bound Warden', combatType: 'melee', abilityName: "Endless Tower's Weight", abilityDescription: 'The sheer, crushing weight of every floor below this one.' },
+  { id: 'tower_guardian_warden_greenhollow', name: 'Warden of Greenhollow', creatureType: 'beast', combatType: 'melee', abilityName: 'Verdant Ruin', abilityDescription: 'A crushing blow wrapped in choking, living thorns.' },
+  { id: 'tower_guardian_warden_foothills', name: 'Warden of the Foothills', combatType: 'ranged', abilityName: 'Stone Avalanche', abilityDescription: 'A rockslide summoned from the crags above.' },
+  { id: 'tower_guardian_warden_emberfall', name: 'Warden of Emberfall', combatType: 'magic', abilityName: 'Ridgefire Surge', abilityDescription: 'A wave of superheated air sweeping the chamber.' },
+  { id: 'tower_guardian_warden_cinderfall', name: 'Warden of Cinderfall', combatType: 'melee', abilityName: "Ashen Executioner's Blow", abilityDescription: 'A two-handed strike meant to end a fight in one hit.' },
+  { id: 'tower_guardian_warden_moltenscar', name: 'Warden of the Molten Scar', combatType: 'ranged', abilityName: 'Scarfire Barrage', abilityDescription: 'Molten shrapnel hurled in every direction.' },
+  { id: 'tower_guardian_warden_cinderheart', name: 'Warden of Cinderheart', creatureType: 'demon', combatType: 'magic', abilityName: "Cinderheart's Judgment", abilityDescription: "A blast of the crater's own buried power." },
+  { id: 'tower_guardian_voidtouched_warden', name: 'Voidtouched Warden', creatureType: 'demon', combatType: 'magic', abilityName: 'Hollow Reckoning', abilityDescription: 'An attack that seems to come from everywhere at once.' },
+  { id: 'tower_guardian_infinitybound_warden', name: 'Infinity-Bound Warden', combatType: 'melee', abilityName: "Endless Tower's Weight", abilityDescription: 'The sheer, crushing weight of every floor below this one.' },
 ];
 
 // Synthesized fresh per floor (never stored in the static MONSTERS
@@ -119,7 +126,7 @@ export function guardianForFloor(floor: number): Monster {
   const archetype = TOWER_GUARDIAN_ARCHETYPES[(floor - 1) % TOWER_GUARDIAN_ARCHETYPES.length];
   const affixes = affixesForFloor(floor);
   return {
-    id: `tower_guardian_floor_${floor}`,
+    id: archetype.id,
     name: `${archetype.name} (Floor ${floor})`,
     zoneIds: [],
     levelRange: [60, 60],

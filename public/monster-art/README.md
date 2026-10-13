@@ -7,6 +7,14 @@ data changes needed. `MonsterPortrait.tsx` tries `.webp` first, then
 `.png`; any monster without either file just keeps showing its emoji
 fallback (`gameData/monsterIcons.ts`).
 
+**The Tower of Infinity** (`gameData/tower.ts`) doesn't have 100 separate
+monster ids, one per floor — all 100 floors cycle through just 8 Guardian
+archetypes, so only 8 images are ever needed, named by archetype id:
+`tower_guardian_warden_greenhollow`, `tower_guardian_warden_foothills`,
+`tower_guardian_warden_emberfall`, `tower_guardian_warden_cinderfall`,
+`tower_guardian_warden_moltenscar`, `tower_guardian_warden_cinderheart`,
+`tower_guardian_voidtouched_warden`, `tower_guardian_infinitybound_warden`.
+
 **Spec:**
 - Square, at least 256x256px
 - **Centered subject** — unlike item icons, this gets cropped to a circle
