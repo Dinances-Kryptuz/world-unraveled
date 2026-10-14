@@ -79,7 +79,7 @@ export function VendorScreen({ zoneId }: { zoneId: string }) {
                   <div className="item-row-main">
                     {item ? <ItemSlot item={item} /> : null}
                     <span>
-                      {item?.name ?? itemId} ({price} {label} each)
+                      {price} {label} each
                     </span>
                   </div>
                   <button onClick={() => handleBuy(itemId, price, 1, currency)} disabled={isBusy || !canAffordOne}>
@@ -110,7 +110,6 @@ export function VendorScreen({ zoneId }: { zoneId: string }) {
         <ul>
           {sellableEntries.map(([itemId, quantity]) => {
             const item = ITEMS[itemId];
-            const name = item?.name ?? itemId;
             const unitValue = item?.sellValue ?? 0;
             const isBusy = selling === itemId;
             const qty = parseQuantity(sellQty[itemId], quantity);
@@ -118,9 +117,7 @@ export function VendorScreen({ zoneId }: { zoneId: string }) {
               <li key={itemId}>
                 <div className="item-row-main">
                   {item ? <ItemSlot item={item} quantity={quantity} /> : null}
-                  <span>
-                    {name} ({unitValue} gold each)
-                  </span>
+                  <span>{unitValue} gold each</span>
                 </div>
                 <button onClick={() => handleSell(itemId, 1, unitValue)} disabled={isBusy}>
                   Sell 1

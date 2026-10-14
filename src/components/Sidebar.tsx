@@ -14,6 +14,7 @@ export type AppSection =
   | 'classTrainer'
   | 'mountTrainer'
   | 'professionsTrainer'
+  | 'journal'
   | 'characters'
   | 'collection'
   | 'settings'
@@ -41,6 +42,7 @@ const TOP_ITEMS: SidebarItem[] = [
   { id: 'classTrainer', label: 'Class Trainer' },
   { id: 'mountTrainer', label: 'Mount Trainer' },
   { id: 'professionsTrainer', label: 'Professions Trainer' },
+  { id: 'journal', label: 'Journal' },
   { id: 'characters', label: 'Characters' },
   { id: 'collection', label: 'Collection' },
   { id: 'tower', label: 'Tower of Infinity' },

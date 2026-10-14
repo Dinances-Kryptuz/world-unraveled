@@ -370,7 +370,7 @@ export function GatheringScreen({ node }: { node: GatherNode }) {
       ) : (
         <>
           <p>
-            {ITEMS[node.itemId]?.name ?? node.itemId} Mastery: {masteryState.level}/{MASTERY_MAX_LEVEL}
+            {ITEMS[node.itemId]?.name ?? node.itemId} Mastery: {masteryState.level}%
             {xpForNextMasteryLevel !== null ? ` (${Math.floor(masteryState.xp)} / ${xpForNextMasteryLevel} XP)` : ' (max)'}
             {' — '}+{((speedMult - 1) * 100).toFixed(0)}% speed, {(bonusChance * 100).toFixed(0)}% bonus yield
           </p>

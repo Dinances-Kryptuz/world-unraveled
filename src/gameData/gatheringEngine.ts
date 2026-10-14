@@ -91,24 +91,37 @@ export function gatheringColorTier(playerLevel: number, resourceRequiredLevel: n
   return 'grey';
 }
 
-// ── Resource Mastery (per-resource, 0-50) ─────────────────────────────────
+// ── Resource Mastery (per-resource, 0-100%) ───────────────────────────────
 // Deliberately NOT the same 0-10 scale as Smithing's existing Mastery
 // (masteryEngine.ts) — gathering Mastery is meant to be a long-term, "come
 // back to this resource for hundreds of gathers" investment (see
 // MASTERY_MILESTONE_EVERY below), not a quick ramp finished incidentally
-// while leveling through a tier. Reaching Mastery 50 on one resource,
+// while leveling through a tier. Reaching Mastery 100% on one resource,
 // ground exclusively, takes roughly as long as leveling the WHOLE
 // profession efficiently (~30-34h by simulation) — during normal play a
 // player only spends a fraction of that on any one tier before the next
 // one is simply better XP/hour, so maxing a resource's Mastery is always a
 // deliberate choice, never a side effect.
-export const MASTERY_MAX_LEVEL = 50;
-// Bonuses land every 5th level (10 milestones total) rather than every
-// single one — same two bonus axes and the same caps (+20% speed, +5% bonus
-// yield chance) as Smithing's shipped Mastery, just spread across 50 levels
+//
+// Originally shipped as a 0-50 level scale (milestones every 5 levels); per
+// user request this is now displayed as a 0-100% scale instead (milestones
+// every 10%) for a more intuitive "percent to mastered" reading. This is a
+// pure re-parametrization, NOT a rebalance: MASTERY_XP_BASE was refit (not
+// simply halved) so the total XP — and therefore the total number of
+// actions — needed to reach the cap is unchanged (old total to level 50:
+// 151,989 XP; new total to level 100: 151,957 XP, a <0.03% rounding
+// difference from doubling the per-level granularity). The milestone-tier
+// functions below (gatheringMasterySpeedMultiplier/BonusChance) already key
+// off the MILESTONE NUMBER (0-10), not the raw level, so they needed no
+// changes at all — only these constants and the doc comments mentioning
+// raw old-scale numbers.
+export const MASTERY_MAX_LEVEL = 100;
+// Bonuses land every 10th level (10 milestones total, same as before) —
+// same two bonus axes and the same caps (+20% speed, +5% bonus yield
+// chance) as Smithing's shipped Mastery, just spread across 100 levels
 // instead of 10, per the "milestones, not every level" design goal.
-const MASTERY_MILESTONE_EVERY = 5;
-const MASTERY_XP_BASE = 25;
+const MASTERY_MILESTONE_EVERY = 10;
+const MASTERY_XP_BASE = 4.63;
 const MASTERY_XP_EXPONENT = 1.45;
 
 export function masteryXpForNextLevel(level: number): number {
@@ -124,7 +137,7 @@ export function gatheringMasterySpeedMultiplier(masteryLevel: number): number {
   return 1 + (milestone * 2) / 100;
 }
 
-// 0% until the halfway milestone (Mastery 25), then a modest ramp to the
+// 0% until the halfway milestone (Mastery 50), then a modest ramp to the
 // same +5% cap Smithing's Mastery already uses — capped low on purpose so
 // Mastery rewards specialization without trivializing the profession grind
 // or flooding the economy with doubled output.
@@ -219,8 +232,11 @@ export function migrateLegacyGatheringLevel(oldLevel: number): number {
   return Math.max(1, Math.min(GATHERING_LEVEL_CAP, Math.round(oldLevel / 3)));
 }
 
+// Old scale was 0-10 (masteryEngine.ts's Smithing pilot); the multiplier is
+// derived from MASTERY_MAX_LEVEL rather than a hardcoded 5/10 literal so it
+// stays correct if the current scale's ceiling ever changes again.
 export function migrateLegacyMasteryLevel(oldMasteryLevel: number): number {
-  return Math.max(0, Math.min(MASTERY_MAX_LEVEL, Math.round(oldMasteryLevel * 5)));
+  return Math.max(0, Math.min(MASTERY_MAX_LEVEL, Math.round(oldMasteryLevel * (MASTERY_MAX_LEVEL / 10))));
 }
 
 // ── Resolver ───────────────────────────────────────────────────────────

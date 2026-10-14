@@ -79,48 +79,39 @@ export function BankScreen() {
       </p>
       {error && <p className="error">{error}</p>}
 
+      {/* Each panel is a 3-column box grid (see index.css's .bank-grid) —
+          no name text next to a tile anymore, ItemSlot's own hover tooltip
+          covers that. Click a tile to act: deposit-all on the left,
+          withdraw-all on the right — the only action either side ever
+          offered, so there's nothing lost by dropping the separate button. */}
       <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
-        <div style={{ flex: 1, minWidth: 260 }}>
+        <div style={{ flex: 1, minWidth: 200 }}>
           <h3>Inventory</h3>
           {sortedEntries(inventory).length === 0 ? (
             <p>Nothing to deposit.</p>
           ) : (
-            <ul>
+            <div className="bank-grid">
               {sortedEntries(inventory).map(([itemId, quantity]) => {
                 const item = ITEMS[itemId];
-                return (
-                  <li key={itemId}>
-                    <div className="item-row-main">
-                      {item ? <ItemSlot item={item} quantity={quantity} /> : null}
-                      <span>{item?.name ?? itemId}</span>
-                    </div>
-                    <button onClick={() => handleDeposit(itemId, quantity)}>Deposit all</button>
-                  </li>
-                );
+                if (!item) return null;
+                return <ItemSlot key={itemId} item={item} quantity={quantity} onClick={() => handleDeposit(itemId, quantity)} />;
               })}
-            </ul>
+            </div>
           )}
         </div>
 
-        <div style={{ flex: 1, minWidth: 260 }}>
+        <div style={{ flex: 1, minWidth: 200 }}>
           <h3>Bank</h3>
           {sortedEntries(bank).length === 0 ? (
             <p>Empty so far.</p>
           ) : (
-            <ul>
+            <div className="bank-grid">
               {sortedEntries(bank).map(([itemId, quantity]) => {
                 const item = ITEMS[itemId];
-                return (
-                  <li key={itemId}>
-                    <div className="item-row-main">
-                      {item ? <ItemSlot item={item} quantity={quantity} /> : null}
-                      <span>{item?.name ?? itemId}</span>
-                    </div>
-                    <button onClick={() => handleWithdraw(itemId, quantity)}>Withdraw all</button>
-                  </li>
-                );
+                if (!item) return null;
+                return <ItemSlot key={itemId} item={item} quantity={quantity} onClick={() => handleWithdraw(itemId, quantity)} />;
               })}
-            </ul>
+            </div>
           )}
         </div>
       </div>

@@ -96,6 +96,15 @@ export interface ActiveDot {
   tickSeconds: number;
   timeSinceLastTick: number;
   hitPerTick: number;
+  // Rogue companion's Deadly Poison — up to 5, each stack multiplying the
+  // per-tick damage. Undefined/1 for every other dot (treated as 1 stack),
+  // so this is a purely additive, backward-compatible field. A new stack
+  // REPLACES this dot (refreshing remainingSeconds and incrementing stacks,
+  // capped at the max) rather than pushing a second independent entry — see
+  // engine.ts's applyDeadlyPoisonStack — which is what makes "the poison's
+  // own duration fully expiring wipes every stack at once" fall out of the
+  // existing dot-expiry/removal logic for free, no separate bookkeeping.
+  stacks?: number;
 }
 
 // Mirrors ActiveDot exactly, just healing instead of damaging — see
@@ -113,6 +122,14 @@ export interface ActiveBuff {
   remainingSeconds: number;
   damageDealtPct: number;
   damageTakenPct: number;
+  // Rogue companion's Crippling Poison — negative means slower (e.g. -10 =
+  // 10% slower action cadence). Summed the same way damageDealtPct/
+  // damageTakenPct already are (buffActionSpeedMult, mirroring
+  // buffDamageDealtMult/buffDamageTakenMult) and divides into the same
+  // attackInterval calc hastePct already feeds — the "attack-speed debuff"
+  // primitive EnchantProcKind's icy_chill doc comment flagged as
+  // deliberately missing from this engine, now added for Crippling Poison.
+  actionSpeedPct: number;
 }
 
 // Live combat state — everything that changes second to second. Static
@@ -272,6 +289,13 @@ export interface CasterProfile {
   // computeEffectDamage simply never rolling source.profile.weaponProc
   // again for a proc's OWN bonus-damage sub-event.
   weaponProc?: EnchantWeaponProc;
+  // The Rogue companion's innate on-hit poisons (Crippling/Deadly Poison —
+  // see engine.ts's useAbility) — a SPEC-level always-on proc, independent
+  // of weaponProc (which is item/enchant-sourced), set only in
+  // buildCompanionProfile for specId === 'rogue_poison'. Modeled as its own
+  // kind rather than reusing EnchantProcKind/weaponProc since it's never
+  // item-sourced and a Rogue keeps it with no weapon/enchant requirement.
+  innateCombatProc?: 'rogue_poison';
   // ── Attribute & Specialization Identity overhaul ──────────────────────
   // shieldBlockValue: a flat damage-reduction stat, SUMMED with
   // flatDamageReduction in computeEffectDamage (one pipeline, two sources —

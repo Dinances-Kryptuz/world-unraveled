@@ -417,7 +417,6 @@ export function DisenchantingScreen({ itemId, instanceId }: { itemId: string; in
                 <li key={`${q.itemId}:${q.instanceId ?? ''}:${i}`}>
                   <div className="item-row-main">
                     <ItemSlot item={qItem} quantity={q.quantity} statOverride={qRolls} />
-                    <span>{getItemDisplayName(qItem.name, qRolls)}</span>
                   </div>
                   <button onClick={() => handleRemoveFromQueue(i)}>Remove</button>
                 </li>

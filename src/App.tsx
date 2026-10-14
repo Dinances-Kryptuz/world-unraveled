@@ -3,7 +3,6 @@ import { AuthProvider, useAuth } from './hooks/useAuth';
 import { CharacterProvider, useCharacter } from './hooks/useCharacter';
 import { LoginScreen } from './components/LoginScreen';
 import { CharacterCreationScreen } from './components/CharacterCreationScreen';
-import { SpecSelectionScreen } from './components/SpecSelectionScreen';
 import { ZoneScreen } from './components/ZoneScreen';
 import { EquipmentScreen } from './components/EquipmentScreen';
 import { InventoryScreen } from './components/InventoryScreen';
@@ -11,6 +10,7 @@ import { BankScreen } from './components/BankScreen';
 import { ClassTrainerScreen } from './components/ClassTrainerScreen';
 import { MountTrainerScreen } from './components/MountTrainerScreen';
 import { ProfessionsTrainerScreen } from './components/ProfessionsTrainerScreen';
+import { JournalScreen } from './components/JournalScreen';
 import { CombatScreen } from './components/CombatScreen';
 import { GatheringScreen } from './components/GatheringScreen';
 import { FishingScreen } from './components/FishingScreen';
@@ -139,10 +139,6 @@ function AppContent() {
     return <CharacterCreationScreen />;
   }
 
-  if (character.level >= 5 && character.spec === null) {
-    return <SpecSelectionScreen />;
-  }
-
   // Sidebar just renders the current choice and reports clicks back up —
   // Talents' own spec gate now lives inside ClassTrainerScreen, so there's
   // no section-level redirect needed here anymore.
@@ -254,6 +250,7 @@ function AppContent() {
       {section === 'classTrainer' && <ClassTrainerScreen zoneId={character.currentZoneId} />}
       {section === 'mountTrainer' && <MountTrainerScreen zoneId={character.currentZoneId} />}
       {section === 'professionsTrainer' && <ProfessionsTrainerScreen />}
+      {section === 'journal' && <JournalScreen />}
       {section === 'quests' && <QuestLog />}
       {section === 'tower' && <TowerScreen />}
       {section === 'settings' && <SettingsScreen />}

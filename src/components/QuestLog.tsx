@@ -48,6 +48,14 @@ function describeObjective(obj: QuestObjective): string {
   }
 }
 
+// The classic MMO quest-marker convention: a gray "?" for a quest already
+// accepted but not yet ready to turn in, a yellow "?" once its objectives
+// are done (ready to complete), and a yellow "!" for one sitting in
+// Available, not yet accepted at all.
+function QuestMarker({ state }: { state: 'incomplete' | 'completed' | 'available' }) {
+  return <span className={`quest-marker quest-marker-${state}`}>{state === 'available' ? '!' : '?'}</span>;
+}
+
 function describeReward(quest: QuestDef): string {
   const parts: string[] = [];
   if (quest.rewards.xp) parts.push(`${quest.rewards.xp.toLocaleString()} XP`);
@@ -112,24 +120,27 @@ export function QuestLog() {
           {activeQuests.map(({ quest, progress }) => {
             const ready = isQuestReadyToComplete(quest, progress);
             return (
-              <li key={quest.id} style={{ marginBottom: 10 }}>
-                <div>
-                  <strong>{quest.name}</strong> <small>({CATEGORY_LABELS[quest.category]})</small>
-                  {ready && (
-                    <button onClick={() => handleComplete(quest.id)} disabled={busyId !== null} style={{ marginLeft: 8 }}>
-                      {busyId === quest.id ? 'Completing…' : 'Complete Quest'}
-                    </button>
-                  )}
+              <li key={quest.id} className="quest-row" style={{ marginBottom: 10 }}>
+                <QuestMarker state={ready ? 'completed' : 'incomplete'} />
+                <div className="quest-row-body">
+                  <div>
+                    <strong>{quest.name}</strong> <small>({CATEGORY_LABELS[quest.category]})</small>
+                    {ready && (
+                      <button onClick={() => handleComplete(quest.id)} disabled={busyId !== null} style={{ marginLeft: 8 }}>
+                        {busyId === quest.id ? 'Completing…' : 'Complete Quest'}
+                      </button>
+                    )}
+                  </div>
+                  <div>{quest.description}</div>
+                  <ul style={{ paddingLeft: 18, margin: '4px 0' }}>
+                    {quest.objectives.map((obj, i) => (
+                      <li key={i}>
+                        {describeObjective(obj)}: {Math.min(progress[i], obj.count)} / {obj.count}
+                      </li>
+                    ))}
+                  </ul>
+                  <small>Reward: {describeReward(quest)}</small>
                 </div>
-                <div>{quest.description}</div>
-                <ul style={{ paddingLeft: 18, margin: '4px 0' }}>
-                  {quest.objectives.map((obj, i) => (
-                    <li key={i}>
-                      {describeObjective(obj)}: {Math.min(progress[i], obj.count)} / {obj.count}
-                    </li>
-                  ))}
-                </ul>
-                <small>Reward: {describeReward(quest)}</small>
               </li>
             );
           })}
@@ -142,20 +153,23 @@ export function QuestLog() {
       ) : (
         <ul style={{ listStyle: 'none', paddingLeft: 0 }}>
           {available.map((quest) => (
-            <li key={quest.id} style={{ marginBottom: 10, opacity: atCap ? 0.6 : 1 }}>
-              <div>
-                <strong>{quest.name}</strong> <small>({CATEGORY_LABELS[quest.category]})</small>
-                <button onClick={() => handleAccept(quest.id)} disabled={busyId !== null || atCap} style={{ marginLeft: 8 }}>
-                  {busyId === quest.id ? 'Accepting…' : atCap ? 'Board full' : 'Accept'}
-                </button>
+            <li key={quest.id} className="quest-row" style={{ marginBottom: 10, opacity: atCap ? 0.6 : 1 }}>
+              <QuestMarker state="available" />
+              <div className="quest-row-body">
+                <div>
+                  <strong>{quest.name}</strong> <small>({CATEGORY_LABELS[quest.category]})</small>
+                  <button onClick={() => handleAccept(quest.id)} disabled={busyId !== null || atCap} style={{ marginLeft: 8 }}>
+                    {busyId === quest.id ? 'Accepting…' : atCap ? 'Board full' : 'Accept'}
+                  </button>
+                </div>
+                <div>{quest.description}</div>
+                <ul style={{ paddingLeft: 18, margin: '4px 0' }}>
+                  {quest.objectives.map((obj, i) => (
+                    <li key={i}>{describeObjective(obj)}: 0 / {obj.count}</li>
+                  ))}
+                </ul>
+                <small>Reward: {describeReward(quest)}</small>
               </div>
-              <div>{quest.description}</div>
-              <ul style={{ paddingLeft: 18, margin: '4px 0' }}>
-                {quest.objectives.map((obj, i) => (
-                  <li key={i}>{describeObjective(obj)}: 0 / {obj.count}</li>
-                ))}
-              </ul>
-              <small>Reward: {describeReward(quest)}</small>
             </li>
           ))}
         </ul>

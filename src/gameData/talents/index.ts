@@ -18,6 +18,8 @@ export const TALENT_TREES: Record<SpecId, TalentTree> = {
   // every SpecId.
   mage_fire: [],
   mage_frost: [],
+  // Rogue is also companion-only (see classStats.ts) — same reasoning as Mage.
+  rogue_poison: [],
 };
 
 export { WARRIOR_DPS_EXTRA_DMG_TAKEN_AT_60 };

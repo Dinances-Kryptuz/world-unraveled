@@ -3,7 +3,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useCharacter } from '../hooks/useCharacter';
 import { getAccount, listRosterSummaries, switchActiveCharacter, createCharacterInNewSlot } from '../firebase/characterSlots';
 import { MAX_CHARACTER_SLOTS, type AccountState, type RosterSlotSummary } from '../gameData/characterSlots';
-import { CLASS_LABELS, SPEC_LABELS, type ClassId, type SpecId } from '../gameData/classStats';
+import { CLASS_LABELS, SPECS, SPEC_LABELS, type ClassId, type SpecId } from '../gameData/classStats';
 import { ClassColoredName } from './ClassColoredName';
 
 const CLASS_OPTIONS: { id: ClassId; name: string; blurb: string }[] = [
@@ -29,6 +29,7 @@ export function CharacterSelectScreen() {
   const [error, setError] = useState<string | null>(null);
   const [creatingName, setCreatingName] = useState('');
   const [creatingClass, setCreatingClass] = useState<ClassId | null>(null);
+  const [creatingSpec, setCreatingSpec] = useState<SpecId | null>(null);
 
   async function load() {
     if (!user) return;
@@ -70,18 +71,19 @@ export function CharacterSelectScreen() {
       setError('Name must be 2-20 characters.');
       return;
     }
-    if (!creatingClass) {
-      setError('Choose a class first.');
+    if (!creatingClass || !creatingSpec) {
+      setError('Choose a class and specialization first.');
       return;
     }
     setBusy(true);
     setError(null);
-    const result = await createCharacterInNewSlot(user.uid, trimmed, creatingClass, account);
+    const result = await createCharacterInNewSlot(user.uid, trimmed, creatingClass, creatingSpec, account);
     if (!result.success) {
       setError(result.reason ?? 'Could not create a new character.');
     } else {
       setCreatingName('');
       setCreatingClass(null);
+      setCreatingSpec(null);
       await refetch();
       await load();
     }
@@ -133,7 +135,10 @@ export function CharacterSelectScreen() {
                   <strong>{opt.name}</strong> — {opt.blurb}
                 </div>
                 <button
-                  onClick={() => setCreatingClass(opt.id)}
+                  onClick={() => {
+                    setCreatingClass(opt.id);
+                    setCreatingSpec(null);
+                  }}
                   disabled={busy}
                   style={{ opacity: creatingClass === opt.id ? 1 : 0.6 }}
                 >
@@ -142,7 +147,25 @@ export function CharacterSelectScreen() {
               </li>
             ))}
           </ul>
-          <button onClick={handleCreate} disabled={busy || creatingName.trim().length === 0 || !creatingClass}>
+          {creatingClass && (
+            <ul>
+              {(Object.keys(SPECS) as SpecId[])
+                .filter((id) => SPECS[id].class === creatingClass)
+                .map((specId) => (
+                  <li key={specId}>
+                    <div>{SPEC_LABELS[specId]}</div>
+                    <button
+                      onClick={() => setCreatingSpec(specId)}
+                      disabled={busy}
+                      style={{ opacity: creatingSpec === specId ? 1 : 0.6 }}
+                    >
+                      {creatingSpec === specId ? 'Selected' : 'Choose'}
+                    </button>
+                  </li>
+                ))}
+            </ul>
+          )}
+          <button onClick={handleCreate} disabled={busy || creatingName.trim().length === 0 || !creatingClass || !creatingSpec}>
             {busy ? 'Creating…' : 'Create Character'}
           </button>
         </div>

@@ -611,7 +611,7 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
           ) : (
             <>
               <p>
-                {resultItem?.name ?? recipe.resultItemId} Mastery: {masteryState.level}/{RECIPE_MASTERY_MAX_LEVEL}
+                {resultItem?.name ?? recipe.resultItemId} Mastery: {masteryState.level}%
                 {xpForNextMasteryLevel !== null ? ` (${Math.floor(masteryState.xp)} / ${xpForNextMasteryLevel} XP)` : ' (max)'}
                 {' — '}+{((speedMult - 1) * 100).toFixed(0)}% speed, {(bonusChance * 100).toFixed(0)}% bonus output
               </p>

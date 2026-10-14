@@ -412,6 +412,10 @@ function buildCompanionProfile(companion: CompanionCombatSetup, monster: Monster
     fireResistancePct: companion.fireResistancePct ?? 0,
     shadowResistancePct: 0,
     // weaponProc stays undefined — companions have no enchantments storage.
+    // innateCombatProc: the Rogue's Master of Poisons kit — spec-level, not
+    // item-sourced, so it's set here directly from specId rather than
+    // needing any gear.
+    innateCombatProc: specId === 'rogue_poison' ? 'rogue_poison' : undefined,
     shieldBlockValue: core.shieldBlock,
     manaRegenMult: core.manaRegenMult,
     manaCostReductionPct: core.manaCostReductionPct,
@@ -647,6 +651,17 @@ function buffDamageTakenMult(c: Combatant): number {
   return 1 + c.buffs.reduce((sum, b) => sum + b.damageTakenPct, 0) / 100;
 }
 
+// Crippling Poison's attack-speed debuff — same summed-buffs convention as
+// buffDamageDealtMult/buffDamageTakenMult above, just feeding the
+// attackInterval calc (the main tick loop, below) instead of damage.
+// Clamped so stacked/overlapping slows can never reach or cross 0 (a
+// combatant that never acts again), matching this file's existing
+// defensive-clamp habit elsewhere (e.g. damageTakenMult's own floor).
+function buffActionSpeedMult(c: Combatant): number {
+  const sum = c.buffs.reduce((total, b) => total + b.actionSpeedPct, 0);
+  return 1 + Math.max(-80, sum) / 100;
+}
+
 // Replaces any existing buff tagged with the same abilityId rather than
 // stacking a second copy — Crusader's "+10% of unbuffed Strength... for the
 // next 3 eligible attacks, refreshing rather than stacking" (per the design
@@ -677,6 +692,56 @@ function applyChainLightningDebuff(target: Combatant): void {
     remainingSeconds: 15,
     damageDealtPct: 0,
     damageTakenPct: CHAIN_LIGHTNING_DEBUFF_PCT_PER_STACK * nextStacks,
+    actionSpeedPct: 0,
+  });
+}
+
+// Rogue companion's "Master of Poisons" innate procs (CasterProfile.
+// innateCombatProc === 'rogue_poison') — rolled independently of each
+// other and of any weapon enchant proc, on every landed 'damage' effect,
+// in useAbility below.
+//
+// Crippling Poison: flat -10% action speed on proc, refreshed (not
+// stacked) each time it lands — upsertBuff alone is correct here since
+// there's only ever one "stack."
+const CRIPPLING_POISON_CHANCE = 0.1;
+const CRIPPLING_POISON_SLOW_PCT = 10;
+const CRIPPLING_POISON_DURATION_SECONDS = 15;
+function applyCripplingPoisonDebuff(target: Combatant): void {
+  upsertBuff(target, {
+    abilityId: 'rogue_crippling_poison',
+    remainingSeconds: CRIPPLING_POISON_DURATION_SECONDS,
+    damageDealtPct: 0,
+    damageTakenPct: 0,
+    actionSpeedPct: -CRIPPLING_POISON_SLOW_PCT,
+  });
+}
+
+// Deadly Poison: a dot that stacks up to 5 times, each stack adding its own
+// tick damage. A new stack REPLACES the existing dot entry (refreshing its
+// full duration and incrementing stacks, capped), rather than pushing a
+// second independent timer — so "stacks fall off together if the poison's
+// own duration expires before a new one lands" falls out of tickDots'
+// existing expiry/removal logic for free: the whole entry (all stacks)
+// expires as one unit, exactly like any other single dot already does.
+const DEADLY_POISON_CHANCE = 0.2;
+const DEADLY_POISON_MAX_STACKS = 5;
+const DEADLY_POISON_DURATION_SECONDS = 12;
+const DEADLY_POISON_TICK_SECONDS = 3;
+const DEADLY_POISON_POWER = 0.25;
+function applyDeadlyPoisonStack(target: Combatant, source: Combatant): void {
+  const existing = target.dots.find((d) => d.abilityId === 'rogue_deadly_poison');
+  const nextStacks = Math.min(DEADLY_POISON_MAX_STACKS, (existing?.stacks ?? 0) + 1);
+  target.dots = target.dots.filter((d) => d.abilityId !== 'rogue_deadly_poison');
+  target.dots.push({
+    abilityId: 'rogue_deadly_poison',
+    remainingSeconds: DEADLY_POISON_DURATION_SECONDS,
+    tickSeconds: DEADLY_POISON_TICK_SECONDS,
+    timeSinceLastTick: 0,
+    // Snapshot per-stack tick damage fresh on every (re)application, same
+    // "re-snapshot on refresh" convention the existing single-dot case uses.
+    hitPerTick: source.profile.normalizedHit * DEADLY_POISON_POWER * source.profile.damageCoef * buffDamageDealtMult(source),
+    stacks: nextStacks,
   });
 }
 
@@ -838,6 +903,7 @@ function computeEffectDamage(
         remainingSeconds: (3 * ATTACK_INTERVAL_SECONDS) / (1 + attacker.profile.hastePct / 100),
         damageDealtPct: CRUSADER_PROC_DAMAGE_DEALT_PCT,
         damageTakenPct: 0,
+        actionSpeedPct: 0,
       });
       attackerHealOnTrigger = Math.max(
         0,
@@ -1066,10 +1132,13 @@ export function advanceCombat(state: CombatState, ctx: TickContext, deltaSeconds
     // at all until its adds are dead, same "action timer doesn't advance"
     // treatment as a stun.
     if (!c.isAlive || c.stunnedSeconds > 0 || c.bossPhaseState?.paused) continue;
-    // Haste enchant — see CasterProfile.hastePct's doc comment. 0 for
-    // everyone except possibly the player, so this is a no-op divide-by-1
-    // for every other combatant, same cadence as before this field existed.
-    const attackInterval = ATTACK_INTERVAL_SECONDS / (1 + c.profile.hastePct / 100);
+    // Haste enchant (static, per-encounter) combined with Crippling
+    // Poison's live actionSpeedPct debuff (buffActionSpeedMult) — see
+    // CasterProfile.hastePct's and ActiveBuff.actionSpeedPct's doc comments.
+    // Both default to a 1x no-op for everyone except the player (haste) or
+    // a poisoned target (the debuff), so this is unchanged cadence for
+    // every other combatant, same as before either field existed.
+    const attackInterval = ATTACK_INTERVAL_SECONDS / ((1 + c.profile.hastePct / 100) * buffActionSpeedMult(c));
     c.actionReadyIn -= deltaSeconds;
     while (c.actionReadyIn <= 0 && c.isAlive) {
       const picked = pickAbility(state, c, abilities);
@@ -1168,7 +1237,10 @@ function tickDots(c: Combatant, deltaSeconds: number, ctx: TickContext, events: 
     dot.timeSinceLastTick += deltaSeconds;
     while (dot.timeSinceLastTick >= dot.tickSeconds && c.isAlive) {
       dot.timeSinceLastTick -= dot.tickSeconds;
-      const amount = Math.round(dot.hitPerTick);
+      // dot.stacks (Deadly Poison) multiplies the per-tick amount; absent
+      // for every other dot, which ticks exactly as before this field
+      // existed (× 1).
+      const amount = Math.round(dot.hitPerTick * (dot.stacks ?? 1));
       c.hp = Math.max(0, c.hp - amount);
       events.push({
         message: `${c.name} takes ${amount} damage from a lingering effect.`,
@@ -1318,6 +1390,20 @@ export function useAbility(
               }
             }
           }
+          // Rogue companion's innate poisons — independent of procTriggered
+          // (that's reserved for weapon-enchant procs specifically; these
+          // are spec-innate, no weapon/enchant required) and independent of
+          // each other, so both can land on the same hit.
+          if (target.isAlive && source.profile.innateCombatProc === 'rogue_poison') {
+            if (Math.random() < CRIPPLING_POISON_CHANCE) {
+              applyCripplingPoisonDebuff(target);
+              events.push({ message: `${source.name} poisons ${target.name} with Crippling Poison.`, kind: 'status' });
+            }
+            if (Math.random() < DEADLY_POISON_CHANCE) {
+              applyDeadlyPoisonStack(target, source);
+              events.push({ message: `${source.name} applies a stack of Deadly Poison to ${target.name}.`, kind: 'status' });
+            }
+          }
           // healFrac (Shadow Priest's "sustain from the damage you deal," per
           // its own spec blurb) was computed onto the profile since Phase 1
           // but never actually paid out here — same gap as passiveHealPct
@@ -1409,6 +1495,7 @@ export function useAbility(
             remainingSeconds: effect.durationSeconds ?? 0,
             damageDealtPct: effect.damageDealtPct ?? 0,
             damageTakenPct: effect.damageTakenPct ?? 0,
+            actionSpeedPct: 0,
           });
           const verb = (effect.damageDealtPct ?? 0) < 0 || (effect.damageTakenPct ?? 0) < 0 ? 'afflicts' : 'buffs';
           events.push({ message: `${source.name} ${verb} ${target.name} with ${ability.name}.`, kind: 'status' });

@@ -33,6 +33,11 @@ export function initialResources(
       const max = manaMax(level, intStat, flatManaBonus);
       return { mana: { current: max, max } };
     }
+    // Rogue's V1 kit (engine.ts's applyCripplingPoisonDebuff/
+    // applyDeadlyPoisonStack) spends no resource at all — no Energy system
+    // modeled yet, same "for now" minimal scope as the rest of its kit.
+    case 'rogue':
+      return {};
   }
 }
 
@@ -53,6 +58,8 @@ export function resourcesForClass(cls: ClassId): ResourceType[] {
       return ['mana', 'holyPower'];
     case 'mage':
       return ['mana'];
+    case 'rogue':
+      return [];
   }
 }
 

@@ -1,13 +1,17 @@
 import type { ArmorType, ItemDef } from './types';
 import type { CombatType } from './combatTriangle';
 
-// 'mage' is companion-only for now — not one of CharacterCreationScreen's
-// CLASS_OPTIONS, so no player character ever has class === 'mage' and
-// SpecSelectionScreen (which filters SPECS by character.class) never
-// surfaces mage_fire/mage_frost to a player either. A future expansion may
-// make it player-playable; until then it only exists to give the
-// companion roster a 4th class (see gameData/companions.ts).
-export type ClassId = 'warrior' | 'priest' | 'paladin' | 'mage';
+// 'mage' is companion-only for now — not one of classInfo.ts's
+// CLASS_SHOWCASE, so no player character ever has class === 'mage' and
+// mage_fire/mage_frost are never offered on the character-creation
+// storybook either. A future expansion may make it player-playable; until
+// then it only exists to give the companion roster a 4th class (see
+// gameData/companions.ts).
+// 'rogue' is companion-only, same posture as 'mage' above — not one of
+// classInfo.ts's CLASS_SHOWCASE, so no player character is ever created
+// with it. Added for the "Master of Poisons" companion (see
+// companions.ts) — a single spec for now, not the usual two.
+export type ClassId = 'warrior' | 'priest' | 'paladin' | 'mage' | 'rogue';
 export type SpecId =
   | 'warrior_dps'
   | 'warrior_tank'
@@ -16,7 +20,8 @@ export type SpecId =
   | 'prot_paladin'
   | 'holy_paladin'
   | 'mage_fire'
-  | 'mage_frost';
+  | 'mage_frost'
+  | 'rogue_poison';
 
 export type BaseStat = 'STR' | 'STA' | 'INT' | 'SPI' | 'AGI';
 
@@ -24,12 +29,13 @@ export type BaseStat = 'STR' | 'STA' | 'INT' | 'SPI' | 'AGI';
 // at 5 in each stat at level 1; stat(level) = 5 + (level - 1) * growth.
 // Paladin STA deliberately matches Warrior's — plate-wearer parity, fixed
 // during Pass 1 calibration (Prot Paladin was underwater at Warrior-equal STA).
-// AGI is deliberately 0 growth for every class — no class currently grants
-// AGI from leveling, so every character sits at the flat level-1 baseline
-// (5) until they equip AGI gear (Leatherworking's rollable stat — see
-// equipmentRolls.ts's ARMOR_STATS). This is what keeps adding AGI/crit/dodge
-// from silently shifting existing combat balance: nothing changes for a
-// character with no AGI gear equipped.
+// AGI was 0 growth for every class until Rogue — no OTHER class grants AGI
+// from leveling, so every non-Rogue character still sits at the flat
+// level-1 baseline (5) until they equip AGI gear (Leatherworking's
+// rollable stat — see equipmentRolls.ts's ARMOR_STATS). Rogue is the one
+// deliberate exception: AGI-driven crit/dodge (combatFormulas.ts) IS its
+// whole identity, so it gets real AGI growth from leveling, same as every
+// other class gets real growth in its own primary stat.
 export const CLASS_GROWTH: Record<ClassId, Record<BaseStat, number>> = {
   warrior: { STR: 1.2, STA: 1.0, INT: 0.2, SPI: 0.2, AGI: 0 },
   priest: { STR: 0.2, STA: 0.5, INT: 1.2, SPI: 1.0, AGI: 0 },
@@ -39,12 +45,18 @@ export const CLASS_GROWTH: Record<ClassId, Record<BaseStat, number>> = {
   // thinnest STA of any class (a Priest at least has healing to offset
   // being squishy; a Mage companion leans on the group's tank instead).
   mage: { STR: 0.2, STA: 0.4, INT: 1.4, SPI: 0.1, AGI: 0 },
+  // "Master of Poisons" — AGI-primary (crit/dodge), moderate STA (not a
+  // tank, but not paper either — it's meant to stand and fight through a
+  // long single-target poison ramp), the thinnest STR/INT/SPI of any class
+  // (nothing of its kit reads any of the three).
+  rogue: { STR: 0.3, STA: 0.8, INT: 0.2, SPI: 0.2, AGI: 1.2 },
 };
 
 export const PRIMARY_STAT: Record<ClassId, BaseStat> = {
   warrior: 'STR',
   priest: 'INT',
   paladin: 'STR',
+  rogue: 'AGI',
   mage: 'INT',
 };
 
@@ -134,6 +146,14 @@ export const SPECS: Record<SpecId, SpecDef> = {
   // one.
   mage_fire: { class: 'mage', damageCoef: 1.0, survivabilityCoef: 0.8, avoidance: 0.05, healFrac: 0.0, passiveHealPct: 0.014, combatType: 'magic', threatWeight: 1 },
   mage_frost: { class: 'mage', damageCoef: 1.0, survivabilityCoef: 0.8, avoidance: 0.05, healFrac: 0.0, passiveHealPct: 0.014, combatType: 'magic', threatWeight: 1 },
+  // "Master of Poisons" — single-spec class (see ClassId's doc comment),
+  // companion-only V1. Its identity is entirely in its innate poison procs
+  // (engine.ts's applyCripplingPoisonDebuff/applyDeadlyPoisonStack), not a
+  // raw-number edge, so damageCoef matches the other melee DPS baseline
+  // (Warrior DPS's own 1.0). AGI-driven avoidance (dodge, on top of this
+  // flat avoidance — see combatFormulas.ts) reflects the classic
+  // lightly-armored, evasive rogue archetype.
+  rogue_poison: { class: 'rogue', damageCoef: 1.0, survivabilityCoef: 0.85, avoidance: 0.08, healFrac: 0.0, passiveHealPct: 0.016, combatType: 'melee', threatWeight: 1 },
 };
 
 export function statAtLevel(cls: ClassId, stat: BaseStat, level: number): number {
@@ -145,12 +165,13 @@ export const CLASS_LABELS: Record<ClassId, string> = {
   priest: 'Priest',
   paladin: 'Paladin',
   mage: 'Mage',
+  rogue: 'Rogue',
 };
 
 // Name color-coding (player characters and companions alike) — same
 // "recognizable color per category" convention as itemRarity.ts's
-// RARITY_COLORS, just keyed by class instead of rarity. White/pink/cyan
-// all measure well under WCAG AA contrast against this game's light
+// RARITY_COLORS, just keyed by class instead of rarity. White/pink/cyan/
+// yellow all measure well under WCAG AA contrast against this game's light
 // parchment backgrounds on their own (~1.1-1.9:1 vs. the 4.5:1 minimum) —
 // components/ClassColoredName.tsx fixes this with a dark text outline at
 // the display site rather than by picking different, less-true-to-the-
@@ -160,23 +181,69 @@ export const CLASS_NAME_COLORS: Record<ClassId, string> = {
   priest: '#ffffff',
   paladin: '#f58cba',
   mage: '#19c3d6',
+  rogue: '#fff569',
 };
 
 // Which armor types each class can equip. Priest is cloth-only; the two
 // physical classes can wear anything (cloth included, just off-stat for
 // them) — matches the classic "plate/mail wearer can always drop down to
-// lighter armor" convention. Weapons and rings have no armorType and are
-// unrestricted for everyone.
+// lighter armor" convention. Rogue is leather-only (explicitly NOT cloth —
+// unlike every other class's armor floor, Rogue doesn't get a "drop down a
+// tier" exception; see the user's explicit "leatherwearer only" ask), never
+// mail/plate. Weapons and rings have no armorType and are unrestricted for
+// everyone by THIS table — Rogue's further weapon restriction (blades only,
+// no staff/wand/orb/book/shield) lives in equipmentStats.ts's
+// canEquipWeaponLoadout under the 'rogue_blades' role instead.
 export const ALLOWED_ARMOR_TYPES: Record<ClassId, ArmorType[]> = {
   warrior: ['cloth', 'leather', 'mail', 'plate'],
   paladin: ['cloth', 'leather', 'mail', 'plate'],
   priest: ['cloth'],
   mage: ['cloth'],
+  rogue: ['leather'],
 };
 
 export function canClassEquip(cls: ClassId, item: Pick<ItemDef, 'armorType'>): boolean {
   return !item.armorType || ALLOWED_ARMOR_TYPES[cls].includes(item.armorType);
 }
+
+// Equip-role restrictions — which weapon/offhand SHAPES each spec may wear,
+// independent of ALLOWED_ARMOR_TYPES above (that gates armor by class; this
+// gates weapon+offhand combination by spec — keyed by spec, not class,
+// because Paladin splits into two different shapes: Protection is a
+// shield-tank like Warrior Tank, while Holy is the one spec allowed a
+// two-hander as an alternative to 1H+shield). See equipmentStats.ts's
+// canEquipWeaponLoadout for what each role actually allows. 'rogue_blades'
+// is its own role rather than sharing 'melee_dps' with Warrior DPS — Rogue
+// additionally can't equip a staff/wand (those stay fine for Warrior DPS,
+// which has no such restriction).
+export type EquipRole = 'tank' | 'melee_dps' | 'paladin_healer' | 'caster' | 'rogue_blades';
+
+export const EQUIP_ROLE_BY_SPEC: Record<SpecId, EquipRole> = {
+  warrior_tank: 'tank',
+  prot_paladin: 'tank',
+  warrior_dps: 'melee_dps',
+  rogue_poison: 'rogue_blades',
+  holy_paladin: 'paladin_healer',
+  shadow_priest: 'caster',
+  holy_priest: 'caster',
+  mage_fire: 'caster',
+  mage_frost: 'caster',
+};
+
+// A character/companion/alt that somehow still has no spec chosen (a
+// companion/alt recruited before level 5 under the old system, or a legacy
+// player character read after the combined class+spec storybook creation
+// flow replaced the separate level-5 SpecSelectionScreen — see
+// firebase/character.ts's getCharacter) needs SOME spec to fight with.
+// Picks each class's first (damage-leaning) spec rather than leaving combat
+// math undefined.
+export const FALLBACK_SPEC_BY_CLASS: Record<ClassId, SpecId> = {
+  warrior: 'warrior_dps',
+  priest: 'shadow_priest',
+  paladin: 'prot_paladin',
+  mage: 'mage_fire',
+  rogue: 'rogue_poison',
+};
 
 export const SPEC_LABELS: Record<SpecId, string> = {
   warrior_dps: 'Melee DPS',
@@ -187,4 +254,5 @@ export const SPEC_LABELS: Record<SpecId, string> = {
   holy_paladin: 'Holy',
   mage_fire: 'Fire',
   mage_frost: 'Frost',
+  rogue_poison: 'Poisons',
 };
