@@ -4,6 +4,7 @@ import { useCharacter } from '../hooks/useCharacter';
 import { getAccount, listRosterSummaries, switchActiveCharacter, createCharacterInNewSlot } from '../firebase/characterSlots';
 import { MAX_CHARACTER_SLOTS, type AccountState, type RosterSlotSummary } from '../gameData/characterSlots';
 import { CLASS_LABELS, SPEC_LABELS, type ClassId, type SpecId } from '../gameData/classStats';
+import { ClassColoredName } from './ClassColoredName';
 
 const CLASS_OPTIONS: { id: ClassId; name: string; blurb: string }[] = [
   { id: 'warrior', name: 'Warrior', blurb: 'Melee damage or tank. High strength and stamina.' },
@@ -99,13 +100,13 @@ export function CharacterSelectScreen() {
 
       <ul>
         <li>
-          <strong>{character.name}</strong> — {CLASS_LABELS[character.class]}
+          <strong><ClassColoredName name={character.name} cls={character.class} /></strong> — {CLASS_LABELS[character.class]}
           {character.spec ? ` (${SPEC_LABELS[character.spec]})` : ''} — Level {character.level}{' '}
           <em>(currently playing)</em>
         </li>
         {roster.map((r) => (
           <li key={r.slot}>
-            <strong>{r.name}</strong> — {CLASS_LABELS[r.class as ClassId]}
+            <strong><ClassColoredName name={r.name} cls={r.class as ClassId} /></strong> — {CLASS_LABELS[r.class as ClassId]}
             {r.spec ? ` (${SPEC_LABELS[r.spec as SpecId]})` : ''} — Level {r.level}{' '}
             <button onClick={() => handleSwitch(r.slot)} disabled={busy}>
               Switch to

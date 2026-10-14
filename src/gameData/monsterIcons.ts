@@ -39,6 +39,18 @@ const MONSTER_ICONS: Record<string, string> = {
   ashen_overseer: '👹',
   molten_herald: '😈',
   pyraxis: '🐉',
+  // The Tower of Infinity's 8 Guardian archetypes (gameData/tower.ts) — one
+  // id per archetype, reused across every floor that cycles to it, so this
+  // table (and any future /monster-art/ images) only ever needs 8 entries
+  // total, not one per floor.
+  tower_guardian_warden_greenhollow: '🌿',
+  tower_guardian_warden_foothills: '🪨',
+  tower_guardian_warden_emberfall: '🔥',
+  tower_guardian_warden_cinderfall: '⚔️',
+  tower_guardian_warden_moltenscar: '🌋',
+  tower_guardian_warden_cinderheart: '😈',
+  tower_guardian_voidtouched_warden: '👁️',
+  tower_guardian_infinitybound_warden: '🗼',
 };
 
 export function getMonsterIcon(monsterId: string): string {

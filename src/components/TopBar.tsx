@@ -5,6 +5,7 @@ import { ZONES, isZoneUnlocked } from '../gameData/zones';
 import { formatTravelMinutes } from '../gameData/travel';
 import { bestMountSpeedBonusPct } from '../gameData/mounts';
 import { ActiveBuffsBar } from './ActiveBuffsBar';
+import { ClassColoredName } from './ClassColoredName';
 import type { Character } from '../types/character';
 
 // The one thing visible no matter which sidebar section is open — who you
@@ -38,7 +39,7 @@ export function TopBar({
     <div className="top-bar">
       <div className="top-bar-main">
         <div className="top-bar-identity">
-          <strong>{character.name}</strong>
+          <strong><ClassColoredName name={character.name} cls={character.class} /></strong>
           {character.equippedTitleId && getTitle(character.equippedTitleId) && (
             <span className="top-bar-title"> «{getTitle(character.equippedTitleId)!.name}»</span>
           )}
