@@ -5,8 +5,7 @@ import { subscribeToInventory, isLocked, setItemLocked } from '../firebase/inven
 import { useConsumableOutOfCombat, setEquippedConsumable, equipStatFood } from '../firebase/consumables';
 import { setInventorySortPrefs } from '../firebase/character';
 import { ITEMS } from '../gameData/items';
-import { getItemDisplayName, equipmentSuffixFor } from '../gameData/equipmentSuffixes';
-import { rarityColor } from '../gameData/itemRarity';
+import { equipmentSuffixFor } from '../gameData/equipmentSuffixes';
 import { materialIdForItem } from '../gameData/itemMetadata';
 import { getMaterial } from '../gameData/materials';
 import { sortInventoryEntries, matchesInventoryFilter, type InventoryEntry } from '../gameData/inventorySort';
@@ -287,41 +286,45 @@ export function InventoryScreen() {
       {entries.length === 0 ? (
         <p>{rawEntries.length === 0 ? 'Empty so far — go fight or gather something.' : 'No items match the current filters.'}</p>
       ) : (
-        <ul>
+        // Melvor/WoW-style fixed bag grid — 6 columns, as many rows as
+        // character.bagSlots needs (see index.css's .inventory-grid). Every
+        // slot the player owns gets a cell, filled ones first; the rest
+        // render as empty placeholders, same convention as
+        // EquipmentPaperDoll's unequipped slots. No name text next to a
+        // tile anymore — ItemSlot's own hover tooltip (name, rarity, stats,
+        // description) already covers it; a tile's only other affordance is
+        // click-to-act where exactly one action applies (equip a Stat Food,
+        // toggle an equipment item's lock) — nothing to click otherwise.
+        <div className="inventory-grid">
           {entries.map(({ key, itemId, quantity, rolls, remainingCharges, locked }) => {
             const item = ITEMS[itemId];
-            if (!item) {
-              return (
-                <li key={key}>
-                  {itemId}: {quantity}
-                </li>
-              );
-            }
+            if (!item) return null;
             const isStatFood = item.consumableEffect?.buff?.category === 'stat_food';
             const isLockableEquipment = item.type === 'equipment';
             const equippedRef = item.equipSlot ? character.equipment[item.equipSlot] : null;
             const compareStats = equippedRef ? equippedRef.rolls ?? ITEMS[equippedRef.itemId]?.statBonuses : undefined;
+            const onClick = isStatFood
+              ? () => handleEquipStatFood(itemId)
+              : isLockableEquipment
+                ? () => handleToggleLock(key, locked)
+                : undefined;
             return (
-              <li key={key}>
-                <div className="item-row-main">
-                  <ItemSlot
-                    item={item}
-                    quantity={quantity}
-                    statOverride={rolls}
-                    remainingCharges={remainingCharges}
-                    compareStats={compareStats}
-                    locked={locked}
-                  />
-                  <span style={{ color: rarityColor(item) ?? undefined }}>{getItemDisplayName(item.name, rolls)}</span>
-                  {isStatFood && <button onClick={() => handleEquipStatFood(itemId)}>Equip</button>}
-                  {isLockableEquipment && (
-                    <button onClick={() => handleToggleLock(key, locked)}>{locked ? 'Unlock' : 'Lock'}</button>
-                  )}
-                </div>
-              </li>
+              <ItemSlot
+                key={key}
+                item={item}
+                quantity={quantity}
+                statOverride={rolls}
+                remainingCharges={remainingCharges}
+                compareStats={compareStats}
+                locked={locked}
+                onClick={onClick}
+              />
             );
           })}
-        </ul>
+          {Array.from({ length: Math.max(0, character.bagSlots - entries.length) }).map((_, i) => (
+            <div key={`empty-${i}`} className="item-slot item-slot-empty" />
+          ))}
+        </div>
       )}
     </div>
   );

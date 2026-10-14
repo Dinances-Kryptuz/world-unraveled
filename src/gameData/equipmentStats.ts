@@ -34,6 +34,34 @@ export function isStaffWeapon(item: Pick<ItemDef, 'id' | 'equipSlot'>): boolean 
   return item.equipSlot === 'weapon' && STAFF_WEAPON_IDS.has(item.id);
 }
 
+// Every wand in the game — Enchanting's 6-tier Wand/Staff/Book line plus the
+// early focusing_wand bandit drop. Wands are one-handed (never in
+// TWO_HANDED_WEAPON_IDS), so without this check they'd otherwise pass as an
+// ordinary one-handed weapon — this exists purely so canEquipWeaponLoadout's
+// 'rogue_blades' role (below) can exclude them specifically ("no staffs,
+// wands... only blades" per the user's own wording).
+const WAND_WEAPON_IDS = new Set([
+  'focusing_wand',
+  'rough_wand',
+  'aged_wand',
+  'heartwood_wand',
+  'ironwood_wand',
+  'charwood_wand',
+  'emberwood_wand',
+]);
+
+export function isWandWeapon(item: Pick<ItemDef, 'id' | 'equipSlot'>): boolean {
+  return item.equipSlot === 'weapon' && WAND_WEAPON_IDS.has(item.id);
+}
+
+// Either caster implement a Rogue is barred from — a staff (2H) or a wand
+// (1H). Not the same thing as "not a physical weapon" (canEquipInOffhand's
+// own caster-offhand check uses equipSlot === 'offhand' for that); a wand
+// IS a weapon-slot item, so it needs its own explicit exclusion.
+export function isCasterWeapon(item: Pick<ItemDef, 'id' | 'equipSlot'>): boolean {
+  return isStaffWeapon(item) || isWandWeapon(item);
+}
+
 // Two-handed weapons — every staff above, plus a small, deliberately short
 // list of non-staff two-handers rather than a keyword guess across the
 // whole weapon catalog: most of this game's weapons (the paired sword/
@@ -101,6 +129,15 @@ export function canEquipWeaponLoadout(
     case 'caster':
       if (weaponIsTwoHanded) return isStaffWeapon(weaponItem!) && !offhandItem;
       return !offhandItem || offhandIsCasterItem;
+    // Rogue: blades only — never a staff or wand (weaponItem OR a dual-
+    // wielded offhand one), never a shield, never a caster orb/book. A
+    // blade is simply "every weapon-slot item that isn't a staff/wand",
+    // same posture as the game's existing weapon itemization (no separate
+    // sword/axe/dagger tagging exists, or is needed, to express this).
+    case 'rogue_blades':
+      if (weaponItem && isCasterWeapon(weaponItem)) return false;
+      if (offhandIsWeapon && offhandItem && isCasterWeapon(offhandItem)) return false;
+      return !offhandItem || offhandIsWeapon;
   }
 }
 

@@ -154,6 +154,7 @@ service cloud.firestore {
       && data.activeCompanionIds == []
       && data.activeAltSlots == []
       && data.dungeonClears == {}
+      && data.discoveredZoneIds == ['greenhollow_fields']
       && data.collectedItemIds == []
       && data.unlockedAchievementIds == []
       && data.notificationsEnabled == true
@@ -214,6 +215,7 @@ service cloud.firestore {
       && isValidTravel(after)
       && isValidActiveAltSlots(after)
       && isValidDungeonClears(after)
+      && isValidDiscoveredZoneIds(after)
       && isValidCollectedItemIds(after)
       && isValidUnlockedAchievementIds(after)
       && isValidMaterialMastery(after)
@@ -251,6 +253,13 @@ service cloud.firestore {
   // path that writes this field.
   function isValidCollectedItemIds(after) {
     return !('collectedItemIds' in after) || after.collectedItemIds is list;
+  }
+
+  // The Journal — same treatment (that a zone id is real, that the list
+  // only ever grows) happens in firebase/character.ts's getCharacter, the
+  // only path that writes this field.
+  function isValidDiscoveredZoneIds(after) {
+    return !('discoveredZoneIds' in after) || after.discoveredZoneIds is list;
   }
 
   // Same treatment — full validation (that an id is a real achievement,

@@ -187,15 +187,19 @@ export const CLASS_NAME_COLORS: Record<ClassId, string> = {
 // Which armor types each class can equip. Priest is cloth-only; the two
 // physical classes can wear anything (cloth included, just off-stat for
 // them) — matches the classic "plate/mail wearer can always drop down to
-// lighter armor" convention. Rogue is leather (and cloth, same "can drop
-// down" convention), never mail/plate. Weapons and rings have no armorType
-// and are unrestricted for everyone.
+// lighter armor" convention. Rogue is leather-only (explicitly NOT cloth —
+// unlike every other class's armor floor, Rogue doesn't get a "drop down a
+// tier" exception; see the user's explicit "leatherwearer only" ask), never
+// mail/plate. Weapons and rings have no armorType and are unrestricted for
+// everyone by THIS table — Rogue's further weapon restriction (blades only,
+// no staff/wand/orb/book/shield) lives in equipmentStats.ts's
+// canEquipWeaponLoadout under the 'rogue_blades' role instead.
 export const ALLOWED_ARMOR_TYPES: Record<ClassId, ArmorType[]> = {
   warrior: ['cloth', 'leather', 'mail', 'plate'],
   paladin: ['cloth', 'leather', 'mail', 'plate'],
   priest: ['cloth'],
   mage: ['cloth'],
-  rogue: ['cloth', 'leather'],
+  rogue: ['leather'],
 };
 
 export function canClassEquip(cls: ClassId, item: Pick<ItemDef, 'armorType'>): boolean {
@@ -208,14 +212,17 @@ export function canClassEquip(cls: ClassId, item: Pick<ItemDef, 'armorType'>): b
 // because Paladin splits into two different shapes: Protection is a
 // shield-tank like Warrior Tank, while Holy is the one spec allowed a
 // two-hander as an alternative to 1H+shield). See equipmentStats.ts's
-// canEquipWeaponLoadout for what each role actually allows.
-export type EquipRole = 'tank' | 'melee_dps' | 'paladin_healer' | 'caster';
+// canEquipWeaponLoadout for what each role actually allows. 'rogue_blades'
+// is its own role rather than sharing 'melee_dps' with Warrior DPS — Rogue
+// additionally can't equip a staff/wand (those stay fine for Warrior DPS,
+// which has no such restriction).
+export type EquipRole = 'tank' | 'melee_dps' | 'paladin_healer' | 'caster' | 'rogue_blades';
 
 export const EQUIP_ROLE_BY_SPEC: Record<SpecId, EquipRole> = {
   warrior_tank: 'tank',
   prot_paladin: 'tank',
   warrior_dps: 'melee_dps',
-  rogue_poison: 'melee_dps',
+  rogue_poison: 'rogue_blades',
   holy_paladin: 'paladin_healer',
   shadow_priest: 'caster',
   holy_priest: 'caster',

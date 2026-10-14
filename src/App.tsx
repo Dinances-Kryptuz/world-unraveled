@@ -10,6 +10,7 @@ import { BankScreen } from './components/BankScreen';
 import { ClassTrainerScreen } from './components/ClassTrainerScreen';
 import { MountTrainerScreen } from './components/MountTrainerScreen';
 import { ProfessionsTrainerScreen } from './components/ProfessionsTrainerScreen';
+import { JournalScreen } from './components/JournalScreen';
 import { CombatScreen } from './components/CombatScreen';
 import { GatheringScreen } from './components/GatheringScreen';
 import { FishingScreen } from './components/FishingScreen';
@@ -249,6 +250,7 @@ function AppContent() {
       {section === 'classTrainer' && <ClassTrainerScreen zoneId={character.currentZoneId} />}
       {section === 'mountTrainer' && <MountTrainerScreen zoneId={character.currentZoneId} />}
       {section === 'professionsTrainer' && <ProfessionsTrainerScreen />}
+      {section === 'journal' && <JournalScreen />}
       {section === 'quests' && <QuestLog />}
       {section === 'tower' && <TowerScreen />}
       {section === 'settings' && <SettingsScreen />}

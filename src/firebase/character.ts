@@ -155,6 +155,24 @@ export async function getCharacter(uid: string): Promise<Character | null> {
     playerSpec ? EQUIP_ROLE_BY_SPEC[playerSpec] : null,
     'equipment'
   );
+
+  // The Journal — the same "the game resolves it for you" lazy-backfill
+  // posture as the equip-role fix above, just additive instead of
+  // corrective: the moment a read sees an EFFECTIVE currentZoneId (already
+  // resolved above, including same-tick travel arrival) not yet in
+  // discoveredZoneIds, it's added and persisted once. This is what makes
+  // "discovered upon entering the new zone" true without a dedicated
+  // "complete travel" write path — the very next read after arrival is this
+  // one.
+  let discoveredZoneIds: string[] = data.discoveredZoneIds ?? [DEFAULT_ZONE_ID];
+  if (!discoveredZoneIds.includes(currentZoneId)) {
+    discoveredZoneIds = [...discoveredZoneIds, currentZoneId];
+    try {
+      await updateDoc(doc(db, 'characters', uid), { discoveredZoneIds });
+    } catch (err) {
+      console.error('Journal zone-discovery backfill failed, will retry next read:', err);
+    }
+  }
   const companions = Object.fromEntries(
     await Promise.all(
       Object.entries(data.companions ?? {}).map(async ([id, state]: [string, any]) => {
@@ -178,6 +196,10 @@ export async function getCharacter(uid: string): Promise<Character | null> {
     // fallback) — overrides data.spec so the in-memory result matches what
     // was just persisted.
     spec: playerSpec,
+    // Already backfilled above (Journal zone discovery) — overrides
+    // data.discoveredZoneIds so the in-memory result matches what was just
+    // persisted.
+    discoveredZoneIds,
     // A character with no professions key yet (pre-overhaul save) starts
     // knowing nothing — same "no choice made yet" convention as
     // equippedAbilityIds below, not a default grant. Already migrated (if
@@ -434,6 +456,7 @@ export async function createCharacter(uid: string, name: string, characterClass:
     activeCompanionIds: [],
     activeAltSlots: [],
     dungeonClears: {},
+    discoveredZoneIds: [DEFAULT_ZONE_ID],
     collectedItemIds: [],
     unlockedAchievementIds: [],
     unlockedTitleIds: [],

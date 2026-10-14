@@ -675,17 +675,16 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
         {feastOptions.length === 0 ? (
           <p>You have no Feasts.</p>
         ) : (
-          <ul>
+          <div className="inventory-grid">
             {feastOptions.map((item) => (
-              <li key={item.id}>
-                <div className="item-row-main">
-                  <ItemSlot item={item} quantity={inventory?.items[item.id] ?? 0} />
-                  <span>{item.name}</span>
-                </div>
-                <button onClick={() => void handleChooseFeast(item.id)}>Use</button>
-              </li>
+              <ItemSlot
+                key={item.id}
+                item={item}
+                quantity={inventory?.items[item.id] ?? 0}
+                onClick={() => void handleChooseFeast(item.id)}
+              />
             ))}
-          </ul>
+          </div>
         )}
         {feastError && <p className="error">{feastError}</p>}
         <button onClick={() => void handleChooseFeast(null)}>Enter without a Feast</button>

@@ -348,6 +348,70 @@ button.item-slot:active:not(:disabled) {
   box-shadow: none;
 }
 
+/* ── Fixed-size bag grids (Inventory/Bank) — a tile per owned slot (filled
+   ones first, the rest .item-slot-empty placeholders), no adjacent name
+   text (see InventoryScreen.tsx/BankScreen.tsx — ItemSlot's own hover
+   tooltip covers it). Inventory is 6 columns wide; Bank's two panels
+   (deposit-from/withdraw-to) are 3 each, per the user's own spec. ── */
+
+.inventory-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 56px);
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.bank-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 56px);
+  gap: 8px;
+  margin-top: 12px;
+}
+
+/* ── Quest markers (QuestLog.tsx) — the classic MMO gray-?/gold-?/yellow-!
+   convention, to the left of each quest row. ── */
+
+.quest-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.quest-row-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.quest-marker {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  font-weight: 800;
+  font-size: 1.1rem;
+  background: linear-gradient(180deg, #fffdf9, #efe6d4);
+  border: 2px solid #d8cfc0;
+}
+
+.quest-marker-incomplete {
+  color: #8c8c8c;
+  border-color: #8c8c8c;
+}
+
+.quest-marker-completed {
+  color: #b8960c;
+  border-color: #b8960c;
+}
+
+.quest-marker-available {
+  color: #d2a300;
+  border-color: #d2a300;
+  background: linear-gradient(180deg, #fff9e6, #fdeec4);
+}
+
 .item-slot-mystery {
   opacity: 0.5;
 }
@@ -1546,4 +1610,60 @@ button.storybook-spec-button:hover:not(:disabled) {
   color: #6b6156;
   font-weight: 400;
   margin-top: 2px;
+}
+
+/* ── Journal — one collapsible entry per zone (see JournalScreen.tsx) ── */
+
+.journal-zone-entry {
+  background: linear-gradient(180deg, rgba(255, 253, 249, 0.92), rgba(249, 244, 233, 0.92));
+  border: 1px solid rgba(226, 217, 200, 0.8);
+  border-top: 3px solid var(--zone-primary, #8a6d3b);
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin-bottom: 12px;
+}
+
+.journal-zone-locked {
+  opacity: 0.6;
+}
+
+.journal-zone-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.journal-zone-locked .journal-zone-name {
+  cursor: default;
+}
+
+.journal-zone-body h4 {
+  margin: 14px 0 6px;
+}
+
+.journal-empty {
+  color: #6b6156;
+  font-size: 0.85rem;
+}
+
+.journal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.journal-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.journal-monster-icon {
+  font-size: 1.3rem;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }

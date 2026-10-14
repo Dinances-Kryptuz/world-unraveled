@@ -360,6 +360,14 @@ export interface Character {
   // insta-sold before the log is ever opened while held is the one gap this
   // accepts, a reasonable tradeoff for a completionist side feature.
   collectedItemIds: string[];
+  // The Journal — permanent, monotonic, same convention as
+  // collectedItemIds above. A zone id lands here the moment the character's
+  // EFFECTIVE currentZoneId resolves to it (see firebase/character.ts's
+  // getCharacter, which backfills this lazily on read — including the very
+  // first read after travel arrival, so "upon entering the new zone" fires
+  // without needing its own dedicated write path). JournalScreen.tsx only
+  // reveals a zone's resources/creatures once its id is in this list.
+  discoveredZoneIds: string[];
   // Permanent, monotonic — once an id is added here (see
   // gameData/achievements.ts's checkNewlyUnlocked, reconciled the same lazy
   // way as collectedItemIds above) it never comes out, even if the
