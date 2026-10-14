@@ -625,6 +625,68 @@ export const ABILITIES: Record<string, Ability> = {
       { type: 'stun', durationSeconds: 3 },
     ],
   },
+
+  // ── Rogue, Master of Poisons (companion-only — see classStats.ts) ────
+  // Only one spec exists, so this is just a shared kit (no spec tier at
+  // 15/30 like Mage) — shaped like Warrior's 1/1/5/10/10 unlock split.
+  // Rogue has no resource pool (resources.ts) so none of these cost
+  // anything. Every 'damage' effect here independently rolls Crippling/
+  // Deadly Poison in engine.ts's useAbility — the poisons aren't tied to
+  // any one ability, so a bigger kit just means more chances to proc.
+  rogue_sinister_strike: {
+    id: 'rogue_sinister_strike',
+    name: 'Sinister Strike',
+    class: 'rogue',
+    description: 'A basic physical attack, laced with poison.',
+    unlockLevel: 1,
+    cooldownSeconds: 0,
+    targetType: 'CURRENT_ENEMY',
+    isBasicAttack: true,
+    effects: [{ type: 'damage', power: 1.0 }],
+  },
+  rogue_backstab: {
+    id: 'rogue_backstab',
+    name: 'Backstab',
+    class: 'rogue',
+    description: 'A vicious opening strike. Short cooldown.',
+    unlockLevel: 1,
+    cooldownSeconds: 6,
+    targetType: 'CURRENT_ENEMY',
+    effects: [{ type: 'damage', power: 1.3 }],
+  },
+  rogue_evasion: {
+    id: 'rogue_evasion',
+    name: 'Evasion',
+    class: 'rogue',
+    description: 'A defensive stance that reduces damage taken for a short time — lets a long fight be survived.',
+    unlockLevel: 5,
+    cooldownSeconds: 25,
+    targetType: 'SELF',
+    effects: [{ type: 'buff', damageTakenPct: -25, durationSeconds: 8 }],
+  },
+  rogue_garrote: {
+    id: 'rogue_garrote',
+    name: 'Garrote',
+    class: 'rogue',
+    description: 'A bleeding wound that damages the enemy over time.',
+    unlockLevel: 10,
+    cooldownSeconds: 12,
+    targetType: 'CURRENT_ENEMY',
+    effects: [{ type: 'dot', power: 0.4, durationSeconds: 12, tickSeconds: 4 }],
+  },
+  rogue_kidney_shot: {
+    id: 'rogue_kidney_shot',
+    name: 'Kidney Shot',
+    class: 'rogue',
+    description: 'A crippling strike that leaves the enemy unable to act for a few seconds.',
+    unlockLevel: 10,
+    cooldownSeconds: 20,
+    targetType: 'CURRENT_ENEMY',
+    effects: [
+      { type: 'damage', power: 1.1 },
+      { type: 'stun', durationSeconds: 3 },
+    ],
+  },
 };
 
 export const BASIC_ATTACK_BY_CLASS: Record<string, string> = {
@@ -632,4 +694,5 @@ export const BASIC_ATTACK_BY_CLASS: Record<string, string> = {
   priest: 'priest_smite',
   paladin: 'paladin_judgment',
   mage: 'mage_arcane_bolt',
+  rogue: 'rogue_sinister_strike',
 };

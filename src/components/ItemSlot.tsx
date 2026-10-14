@@ -3,6 +3,7 @@ import { getItemIcon } from '../gameData/itemIcons';
 import { getItemDisplayName } from '../gameData/equipmentSuffixes';
 import { compareEquipmentStats } from '../gameData/equipmentComparison';
 import { inferItemRarity, RARITY_COLORS, RARITY_LABELS } from '../gameData/itemRarity';
+import { ARMOR_STAT_RANGES } from '../gameData/equipmentRolls';
 import type { BaseStat } from '../gameData/classStats';
 import type { ItemDef } from '../gameData/types';
 
@@ -41,8 +42,19 @@ function buildTooltip(
   locked?: boolean
 ): ReactNode {
   const stats = statOverride ?? item.statBonuses;
+  // Previewing a base item (no statOverride — e.g. a recipe's result in
+  // ProfessionScreen) that actually rolls 2 random stats at craft time
+  // (equipmentRolls.ts's ARMOR_STAT_RANGES) — item.statBonuses here is
+  // stale pre-Mastery-overhaul data never actually applied at craft time,
+  // so showing its specific numbers as if guaranteed is misleading. Show
+  // "Random Stat" placeholders instead of a real preview in that case.
+  const isRandomRollPreview = !statOverride && !!ARMOR_STAT_RANGES[item.id];
   const comparison = compareStats !== undefined ? compareEquipmentStats(stats, compareStats) : null;
-  const statLine = !comparison && stats ? Object.entries(stats).map(([stat, val]) => `+${val} ${stat}`).join('  ') : '';
+  const statLine = isRandomRollPreview
+    ? 'Random Stat 1, Random Stat 2'
+    : !comparison && stats
+      ? Object.entries(stats).map(([stat, val]) => `+${val} ${stat}`).join('  ')
+      : '';
   const metaParts = [TYPE_LABEL[item.type]];
   if (item.equipSlot) metaParts.push(item.equipSlot[0].toUpperCase() + item.equipSlot.slice(1));
   if (item.armorType) metaParts.push(item.armorType[0].toUpperCase() + item.armorType.slice(1));

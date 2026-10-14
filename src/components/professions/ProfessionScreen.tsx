@@ -328,7 +328,7 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
                     ) — materials:{' '}
                     {recipe.materials.map((m) => `${m.quantity}x ${ITEMS[m.itemId]?.name ?? m.itemId}`).join(', ')}
                     {recipe.goldCost ? ` + ${recipe.goldCost} gold` : ''}
-                    {known ? ` — Mastery ${masteryLevel}` : ''}
+                    {known ? ` — Mastery ${masteryLevel}%` : ''}
                   </span>
                 </div>
                 <button onClick={() => handleCraft(recipe.id)} disabled={!canCraft}>
@@ -781,7 +781,7 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
                       {meetsLevel ? `, ${(GATHERING_COLOR_XP_PCT[tier as keyof typeof GATHERING_COLOR_XP_PCT] * 100).toFixed(0)}% XP` : ''}
                       ) — yields {yieldItem?.name ?? node.itemId}
                       {bonusItem ? ` (+${(node.rareBonus!.chance * 100).toFixed(0)}% chance of ${bonusItem.name})` : ''}
-                      {known ? ` — Mastery ${masteryLevel}` : ''}
+                      {known ? ` — Mastery ${masteryLevel}%` : ''}
                     </span>
                   </div>
                   <button onClick={() => handleGather(node.id)} disabled={!canGather}>

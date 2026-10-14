@@ -1,10 +1,11 @@
 import type { ClassId, SpecId } from './classStats';
 
-// Player-facing class/spec flavor — icons (emoji, see the comment atop
-// itemIcons.ts for why: no art/image pipeline exists in this environment)
-// and short blurbs, shared by the character-creation showcase, the login
-// screen's class preview, and SpecSelectionScreen so all three describe the
-// same specs identically instead of three hand-copied strings drifting.
+// Player-facing class/spec flavor — icons (emoji; see
+// CharacterCreationScreen.tsx's ClassStorybookArt for the one place real
+// artwork DOES exist, public/class-art/) and short blurbs, shared by the
+// character-creation storybook and the login screen's class preview so both
+// describe the same specs identically instead of two hand-copied strings
+// drifting.
 //
 // 'mage' is intentionally excluded from CLASS_SHOWCASE below — see
 // classStats.ts's ClassId comment, it's companion-only and no player
@@ -15,6 +16,7 @@ export const CLASS_ICONS: Record<ClassId, string> = {
   priest: '✝️',
   paladin: '🔰',
   mage: '🔥',
+  rogue: '🥷',
 };
 
 export const SPEC_ICONS: Record<SpecId, string> = {
@@ -26,6 +28,7 @@ export const SPEC_ICONS: Record<SpecId, string> = {
   holy_paladin: '🌟',
   mage_fire: '🔥',
   mage_frost: '❄️',
+  rogue_poison: '🧪',
 };
 
 export const SPEC_INFO: Record<SpecId, { label: string; blurb: string }> = {
@@ -39,6 +42,8 @@ export const SPEC_INFO: Record<SpecId, { label: string; blurb: string }> = {
   // is companion-only, see the module comment above.
   mage_fire: { label: 'Fire', blurb: 'Single-target burst damage.' },
   mage_frost: { label: 'Frost', blurb: 'Sustained, spread-out damage.' },
+  // Rogue is also companion-only (see classStats.ts's ClassId comment).
+  rogue_poison: { label: 'Poisons', blurb: 'Excels at single-target, long fights — stacking poisons that cripple and wear a target down.' },
 };
 
 export interface ClassShowcaseEntry {

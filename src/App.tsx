@@ -3,7 +3,6 @@ import { AuthProvider, useAuth } from './hooks/useAuth';
 import { CharacterProvider, useCharacter } from './hooks/useCharacter';
 import { LoginScreen } from './components/LoginScreen';
 import { CharacterCreationScreen } from './components/CharacterCreationScreen';
-import { SpecSelectionScreen } from './components/SpecSelectionScreen';
 import { ZoneScreen } from './components/ZoneScreen';
 import { EquipmentScreen } from './components/EquipmentScreen';
 import { InventoryScreen } from './components/InventoryScreen';
@@ -137,10 +136,6 @@ function AppContent() {
 
   if (!character) {
     return <CharacterCreationScreen />;
-  }
-
-  if (character.level >= 5 && character.spec === null) {
-    return <SpecSelectionScreen />;
   }
 
   // Sidebar just renders the current choice and reports clicks back up —

@@ -16,9 +16,17 @@ import { DEFAULT_ZONE_ID, ZONES } from '../gameData/zones';
 import { abilityTrainingCost, abilityTrainingZoneId } from '../gameData/abilityTraining';
 import type { TravelState } from '../gameData/travel';
 import { maxHp } from '../gameData/combatFormulas';
-import { canClassEquip, SPECS } from '../gameData/classStats';
+import { canClassEquip, EQUIP_ROLE_BY_SPEC, FALLBACK_SPEC_BY_CLASS, SPECS } from '../gameData/classStats';
 import { ITEMS } from '../gameData/items';
-import { getEquipmentStatBonuses, isTwoHandedWeapon, canEquipInOffhand, equippedItemId } from '../gameData/equipmentStats';
+import {
+  getEquipmentStatBonuses,
+  isTwoHandedWeapon,
+  canEquipInOffhand,
+  canEquipWeaponLoadout,
+  equipRoleViolationSlots,
+  equippedItemId,
+} from '../gameData/equipmentStats';
+import { COMPANIONS } from '../gameData/companions';
 import { maxEquippedSlots, unlockedAbilities, effectiveLoadout, MAX_COMBAT_PRESETS } from '../combatEngine/progression';
 import { ABILITIES } from '../combatEngine/abilities';
 import type { Condition, ConditionGroup, ConditionType, ResourceType } from '../combatEngine/types';
@@ -124,10 +132,52 @@ export async function getCharacter(uid: string): Promise<Character | null> {
     }
   }
 
+  let playerSpec: SpecId | null = data.spec ?? null;
+  if (!playerSpec) {
+    // Legacy character created before the combined class+spec storybook
+    // creation flow existed (which replaced the separate level-5
+    // SpecSelectionScreen — see App.tsx) — there's no UI path left that
+    // ever sets a spec for them, so auto-assign the same sensible default
+    // an unspecced alt/companion already falls back to (see
+    // FALLBACK_SPEC_BY_CLASS's doc comment) rather than leaving this
+    // character stuck without one forever. Persisted once; every later
+    // read just sees spec already set and skips this entirely.
+    playerSpec = FALLBACK_SPEC_BY_CLASS[data.class as ClassId];
+    try {
+      await updateDoc(doc(db, 'characters', uid), { spec: playerSpec });
+    } catch (err) {
+      console.error('Legacy spec backfill failed, will retry next read:', err);
+    }
+  }
+  const equipment = await enforceEquipRoleRules(
+    uid,
+    normalizeEquipment(data.equipment),
+    playerSpec ? EQUIP_ROLE_BY_SPEC[playerSpec] : null,
+    'equipment'
+  );
+  const companions = Object.fromEntries(
+    await Promise.all(
+      Object.entries(data.companions ?? {}).map(async ([id, state]: [string, any]) => {
+        const def = COMPANIONS[id];
+        const companionEquipment = await enforceEquipRoleRules(
+          uid,
+          normalizeEquipment(state.equipment),
+          def ? EQUIP_ROLE_BY_SPEC[def.specId] : null,
+          `companions.${id}.equipment`
+        );
+        return [id, { ...state, equipment: companionEquipment }];
+      })
+    )
+  );
+
   return {
     ...data,
     currentZoneId,
     travel,
+    // Already backfilled above (legacy spec === null auto-assigns a
+    // fallback) — overrides data.spec so the in-memory result matches what
+    // was just persisted.
+    spec: playerSpec,
     // A character with no professions key yet (pre-overhaul save) starts
     // knowing nothing — same "no choice made yet" convention as
     // equippedAbilityIds below, not a default grant. Already migrated (if
@@ -135,8 +185,12 @@ export async function getCharacter(uid: string): Promise<Character | null> {
     professions,
     // Lazily normalized in memory (never written back) so a slot still
     // holding the old bare-string shape keeps working — see
-    // normalizeEquipment's doc comment above.
-    equipment: normalizeEquipment(data.equipment),
+    // normalizeEquipment's doc comment above. Also retroactively fixes any
+    // equip-role violation (enforceEquipRoleRules above) — unlike the rest
+    // of this backfill, THAT part is a real persisted write, not just an
+    // in-memory patch, since it has to credit removed gear back to
+    // inventory.
+    equipment,
     enchantments: data.enchantments ?? {},
     enchantmentCharges: data.enchantmentCharges ?? {},
     learnedRecipeIds: data.learnedRecipeIds ?? [],
@@ -179,13 +233,9 @@ export async function getCharacter(uid: string): Promise<Character | null> {
     // recruited none yet and fights solo, same "no entry at all" convention
     // as professions above. A character saved before multi-companion
     // parties existed may still have the old singular activeCompanionId —
-    // carry it over as a one-member array rather than dropping it.
-    companions: Object.fromEntries(
-      Object.entries(data.companions ?? {}).map(([id, state]: [string, any]) => [
-        id,
-        { ...state, equipment: normalizeEquipment(state.equipment) },
-      ])
-    ),
+    // carry it over as a one-member array rather than dropping it. Already
+    // normalized and equip-role-enforced (companions, computed above).
+    companions,
     activeCompanionIds: data.activeCompanionIds ?? (data.activeCompanionId ? [data.activeCompanionId] : []),
     // Same backfill idea again, for Phase 4's alt recruiting.
     activeAltSlots: data.activeAltSlots ?? [],
@@ -283,7 +333,59 @@ export function normalizeEquipment(raw: Record<string, unknown> | undefined): Re
   return result;
 }
 
-export async function createCharacter(uid: string, name: string, characterClass: ClassId): Promise<void> {
+// Equip-role restrictions (user's gear-limitation request) — retroactively
+// fixes any weapon/offhand combination that predates this system (or that
+// somehow got into an illegal state) the moment it's read, auto-unequipping
+// just enough to make it legal again and crediting the removed piece(s)
+// back to inventory, same "the game resolves it for you" posture equipItem's
+// own 2H-auto-clears-offhand rule already has. Writes only happen when a
+// violation is actually found — every already-legal character/companion
+// (which, after the first read, is every one of them) takes this path for
+// free with zero extra reads or writes. `pathPrefix` lets this same logic
+// serve both the player's own `equipment.*` fields and a companion's nested
+// `companions.<id>.equipment.*` fields.
+async function enforceEquipRoleRules(
+  uid: string,
+  equipment: Record<EquipmentSlot, EquippedItemRef | null>,
+  role: import('../gameData/classStats').EquipRole | null,
+  pathPrefix: string
+): Promise<Record<EquipmentSlot, EquippedItemRef | null>> {
+  if (!role) return equipment;
+  const weaponId = equippedItemId(equipment.weapon);
+  const offhandId = equippedItemId(equipment.offhand);
+  const weaponItem = weaponId ? ITEMS[weaponId] ?? null : null;
+  const offhandItem = offhandId ? ITEMS[offhandId] ?? null : null;
+  const violatingSlots = equipRoleViolationSlots(role, weaponItem, offhandItem);
+  if (violatingSlots.length === 0) return equipment;
+
+  const patched = { ...equipment };
+  const inventoryUpdates: Record<string, unknown> = {};
+  const characterUpdates: Record<string, unknown> = {};
+  for (const slot of violatingSlots) {
+    const ref = equipment[slot];
+    if (!ref) continue;
+    Object.assign(inventoryUpdates, equipmentRefInventoryDelta(ref, 1));
+    patched[slot] = null;
+    characterUpdates[`${pathPrefix}.${slot}`] = null;
+  }
+
+  try {
+    await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), inventoryUpdates);
+    await updateDoc(doc(db, 'characters', uid), characterUpdates);
+  } catch (err) {
+    // Safe to retry on the next read, same posture as migrateLegacyProfessions.
+    console.error('Equip-role retroactive enforcement failed, will retry next read:', err);
+    return equipment;
+  }
+  return patched;
+}
+
+// `specId` is chosen in the same storybook screen as the class now (the
+// combined class+spec character-creation flow) — a brand-new character
+// never again passes through the old level-5 SpecSelectionScreen (removed;
+// see App.tsx), so `spec` is set here immediately rather than starting
+// null and waiting for a later chooseSpec call.
+export async function createCharacter(uid: string, name: string, characterClass: ClassId, specId: SpecId): Promise<void> {
   const equipment = starterEquipment(characterClass);
   const startingHpBonuses = getEquipmentStatBonuses(equipment);
 
@@ -292,7 +394,7 @@ export async function createCharacter(uid: string, name: string, characterClass:
   // only fills in after their first kill/gather/craft.
   const initialActiveQuests = refillActiveQuests(
     {
-      class: characterClass, spec: null, level: 1, professions: {},
+      class: characterClass, spec: specId, level: 1, professions: {},
       quests: { active: {}, completedIds: [], dailyCompletedAt: {} },
     },
     new Date()
@@ -306,7 +408,7 @@ export async function createCharacter(uid: string, name: string, characterClass:
     gold: 0,
     voidShards: 0,
     class: characterClass,
-    spec: null,
+    spec: specId,
     talentPicks: {},
     currentHp: maxHp(characterClass, 1, startingHpBonuses),
     hpCheckpointAt: serverTimestamp(),
@@ -1007,6 +1109,31 @@ export async function equipItem(uid: string, slot: EquipmentSlot, itemId: string
     }
   }
 
+  // Equip-role restrictions (user's gear-limitation request) — only
+  // meaningful once a spec is chosen (character.spec === null, a pre-
+  // storybook-flow legacy character that hasn't picked one yet, skips this
+  // entirely rather than guessing a role for it). Validates the FULL
+  // resulting weapon+offhand pair, not just the one slot being changed —
+  // equipping a weapon can make an already-equipped offhand illegal (and
+  // vice versa) even though that other slot isn't the one being touched.
+  if ((slot === 'weapon' || slot === 'offhand') && character.spec) {
+    const role = EQUIP_ROLE_BY_SPEC[character.spec];
+    const currentWeaponId = equippedItemId(character.equipment.weapon);
+    const currentOffhandId = equippedItemId(character.equipment.offhand);
+    const prospectiveWeapon = slot === 'weapon' ? item : currentWeaponId ? ITEMS[currentWeaponId] ?? null : null;
+    const prospectiveOffhand =
+      slot === 'offhand'
+        ? item
+        : isTwoHandedWeapon(item)
+          ? null // equipping a 2H weapon auto-clears the offhand (see below)
+          : currentOffhandId
+            ? ITEMS[currentOffhandId] ?? null
+            : null;
+    if (!canEquipWeaponLoadout(role, prospectiveWeapon, prospectiveOffhand)) {
+      throw new Error(`${item.name} isn’t a legal loadout for your spec.`);
+    }
+  }
+
   const { ref: newRef, inventoryDelta } = await resolveAndEquip(uid, itemId, instanceId);
   const previouslyEquipped = character.equipment[slot];
 
@@ -1042,10 +1169,6 @@ export async function unequipItem(uid: string, slot: EquipmentSlot): Promise<voi
   await updateDoc(doc(db, 'characters', uid), {
     [`equipment.${slot}`]: null,
   });
-}
-
-export async function chooseSpec(uid: string, spec: SpecId): Promise<void> {
-  await updateDoc(doc(db, 'characters', uid), { spec });
 }
 
 const ALLOWED_CONDITION_TYPES: ConditionType[] = [

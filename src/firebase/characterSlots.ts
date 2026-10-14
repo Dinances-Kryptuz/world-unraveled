@@ -1,7 +1,7 @@
 import { doc, getDoc, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
 import { db } from './config';
 import { createCharacter, normalizeEquipment } from './character';
-import type { ClassId } from '../gameData/classStats';
+import type { ClassId, SpecId } from '../gameData/classStats';
 import { MAX_ACTIVE_COMPANIONS, buildAltCombatSetup, type CompanionCombatSetup } from '../gameData/companions';
 import type { Character } from '../types/character';
 import {
@@ -69,6 +69,7 @@ export async function createCharacterInNewSlot(
   uid: string,
   name: string,
   cls: ClassId,
+  specId: SpecId,
   account: AccountState
 ): Promise<{ success: boolean; reason?: string }> {
   if (account.unlockedSlots <= account.activeSlot) {
@@ -98,7 +99,7 @@ export async function createCharacterInNewSlot(
   // createCharacter() setDoc's characters/{uid} + its inventory/bank mains —
   // a full overwrite, which is exactly right since the previous occupant was
   // just archived into the roster above.
-  await createCharacter(uid, name, cls);
+  await createCharacter(uid, name, cls, specId);
   return { success: true };
 }
 

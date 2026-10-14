@@ -4,8 +4,9 @@ import { getCharacter } from './character';
 import { getInventory } from './inventory';
 import { equipmentRefInventoryDelta, resolveEquippedRef } from './equipmentInstances';
 import { COMPANIONS, checkRecruitCompanion, emptyCompanionEquipment, MAX_ACTIVE_COMPANIONS, dungeonCompanionFee } from '../gameData/companions';
-import { canClassEquip } from '../gameData/classStats';
+import { canClassEquip, EQUIP_ROLE_BY_SPEC } from '../gameData/classStats';
 import { ITEMS } from '../gameData/items';
+import { canEquipInOffhand, canEquipWeaponLoadout, equippedItemId, isTwoHandedWeapon } from '../gameData/equipmentStats';
 import { DUNGEONS } from '../gameData/dungeons';
 import { ZONE_TIER } from '../gameData/zones';
 import type { EquipmentSlot, EquippedItemRef } from '../gameData/types';
@@ -61,16 +62,19 @@ export async function removeCompanionFromParty(uid: string, companionId: string)
   return { success: true };
 }
 
-// Mirrors firebase/character.ts's equipItem exactly, just scoped to a
-// companion's own equipment map instead of the player's — gear moves out
-// of the SAME shared inventory either way, so there's one pool of loot the
-// player chooses to wear themselves or hand to their companion.
+// Mirrors firebase/character.ts's equipItem, just scoped to a companion's
+// own equipment map instead of the player's — gear moves out of the SAME
+// shared inventory either way, so there's one pool of loot the player
+// chooses to wear themselves or hand to their companion. A companion's
+// spec is fixed (CompanionDef.specId, never player-chosen), so the equip-
+// role check below always has a role to check against, unlike the player's
+// own equipItem (which has to tolerate spec === null for a pre-storybook-
+// flow legacy character).
 // `instanceId` equips a specific randomized-stat roll (gameData/
 // equipmentRolls.ts) from the shared inventory rather than a static/legacy
-// item — see firebase/character.ts's equipItem, which this mirrors (no 2H/
-// offhand rules here, since companions never had them). Omitting it keeps
-// every ordinary equip exactly as fast as before this field existed: no
-// extra inventory read.
+// item — see firebase/character.ts's equipItem, which this mirrors. Omitting
+// it keeps every ordinary equip exactly as fast as before this field
+// existed: no extra inventory read.
 export async function equipCompanionItem(
   uid: string,
   companionId: string,
@@ -89,6 +93,35 @@ export async function equipCompanionItem(
     throw new Error(`${def.name} cannot equip ${item?.name ?? itemId} (${item?.armorType} armor)`);
   }
 
+  if (slot === 'offhand') {
+    if (!canEquipInOffhand(item)) {
+      throw new Error(`${item.name} can’t be equipped in the off-hand.`);
+    }
+    const mainHandId = equippedItemId(companionState.equipment.weapon);
+    const mainHand = mainHandId ? ITEMS[mainHandId] : null;
+    if (mainHand && isTwoHandedWeapon(mainHand)) {
+      throw new Error('Unequip the two-handed weapon first.');
+    }
+  }
+
+  if (slot === 'weapon' || slot === 'offhand') {
+    const role = EQUIP_ROLE_BY_SPEC[def.specId];
+    const currentWeaponId = equippedItemId(companionState.equipment.weapon);
+    const currentOffhandId = equippedItemId(companionState.equipment.offhand);
+    const prospectiveWeapon = slot === 'weapon' ? item : currentWeaponId ? ITEMS[currentWeaponId] ?? null : null;
+    const prospectiveOffhand =
+      slot === 'offhand'
+        ? item
+        : isTwoHandedWeapon(item)
+          ? null
+          : currentOffhandId
+            ? ITEMS[currentOffhandId] ?? null
+            : null;
+    if (!canEquipWeaponLoadout(role, prospectiveWeapon, prospectiveOffhand)) {
+      throw new Error(`${item.name} isn’t a legal loadout for ${def.name}.`);
+    }
+  }
+
   let newRef: EquippedItemRef = { itemId };
   if (instanceId) {
     const inventory = await getInventory(uid);
@@ -100,11 +133,21 @@ export async function equipCompanionItem(
   if (previouslyEquipped) {
     Object.assign(inventoryUpdates, equipmentRefInventoryDelta(previouslyEquipped, 1));
   }
-  await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), inventoryUpdates);
 
-  await updateDoc(doc(db, 'characters', uid), {
+  const characterUpdates: Record<string, unknown> = {
     [`companions.${companionId}.equipment.${slot}`]: newRef,
-  });
+  };
+
+  // Mirrors firebase/character.ts's equipItem — a two-handed weapon can't
+  // coexist with an offhand, so equipping one auto-unequips whatever's
+  // there back to inventory.
+  if (slot === 'weapon' && isTwoHandedWeapon(item) && companionState.equipment.offhand) {
+    Object.assign(inventoryUpdates, equipmentRefInventoryDelta(companionState.equipment.offhand, 1));
+    characterUpdates[`companions.${companionId}.equipment.offhand`] = null;
+  }
+
+  await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), inventoryUpdates);
+  await updateDoc(doc(db, 'characters', uid), characterUpdates);
 }
 
 export interface DungeonFeeResult {

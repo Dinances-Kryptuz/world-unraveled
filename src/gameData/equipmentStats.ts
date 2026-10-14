@@ -1,7 +1,8 @@
-import { PRIMARY_STAT, type BaseStat, type ClassId, type SpecId } from './classStats';
+import { PRIMARY_STAT, type BaseStat, type ClassId, type EquipRole, type SpecId } from './classStats';
 import type { EquipmentSlot, EquippedItemRef, ItemDef } from './types';
 import { ITEMS } from './items';
 import { ENCHANTS } from './enchanting';
+import { ARMOR_STAT_RANGES } from './equipmentRolls';
 
 // The bare item id out of an equipped slot's value — nearly every caller
 // that just needs "what item is in this slot" (class/offhand rules, tool-
@@ -12,18 +13,39 @@ export function equippedItemId(ref: EquippedItemRef | null | undefined): string 
   return ref?.itemId ?? null;
 }
 
-// Two-handed weapons — a small, deliberately short list rather than a
-// keyword guess across the whole weapon catalog: most of this game's
-// weapons (the paired sword/battleaxe lines every Blacksmithing tier
-// crafts, daggers, wands, scepters) are a one-handed progression line by
-// design, matched 1:1 across tiers, and reclassifying an entire line as
-// two-handed would silently cut its offhand pairing without any
-// compensating stat budget. These 4 are each already flavored as
-// unusually heavy/bulky in their own description ("too heavy for most",
-// "heavier...than anything else") or are the classic caster 2H
-// implement (a staff) — real candidates, not a guess. See the equip-rule
-// doc comment on canEquipInOffhand below for what this gates.
-const TWO_HANDED_WEAPON_IDS = new Set(['apprentice_staff', 'chieftains_warhammer', 'kaldrun_warhammer', 'overseers_greatmace']);
+// Every staff in the game — Enchanting's 6-tier Wand/Staff/Book line plus
+// the early apprentice_staff kobold drop. All of these are two-handed (see
+// TWO_HANDED_WEAPON_IDS below) AND, per the equip-role system's Priest/Mage
+// caster rule (canEquipWeaponLoadout below), the ONE two-handed weapon a
+// caster is allowed to equip — a non-staff two-hander (a warhammer/greatmace)
+// is still physically equippable by anyone (weapons carry no armorType
+// restriction) but isn't a legal caster loadout.
+const STAFF_WEAPON_IDS = new Set([
+  'apprentice_staff',
+  'rough_staff',
+  'aged_staff',
+  'heartwood_staff',
+  'ironwood_staff',
+  'charwood_staff',
+  'emberwood_staff',
+]);
+
+export function isStaffWeapon(item: Pick<ItemDef, 'id' | 'equipSlot'>): boolean {
+  return item.equipSlot === 'weapon' && STAFF_WEAPON_IDS.has(item.id);
+}
+
+// Two-handed weapons — every staff above, plus a small, deliberately short
+// list of non-staff two-handers rather than a keyword guess across the
+// whole weapon catalog: most of this game's weapons (the paired sword/
+// battleaxe lines every Blacksmithing tier crafts, daggers, wands,
+// scepters) are a one-handed progression line by design, matched 1:1
+// across tiers, and reclassifying an entire line as two-handed would
+// silently cut its offhand pairing without any compensating stat budget.
+// These 3 are each already flavored as unusually heavy/bulky in their own
+// description ("too heavy for most", "heavier...than anything else") —
+// real candidates, not a guess. See the equip-rule doc comment on
+// canEquipInOffhand below for what this gates.
+const TWO_HANDED_WEAPON_IDS = new Set([...STAFF_WEAPON_IDS, 'chieftains_warhammer', 'kaldrun_warhammer', 'overseers_greatmace']);
 
 export function isTwoHandedWeapon(item: Pick<ItemDef, 'id' | 'equipSlot'>): boolean {
   return item.equipSlot === 'weapon' && TWO_HANDED_WEAPON_IDS.has(item.id);
@@ -38,6 +60,68 @@ export function isTwoHandedWeapon(item: Pick<ItemDef, 'id' | 'equipSlot'>): bool
 export function canEquipInOffhand(item: Pick<ItemDef, 'id' | 'equipSlot'>): boolean {
   if (item.equipSlot === 'offhand') return true;
   return item.equipSlot === 'weapon' && !isTwoHandedWeapon(item);
+}
+
+// Equip-role restrictions (classStats.ts's EQUIP_ROLE_BY_SPEC) — whether a
+// prospective weapon+offhand PAIR (the state equipment would be in AFTER an
+// equip resolves, not just the one slot being changed) is legal for a given
+// role. Both items may be null (nothing equipped there). Doesn't re-check
+// the baseline rules (canEquipInOffhand/isTwoHandedWeapon's own invariants,
+// e.g. a 2H weapon never truly coexists with a filled offhand) — those are
+// already enforced independently at the equip call site; this only adds the
+// role-specific shape on top.
+export function canEquipWeaponLoadout(
+  role: EquipRole,
+  weaponItem: Pick<ItemDef, 'id' | 'equipSlot' | 'isShield'> | null,
+  offhandItem: Pick<ItemDef, 'id' | 'equipSlot' | 'isShield'> | null
+): boolean {
+  const weaponIsTwoHanded = weaponItem ? isTwoHandedWeapon(weaponItem) : false;
+  const offhandIsShield = !!offhandItem?.isShield;
+  const offhandIsWeapon = offhandItem?.equipSlot === 'weapon';
+  const offhandIsCasterItem = !!offhandItem && offhandItem.equipSlot === 'offhand' && !offhandIsShield;
+
+  switch (role) {
+    // Tank: one-hander and shields only — never a two-hander, never a
+    // dual-wielded second weapon, never a caster orb/book.
+    case 'tank':
+      if (weaponIsTwoHanded) return false;
+      return !offhandItem || offhandIsShield;
+    // Melee DPS: a weapon in both slots, just never a shield (and, since
+    // the offhand has to be a WEAPON here, never a caster orb/book either).
+    case 'melee_dps':
+      return !offhandItem || offhandIsWeapon;
+    // Paladin healer: one-hander + shield, OR a two-hander alone — never
+    // both slots holding separate weapons, never a caster orb/book.
+    case 'paladin_healer':
+      if (weaponIsTwoHanded) return !offhandItem;
+      return !offhandItem || offhandIsShield;
+    // Caster (Priest/Mage): a weapon/wand + an empty or non-physical
+    // offhand (orb/book), OR a two-handed STAFF specifically (not just any
+    // two-hander) alone — never a shield, never a second weapon.
+    case 'caster':
+      if (weaponIsTwoHanded) return isStaffWeapon(weaponItem!) && !offhandItem;
+      return !offhandItem || offhandIsCasterItem;
+  }
+}
+
+// Retroactive enforcement (user's explicit "auto-unequip violations now"
+// call) — a character/companion whose spec/role existed before this system
+// did, or who somehow ended up in an illegal state, needs the minimal fix
+// decided here rather than being blocked from reading their own character.
+// Prefers clearing the offhand alone (the common, strictly cheaper fix);
+// only also clears the weapon when the weapon itself is the problem even
+// with an empty offhand (a tank's two-hander, or a caster's non-staff
+// two-hander) — i.e. when clearing the offhand alone still isn't legal.
+export function equipRoleViolationSlots(
+  role: EquipRole,
+  weaponItem: Pick<ItemDef, 'id' | 'equipSlot' | 'isShield'> | null,
+  offhandItem: Pick<ItemDef, 'id' | 'equipSlot' | 'isShield'> | null
+): EquipmentSlot[] {
+  if (canEquipWeaponLoadout(role, weaponItem, offhandItem)) return [];
+  const slots: EquipmentSlot[] = [];
+  if (offhandItem) slots.push('offhand');
+  if (weaponItem && !canEquipWeaponLoadout(role, weaponItem, null)) slots.push('weapon');
+  return slots;
 }
 
 // Attribute/Specialization overhaul's Shield Block Value only applies when
@@ -125,14 +209,23 @@ const SLOT_LABELS: Record<EquipmentSlot, string> = {
 // A one-line summary of what a piece of equipment actually does — slot,
 // armor type, and its stat bonuses — for a hover tooltip on a crafting
 // recipe (or anywhere else that shows an item by name without its stats).
+// A recipe whose result actually rolls 2 random stats at craft time
+// (equipmentRolls.ts's ARMOR_STAT_RANGES) never guarantees item.statBonuses
+// — same stale-pre-Mastery-overhaul-data trap ItemSlot.tsx's own tooltip
+// already guards against (see its isRandomRollPreview) — so this shows the
+// same "Random Stat 1, Random Stat 2" placeholder instead of real numbers.
 export function describeItemStats(item: ItemDef): string {
   if (item.type !== 'equipment' || !item.equipSlot) return item.description;
   const parts: string[] = [SLOT_LABELS[item.equipSlot]];
   if (item.armorType) parts.push(item.armorType);
-  const bonuses = Object.entries(item.statBonuses ?? {})
-    .filter(([, value]) => value)
-    .map(([stat, value]) => `+${value} ${stat}`);
-  if (bonuses.length > 0) parts.push(bonuses.join(', '));
+  if (ARMOR_STAT_RANGES[item.id]) {
+    parts.push('Random Stat 1, Random Stat 2');
+  } else {
+    const bonuses = Object.entries(item.statBonuses ?? {})
+      .filter(([, value]) => value)
+      .map(([stat, value]) => `+${value} ${stat}`);
+    if (bonuses.length > 0) parts.push(bonuses.join(', '));
+  }
   return parts.join(' — ');
 }
 

@@ -1,5 +1,5 @@
 import type { ClassId, SpecDef, SpecId } from './classStats';
-import { SPECS } from './classStats';
+import { FALLBACK_SPEC_BY_CLASS, SPECS } from './classStats';
 import type { BaseStat } from './classStats';
 import type { EquipmentSlot, EquippedItemRef } from './types';
 import { getEquipmentStatBonuses, getInnateItemFireResistance, isShieldEquipped } from './equipmentStats';
@@ -56,16 +56,16 @@ export function dungeonCompanionFee(zoneTier: number, companionCount: number): n
   return companionCount * zoneTier * zoneTier * COMPANION_WAGE_BASE;
 }
 
-// One companion per spec (all 6 — see classStats.ts's SpecId) so a player
-// can freely build any class/spec composition for their 4 active slots
-// (a second tank, three healers, whatever) rather than being steered
-// toward "the optimal" 1 tank/1 healer/3 DPS mix. All six are recruitable
-// within the first two zones specifically so a brand-new player can
-// assemble a full dungeon group before reaching Greenhollow's own dungeon
-// (Kobold Warrens) — a dungeon simply isn't enterable without one (see
-// REQUIRED_DUNGEON_PARTY_SIZE), so the roster has to be available early,
-// even though that means Ser Aldric (originally an Emberfall Ridge, level
-// 25 recruit) moved down to Stonecrag Foothills at level 12.
+// One companion per spec (all 7 non-Mage specs — see classStats.ts's
+// SpecId) so a player can freely build any class/spec composition for
+// their 4 active slots (a second tank, three healers, whatever) rather
+// than being steered toward "the optimal" 1 tank/1 healer/3 DPS mix. By
+// character level 5, Wren (DPS), Borin (tank), Vesper (DPS), Dame Rosalind
+// (healer) and Rook Hollowfang (DPS) are ALL recruitable — a full
+// tank/healer/DPS combination covering every role for the first dungeon
+// (Kobold Warrens), well before Ser Aldric/Sister Mabel's later Stonecrag
+// Foothills unlocks even matter (see REQUIRED_DUNGEON_PARTY_SIZE — a
+// dungeon simply isn't enterable without a full group).
 export const COMPANIONS: Record<string, CompanionDef> = {
   wren_the_squire: {
     id: 'wren_the_squire',
@@ -76,7 +76,7 @@ export const COMPANIONS: Record<string, CompanionDef> = {
       'A scrappy farmhand turned sellsword, looking for someone to swing a blade alongside. Fights for straight damage.',
     recruitZoneId: 'greenhollow_fields',
     recruitGoldCost: 25,
-    requiredCharacterLevel: 3,
+    requiredCharacterLevel: 5,
   },
   borin_ironhide: {
     id: 'borin_ironhide',
@@ -131,7 +131,18 @@ export const COMPANIONS: Record<string, CompanionDef> = {
       'A traveling knight-healer who took her vows seriously enough to mean them. A second, sturdier kind of support for the group.',
     recruitZoneId: 'stonecrag_foothills',
     recruitGoldCost: 90,
-    requiredCharacterLevel: 12,
+    requiredCharacterLevel: 5,
+  },
+  rook_hollowfang: {
+    id: 'rook_hollowfang',
+    name: 'Rook Hollowfang',
+    class: 'rogue',
+    specId: 'rogue_poison',
+    description:
+      "A quiet poisoner who'd rather wear a target down than trade blows with it. Excels at single-target fights that run long.",
+    recruitZoneId: 'greenhollow_fields',
+    recruitGoldCost: 40,
+    requiredCharacterLevel: 5,
   },
   // Mage is a preview of a future expansion — not a playable class yet
   // (see classStats.ts), but its two companions are real, functional party
@@ -290,15 +301,8 @@ export function buildAltCombatSetup(slot: number, alt: AltCharacterSnapshot): Co
 
 // An alt recruited before level 5 (spec === null) still needs SOME spec to
 // fight with — same "no choice made yet" fallback every other unspecced-
-// character code path in this game already has to account for. Picks each
-// class's first (damage-leaning) spec rather than leaving combat math
-// undefined.
-const FALLBACK_SPEC_BY_CLASS: Record<ClassId, SpecId> = {
-  warrior: 'warrior_dps',
-  priest: 'shadow_priest',
-  paladin: 'prot_paladin',
-  mage: 'mage_fire',
-};
+// character code path in this game already has to account for. See
+// classStats.ts's FALLBACK_SPEC_BY_CLASS (imported above).
 
 // Builds the live combat setup for every currently-active companion (0 to
 // MAX_ACTIVE_COMPANIONS) — callers (CombatScreen/DungeonScreen/

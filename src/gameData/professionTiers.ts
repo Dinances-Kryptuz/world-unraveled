@@ -72,17 +72,16 @@ export const PROFESSION_CATEGORY: Record<ProfessionId, ProfessionCategory> = {
   cooking: 'production',
 };
 
-// Character level required to TRAIN each rank (0 = no requirement). Keyed
-// by category rather than individual profession, per the design brief's
-// explicit per-category tables. All 10 professions now reach Master — the
-// crafting redesign that generalized gatheringEngine.ts's 1-100 system to
-// all 6 crafting professions (craftingEngine.ts) gave 'production' a real
-// requirement here too (continuing its existing 5/10/20/35 progression)
-// rather than the old unreachable 0 placeholder.
+// Character level required to TRAIN each rank — deliberately all 0 (no
+// requirement at all). Professions are gated purely by gold cost and
+// reaching the current rank's skill ceiling now; a level-1 character with
+// enough gold can train straight to Master in one sitting. Kept as a table
+// (rather than deleting the gating machinery) so a future profession-
+// specific requirement is a data change, not new code.
 export const RANK_LEVEL_REQUIREMENT: Record<ProfessionCategory, Record<ProfessionTierName, number>> = {
-  production: { apprentice: 5, journeyman: 10, expert: 20, artisan: 35, master: 50 },
-  fishing: { apprentice: 0, journeyman: 10, expert: 10, artisan: 10, master: 10 },
-  gathering: { apprentice: 0, journeyman: 0, expert: 10, artisan: 25, master: 40 },
+  production: { apprentice: 0, journeyman: 0, expert: 0, artisan: 0, master: 0 },
+  fishing: { apprentice: 0, journeyman: 0, expert: 0, artisan: 0, master: 0 },
+  gathering: { apprentice: 0, journeyman: 0, expert: 0, artisan: 0, master: 0 },
 };
 
 export function requiredCharacterLevelForRank(profession: ProfessionId, rank: ProfessionTierName): number {
