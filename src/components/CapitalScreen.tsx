@@ -3,6 +3,7 @@ import { useCharacter } from '../hooks/useCharacter';
 import { CompanionScreen } from './CompanionScreen';
 import { ProfessionsTrainerScreen } from './ProfessionsTrainerScreen';
 import { VendorScreen } from './VendorScreen';
+import { GuildScreen } from './GuildScreen';
 
 type DistrictId = 'guildHall' | 'tavern' | 'artisan' | 'market' | 'expedition' | 'restoration';
 
@@ -40,12 +41,7 @@ function DistrictContent({ districtId, zoneId }: { districtId: DistrictId; zoneI
     case 'market':
       return <VendorScreen zoneId={zoneId} />;
     case 'guildHall':
-      return (
-        <ComingSoonPanel
-          title="Guild Hall"
-          description="Found or join a guild, take on weekly contracts, and grow your headquarters."
-        />
-      );
+      return <GuildScreen />;
     case 'expedition':
       return (
         <ComingSoonPanel

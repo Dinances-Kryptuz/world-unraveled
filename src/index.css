@@ -1613,6 +1613,105 @@ button.storybook-spec-button:hover:not(:disabled) {
   margin-top: 2px;
 }
 
+/* ── Guild Hall — guild creation/browse/overview (see GuildScreen.tsx) ── */
+
+.guild-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.guild-panel {
+  background: linear-gradient(180deg, #fffdf9, #f8f3e8);
+  border: 1px solid #e2d9c8;
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+
+.guild-panel h3 {
+  margin-top: 0;
+}
+
+.guild-tag {
+  color: #8a7f6f;
+  font-weight: 400;
+}
+
+.guild-meta-line {
+  color: #6b6156;
+}
+
+.guild-placeholder-note {
+  color: #8a7f6f;
+  font-style: italic;
+  margin-bottom: 0;
+}
+
+.guild-create-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.guild-create-form input {
+  padding: 6px 10px;
+  border: 1px solid #d8ccb4;
+  border-radius: 4px;
+}
+
+.guild-empty {
+  color: #8a7f6f;
+}
+
+.guild-browse-list,
+.guild-roster-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.guild-browse-row,
+.guild-roster-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 8px 10px;
+  background: #f4efe4;
+  border: 1px solid #d8ccb4;
+  border-radius: 6px;
+}
+
+.guild-browse-name {
+  font-weight: 600;
+  flex: 1 1 auto;
+}
+
+.guild-browse-meta,
+.guild-roster-meta {
+  color: #6b6156;
+  font-size: 0.9rem;
+}
+
+.guild-roster-name {
+  font-weight: 600;
+}
+
+.guild-roster-role {
+  margin-left: auto;
+  font-weight: 600;
+  color: var(--zone-primary, #8a6d3b);
+}
+
+.guild-roster-actions {
+  display: flex;
+  gap: 6px;
+}
+
 /* ── Capital City hub — district tiles (see CapitalScreen.tsx) ── */
 
 .capital-district-grid {
