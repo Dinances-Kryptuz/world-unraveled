@@ -5,6 +5,7 @@ import type { ProfessionId } from '../gameData/types';
 
 export type AppSection =
   | 'adventure'
+  | 'capital'
   | 'shop'
   | 'equipment'
   | 'inventory'
@@ -33,6 +34,7 @@ interface SidebarItem {
 // plumbing churn; only its displayed label changed to Shopkeeper.
 const TOP_ITEMS: SidebarItem[] = [
   { id: 'adventure', label: 'Adventure' },
+  { id: 'capital', label: 'Ashenfall' },
   { id: 'shop', label: 'Shopkeeper' },
   { id: 'equipment', label: 'Equipment' },
   { id: 'inventory', label: 'Inventory' },
