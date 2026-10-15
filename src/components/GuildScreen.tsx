@@ -15,6 +15,15 @@ import {
 import { MAX_GUILD_MEMBERS, MAX_OFFICERS, roleLabel, type GuildDetails, type GuildMemberRow, type GuildPublicSummary } from '../gameData/guilds';
 import { CLASS_LABELS, SPEC_LABELS, type ClassId, type SpecId } from '../gameData/classStats';
 import { ClassColoredName } from './ClassColoredName';
+import {
+  getOrCreateGuildWeek,
+  contributeMaterial,
+  reportHuntingKills,
+  claimContractReward,
+  claimCompanionContributions,
+} from '../firebase/guildContracts';
+import { contractCategoryLabel, myShareOfContract, MAX_MOMENTUM, type GuildWeek } from '../gameData/guildContracts';
+import { ITEMS } from '../gameData/items';
 
 function CreateOrBrowseGuild({ onChanged }: { onChanged: () => void }) {
   const [name, setName] = useState('');
@@ -112,6 +121,164 @@ function CreateOrBrowseGuild({ onChanged }: { onChanged: () => void }) {
   );
 }
 
+function ContractRowView({
+  contract,
+  index,
+  guildId,
+  weekId,
+  myUid,
+  onChanged,
+}: {
+  contract: GuildWeek['contracts'][number];
+  index: number;
+  guildId: string;
+  weekId: string;
+  myUid: string;
+  onChanged: () => void;
+}) {
+  const { refetch } = useCharacter();
+  const [amount, setAmount] = useState('');
+  const [kills, setKills] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const pct = Math.min(100, Math.round((contract.progress / contract.requirement) * 100));
+  const complete = contract.completedAt !== null;
+  const myShare = myShareOfContract(contract, myUid);
+  const alreadyClaimed = !!contract.claims[myUid];
+
+  async function handleContribute() {
+    const n = Math.floor(Number(amount));
+    if (!(n > 0)) return;
+    setError(null);
+    setBusy(true);
+    try {
+      await contributeMaterial(guildId, weekId, index, n);
+      setAmount('');
+      onChanged();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to contribute.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleReportKills() {
+    const n = Math.floor(Number(kills));
+    if (!(n > 0)) return;
+    setError(null);
+    setBusy(true);
+    try {
+      await reportHuntingKills(guildId, weekId, index, n);
+      setKills('');
+      onChanged();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to report kills.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleClaim() {
+    setError(null);
+    setBusy(true);
+    try {
+      await claimContractReward(guildId, weekId, index);
+      onChanged();
+      refetch();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to claim reward.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const materialName = contract.materialId ? ITEMS[contract.materialId]?.name ?? contract.materialId : null;
+
+  return (
+    <li className="guild-contract-row">
+      <div className="guild-contract-header">
+        <span className="guild-contract-category">{contractCategoryLabel(contract.category)}</span>
+        <span className="guild-contract-label">{contract.label}</span>
+      </div>
+      <div className="guild-contract-bar-track">
+        <div className="guild-contract-bar-fill" style={{ width: `${pct}%` }} />
+      </div>
+      <div className="guild-contract-meta">
+        {contract.progress} / {contract.requirement} {complete ? '— Complete!' : `(${pct}%)`}
+        {myShare > 0 && ` · your contribution: ${myShare}`}
+      </div>
+      {error && <p className="error">{error}</p>}
+      {!complete && contract.category !== 'hunting' && (
+        <div className="guild-contract-actions">
+          <input
+            type="number"
+            min={1}
+            placeholder={materialName ? `${materialName} to turn in` : 'Amount'}
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+          />
+          <button onClick={handleContribute} disabled={busy || !(Number(amount) > 0)}>
+            Contribute
+          </button>
+        </div>
+      )}
+      {!complete && contract.category === 'hunting' && (
+        <div className="guild-contract-actions">
+          <input type="number" min={1} max={20} placeholder="Kills to report" value={kills} onChange={(e) => setKills(e.target.value)} />
+          <button onClick={handleReportKills} disabled={busy || !(Number(kills) > 0)}>
+            Report Kills
+          </button>
+        </div>
+      )}
+      {complete && myShare > 0 && !alreadyClaimed && (
+        <div className="guild-contract-actions">
+          <button onClick={handleClaim} disabled={busy}>
+            Claim Reward
+          </button>
+        </div>
+      )}
+      {complete && alreadyClaimed && <p className="guild-placeholder-note">Reward claimed.</p>}
+    </li>
+  );
+}
+
+function ContractsPanel({ guildId, myUid }: { guildId: string; myUid: string }) {
+  const [week, setWeek] = useState<GuildWeek | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function load() {
+    try {
+      const w = await getOrCreateGuildWeek(guildId);
+      setWeek(w);
+      claimCompanionContributions(guildId, w.weekId).then(() => {
+        getOrCreateGuildWeek(guildId).then(setWeek);
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load contracts.');
+    }
+  }
+
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [guildId]);
+
+  if (error) return <p className="error">{error}</p>;
+  if (!week) return <p>Loading contracts…</p>;
+
+  return (
+    <div className="guild-panel">
+      <h3>Weekly Contracts — {week.weekId}</h3>
+      <ul className="guild-contract-list">
+        {week.contracts.map((c, i) => (
+          <ContractRowView key={i} contract={c} index={i} guildId={guildId} weekId={week.weekId} myUid={myUid} onChanged={load} />
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function GuildOverview({ guildId, myUid, onChanged }: { guildId: string; myUid: string; onChanged: () => void }) {
   const [guild, setGuild] = useState<GuildDetails | null>(null);
   const [members, setMembers] = useState<GuildMemberRow[] | null>(null);
@@ -185,10 +352,13 @@ function GuildOverview({ guildId, myUid, onChanged }: { guildId: string; myUid: 
         <p className="guild-meta-line">
           Level {guild.level} · {guild.memberIds.length}/{MAX_GUILD_MEMBERS} members · {officerCount}/{MAX_OFFICERS} Officers
         </p>
+        <p className="guild-meta-line">Guild Momentum: {guild.momentum}/{MAX_MOMENTUM}</p>
         <p className="guild-placeholder-note">
-          Weekly contracts, expeditions, and headquarters upgrades are coming in later phases.
+          Expeditions, headquarters upgrades, and restoration are coming in later phases.
         </p>
       </div>
+
+      <ContractsPanel guildId={guildId} myUid={myUid} />
 
       <div className="guild-panel">
         <h3>Roster</h3>

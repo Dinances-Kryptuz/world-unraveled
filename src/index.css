@@ -1712,6 +1712,69 @@ button.storybook-spec-button:hover:not(:disabled) {
   gap: 6px;
 }
 
+.guild-contract-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.guild-contract-row {
+  padding: 10px 12px;
+  background: #f4efe4;
+  border: 1px solid #d8ccb4;
+  border-radius: 6px;
+}
+
+.guild-contract-header {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  margin-bottom: 4px;
+}
+
+.guild-contract-category {
+  font-weight: 700;
+  color: var(--zone-primary, #8a6d3b);
+}
+
+.guild-contract-label {
+  font-weight: 600;
+}
+
+.guild-contract-bar-track {
+  background: #e2d9c8;
+  border-radius: 4px;
+  height: 10px;
+  overflow: hidden;
+  margin: 4px 0;
+}
+
+.guild-contract-bar-fill {
+  background: var(--zone-primary, #8a6d3b);
+  height: 100%;
+}
+
+.guild-contract-meta {
+  color: #6b6156;
+  font-size: 0.9rem;
+}
+
+.guild-contract-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.guild-contract-actions input {
+  padding: 6px 10px;
+  border: 1px solid #d8ccb4;
+  border-radius: 4px;
+  width: 140px;
+}
+
 /* ── Capital City hub — district tiles (see CapitalScreen.tsx) ── */
 
 .capital-district-grid {

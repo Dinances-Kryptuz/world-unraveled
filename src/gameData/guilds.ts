@@ -26,6 +26,11 @@ export interface GuildDetails {
   level: number;
   xp: number;
   headquartersTier: number;
+  // Weekly Guild Contracts' 5-stage track (0-5) — advances by 1 whenever at
+  // least one contract was completed the prior ISO week, and otherwise is
+  // left exactly as-is (paused, never reset) on a missed week. See
+  // functions/src/contracts.ts's getOrCreateGuildWeek.
+  momentum: number;
 }
 
 export interface GuildPublicSummary {

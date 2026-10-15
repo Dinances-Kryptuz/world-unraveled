@@ -138,6 +138,15 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Weekly Guild Contracts (functions/src/contracts.ts) — same posture as
+    // the three collections above: every write (turn-ins, kill reports,
+    // reward claims, companion contributions, week rollover) goes through
+    // a Cloud Function; clients only ever read.
+    match /guildWeeks/{weekDocId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

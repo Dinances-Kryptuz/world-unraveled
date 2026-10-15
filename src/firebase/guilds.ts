@@ -93,6 +93,7 @@ export async function getGuild(guildId: string): Promise<GuildDetails | null> {
     level: data.level ?? 1,
     xp: data.xp ?? 0,
     headquartersTier: data.headquartersTier ?? 1,
+    momentum: data.momentum ?? 0,
   };
 }
 

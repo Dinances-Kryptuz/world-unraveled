@@ -10,3 +10,11 @@ export {
   setGuildMemberRole,
   refreshGuildMemberProfile,
 } from './guilds';
+
+export {
+  getOrCreateGuildWeek,
+  contributeMaterial,
+  reportHuntingKills,
+  claimContractReward,
+  claimCompanionContributions,
+} from './contracts';
