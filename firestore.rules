@@ -138,6 +138,18 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // A single cached doc (id "top") rebuilt every few minutes by a
+    // scheduled Cloud Function (functions/src/guildDiscoveryCache.ts) from
+    // guildPublicSummaries — lets the Guild Hall's "browse guilds" list cost
+    // ONE read instead of a 20-doc collection query every time a
+    // non-guilded player opens it. Eventually consistent by design; the
+    // client falls back to the live collection query if this doc is
+    // missing (e.g. before the schedule's first run).
+    match /guildDiscoveryCache/{docId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
     // Weekly Guild Contracts (functions/src/contracts.ts) — same posture as
     // the three collections above: every write (turn-ins, kill reports,
     // reward claims, companion contributions, week rollover) goes through
