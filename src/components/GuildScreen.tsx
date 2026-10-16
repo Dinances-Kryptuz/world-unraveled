@@ -23,6 +23,19 @@ import {
   claimCompanionContributions,
 } from '../firebase/guildContracts';
 import { contractCategoryLabel, myShareOfContract, MAX_MOMENTUM, type GuildWeek } from '../gameData/guildContracts';
+import { donateGoldToGuild, upgradeGuildRoom } from '../firebase/guildHeadquarters';
+import {
+  ROOM_IDS,
+  ROOM_LABELS,
+  ROOM_BONUS_LABEL,
+  ROOM_MAX_LEVEL,
+  roomBonusPct,
+  roomUpgradeCost,
+  guildXpProgress,
+  headquartersTierForLevel,
+  HEADQUARTERS_TIER_NAMES,
+  type RoomId,
+} from '../gameData/guildHeadquarters';
 import { ITEMS } from '../gameData/items';
 
 function CreateOrBrowseGuild({ onChanged }: { onChanged: () => void }) {
@@ -279,6 +292,95 @@ function ContractsPanel({ guildId, myUid }: { guildId: string; myUid: string }) 
   );
 }
 
+function HeadquartersPanel({
+  guild,
+  canManage,
+  onChanged,
+}: {
+  guild: GuildDetails;
+  canManage: boolean;
+  onChanged: () => void;
+}) {
+  const { refetch } = useCharacter();
+  const [donateAmount, setDonateAmount] = useState('');
+  const [busyRoom, setBusyRoom] = useState<string | null>(null);
+  const [donating, setDonating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const { level } = guildXpProgress(guild.xp);
+  const tier = headquartersTierForLevel(level);
+
+  async function handleDonate() {
+    const amount = Math.floor(Number(donateAmount));
+    if (!(amount > 0)) return;
+    setError(null);
+    setDonating(true);
+    try {
+      await donateGoldToGuild(guild.id, amount);
+      setDonateAmount('');
+      onChanged();
+      refetch();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to donate.');
+    } finally {
+      setDonating(false);
+    }
+  }
+
+  async function handleUpgrade(roomId: RoomId) {
+    setError(null);
+    setBusyRoom(roomId);
+    try {
+      await upgradeGuildRoom(guild.id, roomId);
+      onChanged();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to upgrade room.');
+    } finally {
+      setBusyRoom(null);
+    }
+  }
+
+  return (
+    <div className="guild-panel">
+      <h3>
+        Headquarters — {HEADQUARTERS_TIER_NAMES[tier - 1]} (Tier {tier})
+      </h3>
+      <p className="guild-meta-line">Guild Gold: {guild.gold}</p>
+      <div className="guild-create-form">
+        <input type="number" min={1} placeholder="Gold to donate" value={donateAmount} onChange={(e) => setDonateAmount(e.target.value)} />
+        <button onClick={handleDonate} disabled={donating || !(Number(donateAmount) > 0)}>
+          {donating ? 'Donating…' : 'Donate'}
+        </button>
+      </div>
+      {error && <p className="error">{error}</p>}
+      <div className="expedition-tier-grid">
+        {ROOM_IDS.map((roomId) => {
+          const roomLevel = Math.max(0, Math.min(ROOM_MAX_LEVEL, guild.rooms[roomId] ?? 0));
+          const maxed = roomLevel >= ROOM_MAX_LEVEL;
+          const cost = roomUpgradeCost(roomLevel);
+          return (
+            <div key={roomId} className="expedition-tier-card">
+              <span className="expedition-tier-name">
+                {ROOM_LABELS[roomId]} (Lv {roomLevel}/{ROOM_MAX_LEVEL})
+              </span>
+              <span className="expedition-tier-meta">{ROOM_BONUS_LABEL[roomId]}</span>
+              <span className="expedition-tier-meta">
+                {roomId === 'trophyhall' ? 'Cosmetic' : `+${roomBonusPct(roomId, roomLevel)}% current`}
+              </span>
+              {canManage && !maxed && (
+                <button onClick={() => handleUpgrade(roomId)} disabled={busyRoom !== null || guild.gold < cost}>
+                  {busyRoom === roomId ? 'Upgrading…' : `Upgrade (${cost} gold)`}
+                </button>
+              )}
+              {maxed && <span className="guild-placeholder-note">Fully upgraded.</span>}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function GuildOverview({ guildId, myUid, onChanged }: { guildId: string; myUid: string; onChanged: () => void }) {
   const [guild, setGuild] = useState<GuildDetails | null>(null);
   const [members, setMembers] = useState<GuildMemberRow[] | null>(null);
@@ -350,13 +452,12 @@ function GuildOverview({ guildId, myUid, onChanged }: { guildId: string; myUid: 
           {guild.tag && <span className="guild-tag"> [{guild.tag}]</span>}
         </h3>
         <p className="guild-meta-line">
-          Level {guild.level} · {guild.memberIds.length}/{MAX_GUILD_MEMBERS} members · {officerCount}/{MAX_OFFICERS} Officers
+          Level {guildXpProgress(guild.xp).level} · {guild.memberIds.length}/{MAX_GUILD_MEMBERS} members · {officerCount}/{MAX_OFFICERS} Officers
         </p>
         <p className="guild-meta-line">Guild Momentum: {guild.momentum}/{MAX_MOMENTUM}</p>
-        <p className="guild-placeholder-note">
-          Expeditions, headquarters upgrades, and restoration are coming in later phases.
-        </p>
       </div>
+
+      <HeadquartersPanel guild={guild} canManage={canManage} onChanged={load} />
 
       <ContractsPanel guildId={guildId} myUid={myUid} />
 

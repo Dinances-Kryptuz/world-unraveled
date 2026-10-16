@@ -1,5 +1,6 @@
 import { onCall, HttpsError, type CallableRequest } from 'firebase-functions/v2/https';
 import { getFirestore, FieldValue, Timestamp } from 'firebase-admin/firestore';
+import { roomBonusMultiplier } from './guildRooms';
 
 // Guild Expeditions (spec Part 8, simplified — see gameData/expeditions.ts's
 // module comment for the party-composition scope decision: self + the
@@ -175,6 +176,10 @@ export const claimExpedition = onCall(async (request) => {
       throw new HttpsError('failed-precondition', 'This expedition has not finished yet.');
     }
 
+    const guildRef = db.collection('guilds').doc(exp.guildId);
+    const guildSnap = await tx.get(guildRef);
+    const guildData = guildSnap.data();
+
     const tier = exp.tier as ExpeditionTier;
     const success = deterministicFraction(`${expeditionId}:outcome`) < exp.successChance;
 
@@ -189,14 +194,18 @@ export const claimExpedition = onCall(async (request) => {
       }
     }
 
-    const guildRef = db.collection('guilds').doc(exp.guildId);
-    const seals = success ? SEALS_REWARD[tier] : 0;
+    // War Room scales Seals/XP payout; Library scales the guild XP award
+    // specifically (both bonuses can apply to the same award).
+    const seals = success ? Math.round(SEALS_REWARD[tier] * roomBonusMultiplier(guildData?.rooms, 'warroom')) : 0;
+    const xp = success
+      ? Math.round(XP_REWARD[tier] * roomBonusMultiplier(guildData?.rooms, 'warroom') * roomBonusMultiplier(guildData?.rooms, 'library'))
+      : 0;
 
     tx.update(expeditionRef, { resolved: true, success, claimed: true, lootItemId });
     const charUpdate: Record<string, unknown> = { activeExpeditionId: FieldValue.delete() };
     if (success) {
       charUpdate.expeditionSeals = FieldValue.increment(seals);
-      tx.update(guildRef, { xp: FieldValue.increment(XP_REWARD[tier]) });
+      tx.update(guildRef, { xp: FieldValue.increment(xp) });
     }
     tx.update(charRef, charUpdate);
     if (lootItemId) {
@@ -205,7 +214,7 @@ export const claimExpedition = onCall(async (request) => {
       });
     }
 
-    return { success, seals, xp: success ? XP_REWARD[tier] : 0, lootItemId };
+    return { success, seals, xp, lootItemId };
   });
 
   return result;

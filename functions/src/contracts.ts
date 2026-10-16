@@ -1,6 +1,7 @@
 import { onCall, HttpsError, type CallableRequest } from 'firebase-functions/v2/https';
 import { getFirestore, FieldValue, Timestamp, type Transaction } from 'firebase-admin/firestore';
 import { isoWeekId } from './weekId';
+import { roomBonusMultiplier } from './guildRooms';
 
 // Weekly Guild Contracts (spec Part 5/6). Kept deliberately simple for this
 // first pass, per Part 14's "validate each phase before moving to the
@@ -77,11 +78,20 @@ function freshContracts(): ContractRow[] {
   }));
 }
 
-async function requireMembership(tx: Transaction, guildId: string, uid: string): Promise<void> {
+// Returns the guild's own data (not just a pass/fail) so callers can also
+// read its room levels — e.g. the Library bonus to guild XP gain — without
+// a second read of a document already fetched in this same transaction.
+async function requireMembership(tx: Transaction, guildId: string, uid: string): Promise<FirebaseFirestore.DocumentData> {
   const guildSnap = await tx.get(db.collection('guilds').doc(guildId));
   if (!guildSnap.exists) throw new HttpsError('not-found', 'Guild not found.');
-  const memberIds: string[] = guildSnap.data()?.memberIds || [];
+  const guildData = guildSnap.data()!;
+  const memberIds: string[] = guildData.memberIds || [];
   if (!memberIds.includes(uid)) throw new HttpsError('permission-denied', 'Not a member of this guild.');
+  return guildData;
+}
+
+function libraryXpBonus(guildData: FirebaseFirestore.DocumentData, baseXp: number): number {
+  return Math.round(baseXp * roomBonusMultiplier(guildData.rooms, 'library'));
 }
 
 // Idempotent get-or-create for "this week's" contracts. The FIRST call from
@@ -152,7 +162,7 @@ export const contributeMaterial = onCall(async (request) => {
   const guildRef = db.collection('guilds').doc(guildId);
 
   await db.runTransaction(async (tx) => {
-    await requireMembership(tx, guildId, uid);
+    const guildData = await requireMembership(tx, guildId, uid);
     const weekSnap = await tx.get(weekRef);
     if (!weekSnap.exists) throw new HttpsError('not-found', 'That contract week does not exist.');
     const week = weekSnap.data() as GuildWeekDoc;
@@ -192,7 +202,7 @@ export const contributeMaterial = onCall(async (request) => {
       // this lives. Timestamp.now() is the Cloud Function's own clock,
       // which is fine here since this code only ever runs server-side.
       updatedContract.completedAt = Timestamp.now();
-      tx.update(guildRef, { xp: FieldValue.increment(CONTRACT_XP_REWARD) });
+      tx.update(guildRef, { xp: FieldValue.increment(libraryXpBonus(guildData, CONTRACT_XP_REWARD)) });
     }
     contracts[contractIndex] = updatedContract;
     tx.update(weekRef, { contracts });
@@ -221,7 +231,7 @@ export const reportHuntingKills = onCall(async (request) => {
   const guildRef = db.collection('guilds').doc(guildId);
 
   await db.runTransaction(async (tx) => {
-    await requireMembership(tx, guildId, uid);
+    const guildData = await requireMembership(tx, guildId, uid);
     const weekSnap = await tx.get(weekRef);
     if (!weekSnap.exists) throw new HttpsError('not-found', 'That contract week does not exist.');
     const week = weekSnap.data() as GuildWeekDoc;
@@ -242,7 +252,7 @@ export const reportHuntingKills = onCall(async (request) => {
     };
     if (updatedContract.progress >= updatedContract.requirement) {
       updatedContract.completedAt = Timestamp.now();
-      tx.update(guildRef, { xp: FieldValue.increment(CONTRACT_XP_REWARD) });
+      tx.update(guildRef, { xp: FieldValue.increment(libraryXpBonus(guildData, CONTRACT_XP_REWARD)) });
     }
     contracts[contractIndex] = updatedContract;
     tx.update(weekRef, { contracts });
@@ -321,7 +331,7 @@ export const claimCompanionContributions = onCall(async (request) => {
   const guildRef = db.collection('guilds').doc(guildId);
 
   const applied = await db.runTransaction(async (tx) => {
-    await requireMembership(tx, guildId, uid);
+    const guildData = await requireMembership(tx, guildId, uid);
     const [weekSnap, charSnap] = await Promise.all([tx.get(weekRef), tx.get(charRef)]);
     if (!weekSnap.exists) throw new HttpsError('not-found', 'That contract week does not exist.');
     const week = weekSnap.data() as GuildWeekDoc;
@@ -332,6 +342,10 @@ export const claimCompanionContributions = onCall(async (request) => {
     const claimedCompanionIds: string[] = week.companionClaims?.[uid] ?? [];
     const unclaimed = companionIds.filter((id) => !claimedCompanionIds.includes(id));
     if (unclaimed.length === 0) return [];
+
+    // Barracks room bonus scales each companion's contribution amount —
+    // read once per call, not per companion.
+    const barracksMultiplier = roomBonusMultiplier(guildData.rooms, 'barracks');
 
     const contracts = week.contracts.map((c) => ({ ...c, companionContributions: { ...c.companionContributions } }));
     const results: { contractIndex: number; amount: number }[] = [];
@@ -355,7 +369,9 @@ export const claimCompanionContributions = onCall(async (request) => {
 
       const seed = `${guildId}:${weekId}:${companionId}`;
       const requirement = contracts[bestIndex].requirement;
-      const wanted = deterministicAmount(seed, Math.ceil(requirement * 0.02), Math.ceil(requirement * 0.06));
+      const wanted = Math.round(
+        deterministicAmount(seed, Math.ceil(requirement * 0.02), Math.ceil(requirement * 0.06)) * barracksMultiplier,
+      );
       const amount = Math.min(wanted, bestRemaining);
       if (amount <= 0) continue;
 
@@ -371,7 +387,7 @@ export const claimCompanionContributions = onCall(async (request) => {
       const c = contracts[contractIndex];
       if (c.progress >= c.requirement && !c.completedAt) {
         c.completedAt = Timestamp.now();
-        xpToAward += CONTRACT_XP_REWARD;
+        xpToAward += libraryXpBonus(guildData, CONTRACT_XP_REWARD);
       }
     }
     // Same array-write rule as contributeMaterial/reportHuntingKills above —

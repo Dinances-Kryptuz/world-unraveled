@@ -94,6 +94,9 @@ export async function getGuild(guildId: string): Promise<GuildDetails | null> {
     xp: data.xp ?? 0,
     headquartersTier: data.headquartersTier ?? 1,
     momentum: data.momentum ?? 0,
+    gold: data.gold ?? 0,
+    rooms: data.rooms ?? {},
+    restorationIds: data.restorationIds ?? [],
   };
 }
 

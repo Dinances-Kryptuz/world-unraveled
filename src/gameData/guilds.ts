@@ -26,6 +26,12 @@ export interface GuildDetails {
   level: number;
   xp: number;
   headquartersTier: number;
+  // Shared guild treasury (Phase 5) — donated by members, spent by the
+  // Guild Master/Officers on room upgrades and restoration projects. A
+  // separate pool from any individual member's own gold.
+  gold: number;
+  rooms: Record<string, number>;
+  restorationIds: string[];
   // Weekly Guild Contracts' 5-stage track (0-5) — advances by 1 whenever at
   // least one contract was completed the prior ISO week, and otherwise is
   // left exactly as-is (paused, never reset) on a missed week. See

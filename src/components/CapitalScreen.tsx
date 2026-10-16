@@ -5,6 +5,7 @@ import { ProfessionsTrainerScreen } from './ProfessionsTrainerScreen';
 import { VendorScreen } from './VendorScreen';
 import { GuildScreen } from './GuildScreen';
 import { ExpeditionScreen } from './ExpeditionScreen';
+import { RestorationScreen } from './RestorationScreen';
 
 type DistrictId = 'guildHall' | 'tavern' | 'artisan' | 'market' | 'expedition' | 'restoration';
 
@@ -23,16 +24,6 @@ const DISTRICTS: District[] = [
   { id: 'restoration', name: 'Restoration Grounds', description: "Help rebuild Ashenfall and restore the capital's former glory." },
 ];
 
-function ComingSoonPanel({ title, description }: { title: string; description: string }) {
-  return (
-    <div className="capital-placeholder">
-      <h3>{title}</h3>
-      <p>{description}</p>
-      <p className="capital-placeholder-note">Coming soon.</p>
-    </div>
-  );
-}
-
 function DistrictContent({ districtId, zoneId }: { districtId: DistrictId; zoneId: string }) {
   switch (districtId) {
     case 'tavern':
@@ -46,12 +37,7 @@ function DistrictContent({ districtId, zoneId }: { districtId: DistrictId; zoneI
     case 'expedition':
       return <ExpeditionScreen />;
     case 'restoration':
-      return (
-        <ComingSoonPanel
-          title="Restoration Grounds"
-          description="Contribute materials to rebuild and restore the capital's districts."
-        />
-      );
+      return <RestorationScreen />;
   }
 }
 

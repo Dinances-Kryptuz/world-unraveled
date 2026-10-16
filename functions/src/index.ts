@@ -20,3 +20,5 @@ export {
 } from './contracts';
 
 export { startExpedition, claimExpedition } from './expeditions';
+
+export { donateGoldToGuild, upgradeGuildRoom, completeRestorationProject } from './guildHeadquarters';
