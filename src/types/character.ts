@@ -430,6 +430,16 @@ export interface Character {
   // Absent means not in a guild, same "absence is the zero state"
   // convention as every other optional field here.
   guildId?: string;
+  // Guild Expeditions (Phase 4) — one active expedition per character, same
+  // "absence is the zero state" convention as everywhere else. Set/cleared
+  // ONLY by functions/src/expeditions.ts (Admin SDK), never written
+  // directly by the client — see firestore.rules' isValidCharacterUpdate.
+  activeExpeditionId?: string;
+  // Expedition Seals — a new currency earned only from completed Guild
+  // Expeditions, spent on guaranteed exclusive-gear purchases (a later
+  // phase). Absence means 0, same convention as gold/voidShards before
+  // they were guaranteed-present fields.
+  expeditionSeals?: number;
 }
 
 export interface Inventory {

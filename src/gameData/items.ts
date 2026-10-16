@@ -4834,6 +4834,93 @@ const STATIC_ITEMS: Record<string, ItemDef> = {
     stackable: true, teachesRecipeId: 'platinum_necklace', sellValue: 0,
   },
 
+  // ── Guild Expedition equipment (Phase 4) — fixed, non-randomized stats
+  // (unlike every rolled equipmentInstances item elsewhere in this file),
+  // one necklace/ring/cape/tabard per tier, obtainable ONLY from a Guild
+  // Expedition's personal loot roll (functions/src/expeditions.ts) — no
+  // vendor, no recipe, no monster drop. Universal (any class may equip),
+  // same posture as this game's other jewelry/capes.
+  expedition_necklace_common: {
+    id: 'expedition_necklace_common', name: 'Necklace of the Novice Expedition', type: 'equipment',
+    description: 'A plain pendant given to those who first braved a guild expedition.',
+    stackable: true, equipSlot: 'necklace', statBonuses: { STR: 4, STA: 6 }, rarity: 'green', sellValue: 20,
+  },
+  expedition_necklace_uncommon: {
+    id: 'expedition_necklace_uncommon', name: 'Necklace of the Seasoned Expedition', type: 'equipment',
+    description: 'Worn by those who have weathered more than a few expeditions.',
+    stackable: true, equipSlot: 'necklace', statBonuses: { STR: 7, STA: 10 }, rarity: 'blue', sellValue: 45,
+  },
+  expedition_necklace_rare: {
+    id: 'expedition_necklace_rare', name: 'Necklace of the Veteran Expedition', type: 'equipment',
+    description: 'A battle-worn pendant marking a true expedition veteran.',
+    stackable: true, equipSlot: 'necklace', statBonuses: { STR: 10, STA: 15 }, rarity: 'purple', sellValue: 90,
+  },
+  expedition_necklace_epic: {
+    id: 'expedition_necklace_epic', name: 'Necklace of the Legendary Expedition', type: 'equipment',
+    description: 'Forged from the spoils of the deadliest guild expeditions.',
+    stackable: true, equipSlot: 'necklace', statBonuses: { STR: 15, STA: 22 }, rarity: 'orange', sellValue: 160,
+  },
+  expedition_ring_common: {
+    id: 'expedition_ring_common', name: 'Ring of the Novice Expedition', type: 'equipment',
+    description: 'A plain band given to those who first braved a guild expedition.',
+    stackable: true, equipSlot: 'ring', statBonuses: { AGI: 4, STA: 6 }, rarity: 'green', sellValue: 20,
+  },
+  expedition_ring_uncommon: {
+    id: 'expedition_ring_uncommon', name: 'Ring of the Seasoned Expedition', type: 'equipment',
+    description: 'Worn by those who have weathered more than a few expeditions.',
+    stackable: true, equipSlot: 'ring', statBonuses: { AGI: 7, STA: 10 }, rarity: 'blue', sellValue: 45,
+  },
+  expedition_ring_rare: {
+    id: 'expedition_ring_rare', name: 'Ring of the Veteran Expedition', type: 'equipment',
+    description: 'A battle-worn band marking a true expedition veteran.',
+    stackable: true, equipSlot: 'ring', statBonuses: { AGI: 10, STA: 15 }, rarity: 'purple', sellValue: 90,
+  },
+  expedition_ring_epic: {
+    id: 'expedition_ring_epic', name: 'Ring of the Legendary Expedition', type: 'equipment',
+    description: 'Forged from the spoils of the deadliest guild expeditions.',
+    stackable: true, equipSlot: 'ring', statBonuses: { AGI: 15, STA: 22 }, rarity: 'orange', sellValue: 160,
+  },
+  expedition_cape_common: {
+    id: 'expedition_cape_common', name: 'Cape of the Novice Expedition', type: 'equipment',
+    description: 'A plain cloak given to those who first braved a guild expedition.',
+    stackable: true, equipSlot: 'cape', statBonuses: { INT: 4, STA: 6 }, rarity: 'green', sellValue: 20,
+  },
+  expedition_cape_uncommon: {
+    id: 'expedition_cape_uncommon', name: 'Cape of the Seasoned Expedition', type: 'equipment',
+    description: 'Worn by those who have weathered more than a few expeditions.',
+    stackable: true, equipSlot: 'cape', statBonuses: { INT: 7, STA: 10 }, rarity: 'blue', sellValue: 45,
+  },
+  expedition_cape_rare: {
+    id: 'expedition_cape_rare', name: 'Cape of the Veteran Expedition', type: 'equipment',
+    description: 'A battle-worn cloak marking a true expedition veteran.',
+    stackable: true, equipSlot: 'cape', statBonuses: { INT: 10, STA: 15 }, rarity: 'purple', sellValue: 90,
+  },
+  expedition_cape_epic: {
+    id: 'expedition_cape_epic', name: 'Cape of the Legendary Expedition', type: 'equipment',
+    description: 'Forged from the spoils of the deadliest guild expeditions.',
+    stackable: true, equipSlot: 'cape', statBonuses: { INT: 15, STA: 22 }, rarity: 'orange', sellValue: 160,
+  },
+  expedition_tabard_common: {
+    id: 'expedition_tabard_common', name: 'Tabard of the Novice Expedition', type: 'equipment',
+    description: 'A plain tabard given to those who first braved a guild expedition.',
+    stackable: true, equipSlot: 'tabard', statBonuses: { SPI: 4, STA: 6 }, rarity: 'green', sellValue: 20,
+  },
+  expedition_tabard_uncommon: {
+    id: 'expedition_tabard_uncommon', name: 'Tabard of the Seasoned Expedition', type: 'equipment',
+    description: 'Worn by those who have weathered more than a few expeditions.',
+    stackable: true, equipSlot: 'tabard', statBonuses: { SPI: 7, STA: 10 }, rarity: 'blue', sellValue: 45,
+  },
+  expedition_tabard_rare: {
+    id: 'expedition_tabard_rare', name: 'Tabard of the Veteran Expedition', type: 'equipment',
+    description: 'A battle-worn tabard marking a true expedition veteran.',
+    stackable: true, equipSlot: 'tabard', statBonuses: { SPI: 10, STA: 15 }, rarity: 'purple', sellValue: 90,
+  },
+  expedition_tabard_epic: {
+    id: 'expedition_tabard_epic', name: 'Tabard of the Legendary Expedition', type: 'equipment',
+    description: 'Forged from the spoils of the deadliest guild expeditions.',
+    stackable: true, equipSlot: 'tabard', statBonuses: { SPI: 15, STA: 22 }, rarity: 'orange', sellValue: 160,
+  },
+
 };
 
 // Combat/Rarity overhaul — dungeon blue/purple fixed-stat equipment is

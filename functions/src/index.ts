@@ -18,3 +18,5 @@ export {
   claimContractReward,
   claimCompanionContributions,
 } from './contracts';
+
+export { startExpedition, claimExpedition } from './expeditions';

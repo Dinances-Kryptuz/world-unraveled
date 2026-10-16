@@ -4,6 +4,7 @@ import { CompanionScreen } from './CompanionScreen';
 import { ProfessionsTrainerScreen } from './ProfessionsTrainerScreen';
 import { VendorScreen } from './VendorScreen';
 import { GuildScreen } from './GuildScreen';
+import { ExpeditionScreen } from './ExpeditionScreen';
 
 type DistrictId = 'guildHall' | 'tavern' | 'artisan' | 'market' | 'expedition' | 'restoration';
 
@@ -43,12 +44,7 @@ function DistrictContent({ districtId, zoneId }: { districtId: DistrictId; zoneI
     case 'guildHall':
       return <GuildScreen />;
     case 'expedition':
-      return (
-        <ComingSoonPanel
-          title="Expedition Command"
-          description="Assemble a party and launch asynchronous guild expeditions for exclusive rewards."
-        />
-      );
+      return <ExpeditionScreen />;
     case 'restoration':
       return (
         <ComingSoonPanel

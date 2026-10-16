@@ -1839,6 +1839,62 @@ button.storybook-spec-button:hover:not(:disabled) {
   font-style: italic;
 }
 
+/* ── Guild Expeditions — tier picker + active-expedition panel (see
+   ExpeditionScreen.tsx) ── */
+
+.expedition-tier-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.expedition-tier-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  background: #f4efe4;
+  border: 1px solid #d8ccb4;
+  border-top: 3px solid var(--zone-primary, #8a6d3b);
+  border-radius: 6px;
+}
+
+.expedition-tier-name {
+  font-weight: 700;
+}
+
+.expedition-tier-meta {
+  color: #6b6156;
+  font-size: 0.85rem;
+}
+
+.expedition-tier-card button {
+  margin-top: 6px;
+}
+
+.expedition-tier-common {
+  border-top-color: #6b8e4e;
+}
+.expedition-tier-uncommon {
+  border-top-color: #3b6fd1;
+}
+.expedition-tier-rare {
+  border-top-color: #8445c9;
+}
+.expedition-tier-epic {
+  border-top-color: #d1792e;
+}
+
+.expedition-party-list {
+  list-style: none;
+  margin: 8px 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 /* ── Journal — one collapsible entry per zone (see JournalScreen.tsx) ── */
 
 .journal-zone-entry {

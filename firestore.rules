@@ -147,6 +147,15 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Guild Expeditions (functions/src/expeditions.ts) — personal, not
+    // guild-wide, so reads are scoped to the owner only (unlike the three
+    // collections above, which every guild member may read). Every write
+    // still goes through a Cloud Function.
+    match /expeditions/{expeditionId} {
+      allow read: if request.auth != null && request.auth.uid == resource.data.ownerUid;
+      allow write: if false;
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }
