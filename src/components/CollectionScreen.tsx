@@ -10,15 +10,13 @@ import { RECIPES } from '../gameData/recipes';
 import { ItemSlot } from './ItemSlot';
 import type { EquipmentSlot } from '../gameData/types';
 
-// The 48 retired "sacred_*" items (see items.ts's module comment on the
-// material-Mastery overhaul) are kept as frozen legacy ItemDefs forever so a
-// pre-existing stack/equip never breaks, but they can no longer be crafted
-// or otherwise obtained — a character who already found one keeps it in
-// their log permanently (collectedItemIds is monotonic), but one who never
-// did shouldn't see a permanently-impossible entry. Identified generically
-// (not a hand-typed id list): a "sacred_X" item whose de-prefixed id X is
-// itself a still-craftable consolidated base item is exactly the retired
-// set this overhaul produced.
+// The 48 retired "sacred_*" armor/jewelry items this overhaul produced were
+// deleted outright from items.ts (see its module comment) rather than kept
+// as frozen legacy ItemDefs, since a full account reset meant no character
+// could be holding one. isRetiredLegacyItem below is still useful for any
+// FUTURE item retired the same way: a "sacred_X" item whose de-prefixed id
+// X is itself a still-craftable consolidated base item is exactly that
+// pattern, identified generically rather than by a hand-typed id list.
 const CONSOLIDATED_BASE_ITEM_IDS = new Set(Object.values(RECIPES).filter((r) => r.materialId).map((r) => r.resultItemId));
 function isRetiredLegacyItem(itemId: string): boolean {
   return itemId.startsWith('sacred_') && CONSOLIDATED_BASE_ITEM_IDS.has(itemId.slice('sacred_'.length));
