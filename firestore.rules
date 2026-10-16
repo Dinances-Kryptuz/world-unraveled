@@ -114,6 +114,48 @@ service cloud.firestore {
           || (request.auth != null && request.resource.data.uid == request.auth.uid));
     }
 
+    // Guild System (Capital City Phase 2+) — every write to these three
+    // collections goes through a Cloud Function (functions/src/guilds.ts)
+    // using the Admin SDK, which bypasses these rules entirely. Clients
+    // only ever READ them directly: the full guild doc (membership/roles,
+    // needed to render Guild Hall), the lightweight per-member roster rows
+    // (so the member list never has to read every member's own full
+    // character document), and the public discovery summaries (guild
+    // browsing). None of these three is ever written client-side —
+    // `allow write: if false` is permanent, not a placeholder.
+    match /guilds/{guildId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    match /guildMembers/{memberDocId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    match /guildPublicSummaries/{guildId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    // Weekly Guild Contracts (functions/src/contracts.ts) — same posture as
+    // the three collections above: every write (turn-ins, kill reports,
+    // reward claims, companion contributions, week rollover) goes through
+    // a Cloud Function; clients only ever read.
+    match /guildWeeks/{weekDocId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    // Guild Expeditions (functions/src/expeditions.ts) — personal, not
+    // guild-wide, so reads are scoped to the owner only (unlike the three
+    // collections above, which every guild member may read). Every write
+    // still goes through a Cloud Function.
+    match /expeditions/{expeditionId} {
+      allow read: if request.auth != null && request.auth.uid == resource.data.ownerUid;
+      allow write: if false;
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }
@@ -179,6 +221,17 @@ service cloud.firestore {
       && after.createdAt == before.createdAt
       && after.level is number && after.level >= before.level
       && after.xp is number && after.xp >= before.xp
+      // Guild membership is only ever granted/revoked by a Cloud Function
+      // (functions/src/guilds.ts), which writes via the Admin SDK and so
+      // bypasses these rules entirely — an ordinary client autosave may
+      // only ever carry this field through UNCHANGED, never introduce or
+      // clear it itself. (guildId is still just a convenience pointer for
+      // the client's own UI — every guild mutation re-derives the caller's
+      // real membership/role from the guilds/guildMembers documents
+      // server-side, never from this field, so even a forged value here
+      // can't grant any actual guild permission.)
+      && (('guildId' in before) == ('guildId' in after))
+      && (!('guildId' in before) || before.guildId == after.guildId)
       && isValidCharacterShape(after);
   }
 

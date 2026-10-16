@@ -215,6 +215,7 @@ input[type="number"] {
 .spell-trainer-screen,
 .mount-trainer-screen,
 .professions-trainer-screen,
+.capital-screen,
 .spec-selection {
   background: linear-gradient(180deg, rgba(255, 253, 249, 0.88), rgba(249, 244, 233, 0.88));
   backdrop-filter: blur(10px);
@@ -1610,6 +1611,288 @@ button.storybook-spec-button:hover:not(:disabled) {
   color: #6b6156;
   font-weight: 400;
   margin-top: 2px;
+}
+
+/* ── Guild Hall — guild creation/browse/overview (see GuildScreen.tsx) ── */
+
+.guild-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.guild-panel {
+  background: linear-gradient(180deg, #fffdf9, #f8f3e8);
+  border: 1px solid #e2d9c8;
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+
+.guild-panel h3 {
+  margin-top: 0;
+}
+
+.guild-tag {
+  color: #8a7f6f;
+  font-weight: 400;
+}
+
+.guild-meta-line {
+  color: #6b6156;
+}
+
+.guild-placeholder-note {
+  color: #8a7f6f;
+  font-style: italic;
+  margin-bottom: 0;
+}
+
+.guild-create-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.guild-create-form input {
+  padding: 6px 10px;
+  border: 1px solid #d8ccb4;
+  border-radius: 4px;
+}
+
+.guild-empty {
+  color: #8a7f6f;
+}
+
+.guild-browse-list,
+.guild-roster-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.guild-browse-row,
+.guild-roster-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 8px 10px;
+  background: #f4efe4;
+  border: 1px solid #d8ccb4;
+  border-radius: 6px;
+}
+
+.guild-browse-name {
+  font-weight: 600;
+  flex: 1 1 auto;
+}
+
+.guild-browse-meta,
+.guild-roster-meta {
+  color: #6b6156;
+  font-size: 0.9rem;
+}
+
+.guild-roster-name {
+  font-weight: 600;
+}
+
+.guild-roster-role {
+  margin-left: auto;
+  font-weight: 600;
+  color: var(--zone-primary, #8a6d3b);
+}
+
+.guild-roster-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.guild-contract-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.guild-contract-row {
+  padding: 10px 12px;
+  background: #f4efe4;
+  border: 1px solid #d8ccb4;
+  border-radius: 6px;
+}
+
+.guild-contract-header {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  margin-bottom: 4px;
+}
+
+.guild-contract-category {
+  font-weight: 700;
+  color: var(--zone-primary, #8a6d3b);
+}
+
+.guild-contract-label {
+  font-weight: 600;
+}
+
+.guild-contract-bar-track {
+  background: #e2d9c8;
+  border-radius: 4px;
+  height: 10px;
+  overflow: hidden;
+  margin: 4px 0;
+}
+
+.guild-contract-bar-fill {
+  background: var(--zone-primary, #8a6d3b);
+  height: 100%;
+}
+
+.guild-contract-meta {
+  color: #6b6156;
+  font-size: 0.9rem;
+}
+
+.guild-contract-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.guild-contract-actions input {
+  padding: 6px 10px;
+  border: 1px solid #d8ccb4;
+  border-radius: 4px;
+  width: 140px;
+}
+
+/* ── Capital City hub — district tiles (see CapitalScreen.tsx) ── */
+
+.capital-district-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.capital-district-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  text-align: left;
+  background: linear-gradient(180deg, #fffdf9, #f8f3e8);
+  border: 1px solid #e2d9c8;
+  border-top: 3px solid var(--zone-primary, #8a6d3b);
+  border-radius: 8px;
+  padding: 14px 16px;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(60, 45, 20, 0.05);
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.capital-district-tile:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(60, 45, 20, 0.15);
+}
+
+.capital-district-name {
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: #3c2d14;
+}
+
+.capital-district-description {
+  color: #6b6156;
+  font-size: 0.9rem;
+}
+
+.capital-back-button {
+  background: none;
+  border: none;
+  color: var(--zone-primary, #8a6d3b);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 10px;
+}
+
+.capital-back-button:hover {
+  text-decoration: underline;
+}
+
+.capital-placeholder {
+  padding: 10px 2px;
+}
+
+.capital-placeholder-note {
+  color: #8a7f6f;
+  font-style: italic;
+}
+
+/* ── Guild Expeditions — tier picker + active-expedition panel (see
+   ExpeditionScreen.tsx) ── */
+
+.expedition-tier-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.expedition-tier-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  background: #f4efe4;
+  border: 1px solid #d8ccb4;
+  border-top: 3px solid var(--zone-primary, #8a6d3b);
+  border-radius: 6px;
+}
+
+.expedition-tier-name {
+  font-weight: 700;
+}
+
+.expedition-tier-meta {
+  color: #6b6156;
+  font-size: 0.85rem;
+}
+
+.expedition-tier-card button {
+  margin-top: 6px;
+}
+
+.expedition-tier-common {
+  border-top-color: #6b8e4e;
+}
+.expedition-tier-uncommon {
+  border-top-color: #3b6fd1;
+}
+.expedition-tier-rare {
+  border-top-color: #8445c9;
+}
+.expedition-tier-epic {
+  border-top-color: #d1792e;
+}
+
+.expedition-party-list {
+  list-style: none;
+  margin: 8px 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 /* ── Journal — one collapsible entry per zone (see JournalScreen.tsx) ── */

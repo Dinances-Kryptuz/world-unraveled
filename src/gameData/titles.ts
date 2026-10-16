@@ -111,6 +111,15 @@ export const TITLES: TitleDef[] = [
   { id: 'citadel_level_2_cleared', name: 'Cultist Hunter' },
   { id: 'citadel_level_3_cleared', name: 'Firelord\'s Bane' },
   { id: 'citadel_full_cleared', name: 'Unbroken' },
+  // Guild Restoration projects (Capital City Phase 5) — awarded to every
+  // CURRENT guild member the moment their guild completes the matching
+  // project (functions/src/guildHeadquarters.ts), via the exact same
+  // unlockedTitleIds mechanism as every other title above. Cosmetic only.
+  { id: 'patron_of_ashenfall', name: 'Patron of Ashenfall' },
+  { id: 'banner_bearer', name: 'Banner Bearer' },
+  { id: 'keeper_of_lore', name: 'Keeper of Lore' },
+  { id: 'vanguard_of_ashenfall', name: 'Vanguard of Ashenfall' },
+  { id: 'beacon_of_the_guild', name: 'Beacon of the Guild' },
 ];
 
 const TITLES_BY_ID: Record<string, TitleDef> = Object.fromEntries(TITLES.map((t) => [t.id, t]));

@@ -420,6 +420,26 @@ export interface Character {
   // losing its whole kit; every character created after is empty until its
   // first trainAbility() call.
   trainedAbilityIds: string[];
+  // Guild System — set/cleared ONLY by a Cloud Function (functions/src/
+  // guilds.ts), never written directly by the client (see firestore.rules'
+  // isValidCharacterUpdate, which requires this field to pass through any
+  // ordinary client write completely unchanged). Purely a convenience
+  // pointer for this client's own UI ("which guild am I in"); every guild
+  // mutation re-derives the caller's real membership/role from the
+  // guilds/guildMembers documents server-side, never from this field.
+  // Absent means not in a guild, same "absence is the zero state"
+  // convention as every other optional field here.
+  guildId?: string;
+  // Guild Expeditions (Phase 4) — one active expedition per character, same
+  // "absence is the zero state" convention as everywhere else. Set/cleared
+  // ONLY by functions/src/expeditions.ts (Admin SDK), never written
+  // directly by the client — see firestore.rules' isValidCharacterUpdate.
+  activeExpeditionId?: string;
+  // Expedition Seals — a new currency earned only from completed Guild
+  // Expeditions, spent on guaranteed exclusive-gear purchases (a later
+  // phase). Absence means 0, same convention as gold/voidShards before
+  // they were guaranteed-present fields.
+  expeditionSeals?: number;
 }
 
 export interface Inventory {
