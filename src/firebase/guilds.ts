@@ -3,6 +3,16 @@ import { collection, doc, getDoc, getDocs, query, where, orderBy, limit } from '
 import { db, functions } from './config';
 import type { GuildDetails, GuildMemberRow, GuildPublicSummary, GuildRole } from '../gameData/guilds';
 
+interface RawRosterEntry {
+  uid: string;
+  name: string;
+  class: string;
+  spec: string | null;
+  level: number;
+  role: GuildRole;
+  joinedAt?: { toDate?: () => Date } | null;
+}
+
 // Every MUTATION here is a thin wrapper over a Cloud Function
 // (functions/src/guilds.ts) — this file never writes to guilds/
 // guildMembers/guildPublicSummaries directly (firestore.rules forbids it
@@ -79,10 +89,24 @@ export async function refreshGuildMemberProfile(): Promise<void> {
   }
 }
 
+// One-time self-heal for a guild whose `guilds` doc predates the roster
+// trigger (functions/src/guildRoster.ts) and has no `roster` field yet.
+// Fire-and-forget — the caller already has a working fallback
+// (listGuildMembers) for this visit; this just makes the NEXT visit cheap.
+export async function backfillGuildRoster(guildId: string): Promise<void> {
+  try {
+    const call = httpsCallable(functions, 'backfillGuildRoster');
+    await call({ guildId });
+  } catch {
+    // Best-effort — worst case, the next Guild Hall open falls back again.
+  }
+}
+
 export async function getGuild(guildId: string): Promise<GuildDetails | null> {
   const snap = await getDoc(doc(db, 'guilds', guildId));
   if (!snap.exists()) return null;
   const data = snap.data();
+  const rawRoster = data.roster as RawRosterEntry[] | undefined;
   return {
     id: snap.id,
     name: data.name,
@@ -97,6 +121,17 @@ export async function getGuild(guildId: string): Promise<GuildDetails | null> {
     gold: data.gold ?? 0,
     rooms: data.rooms ?? {},
     restorationIds: data.restorationIds ?? [],
+    roster: Array.isArray(rawRoster)
+      ? rawRoster.map((m) => ({
+          uid: m.uid,
+          name: m.name,
+          class: m.class,
+          spec: m.spec ?? null,
+          level: m.level,
+          role: m.role,
+          joinedAt: m.joinedAt?.toDate?.() ?? null,
+        }))
+      : undefined,
   };
 }
 
@@ -119,7 +154,18 @@ export async function listGuildMembers(guildId: string): Promise<GuildMemberRow[
 
 const DISCOVERY_PAGE_SIZE = 20;
 
+// Reads the single cached doc a scheduled Cloud Function
+// (functions/src/guildDiscoveryCache.ts) rebuilds every 10 minutes — 1
+// read instead of the up-to-20-doc collection query below, which only
+// runs as a fallback (the cache doc doesn't exist yet, e.g. before that
+// schedule's first run, or Cloud Scheduler isn't deployed in this project).
 export async function browseGuilds(): Promise<GuildPublicSummary[]> {
+  const cacheSnap = await getDoc(doc(db, 'guildDiscoveryCache', 'top'));
+  if (cacheSnap.exists()) {
+    const guilds = cacheSnap.data().guilds as GuildPublicSummary[] | undefined;
+    if (Array.isArray(guilds)) return guilds;
+  }
+
   const q = query(collection(db, 'guildPublicSummaries'), orderBy('memberCount', 'desc'), limit(DISCOVERY_PAGE_SIZE));
   const snap = await getDocs(q);
   return snap.docs.map((d) => {

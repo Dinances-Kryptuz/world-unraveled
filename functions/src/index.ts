@@ -22,3 +22,7 @@ export {
 export { startExpedition, claimExpedition } from './expeditions';
 
 export { donateGoldToGuild, upgradeGuildRoom, completeRestorationProject } from './guildHeadquarters';
+
+export { onGuildMemberWritten, backfillGuildRoster } from './guildRoster';
+
+export { refreshGuildDiscoveryCache } from './guildDiscoveryCache';

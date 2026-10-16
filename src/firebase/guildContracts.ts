@@ -98,12 +98,22 @@ export async function claimContractReward(guildId: string, weekId: string, contr
   }
 }
 
-export async function claimCompanionContributions(guildId: string, weekId: string): Promise<void> {
+// Returns whether anything was actually applied, so callers can skip
+// re-fetching the week's contracts (getOrCreateGuildWeek) when nothing
+// changed — this runs on every Contracts tab open, so refetching
+// unconditionally meant a guaranteed second read on every visit even
+// though companion contributions only land once per companion per week.
+export async function claimCompanionContributions(guildId: string, weekId: string): Promise<boolean> {
   try {
-    const call = httpsCallable(functions, 'claimCompanionContributions');
-    await call({ guildId, weekId });
+    const call = httpsCallable<{ guildId: string; weekId: string }, { applied: unknown[] }>(
+      functions,
+      'claimCompanionContributions',
+    );
+    const result = await call({ guildId, weekId });
+    return (result.data.applied?.length ?? 0) > 0;
   } catch {
     // Best-effort, same posture as refreshGuildMemberProfile — never block
     // the Contracts tab on this.
+    return false;
   }
 }

@@ -32,6 +32,14 @@ export interface GuildDetails {
   gold: number;
   rooms: Record<string, number>;
   restorationIds: string[];
+  // Denormalized roster, maintained server-side by a Firestore trigger
+  // (functions/src/guildRoster.ts) on every guildMembers write — lets the
+  // Guild Hall render the member list from this ONE doc read instead of a
+  // separate up-to-MAX_GUILD_MEMBERS-reads collection query. Undefined for
+  // a guild that existed before that trigger shipped and hasn't had a
+  // membership write since; callers should fall back to listGuildMembers()
+  // (and trigger backfillGuildRoster()) in that case.
+  roster?: GuildMemberRow[];
   // Weekly Guild Contracts' 5-stage track (0-5) — advances by 1 whenever at
   // least one contract was completed the prior ISO week, and otherwise is
   // left exactly as-is (paused, never reset) on a missed week. See

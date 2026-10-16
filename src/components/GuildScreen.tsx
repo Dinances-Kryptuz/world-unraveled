@@ -11,6 +11,7 @@ import {
   getGuild,
   listGuildMembers,
   browseGuilds,
+  backfillGuildRoster,
 } from '../firebase/guilds';
 import { MAX_GUILD_MEMBERS, MAX_OFFICERS, roleLabel, type GuildDetails, type GuildMemberRow, type GuildPublicSummary } from '../gameData/guilds';
 import { CLASS_LABELS, SPEC_LABELS, type ClassId, type SpecId } from '../gameData/classStats';
@@ -264,9 +265,15 @@ function ContractsPanel({ guildId, myUid }: { guildId: string; myUid: string }) 
     try {
       const w = await getOrCreateGuildWeek(guildId);
       setWeek(w);
-      claimCompanionContributions(guildId, w.weekId).then(() => {
-        getOrCreateGuildWeek(guildId).then(setWeek);
-      });
+      // Only pay for a second read when claimCompanionContributions
+      // actually changed something (once per companion per week) — most
+      // visits land here with nothing to claim, and used to still cost a
+      // guaranteed redundant getOrCreateGuildWeek call every time.
+      const changed = await claimCompanionContributions(guildId, w.weekId);
+      if (changed) {
+        const w2 = await getOrCreateGuildWeek(guildId);
+        setWeek(w2);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load contracts.');
     }
@@ -381,6 +388,12 @@ function HeadquartersPanel({
   );
 }
 
+function sortRoster(members: GuildMemberRow[]): GuildMemberRow[] {
+  return members
+    .slice()
+    .sort((a, b) => (a.role === b.role ? b.level - a.level : a.role === 'master' ? -1 : b.role === 'master' ? 1 : a.role === 'officer' ? -1 : 1));
+}
+
 function GuildOverview({ guildId, myUid, onChanged }: { guildId: string; myUid: string; onChanged: () => void }) {
   const [guild, setGuild] = useState<GuildDetails | null>(null);
   const [members, setMembers] = useState<GuildMemberRow[] | null>(null);
@@ -388,10 +401,24 @@ function GuildOverview({ guildId, myUid, onChanged }: { guildId: string; myUid: 
   const [busyUid, setBusyUid] = useState<string | null>(null);
   const [leaving, setLeaving] = useState(false);
 
+  // getGuild() alone covers the roster, now that a Firestore trigger
+  // (functions/src/guildRoster.ts) keeps it denormalized on the guild doc
+  // — this is 1 read instead of 1 + up to MAX_GUILD_MEMBERS from a
+  // separate listGuildMembers() query, on every single Guild Hall open.
+  // The listGuildMembers() fallback only runs for a guild whose doc
+  // predates that trigger and has had no membership write since;
+  // backfillGuildRoster() makes every later visit to that guild cheap too.
   async function load() {
-    const [g, m] = await Promise.all([getGuild(guildId), listGuildMembers(guildId)]);
+    const g = await getGuild(guildId);
     setGuild(g);
-    setMembers(m.sort((a, b) => (a.role === b.role ? b.level - a.level : a.role === 'master' ? -1 : b.role === 'master' ? 1 : a.role === 'officer' ? -1 : 1)));
+    if (!g) return;
+    if (g.roster) {
+      setMembers(sortRoster(g.roster));
+    } else {
+      backfillGuildRoster(guildId);
+      const m = await listGuildMembers(guildId);
+      setMembers(sortRoster(m));
+    }
   }
 
   useEffect(() => {
