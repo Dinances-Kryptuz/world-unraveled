@@ -16,9 +16,9 @@ const ARMOR_STATS: BaseStat[] = ['STR', 'STA', 'INT', 'SPI', 'AGI'];
 // lands on the old static value (preserving pre-overhaul power level) while
 // adding real variance. See the Phase 0 balancing pass for how these were
 // computed; regenerate by re-running that script if an item's old values
-// ever change (they won't, post-consolidation, since the old pairs are
-// frozen legacy data — see items.ts's module comment on the 48 retired
-// "sacred_*" entries).
+// ever change (they won't, post-consolidation — the 48 old "sacred_*"
+// armor/jewelry pairs these ranges were derived from were deleted outright
+// after a full account reset; see items.ts's module comment).
 export const ARMOR_STAT_RANGES: Record<string, { min: number; max: number }> = {
   copper_helm: { min: 2, max: 4 },
   copper_chestplate: { min: 3, max: 5 },
