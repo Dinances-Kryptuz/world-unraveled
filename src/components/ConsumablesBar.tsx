@@ -6,7 +6,11 @@ import type { Character } from '../types/character';
 import type { ItemDef } from '../gameData/types';
 
 function isFoodItem(item: ItemDef): boolean {
-  return item.consumableEffect?.buff?.category === 'well_fed' || !!item.consumableEffect?.recoveryFood;
+  return (
+    item.consumableEffect?.buff?.category === 'well_fed' ||
+    !!item.consumableEffect?.recoveryFood ||
+    !!item.consumableEffect?.isFood
+  );
 }
 
 // The two pinned quick-use slots (Character.equippedConsumables) — pick one

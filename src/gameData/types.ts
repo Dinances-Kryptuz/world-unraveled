@@ -190,6 +190,13 @@ export interface ConsumableEffect {
   // (see ConsumablesBar's allowRecoveryFood prop and engine.ts's
   // ctx.nextMonster dungeon check).
   recoveryFood?: boolean;
+  // Pure UI classification: pins this item to the Food quick-use slot
+  // (ConsumablesBar's isFoodItem) rather than Potion, for a flat-heal/mana
+  // item that's thematically food but isn't a well_fed buff or Recovery
+  // Food — e.g. Bread. Doesn't affect any mechanic (heal amount, dungeon
+  // availability, Auto Eat eligibility); well_fed and recoveryFood items
+  // are already classified as food without needing this flag.
+  isFood?: boolean;
 }
 
 // Which classes can equip a given piece of armor — see classStats.ts's
