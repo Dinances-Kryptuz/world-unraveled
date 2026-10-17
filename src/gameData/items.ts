@@ -1622,7 +1622,11 @@ const STATIC_ITEMS: Record<string, ItemDef> = {
     id: 'bread', name: 'Bread', type: 'consumable',
     description: 'A dense travel loaf. Restores 40 health. Usable anywhere, once every 10 seconds.',
     stackable: true, sellValue: 1,
-    consumableEffect: { healAmount: 40, cooldownSeconds: 10 },
+    // isFood: thematically food (not a potion), but predates the Cooking
+    // overhaul's recoveryFood/well_fed categories, so it needs the generic
+    // UI-only flag (see types.ts's ConsumableEffect doc comment) to land in
+    // ConsumablesBar's Food slot instead of Potion.
+    consumableEffect: { healAmount: 40, cooldownSeconds: 10, isFood: true },
   },
   orange_juice: {
     id: 'orange_juice', name: 'Orange Juice', type: 'consumable',
@@ -3598,13 +3602,13 @@ const STATIC_ITEMS: Record<string, ItemDef> = {
     id: 'roasted_boar_meat', name: 'Roasted Boar Meat', type: 'consumable',
     description: 'Simple roasted meat. Restores 20 health. No frills, no buff — just food.',
     stackable: true, sellValue: 2,
-    consumableEffect: { healAmount: 20, cooldownSeconds: 30 },
+    consumableEffect: { healAmount: 20, cooldownSeconds: 30, isFood: true },
   },
   hunters_jerky: {
     id: 'hunters_jerky', name: 'Hunter’s Jerky', type: 'consumable',
     description: 'Dried trail rations. Restores 35 health. No frills, no buff — just food.',
     stackable: true, sellValue: 4,
-    consumableEffect: { healAmount: 35, cooldownSeconds: 30 },
+    consumableEffect: { healAmount: 35, cooldownSeconds: 30, isFood: true },
   },
   wolf_trout_stew: {
     id: 'wolf_trout_stew', name: 'Wolf & Trout Stew', type: 'consumable',
