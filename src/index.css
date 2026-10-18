@@ -831,6 +831,21 @@ button.item-slot:active:not(:disabled) {
   padding: 20px;
   box-shadow: 0 2px 0 rgba(255, 255, 255, 0.5) inset, 0 6px 16px rgba(20, 14, 8, 0.15);
   text-align: center;
+  overflow: hidden;
+}
+
+/* When real art is showing (not the emoji fallback), the art IS the card —
+   no padding/background around it, just the card's own border and rounded
+   corners (overflow:hidden above clips the image to match them). The
+   fallback-only text block below (emoji icon, class name, blurb, spec
+   buttons) still needs its own padding, which this removes from the card
+   itself, so storybook-art-wrap's margin is zeroed here too. */
+.storybook-card-flush {
+  padding: 0;
+}
+
+.storybook-card-flush .storybook-art-wrap {
+  margin: 0;
 }
 
 /* The dual-spec storybook art (public/class-art/) is a wide, fixed-aspect
@@ -847,7 +862,6 @@ button.item-slot:active:not(:disabled) {
   display: block;
   width: 100%;
   height: auto;
-  border-radius: 6px;
   margin: 0;
 }
 

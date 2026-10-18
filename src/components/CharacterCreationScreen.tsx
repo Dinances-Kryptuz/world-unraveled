@@ -77,6 +77,12 @@ export function CharacterCreationScreen() {
   const selectedClass: ClassId | null = selectedSpec
     ? CLASS_SHOWCASE.find((c) => c.specs.includes(selectedSpec))!.id
     : null;
+  // Begin Adventure picks up whichever spec's colors were last selected
+  // (SPEC_THEME, the same palette as that spec's overlay Select button) —
+  // only applied once the button is actually clickable, so it never shows
+  // "enabled" colors while still disabled waiting on a name.
+  const canBegin = !creating && name.trim().length > 0 && !!selectedSpec;
+  const beginTheme = selectedSpec ? SPEC_THEME[selectedSpec] : undefined;
 
   function goTo(nextPage: number) {
     if (nextPage < 0 || nextPage >= CLASS_SHOWCASE.length) return;
@@ -134,7 +140,7 @@ export function CharacterCreationScreen() {
             ‹
           </button>
 
-          <div className="storybook-card">
+          <div className={`storybook-card${hasArt ? ' storybook-card-flush' : ''}`}>
             <div className="storybook-art-wrap">
               <ClassStorybookArt key={entry.id} classId={entry.id} onArtAvailability={setHasArt} />
               {hasArt && (
@@ -215,7 +221,11 @@ export function CharacterCreationScreen() {
           ))}
         </div>
 
-        <button onClick={handleCreate} disabled={creating || name.trim().length === 0 || !selectedSpec}>
+        <button
+          onClick={handleCreate}
+          disabled={!canBegin}
+          style={canBegin && beginTheme ? { background: beginTheme.bg, borderColor: beginTheme.border, color: beginTheme.text } : undefined}
+        >
           {creating ? 'Creating…' : 'Begin Adventure'}
         </button>
         {error && <p className="error">{error}</p>}
