@@ -242,8 +242,15 @@ export interface Character {
   learnedRecipeIds: string[];
   // Max distinct item ids the inventory can hold at once (see
   // firebase/inventory.ts) — grows permanently when a Tailoring-crafted bag
-  // is used (ConsumableEffect.bagCapacityBonus).
+  // is used (ConsumableEffect.bagCapacityBonus) or a slot is bought from the
+  // Shopkeeper (gameData/bagSlotShop.ts's nextShopkeeperSlotCost).
   bagSlots: number;
+  // How many of bagSlots came from the Shopkeeper specifically — separate
+  // counter from bagSlots itself so the exponential cost curve
+  // (gameData/bagSlotShop.ts) and the "8 per zone unlocked" cap both track
+  // only shopkeeper-bought slots, not ones granted by Tailoring bags.
+  // Absent/0 for a character who's never bought one.
+  shopkeeperBagSlotsPurchased?: number;
   // Max distinct item ids the bank (characters/{uid}/bank/main, see
   // firebase/bank.ts) can hold at once — a separate, larger storage pool
   // bought slot-by-slot with gold (gameData/bank.ts's nextBankSlotCost),

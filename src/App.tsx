@@ -6,8 +6,6 @@ import { CharacterCreationScreen } from './components/CharacterCreationScreen';
 import { ZoneScreen } from './components/ZoneScreen';
 import { EquipmentScreen } from './components/EquipmentScreen';
 import { InventoryScreen } from './components/InventoryScreen';
-import { BankScreen } from './components/BankScreen';
-import { MountTrainerScreen } from './components/MountTrainerScreen';
 import { JournalScreen } from './components/JournalScreen';
 import { CapitalScreen } from './components/CapitalScreen';
 import { CombatScreen } from './components/CombatScreen';
@@ -239,12 +237,10 @@ function AppContent() {
       </div>
       {section === 'equipment' && <EquipmentScreen />}
       {section === 'inventory' && <InventoryScreen />}
-      {section === 'bank' && <BankScreen />}
       {section === 'characters' && <CharacterSelectScreen />}
       {section === 'collection' && <CollectionScreen />}
       {section === 'shop' && <VendorScreen zoneId={character.currentZoneId} />}
       {section === 'profession' && <ProfessionScreen professionId={selectedProfessionId} zoneId={character.currentZoneId} />}
-      {section === 'mountTrainer' && <MountTrainerScreen zoneId={character.currentZoneId} />}
       {section === 'journal' && <JournalScreen />}
       {section === 'capital' && <CapitalScreen onRequestTravel={handleRequestTravel} />}
       {section === 'quests' && <QuestLog />}

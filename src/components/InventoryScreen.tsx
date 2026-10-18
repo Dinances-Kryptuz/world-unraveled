@@ -195,7 +195,7 @@ export function InventoryScreen() {
       <h2>Inventory</h2>
       <p>
         <small>
-          {distinctItemCount} / {character.bagSlots} item slots used
+          {distinctItemCount} / {character.bagSlots} item slots used (distinct item types, armor included — more of one you already hold stacks for free)
         </small>
       </p>
       <ConsumablesBar

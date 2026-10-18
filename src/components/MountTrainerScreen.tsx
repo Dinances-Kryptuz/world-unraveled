@@ -3,13 +3,15 @@ import { useAuth } from '../hooks/useAuth';
 import { useCharacter } from '../hooks/useCharacter';
 import { trainMount } from '../firebase/mounts';
 import { MOUNTS, MOUNT_ORDER, requiredPriorMountId } from '../gameData/mounts';
-import { ZONES } from '../gameData/zones';
+import { ZONES, isZoneUnlocked } from '../gameData/zones';
 
 // Five ranks (Apprentice → Master), each trainable starting at its own zone
 // — see gameData/mounts.ts's MOUNT_RANK_ZONE — and strictly sequential: the
 // previous rank must already be owned (see requiredPriorMountId) before the
-// next one can be trained, mirroring how profession ranks work.
-export function MountTrainerScreen({ zoneId }: { zoneId: string }) {
+// next one can be trained, mirroring how profession ranks work. Hosted in
+// Ashenfall's Stables district (CapitalScreen), so each rank's zone just
+// needs to be unlocked, not physically visited.
+export function MountTrainerScreen() {
   const { user } = useAuth();
   const { character, refetch } = useCharacter();
   const [training, setTraining] = useState<string | null>(null);
@@ -41,7 +43,7 @@ export function MountTrainerScreen({ zoneId }: { zoneId: string }) {
         {MOUNT_ORDER.map((mountId) => {
           const mount = MOUNTS[mountId];
           const owned = character.mounts.includes(mountId);
-          const inZone = zoneId === mount.requiredZoneId;
+          const inZone = isZoneUnlocked(ZONES[mount.requiredZoneId], character.level);
           const isBusy = training === mountId;
           const canAfford = character.gold >= mount.cost;
           const zoneName = ZONES[mount.requiredZoneId]?.name ?? mount.requiredZoneId;
@@ -50,7 +52,7 @@ export function MountTrainerScreen({ zoneId }: { zoneId: string }) {
           let lockedNote: string | null = null;
           if (!owned) {
             if (!priorOwned) lockedNote = `Train ${MOUNTS[priorId!].name} first`;
-            else if (!inZone) lockedNote = `train this at ${zoneName}`;
+            else if (!inZone) lockedNote = `requires ${zoneName} to be unlocked`;
           }
           return (
             <li key={mountId}>

@@ -252,472 +252,66 @@ service cloud.firestore {
   // different character's data entirely, where "level never decreases
   // relative to before" is meaningless) can still be held to the same
   // shape/bounds rules without the before/after comparisons.
+  //
+  // DELIBERATELY MINIMAL. Every optional field on Character (professions,
+  // quests, companions, mastery tracks, titles, mounts, the Journal, …)
+  // used to get its own "shape-only" validator function here, chained
+  // unconditionally into this one — meaning EVERY SINGLE WRITE to this
+  // document (every combat/gather/craft/profession autosave, for every
+  // player) re-evaluated the full chain regardless of which field actually
+  // changed. That design has now broken production three times as the
+  // game added more optional fields and players' own characters grew more
+  // complete: a character with full gear (isValidEquipment's per-slot
+  // branching), then a character with several known professions
+  // (isValidProfessions' per-entry descent), and most recently an
+  // ordinarily-veteran character (10 known professions, several
+  // companions, dozens of achievements/titles, mastery progress on every
+  // tracked axis) tripped Firestore's hard 1000-expression-per-request
+  // rules evaluation ceiling on a completely ordinary xp/gold autosave —
+  // "insufficient permissions" on every action (combat, gathering,
+  // crafting, training) for any character whose OWN data had simply grown
+  // large enough, with no code change needed to trigger it. The first two
+  // incidents were each fixed by shrinking one validator to a single
+  // expression; neither fix addressed the actual cause (summing ~45
+  // unconditional per-field checks on every write), so the same failure
+  // mode kept recurring as more fields were added.
+  //
+  // The fields no longer checked here are all single-player state with no
+  // cross-player stakes: this is a single-player idle/RPG with no PvP,
+  // leaderboard, or shared economy — a forged or malformed value in any of
+  // them can only corrupt the WRITER'S OWN character, the same as editing
+  // your own save file. The one field that genuinely crosses into shared
+  // state, guildId, stays protected above in isValidCharacterUpdate (cheap
+  // regardless, so no budget tradeoff there). Every consequential mutation
+  // elsewhere — granting gold/items, unlocking a profession/ability,
+  // guild contract rewards — is independently validated by its own writer
+  // function in src/firebase/*.ts (re-checked server-side via Cloud
+  // Functions wherever a cross-player stake exists, e.g. functions/src/
+  // guilds.ts and contracts.ts) before it ever calls updateDoc; that write
+  // path, not this rules file, was always the real enforcement point for
+  // those invariants. What's left here is the minimum needed to keep every
+  // reader of this document (every screen in the app) from choking on a
+  // structurally broken write.
   function isValidCharacterShape(after) {
     return after.name is string && after.name.size() >= 2 && after.name.size() <= 20
       && after.level is number && after.level >= 1
       && after.xp is number && after.xp >= 0
       && after.gold is number && after.gold >= 0
       && after.voidShards is number && after.voidShards >= 0
-      && isValidEquipment(after.equipment)
-      && isValidProfessions(after.professions)
-      && isValidEnchantments(after)
-      && isValidEnchantmentCharges(after)
-      && isValidLearnedRecipeIds(after)
-      && isValidBagSlots(after)
-      && isValidBankSlots(after)
-      && isValidActiveBuffs(after)
-      && isValidEquippedConsumables(after)
-      && isValidActivity(after.currentActivity)
-      && isValidEquippedAbilityIds(after)
-      && isValidAbilityConditions(after)
-      && isValidDisabledAbilityIds(after)
-      && isValidCombatPresets(after)
-      && isValidItemCooldowns(after)
-      && isValidQuests(after)
-      && isValidCompanions(after)
-      && isValidActiveCompanionIds(after)
-      && isValidCurrentZoneId(after)
-      && isValidTravel(after)
-      && isValidActiveAltSlots(after)
-      && isValidDungeonClears(after)
-      && isValidDiscoveredZoneIds(after)
-      && isValidCollectedItemIds(after)
-      && isValidUnlockedAchievementIds(after)
-      && isValidMaterialMastery(after)
-      && isValidHerbalismZoneMastery(after)
-      && isValidFishingZoneMastery(after)
-      && isValidCookingZoneMastery(after)
-      && isValidAutoEatRank(after)
-      && isValidAlchemyZoneMastery(after)
-      && isValidEnchantingZoneMastery(after)
-      && isValidConsumableAutomation(after)
-      && isValidUnlockedTitleIds(after)
-      && isValidEquippedTitleId(after)
-      && isValidNotificationsEnabled(after)
-      && isValidSkillXpNotificationsEnabled(after)
-      && isValidMasteryXpNotificationsEnabled(after)
-      && isValidMounts(after)
-      && isValidTrainedAbilityIds(after)
-      && isValidInventorySortPrefs(after)
-      && isValidTowerHighestFloor(after)
-      && isValidTowerConsecutiveFailures(after)
-      && isValidHuntingKillTally(after);
-  }
-
-  // Same "may not exist yet on an old character" treatment and expression-
-  // budget-conscious posture as isValidCurrentZoneId above — full
-  // validation (that a dungeon id is real, that the count only ever
-  // increments) happens in firebase/character.ts's applyCombatResult, the
-  // only path that writes this field.
-  function isValidDungeonClears(after) {
-    return !('dungeonClears' in after) || after.dungeonClears is map;
-  }
-
-  // Same treatment — full validation (that an id is a real equipment item,
-  // that the list only ever grows) happens in
-  // firebase/achievements.ts's reconcileCollectionAndAchievements, the only
-  // path that writes this field.
-  function isValidCollectedItemIds(after) {
-    return !('collectedItemIds' in after) || after.collectedItemIds is list;
-  }
-
-  // The Journal — same treatment (that a zone id is real, that the list
-  // only ever grows) happens in firebase/character.ts's getCharacter, the
-  // only path that writes this field.
-  function isValidDiscoveredZoneIds(after) {
-    return !('discoveredZoneIds' in after) || after.discoveredZoneIds is list;
-  }
-
-  // Same treatment — full validation (that an id is a real achievement,
-  // that the list only ever grows) happens in the same reconcile function
-  // above, the only path that writes this field.
-  function isValidUnlockedAchievementIds(after) {
-    return !('unlockedAchievementIds' in after) || after.unlockedAchievementIds is list;
-  }
-
-  // Shape-only, same posture as every sibling check above — full validation
-  // (that a materialId is real, that xp only ever increases) happens in
-  // firebase/character.ts's applyCraftingProfessionResult, the only path
-  // that writes this field.
-  function isValidMaterialMastery(after) {
-    return !('materialMastery' in after) || after.materialMastery is map;
-  }
-
-  // Same shape-only treatment as isValidMaterialMastery above — one shared
-  // bar per zone (not per-herb), so this is bounded by the ZONES registry
-  // (6) rather than by any per-item catalog. Full validation (that a zone
-  // id is real, that xp only ever increases) happens in
-  // firebase/character.ts's applyGatheringProfessionResult, the only path
-  // that writes this field.
-  function isValidHerbalismZoneMastery(after) {
-    return !('herbalismZoneMastery' in after) || (after.herbalismZoneMastery is map && after.herbalismZoneMastery.size() <= 6);
-  }
-
-  // Same shape-only treatment — Fishing overhaul's shared per-zone Mastery
-  // axis, replacing the old per-hole 0-50 bucket entirely. Full validation
-  // (that a zone id is real, that xp only ever increases) happens in
-  // firebase/professions.ts's applyFishingResult, the only path that writes
-  // this field.
-  function isValidFishingZoneMastery(after) {
-    return !('fishingZoneMastery' in after) || (after.fishingZoneMastery is map && after.fishingZoneMastery.size() <= 6);
-  }
-
-  // Same treatment as isValidHerbalismZoneMastery above — Alchemy's own
-  // independent 6-zone-bar axis. Full validation happens in
-  // firebase/character.ts's applyCraftingProfessionResult, the only path
-  // that writes this field.
-  function isValidAlchemyZoneMastery(after) {
-    return !('alchemyZoneMastery' in after) || (after.alchemyZoneMastery is map && after.alchemyZoneMastery.size() <= 6);
-  }
-
-  // Enchanting overhaul's Phase E7 scroll-crafting zone-Mastery — same
-  // shape-only treatment, a THIRD independent 6-zone-bar axis (distinct
-  // from materialMastery's WOOD_MATERIALS-keyed equipment track). Full
-  // validation happens in firebase/character.ts's
-  // applyCraftingProfessionResult, the only path that writes this field.
-  function isValidEnchantingZoneMastery(after) {
-    return !('enchantingZoneMastery' in after) || (after.enchantingZoneMastery is map && after.enchantingZoneMastery.size() <= 6);
-  }
-
-  // Herbalism/Alchemy overhaul's Part 8 automation settings — a player-
-  // editable settings object (SettingsScreen), not a server-computed one,
-  // so unlike the sibling maps above this DOES check its own keys/types
-  // (still ownership-scoped, not "is this item id actually a consumable the
-  // player owns" — that's firebase/consumables.ts's
-  // buildConsumableAutomationState's job at read time, same posture as
-  // equippedConsumables/equippedAbilityIds trusting their own write paths
-  // for anything deeper than shape).
-  function isValidConsumableAutomation(after) {
-    return !('consumableAutomation' in after)
-      || (after.consumableAutomation.keys().hasOnly([
-            'offensiveItemId', 'defensiveItemId', 'healingItemId', 'manaItemId',
-            'healingThresholdPct', 'manaThresholdPct',
-            'autoOffensiveEnabled', 'autoDefensiveEnabled', 'autoHealingEnabled', 'autoManaEnabled'
-          ])
-          && (after.consumableAutomation.offensiveItemId == null || after.consumableAutomation.offensiveItemId is string)
-          && (after.consumableAutomation.defensiveItemId == null || after.consumableAutomation.defensiveItemId is string)
-          && (after.consumableAutomation.healingItemId == null || after.consumableAutomation.healingItemId is string)
-          && (after.consumableAutomation.manaItemId == null || after.consumableAutomation.manaItemId is string)
-          && after.consumableAutomation.healingThresholdPct is number
-          && after.consumableAutomation.manaThresholdPct is number
-          && after.consumableAutomation.autoOffensiveEnabled is bool
-          && after.consumableAutomation.autoDefensiveEnabled is bool
-          && after.consumableAutomation.autoHealingEnabled is bool
-          && after.consumableAutomation.autoManaEnabled is bool);
-  }
-
-  // Same treatment as isValidUnlockedAchievementIds above — unlockedTitleIds
-  // is populated in lockstep with it by the same function.
-  function isValidUnlockedTitleIds(after) {
-    return !('unlockedTitleIds' in after) || after.unlockedTitleIds is list;
-  }
-
-  // Same treatment as isValidEquippedConsumables — a pure pointer field, not
-  // deeply validated here (firebase/titles.ts's setEquippedTitle is the only
-  // path that writes it).
-  function isValidEquippedTitleId(after) {
-    return !('equippedTitleId' in after) || after.equippedTitleId == null || after.equippedTitleId is string;
-  }
-
-  function isValidNotificationsEnabled(after) {
-    return !('notificationsEnabled' in after) || after.notificationsEnabled is bool;
-  }
-
-  // Same treatment as isValidNotificationsEnabled above — two independent
-  // opt-in sub-preferences (firebase/character.ts's
-  // setSkillXpNotificationsEnabled/setMasteryXpNotificationsEnabled).
-  function isValidSkillXpNotificationsEnabled(after) {
-    return !('skillXpNotificationsEnabled' in after) || after.skillXpNotificationsEnabled is bool;
-  }
-
-  function isValidMasteryXpNotificationsEnabled(after) {
-    return !('masteryXpNotificationsEnabled' in after) || after.masteryXpNotificationsEnabled is bool;
-  }
-
-  // Same "may not exist yet on an old character" treatment as
-  // isValidNotificationsEnabled above — a pin is just a UI pointer (see
-  // firebase/consumables.ts's setEquippedConsumable), so there's nothing
-  // more to validate than its shape.
-  function isValidEquippedConsumables(after) {
-    return !('equippedConsumables' in after)
-      || (after.equippedConsumables.keys().hasOnly(['food', 'potion'])
-        && (!('food' in after.equippedConsumables) || after.equippedConsumables.food == null || after.equippedConsumables.food is string)
-        && (!('potion' in after.equippedConsumables) || after.equippedConsumables.potion == null || after.equippedConsumables.potion is string));
-  }
-
-  // Same "may not exist yet on an old character" treatment and ownership-
-  // scoped posture as isValidCollectedItemIds above — full validation (that
-  // an id is a real mount, that gold was actually spent, that a mount is
-  // never added twice) happens in firebase/mounts.ts's buyMount, the only
-  // path that writes this field. Bounded generously since this grows with
-  // the mount catalog, not with player action.
-  function isValidMounts(after) {
-    return !('mounts' in after) || (after.mounts is list && after.mounts.size() <= 20);
-  }
-
-  // Same "may not exist yet on an old character" treatment and ownership-
-  // scoped posture as isValidMounts above — full validation (that an id is a
-  // real ability the character's own class/spec, that the right zone and
-  // gold were checked) happens in firebase/character.ts's trainAbility, the
-  // only path that writes this field. Bounded generously since this grows
-  // with the ability catalog, not with player action.
-  function isValidTrainedAbilityIds(after) {
-    return !('trainedAbilityIds' in after) || (after.trainedAbilityIds is list && after.trainedAbilityIds.size() <= 60);
-  }
-
-  // The Tower of Infinity — same "may not exist yet on an old character,
-  // shape-only here" treatment as isValidDungeonClears above. Full
-  // validation (that a win only ever advances by exactly 1, that a drop-back
-  // only happens after 3 consecutive failures, that the attempt cost was
-  // actually paid first) happens in firebase/tower.ts's
-  // payTowerAttemptCost/applyTowerAttemptResult, the only paths that write
-  // these two fields.
-  function isValidTowerHighestFloor(after) {
-    return !('towerHighestFloor' in after) || (after.towerHighestFloor is number && after.towerHighestFloor >= 0);
-  }
-
-  function isValidTowerConsecutiveFailures(after) {
-    return !('towerConsecutiveFailures' in after)
-      || (after.towerConsecutiveFailures is number && after.towerConsecutiveFailures >= 0);
-  }
-
-  // Guild Contracts' Hunting-category tally — ownership-scoped, not
-  // value-scoped, same expression-budget reason as isValidCurrentZoneId/
-  // isValidTravel above (a bare "is a map" check, not one expression per
-  // sub-field — this file is already close to the 1000-expression-per-
-  // request ceiling, and a per-field breakdown here was measured to tip a
-  // live combat autosave over it and PERMISSION_DENIED every kill).
-  // Client-tracked and not server-verified by design (see
-  // functions/src/contracts.ts's module comment); reportHuntingKills' own
-  // transaction is what actually caps what gets credited to a contract, so
-  // a forged value here can win at most that function's own per-call/
-  // remaining-progress limits, same as today.
-  function isValidHuntingKillTally(after) {
-    return !('huntingKillTally' in after) || after.huntingKillTally is map;
-  }
-
-  // Same "may not exist yet on an old character" treatment and ownership-
-  // scoped posture as isValidActiveCompanionIds — full validation (that a
-  // slot number is actually unlocked, has a roster character in it, and the
-  // combined companions+alts count stays under the shared party-size limit)
-  // happens in firebase/characterSlots.ts's addAltToParty, the only path
-  // that ever adds an entry. One expression, not a size bound too — see
-  // isValidCurrentZoneId's comment on this file's expression budget.
-  function isValidActiveAltSlots(after) {
-    return !('activeAltSlots' in after) || after.activeAltSlots is list;
-  }
-
-  // Optional like bagSlots/bankSlots above — a character that existed before
-  // this field did has no currentZoneId in its raw document at all yet (see
-  // firebase/character.ts's getCharacter(), which backfills it to
-  // DEFAULT_ZONE_ID in memory without an eager write-back), and every one of
-  // its ordinary updates (gaining xp, gold, etc.) must keep working without
-  // ever having set it. Kept to one expression on purpose — see
-  // isValidEquipment's comment on this file's 1000-expression-per-request
-  // evaluation ceiling; a fully-populated character (gear, professions,
-  // quests, companions) was already close to it before Phase 3/4 added
-  // currentZoneId/travel/activeAltSlots, so each of these stays as cheap as
-  // the "may not exist yet" check requires and no cheaper.
-  function isValidCurrentZoneId(after) {
-    return !('currentZoneId' in after) || after.currentZoneId is string;
-  }
-
-  // Ownership-scoped like the rest of this file — the real validation (that
-  // a flight's duration actually matches the zone-tier formula, see
-  // gameData/travel.ts's travelMinutes) happens in firebase/travel.ts, the
-  // only path that writes this field. A bare "is a map" check (not one
-  // expression per sub-field) for the same expression-budget reason as
-  // isValidCurrentZoneId above.
-  function isValidTravel(after) {
-    return !('travel' in after) || after.travel == null || after.travel is map;
+      && isValidEquipment(after.equipment);
   }
 
   // Ownership-scoped, not fully value-scoped — same posture as the sibling
-  // maps below. Full validation (that an enchantment id is real, that a
-  // disenchant/repair actually consumed the right materials) happens in
-  // firebase/enchanting.ts / firebase/professions.ts, the only paths that
-  // write these fields.
-  function isValidEnchantments(after) {
-    return !('enchantments' in after) || (after.enchantments is map && after.enchantments.size() <= 8);
-  }
-
-  // Enchanting overhaul's charge model — same ownership-scoped posture as
-  // isValidEnchantments above (full validation of "always exactly 100 on
-  // use, never more" happens in firebase/enchanting.ts, the only path that
-  // writes this field).
-  function isValidEnchantmentCharges(after) {
-    return !('enchantmentCharges' in after) || (after.enchantmentCharges is map && after.enchantmentCharges.size() <= 8);
-  }
-
-  function isValidLearnedRecipeIds(after) {
-    return !('learnedRecipeIds' in after) || (after.learnedRecipeIds is list && after.learnedRecipeIds.size() <= 300);
-  }
-
-  // Only ever grows via a Tailoring-crafted bag (see
-  // firebase/consumables.ts) — bounded well above anything reachable so a
-  // genuine bag-capacity ceiling is never mistaken for a rules bug.
-  function isValidBagSlots(after) {
-    return !('bagSlots' in after) || (after.bagSlots is number && after.bagSlots >= 24 && after.bagSlots <= 500);
-  }
-
-  // Cooking overhaul Tier 1 — Auto Eat's rank, 0-3 (see gameData/
-  // cooking.ts's AUTO_EAT_RANKS). Full validation (sequential, zone-gated,
-  // gold spent) happens in firebase/cooking.ts's purchaseAutoEatRank, the
-  // only path that writes this field.
-  function isValidAutoEatRank(after) {
-    return !('autoEatRank' in after) || (after.autoEatRank is number && after.autoEatRank >= 0 && after.autoEatRank <= 3);
-  }
-
-  // Equipment overhaul's Inventory Sorting — presentation-only, so this is
-  // a shallow "it's a map with only the known fields" check, same posture
-  // as isValidConsumableAutomation's own field-presence-only validation.
-  function isValidInventorySortPrefs(after) {
-    return !('inventorySortPrefs' in after)
-      || (after.inventorySortPrefs is map
-        && after.inventorySortPrefs.keys().hasOnly(['sortBy', 'sortStat', 'filterSlot', 'filterTier', 'filterSuffix', 'filterLocked'])
-        && after.inventorySortPrefs.sortBy in ['slot', 'tier', 'suffix', 'totalStats', 'individualStat', 'newest', 'oldest']);
-  }
-
-  // Cooking overhaul's 6 independent zone-Mastery pools — same shape-only
-  // treatment as isValidFishingZoneMastery below. Full validation happens
-  // in firebase/character.ts's applyCraftingProfessionResult, the only
-  // path that writes this field.
-  function isValidCookingZoneMastery(after) {
-    return !('cookingZoneMastery' in after) || (after.cookingZoneMastery is map && after.cookingZoneMastery.size() <= 6);
-  }
-
-  // Bounded 4-124 — see gameData/bank.ts's BASE_BANK_SLOTS/MAX_BANK_SLOTS.
-  // Full validation (gold actually spent, one slot at a time) happens in
-  // firebase/bank.ts's buyBankSlot, the only path that increases this.
-  function isValidBankSlots(after) {
-    return !('bankSlots' in after) || (after.bankSlots is number && after.bankSlots >= 4 && after.bankSlots <= 124);
-  }
-
-  // Capped at 7 — the number of BuffCategory values (gameData/types.ts) —
-  // since at most one buff per category can ever be active at once.
-  function isValidActiveBuffs(after) {
-    // Bounded by the number of registered BuffCategory values (8 as of the
-    // Cooking overhaul's 'stat_food' addition) — one active buff per
-    // category at most.
-    return !('activeBuffs' in after) || (after.activeBuffs is map && after.activeBuffs.size() <= 8);
-  }
-
-  // Same "may not exist yet on an old character" treatment as Smithing/
-  // Tailoring above — this field was added after some characters already
-  // existed. Value-scoped only up to size (max 5 slots) — full validation
-  // of "is this ability actually unlocked for this class/level" happens in
-  // firebase/character.ts's setEquippedAbilities before the write is even
-  // sent, matching this project's existing "ownership-scoped, not fully
-  // value-scoped" security posture.
-  function isValidEquippedAbilityIds(after) {
-    return !('equippedAbilityIds' in after)
-      || (after.equippedAbilityIds is list && after.equippedAbilityIds.size() <= 5);
-  }
-
-  // Same "may not exist yet on an old character" treatment, and the same
-  // ownership-scoped (not fully value-scoped) posture as
-  // isValidEquippedAbilityIds — full validation of condition shape/values/
-  // "only for an equipped ability" happens in firebase/character.ts's
-  // saveCombatSetup before the write is even sent.
-  function isValidAbilityConditions(after) {
-    return !('abilityConditions' in after)
-      || (after.abilityConditions is map && after.abilityConditions.size() <= 5);
-  }
-
-  // Same "may not exist yet on an old character" treatment and ownership-
-  // scoped posture as isValidEquippedAbilityIds — full validation that an id
-  // here is actually equipped happens in firebase/character.ts's
-  // saveCombatSetup before the write is even sent. Bounded the same as
-  // equippedAbilityIds (at most 5 slots, so at most 5 can be toggled off).
-  function isValidDisabledAbilityIds(after) {
-    return !('disabledAbilityIds' in after)
-      || (after.disabledAbilityIds is list && after.disabledAbilityIds.size() <= 5);
-  }
-
-  // Same "may not exist yet on an old character" treatment and the same
-  // ownership-scoped posture as isValidEquippedAbilityIds/
-  // isValidAbilityConditions above — full validation of each preset's shape
-  // happens in firebase/character.ts's saveCombatPreset (the only path that
-  // ever adds an entry), so this just bounds how many can exist. Keep this
-  // 3 in sync with combatEngine/progression.ts's MAX_COMBAT_PRESETS.
-  function isValidCombatPresets(after) {
-    return !('combatPresets' in after)
-      || (after.combatPresets is list && after.combatPresets.size() <= 3);
-  }
-
-  // Same "may not exist yet on an old character" treatment and ownership-
-  // scoped posture as the sibling maps above — full validation (that a key
-  // is an actual consumable item id, that the write only ever sets it to
-  // now()) happens in firebase/consumables.ts, the only path that touches
-  // this field. Bounded generously since this grows with the consumable
-  // item catalog, not with player action.
-  function isValidItemCooldowns(after) {
-    return !('itemCooldowns' in after)
-      || (after.itemCooldowns is map && after.itemCooldowns.size() <= 20);
-  }
-
-  // Same "may not exist yet on an old character" treatment as the sibling
-  // fields above — full validation (that active quest ids are real, that
-  // objective progress never exceeds a quest's own target, that rewards
-  // match QuestDef) happens in gameData/questEngine.ts's applyQuestEvents,
-  // the only path that ever writes this field. Bounded generously on
-  // completedIds/dailyCompletedAt since those only grow with the quest
-  // catalog, not with player action; active is capped at
-  // gameData/quests.ts's MAX_ACTIVE_QUESTS.
-  function isValidQuests(after) {
-    return !('quests' in after)
-      || (after.quests is map
-          && after.quests.keys().hasOnly(['active', 'completedIds', 'dailyCompletedAt'])
-          && after.quests.active is map && after.quests.active.size() <= 8
-          && after.quests.completedIds is list && after.quests.completedIds.size() <= 200
-          && after.quests.dailyCompletedAt is map && after.quests.dailyCompletedAt.size() <= 50);
-  }
-
-  // New-character quests: completedIds/dailyCompletedAt must be empty (a
-  // fresh character has completed nothing yet), but active may already
-  // hold up to MAX_ACTIVE_QUESTS starter quests — createCharacter() fills
-  // it via refillActiveQuests() before the write, so a brand new character
-  // sees its quest board immediately instead of an empty one.
-  function isValidNewQuests(q) {
-    return q is map
-      && q.keys().hasOnly(['active', 'completedIds', 'dailyCompletedAt'])
-      && q.active is map && q.active.size() <= 8
-      && q.completedIds == []
-      && q.dailyCompletedAt == {};
-  }
-
-  // Ownership-scoped, not fully value-scoped — same posture as the sibling
-  // maps above. Full validation (that a companion id is real, that its gear
-  // is something its class can wear) happens in firebase/companions.ts, the
-  // only path that ever writes this field. Capped at the size of the
-  // COMPANIONS roster (gameData/companions.ts) since a character can
-  // recruit each one at most once.
-  function isValidCompanions(after) {
-    return !('companions' in after) || (after.companions is map && after.companions.size() <= 10);
-  }
-
-  // Must be a list of recruited companion ids, at most MAX_ACTIVE_COMPANIONS
-  // (gameData/companions.ts) long — but "are these ids actually recruited"
-  // is a cross-field check, not something this layer alone can verify
-  // cheaply, so this only bounds the type/size and leaves full validation to
-  // firebase/companions.ts's addCompanionToParty/removeCompanionFromParty,
-  // same posture as every other companions field.
-  function isValidActiveCompanionIds(after) {
-    return !('activeCompanionIds' in after)
-      || (after.activeCompanionIds is list && after.activeCompanionIds.size() <= 4);
-  }
-
-  // Ownership-scoped, not fully value-scoped — same posture as
-  // isValidCombatPresets/isValidAbilityConditions/isValidItemCooldowns/
-  // isValidQuests below (full validation, e.g. that a slot's value is a real
-  // equippable item id the class can wear, happens in firebase/character.ts's
-  // equipItem before the write is even sent). Deliberately NOT checking each
+  // maps below. Full validation (e.g. that a slot's value is a real
+  // equippable item id the class can wear) happens in firebase/character.ts's
+  // equipItem before the write is even sent. Deliberately NOT checking each
   // of the 7 slots individually with a per-field null-or-string branch: with
   // every slot non-null (a fully-geared character, the normal end state of
   // real play) that per-field branching was enough to trip Firestore's
   // 1000-expression-per-request rules evaluation limit on every single
   // combat/gather/craft autosave — a real, production-blocking bug, not an
-  // emulator artifact.
+  // emulator artifact (the first of the three incidents described in
+  // isValidCharacterShape's own comment above).
   function isValidEquipment(e) {
     return e is map && e.keys().hasOnly([
       'weapon','offhand','chest','helmet','gloves','legs','boots','ring','ring2','necklace','tool',
@@ -739,47 +333,18 @@ service cloud.firestore {
       && e.bracers == null && e.belt == null && e.ammo == null;
   }
 
-  // A character now starts knowing NO professions at all (see
-  // firebase/professions.ts's learnProfession) — professions is only ever
-  // populated by explicit, server-validated learn/abandon/rank-up calls, so
-  // this is ownership-scoped (bounds + shape only, not a per-entry
-  // isValidProfessionState descent) — same posture as
-  // isValidCombatPresets/isValidItemCooldowns/isValidQuests above. This used
-  // to also validate each known profession's {level, xp, unlockedTier} shape
-  // individually (10 extra function calls, unconditionally, on every single
-  // write touching this character), which stacked with every other field's
-  // own checks below closely enough to the 1000-expression-per-request
-  // evaluation ceiling (see isValidEquipment's comment on this same limit)
-  // that learning a profession could start failing with "insufficient
-  // permissions" once a character's other state (gear, quests, companions)
-  // had grown large enough — worse the more professions were already known,
-  // so it surfaced as "I can learn some professions but not others" even
-  // though nothing about any specific profession was actually invalid. A
-  // profession can also be REMOVED (abandonProfession resets it entirely),
-  // so there's deliberately no "never decreases" invariant here either —
-  // re-learning after abandoning always restarts at level 1 anyway.
-  function isValidProfessions(profs) {
-    return profs is map
-      && profs.size() <= 10
-      && profs.keys().hasOnly(['herbalism','skinning','mining','fishing','alchemy','leatherworking','smithing','tailoring','enchanting','cooking']);
-  }
-
-  function isValidActivity(a) {
-    return a.type in [null, 'combat', 'gathering', 'crafting', 'fishing', 'disenchanting', 'dungeon']
-      && (a.targetId == null || a.targetId is string)
-      && (a.zoneId == null || a.zoneId is string)
-      && (a.startedAt == null || a.startedAt is timestamp)
-      && (!('disenchantQuantity' in a) || a.disenchantQuantity is int)
-      // Continuous Disenchanting Queue overhaul — a list of plain maps, one
-      // per queued item; per-entry field shapes aren't validated any more
-      // deeply here, matching this function's own existing posture (e.g.
-      // disenchantInstanceId right below isn't type-checked either).
-      && (!('disenchantQueue' in a) || a.disenchantQueue is list)
-      && (!('equippedShirtItemId' in a) || a.equippedShirtItemId == null || a.equippedShirtItemId is string)
-      // Equipment Rarity overhaul's Part 8 — only meaningful for
-      // type == 'dungeon' (see CurrentActivity.dungeonFeastStatBonuses's
-      // doc comment); a plain map of stat -> number, not deeply validated
-      // any further, same posture as disenchantQueue above.
-      && (!('dungeonFeastStatBonuses' in a) || a.dungeonFeastStatBonuses is map);
+  // New-character quests: completedIds/dailyCompletedAt must be empty (a
+  // fresh character has completed nothing yet), but active may already
+  // hold up to MAX_ACTIVE_QUESTS starter quests — createCharacter() fills
+  // it via refillActiveQuests() before the write, so a brand new character
+  // sees its quest board immediately instead of an empty one. Only runs
+  // once, at character creation, so this is not part of the expression-
+  // budget pressure described on isValidCharacterShape above.
+  function isValidNewQuests(q) {
+    return q is map
+      && q.keys().hasOnly(['active', 'completedIds', 'dailyCompletedAt'])
+      && q.active is map && q.active.size() <= 8
+      && q.completedIds == []
+      && q.dailyCompletedAt == {};
   }
 }

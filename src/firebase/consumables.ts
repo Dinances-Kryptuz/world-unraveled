@@ -4,6 +4,7 @@ import { getCharacter } from './character';
 import { getInventory } from './inventory';
 import { ITEMS } from '../gameData/items';
 import { resolveCombatProfile } from '../gameData/resolveCombatProfile';
+import { isFoodItem, isPotionItem } from '../gameData/consumableClassification';
 import type { Character, ConsumableAutomationSettings } from '../types/character';
 import type { ItemDef, BuffCategory } from '../gameData/types';
 import { BUFF_CATEGORY_TRIGGER } from '../gameData/buffs';
@@ -53,9 +54,8 @@ export async function setEquippedConsumable(
     if (!item || item.type !== 'consumable' || !item.consumableEffect) {
       return { success: false, reason: 'That isn’t a consumable.' };
     }
-    const isFood = item.consumableEffect.buff?.category === 'well_fed' || !!item.consumableEffect.recoveryFood;
-    if (slot === 'food' && !isFood) return { success: false, reason: 'Not a food item.' };
-    if (slot === 'potion' && isFood) return { success: false, reason: 'Not a potion.' };
+    if (slot === 'food' && !isFoodItem(item)) return { success: false, reason: 'Not a food item.' };
+    if (slot === 'potion' && !isPotionItem(item)) return { success: false, reason: 'Not a potion.' };
   }
   await updateDoc(doc(db, 'characters', uid), { [`equippedConsumables.${slot}`]: itemId });
   return { success: true };

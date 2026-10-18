@@ -7,9 +7,20 @@ import { VendorScreen } from './VendorScreen';
 import { GuildScreen } from './GuildScreen';
 import { ExpeditionScreen } from './ExpeditionScreen';
 import { RestorationScreen } from './RestorationScreen';
+import { BankScreen } from './BankScreen';
+import { MountTrainerScreen } from './MountTrainerScreen';
 import { grandMarketStock } from '../gameData/vendors';
 
-type DistrictId = 'guildHall' | 'tavern' | 'artisan' | 'trainingHall' | 'market' | 'expedition' | 'restoration';
+type DistrictId =
+  | 'guildHall'
+  | 'tavern'
+  | 'artisan'
+  | 'trainingHall'
+  | 'market'
+  | 'expedition'
+  | 'restoration'
+  | 'vault'
+  | 'stables';
 
 interface District {
   id: DistrictId;
@@ -25,6 +36,8 @@ const DISTRICTS: District[] = [
   { id: 'market', name: 'Grand Market', description: 'Buy and sell goods with the local merchants.' },
   { id: 'expedition', name: 'Expedition Command', description: 'Organize guild expeditions into dangerous territory.' },
   { id: 'restoration', name: 'Restoration Grounds', description: "Help rebuild Ashenfall and restore the capital's former glory." },
+  { id: 'vault', name: 'The Vault', description: 'Store gear and materials safely away from your bag slots.' },
+  { id: 'stables', name: 'Stables', description: 'Train faster mounts to cut down zone-travel time.' },
 ];
 
 function DistrictContent({ districtId, zoneId, characterLevel }: { districtId: DistrictId; zoneId: string; characterLevel: number }) {
@@ -47,6 +60,10 @@ function DistrictContent({ districtId, zoneId, characterLevel }: { districtId: D
       return <ExpeditionScreen />;
     case 'restoration':
       return <RestorationScreen />;
+    case 'vault':
+      return <BankScreen />;
+    case 'stables':
+      return <MountTrainerScreen />;
   }
 }
 
