@@ -4,6 +4,8 @@
 // is a Greenhollow Fields good, not something you can buy while out in
 // Stonecrag Foothills).
 
+import { ZONES, ZONE_TIER, isZoneUnlocked } from './zones';
+
 export interface VendorStockEntry {
   itemId: string;
   price: number;
@@ -119,3 +121,27 @@ export const VENDOR_STOCK: Record<string, VendorStockEntry[]> = {
     { itemId: 'voidforged_signet', price: 25, currency: 'voidShards' },
   ],
 };
+
+// Ashenfall's Grand Market — one aggregated stock list spanning every zone
+// the character has unlocked so far (not just whichever one they happen to
+// be standing in), per the design ask ("it should have all the items from
+// any zones currently unlocked"). Deduped by itemId; the lowest-tier zone
+// that carries an item wins, which is a no-op for the cumulative items
+// above (coarse_thread, simple_wood, …) since their price is identical in
+// every zone that sells them anyway.
+export function grandMarketStock(characterLevel: number): VendorStockEntry[] {
+  const zoneIdsByTier = Object.keys(ZONES)
+    .filter((id) => id !== 'ashenfall')
+    .sort((a, b) => (ZONE_TIER[a] ?? 0) - (ZONE_TIER[b] ?? 0));
+  const seen = new Set<string>();
+  const result: VendorStockEntry[] = [];
+  for (const zoneId of zoneIdsByTier) {
+    if (!isZoneUnlocked(ZONES[zoneId], characterLevel)) continue;
+    for (const entry of VENDOR_STOCK[zoneId] ?? []) {
+      if (seen.has(entry.itemId)) continue;
+      seen.add(entry.itemId);
+      result.push(entry);
+    }
+  }
+  return result;
+}

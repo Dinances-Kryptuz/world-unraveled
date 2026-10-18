@@ -18,8 +18,9 @@ const TAB_LABELS: Record<ClassTrainerTab, string> = {
 // Combat Set Up (relocated from Settings, see SettingsScreen's doc comment
 // for why it used to live there). A <select> dropdown rather than a tab bar
 // per the design ask ("click Class Trainer and it brings a drop down menu
-// that has...").
-export function ClassTrainerScreen({ zoneId }: { zoneId: string }) {
+// that has..."). Now hosted inside Ashenfall's Training Hall district
+// (CapitalScreen) rather than its own zone-bound sidebar tab.
+export function ClassTrainerScreen() {
   const { character } = useCharacter();
   const [tab, setTab] = useState<ClassTrainerTab>('spells');
 
@@ -39,7 +40,7 @@ export function ClassTrainerScreen({ zoneId }: { zoneId: string }) {
         </select>
       </label>
 
-      {effectiveTab === 'spells' && <SpellTrainerScreen zoneId={zoneId} />}
+      {effectiveTab === 'spells' && <SpellTrainerScreen />}
       {effectiveTab === 'talents' && showTalents && <TalentScreen />}
       {effectiveTab === 'combat' && <CombatSetupScreen />}
     </div>

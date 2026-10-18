@@ -351,6 +351,15 @@ export interface Character {
   // means floor 1, 0 failures — same "absence is the zero state"
   // convention as every other optional field here.
   towerHighestFloor?: number;
+  // Weekly Guild Contracts' Hunting category — a running count of monsters
+  // defeated THIS ISO week (gameData/guildContracts.ts's isoWeekId), reset
+  // whenever a kill lands in a new week. Client-tracked, not server-
+  // verified (same trust model as the rest of this game's combat — see
+  // functions/src/contracts.ts's module comment), used only to let
+  // GuildScreen auto-fill "how many kills to report" instead of a free-
+  // typed number; the server-side report call still independently caps
+  // what's actually accepted. Absent means weekId "" / 0 kills.
+  huntingKillTally?: { weekId: string; kills: number };
   towerConsecutiveFailures?: number;
   // Every equipment item id ever seen in this character's inventory or
   // bank — permanent, never shrinks even if the item is later sold,

@@ -4,7 +4,7 @@ import { useCharacter } from '../hooks/useCharacter';
 import { sellItem, buyItem } from '../firebase/vendor';
 import { subscribeToInventory } from '../firebase/inventory';
 import { ITEMS } from '../gameData/items';
-import { VENDOR_STOCK } from '../gameData/vendors';
+import { VENDOR_STOCK, type VendorStockEntry } from '../gameData/vendors';
 import { ItemSlot } from './ItemSlot';
 import type { Inventory } from '../types/character';
 
@@ -14,7 +14,22 @@ function parseQuantity(raw: string | undefined, max: number): number {
   return Math.min(parsed, max);
 }
 
-export function VendorScreen({ zoneId }: { zoneId: string }) {
+// `stockOverride` is the Grand Market's aggregated cross-zone list
+// (gameData/vendors.ts's grandMarketStock) — passed by CapitalScreen
+// instead of the plain per-zone VENDOR_STOCK lookup. Without it, the
+// per-zone Shopkeeper (Sidebar's standalone 'shop' section) only ever
+// shows zoneId's own stock — and since Ashenfall itself has no
+// VENDOR_STOCK entry, standing there and opening Shopkeeper shows a
+// redirect to the Grand Market instead of an empty Buy list.
+export function VendorScreen({
+  zoneId,
+  stockOverride,
+  title = 'Shopkeeper',
+}: {
+  zoneId: string;
+  stockOverride?: VendorStockEntry[];
+  title?: string;
+}) {
   const { user } = useAuth();
   const { character, refetch, applyOptimisticUpdate } = useCharacter();
   const [inventory, setInventory] = useState<Inventory | null>(null);
@@ -31,8 +46,17 @@ export function VendorScreen({ zoneId }: { zoneId: string }) {
 
   if (!inventory || !character) return null;
 
+  if (!stockOverride && zoneId === 'ashenfall') {
+    return (
+      <div className="vendor-screen">
+        <h2>{title}</h2>
+        <p>There's no shopkeeper out here in the streets — visit the Grand Market.</p>
+      </div>
+    );
+  }
+
   const sellableEntries = Object.entries(inventory.items).filter(([, quantity]) => quantity > 0);
-  const stock = VENDOR_STOCK[zoneId] ?? [];
+  const stock = stockOverride ?? (VENDOR_STOCK[zoneId] ?? []);
 
   async function handleSell(itemId: string, quantity: number, unitValue: number) {
     if (!user || quantity <= 0) return;
@@ -60,7 +84,7 @@ export function VendorScreen({ zoneId }: { zoneId: string }) {
 
   return (
     <div className="vendor-screen">
-      <h2>Shopkeeper</h2>
+      <h2>{title}</h2>
 
       {stock.length > 0 && (
         <>

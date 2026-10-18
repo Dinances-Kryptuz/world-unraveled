@@ -7,9 +7,7 @@ import { ZoneScreen } from './components/ZoneScreen';
 import { EquipmentScreen } from './components/EquipmentScreen';
 import { InventoryScreen } from './components/InventoryScreen';
 import { BankScreen } from './components/BankScreen';
-import { ClassTrainerScreen } from './components/ClassTrainerScreen';
 import { MountTrainerScreen } from './components/MountTrainerScreen';
-import { ProfessionsTrainerScreen } from './components/ProfessionsTrainerScreen';
 import { JournalScreen } from './components/JournalScreen';
 import { CapitalScreen } from './components/CapitalScreen';
 import { CombatScreen } from './components/CombatScreen';
@@ -28,7 +26,6 @@ import { RECIPES } from './gameData/recipes';
 import { zoneThemeStyle } from './gameData/zoneThemes';
 import { VendorScreen } from './components/VendorScreen';
 import { QuestLog } from './components/QuestLog';
-import { CompanionScreen } from './components/CompanionScreen';
 import { CharacterSelectScreen } from './components/CharacterSelectScreen';
 import { CollectionScreen } from './components/CollectionScreen';
 import { SettingsScreen } from './components/SettingsScreen';
@@ -243,16 +240,13 @@ function AppContent() {
       {section === 'equipment' && <EquipmentScreen />}
       {section === 'inventory' && <InventoryScreen />}
       {section === 'bank' && <BankScreen />}
-      {section === 'companions' && <CompanionScreen />}
       {section === 'characters' && <CharacterSelectScreen />}
       {section === 'collection' && <CollectionScreen />}
       {section === 'shop' && <VendorScreen zoneId={character.currentZoneId} />}
       {section === 'profession' && <ProfessionScreen professionId={selectedProfessionId} zoneId={character.currentZoneId} />}
-      {section === 'classTrainer' && <ClassTrainerScreen zoneId={character.currentZoneId} />}
       {section === 'mountTrainer' && <MountTrainerScreen zoneId={character.currentZoneId} />}
-      {section === 'professionsTrainer' && <ProfessionsTrainerScreen />}
       {section === 'journal' && <JournalScreen />}
-      {section === 'capital' && <CapitalScreen />}
+      {section === 'capital' && <CapitalScreen onRequestTravel={handleRequestTravel} />}
       {section === 'quests' && <QuestLog />}
       {section === 'tower' && <TowerScreen />}
       {section === 'settings' && <SettingsScreen />}

@@ -2,11 +2,16 @@ import { useCharacter } from '../hooks/useCharacter';
 import { ZONES, ZONE_TIER, GATHER_NODES, FISHING_HOLES } from '../gameData/zones';
 import { MONSTERS } from '../gameData/monsters';
 import { ITEMS } from '../gameData/items';
-import { getMonsterIcon } from '../gameData/monsterIcons';
-import { COMBAT_TYPE_ICONS, COMBAT_TYPE_LABELS } from '../gameData/combatTriangle';
 import { ItemSlot } from './ItemSlot';
+import { MonsterSlot } from './MonsterPortrait';
 
-const ZONE_IDS_IN_ORDER = Object.keys(ZONES).sort((a, b) => (ZONE_TIER[a] ?? 0) - (ZONE_TIER[b] ?? 0));
+// Ashenfall (the capital) has no gatherNodeIds/monsterIds of its own — it's
+// a city hub, not a leveling zone (see gameData/zones.ts) — so it's left
+// out of the Journal entirely rather than showing an entry with nothing in
+// it.
+const ZONE_IDS_IN_ORDER = Object.keys(ZONES)
+  .filter((id) => id !== 'ashenfall')
+  .sort((a, b) => (ZONE_TIER[a] ?? 0) - (ZONE_TIER[b] ?? 0));
 
 // One zone's revealed content — resources (every gather node + fishing hole
 // that yields an item) and creatures (every monster) — only ever rendered
@@ -29,34 +34,23 @@ function ZoneJournalEntry({ zoneId }: { zoneId: string }) {
         {resourceRows.length === 0 ? (
           <p className="journal-empty">No gatherable resources here.</p>
         ) : (
-          <ul className="journal-list">
+          <div className="item-grid">
             {resourceRows.map((node) => {
               const item = ITEMS[node.itemId];
-              return (
-                <li key={node.id} className="journal-row">
-                  {item && <ItemSlot item={item} />}
-                  <span>{node.name}</span>
-                </li>
-              );
+              return item ? <ItemSlot key={node.id} item={item} /> : null;
             })}
-          </ul>
+          </div>
         )}
 
         <h4>Creatures</h4>
         {creatureRows.length === 0 ? (
           <p className="journal-empty">No creatures recorded here.</p>
         ) : (
-          <ul className="journal-list">
+          <div className="item-grid">
             {creatureRows.map((monster) => (
-              <li key={monster.id} className="journal-row">
-                <span className="journal-monster-icon">{getMonsterIcon(monster.id)}</span>
-                <span>
-                  {monster.name} — Lv {monster.levelRange[0]}–{monster.levelRange[1]}{' '}
-                  <span title={COMBAT_TYPE_LABELS[monster.combatType]}>{COMBAT_TYPE_ICONS[monster.combatType]}</span>
-                </span>
-              </li>
+              <MonsterSlot key={monster.id} monster={monster} />
             ))}
-          </ul>
+          </div>
         )}
       </div>
     </details>
@@ -87,7 +81,12 @@ function LockedZoneEntry() {
 export function JournalScreen() {
   const { character } = useCharacter();
   if (!character) return null;
-  const discovered = new Set(character.discoveredZoneIds);
+  // Ashenfall backfills into discoveredZoneIds the same as any other zone
+  // the moment currentZoneId resolves to it, but it's excluded from
+  // ZONE_IDS_IN_ORDER above — strip it here too so the ratio's numerator
+  // and denominator stay consistent (visiting the capital alone shouldn't
+  // move the needle on "zones discovered").
+  const discovered = new Set(character.discoveredZoneIds.filter((id) => id !== 'ashenfall'));
 
   return (
     <div className="journal-screen">

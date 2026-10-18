@@ -10,11 +10,8 @@ export type AppSection =
   | 'equipment'
   | 'inventory'
   | 'bank'
-  | 'companions'
   | 'quests'
-  | 'classTrainer'
   | 'mountTrainer'
-  | 'professionsTrainer'
   | 'journal'
   | 'characters'
   | 'collection'
@@ -32,6 +29,11 @@ interface SidebarItem {
 // grouped with the new Spells & Abilities training page, rather than
 // scattered across the sidebar). 'shop' keeps its old id for minimal
 // plumbing churn; only its displayed label changed to Shopkeeper.
+// Companions, Class Trainer, and Professions Trainer are no longer
+// top-level entries — they're all now districts inside Ashenfall
+// (CapitalScreen's Wayfarer's Tavern, Training Hall, and Artisan Quarter
+// respectively), so keeping a duplicate standalone tab for each would just
+// be two paths to the same screen.
 const TOP_ITEMS: SidebarItem[] = [
   { id: 'adventure', label: 'Adventure' },
   { id: 'capital', label: 'Ashenfall' },
@@ -39,11 +41,8 @@ const TOP_ITEMS: SidebarItem[] = [
   { id: 'equipment', label: 'Equipment' },
   { id: 'inventory', label: 'Inventory' },
   { id: 'bank', label: 'Bank' },
-  { id: 'companions', label: 'Companions' },
   { id: 'quests', label: 'Quests' },
-  { id: 'classTrainer', label: 'Class Trainer' },
   { id: 'mountTrainer', label: 'Mount Trainer' },
-  { id: 'professionsTrainer', label: 'Professions Trainer' },
   { id: 'journal', label: 'Journal' },
   { id: 'characters', label: 'Characters' },
   { id: 'collection', label: 'Collection' },

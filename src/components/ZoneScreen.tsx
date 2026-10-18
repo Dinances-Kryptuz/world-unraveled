@@ -86,39 +86,45 @@ export function ZoneScreen({
   return (
     <div className="zone-screen">
       <ZoneBanner zoneId={zone.id} />
-      <p>
-        <small>
-          Enemy composition:{' '}
-          {(['melee', 'ranged', 'magic'] as const)
-            .map((t) => ({ t, count: zone.monsterIds.filter((id) => MONSTERS[id].combatType === t).length }))
-            .filter(({ count }) => count > 0)
-            .map(({ t, count }) => `${COMBAT_TYPE_ICONS[t]} ${COMBAT_TYPE_LABELS[t]} (${count})`)
-            .join(' · ')}
-        </small>
-      </p>
+      {zone.monsterIds.length === 0 ? (
+        <p>There's nothing to hunt here — Ashenfall is a capital city. Visit its districts instead.</p>
+      ) : (
+        <>
+          <p>
+            <small>
+              Enemy composition:{' '}
+              {(['melee', 'ranged', 'magic'] as const)
+                .map((t) => ({ t, count: zone.monsterIds.filter((id) => MONSTERS[id].combatType === t).length }))
+                .filter(({ count }) => count > 0)
+                .map(({ t, count }) => `${COMBAT_TYPE_ICONS[t]} ${COMBAT_TYPE_LABELS[t]} (${count})`)
+                .join(' · ')}
+            </small>
+          </p>
 
-      <h2>Monsters</h2>
-      <ul>
-        {zone.monsterIds.map((monsterId) => {
-          const monster = MONSTERS[monsterId];
-          const isExpanded = expandedMonsterId === monsterId;
-          return (
-            <li key={monsterId} className="monster-list-item">
-              <div className="monster-row-main">
-                <span className="monster-row-info">
-                  {monster.name} (<MonsterLevelBadge monsterLevel={monster.level} playerLevel={character.level} isElite={monster.isElite} />{' '}
-                  <CombatTypeBadge monsterType={monster.combatType} playerType={playerCombatType} />)
-                </span>
-                <div className="monster-row-actions">
-                  <button onClick={() => handleFight(monsterId)}>Fight</button>
-                  <button onClick={() => setExpandedMonsterId(isExpanded ? null : monsterId)}>Drops</button>
-                </div>
-              </div>
-              {isExpanded && <MonsterLootPanel monster={monster} />}
-            </li>
-          );
-        })}
-      </ul>
+          <h2>Monsters</h2>
+          <ul>
+            {zone.monsterIds.map((monsterId) => {
+              const monster = MONSTERS[monsterId];
+              const isExpanded = expandedMonsterId === monsterId;
+              return (
+                <li key={monsterId} className="monster-list-item">
+                  <div className="monster-row-main">
+                    <span className="monster-row-info">
+                      {monster.name} (<MonsterLevelBadge monsterLevel={monster.level} playerLevel={character.level} isElite={monster.isElite} />{' '}
+                      <CombatTypeBadge monsterType={monster.combatType} playerType={playerCombatType} />)
+                    </span>
+                    <div className="monster-row-actions">
+                      <button onClick={() => handleFight(monsterId)}>Fight</button>
+                      <button onClick={() => setExpandedMonsterId(isExpanded ? null : monsterId)}>Drops</button>
+                    </div>
+                  </div>
+                  {isExpanded && <MonsterLootPanel monster={monster} />}
+                </li>
+              );
+            })}
+          </ul>
+        </>
+      )}
 
       {Object.values(DUNGEONS)
         .filter((d) => d.zoneId === zone.id)

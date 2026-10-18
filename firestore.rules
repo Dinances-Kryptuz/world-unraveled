@@ -300,7 +300,8 @@ service cloud.firestore {
       && isValidTrainedAbilityIds(after)
       && isValidInventorySortPrefs(after)
       && isValidTowerHighestFloor(after)
-      && isValidTowerConsecutiveFailures(after);
+      && isValidTowerConsecutiveFailures(after)
+      && isValidHuntingKillTally(after);
   }
 
   // Same "may not exist yet on an old character" treatment and expression-
@@ -478,6 +479,21 @@ service cloud.firestore {
   function isValidTowerConsecutiveFailures(after) {
     return !('towerConsecutiveFailures' in after)
       || (after.towerConsecutiveFailures is number && after.towerConsecutiveFailures >= 0);
+  }
+
+  // Guild Contracts' Hunting-category tally — ownership-scoped, not
+  // value-scoped, same expression-budget reason as isValidCurrentZoneId/
+  // isValidTravel above (a bare "is a map" check, not one expression per
+  // sub-field — this file is already close to the 1000-expression-per-
+  // request ceiling, and a per-field breakdown here was measured to tip a
+  // live combat autosave over it and PERMISSION_DENIED every kill).
+  // Client-tracked and not server-verified by design (see
+  // functions/src/contracts.ts's module comment); reportHuntingKills' own
+  // transaction is what actually caps what gets credited to a contract, so
+  // a forged value here can win at most that function's own per-call/
+  // remaining-progress limits, same as today.
+  function isValidHuntingKillTally(after) {
+    return !('huntingKillTally' in after) || after.huntingKillTally is map;
   }
 
   // Same "may not exist yet on an old character" treatment and ownership-
