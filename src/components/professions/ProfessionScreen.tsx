@@ -753,24 +753,36 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
                   <button onClick={() => setSelectedForQueue(new Set())} disabled={selectedForQueue.size === 0}>
                     Clear selection
                   </button>
-                  {/* One click to both select and immediately queue/start
-                      every currently-shown, skill-eligible item — the
-                      explicit "disenchant all" action, instead of needing
-                      Select All followed by a separate Queue click. */}
+                  {/* One click to start disenchanting — respects your
+                      checkboxes when anything is checked (same set "Queue N
+                      selected" below acts on), so it never destroys an item
+                      you deliberately unchecked. Only when NOTHING is
+                      checked does it fall back to "everything currently
+                      shown and skill-eligible," matching "Select all shown"
+                      followed by Queue in one click. */}
                   <button
                     onClick={() => {
-                      const eligible = filtered.filter((e) => skill >= disenchantRequiredSkill(ITEMS[e.itemId]!));
+                      const eligibleShown = filtered.filter((e) => skill >= disenchantRequiredSkill(ITEMS[e.itemId]!));
+                      const toQueue = selectedForQueue.size > 0 ? selectedEntries : eligibleShown;
                       handleAddToDisenchantQueue(
-                        eligible.map((e) => ({
+                        toQueue.map((e) => ({
                           itemId: e.itemId,
                           instanceId: e.instanceId,
                           quantity: Math.min(disenchantQty[e.instanceId ?? e.itemId] ?? e.quantity, e.quantity),
                         }))
                       );
                     }}
-                    disabled={filtered.filter((e) => skill >= disenchantRequiredSkill(ITEMS[e.itemId]!)).length === 0}
+                    disabled={
+                      selectedForQueue.size === 0 &&
+                      filtered.filter((e) => skill >= disenchantRequiredSkill(ITEMS[e.itemId]!)).length === 0
+                    }
+                    title={
+                      selectedForQueue.size > 0
+                        ? `Disenchant the ${selectedForQueue.size} item${selectedForQueue.size === 1 ? '' : 's'} you've checked below`
+                        : 'Nothing checked — disenchants every item currently shown that you have the skill for'
+                    }
                   >
-                    Disenchant All
+                    {selectedForQueue.size > 0 ? `Disenchant Selected (${selectedForQueue.size})` : 'Disenchant All Shown'}
                   </button>
                 </div>
 
@@ -822,20 +834,13 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
                 </ul>
 
                 {selectedForQueue.size > 0 && (
-                  <button
-                    onClick={() =>
-                      handleAddToDisenchantQueue(
-                        selectedEntries.map((e) => ({
-                          itemId: e.itemId,
-                          instanceId: e.instanceId,
-                          quantity: Math.min(disenchantQty[e.instanceId ?? e.itemId] ?? e.quantity, e.quantity),
-                        }))
-                      )
-                    }
-                  >
-                    Queue {selectedForQueue.size} selected ({totalSelectedPieces} pieces)
-                    {character?.currentActivity.type === 'disenchanting' ? ' — adds to running queue' : ''}
-                  </button>
+                  <p>
+                    <small>
+                      {totalSelectedPieces} piece{totalSelectedPieces === 1 ? '' : 's'} selected — click "Disenchant
+                      Selected" above to start
+                      {character?.currentActivity.type === 'disenchanting' ? ' (adds to the running queue)' : ''}.
+                    </small>
+                  </p>
                 )}
               </>
             );
