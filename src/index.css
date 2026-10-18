@@ -774,32 +774,173 @@ button.item-slot:active:not(:disabled) {
   margin-bottom: 0;
 }
 
+/* ── Create Your Adventurer: dark, antique-gold "storybook" theme — all
+   variables/rules below are scoped under .character-creation so no other
+   screen is affected. The woodland ZoneBackdrop behind PreGameShell stays
+   visible around (and, where backdrop-filter is supported, faintly
+   through) this panel rather than being covered by an opaque card. ── */
 .character-creation {
+  --cc-ivory: #f0e3c8;
+  --cc-parchment: #c9b999;
+  --cc-gold: #b68a45;
+  --cc-gold-soft: rgba(182, 138, 69, 0.45);
+  --cc-font-display: 'Cinzel', Georgia, 'Times New Roman', serif;
+
+  position: relative;
   width: 100%;
   max-width: 820px;
   margin: 0 auto;
   text-align: center;
-  padding: 40px 32px;
-  background: linear-gradient(180deg, rgba(255, 253, 249, 0.92), rgba(249, 244, 233, 0.92));
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(226, 217, 200, 0.8);
-  border-top: 3px solid var(--zone-primary, #8a6d3b);
-  border-radius: 10px;
-  box-shadow: 0 2px 0 rgba(255, 255, 255, 0.5) inset, 0 10px 28px rgba(20, 14, 8, 0.25);
+  padding: 40px 56px;
+  color: var(--cc-parchment);
+  /* Opaque fallback first (no backdrop-filter support = no blur, so the
+     panel needs to be solid to stay readable over the busy background);
+     @supports below upgrades it to translucent + blurred. */
+  background: #19140f;
+  border: 1px solid var(--cc-gold-soft);
+  border-radius: 14px;
+  box-shadow: 0 2px 0 rgba(255, 255, 255, 0.04) inset, 0 18px 44px rgba(0, 0, 0, 0.55);
 }
+
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .character-creation {
+    background: rgba(25, 20, 15, 0.88);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+}
+
+.character-creation h1 {
+  font-family: var(--cc-font-display);
+  color: var(--cc-ivory);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  margin: 0;
+}
+
+.cc-title-divider {
+  width: 160px;
+  height: 1px;
+  margin: 14px auto;
+  background: linear-gradient(90deg, transparent, var(--cc-gold), transparent);
+}
+
+.cc-title-divider::before {
+  content: '◆';
+  display: block;
+  margin: -0.55em auto 0;
+  width: 1.2em;
+  color: var(--cc-gold);
+  font-size: 0.7rem;
+  background: #19140f;
+}
+
+.cc-subtitle {
+  color: var(--cc-parchment);
+  margin: 0 0 20px;
+}
+
+.cc-label {
+  display: block;
+  max-width: 280px;
+  margin: 0 auto 6px;
+  font-family: var(--cc-font-display);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--cc-gold);
+  text-align: left;
+}
+
+.cc-corner {
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  color: var(--cc-gold);
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+.cc-corner-top-left { top: 12px; left: 12px; }
+.cc-corner-top-right { top: 12px; right: 12px; transform: scaleX(-1); }
+.cc-corner-bottom-left { bottom: 12px; left: 12px; transform: scaleY(-1); }
+.cc-corner-bottom-right { bottom: 12px; right: 12px; transform: scale(-1, -1); }
 
 /* ── Character-creation storybook: one page per class (Warrior/Priest/
    Paladin), arrow-navigable, each showing that class's artwork (or a
    fallback icon) and 2 spec buttons — see CharacterCreationScreen.tsx. ── */
 
 .character-creation input[type="text"] {
-  margin: 8px 0 16px;
+  margin: 0 0 20px;
   width: 100%;
   max-width: 280px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--cc-gold-soft);
+  border-radius: 6px;
+  padding: 10px 12px;
+  color: var(--cc-ivory);
+  font-size: 0.95rem;
 }
 
-.character-creation > button {
+.character-creation input[type="text"]::placeholder {
+  color: rgba(201, 185, 153, 0.55);
+}
+
+.character-creation input[type="text"]:disabled {
+  opacity: 0.6;
+}
+
+/* A visible gold ring on every focusable control in this screen — inputs,
+   nav arrows, spec Select buttons, Begin Adventure — since this is the one
+   screen-specific control group item 4/5 call out "a clear keyboard-focus
+   outline" for; nothing outside .character-creation is touched. */
+.character-creation input:focus-visible,
+.character-creation button:focus-visible {
+  outline: 2px solid var(--cc-gold);
+  outline-offset: 3px;
+}
+
+/* The dark theme needs its own disabled look — the global button:disabled
+   rule's light grey would clash badly against this panel's charcoal/gold
+   palette, so this (class+pseudo-class, same specificity pattern already
+   used by .storybook-select-overlay-btn) overrides it within this screen
+   only, keeping the text legible per item 6's "keep disabled text
+   readable." */
+.character-creation button:disabled {
+  background: rgba(80, 58, 28, 0.35);
+  border-color: rgba(182, 138, 69, 0.3);
+  color: rgba(240, 227, 200, 0.5);
+  box-shadow: none;
+}
+
+.cc-begin-button {
   margin-top: 20px;
+  font-family: var(--cc-font-display);
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.cc-begin-hint {
+  margin: 10px 0 0;
+  color: var(--cc-parchment);
+  font-size: 0.85rem;
+}
+
+.character-creation .error {
+  margin: 10px 0 0;
+  color: #e2756a;
+}
+
+/* Reduced-motion: neutralize this screen's hover-lift/selection
+   transitions and keep the mobile drawer-style corner ornaments static —
+   color/border changes on hover/selection still apply instantly, just
+   without the animated transform. */
+@media (prefers-reduced-motion: reduce) {
+  .character-creation * {
+    transition: none !important;
+    animation: none !important;
+  }
 }
 
 .storybook-page {
@@ -812,24 +953,30 @@ button.item-slot:active:not(:disabled) {
 
 .storybook-arrow {
   flex-shrink: 0;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   font-size: 1.4rem;
   line-height: 1;
   padding: 0;
+  background: rgba(10, 8, 6, 0.6);
+  border: 1px solid var(--cc-gold);
+  color: var(--cc-ivory);
+}
+
+.storybook-arrow:hover:not(:disabled) {
+  background: rgba(40, 30, 18, 0.8);
 }
 
 .storybook-card {
   flex: 1;
   min-width: 0;
   max-width: 720px;
-  background: linear-gradient(180deg, rgba(255, 253, 249, 0.92), rgba(249, 244, 233, 0.92));
-  border: 1px solid rgba(226, 217, 200, 0.8);
-  border-top: 3px solid var(--zone-primary, #8a6d3b);
+  background: rgba(10, 8, 6, 0.4);
+  border: 1px solid var(--cc-gold);
   border-radius: 10px;
   padding: 20px;
-  box-shadow: 0 2px 0 rgba(255, 255, 255, 0.5) inset, 0 6px 16px rgba(20, 14, 8, 0.15);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
   text-align: center;
   overflow: hidden;
 }
@@ -842,6 +989,7 @@ button.item-slot:active:not(:disabled) {
    itself, so storybook-art-wrap's margin is zeroed here too. */
 .storybook-card-flush {
   padding: 0;
+  background: transparent;
 }
 
 .storybook-card-flush .storybook-art-wrap {
@@ -881,6 +1029,7 @@ button.item-slot:active:not(:disabled) {
   padding: 8px 22px;
   border-radius: 999px;
   border: 2px solid;
+  font-family: var(--cc-font-display);
   font-weight: 700;
   font-size: 0.85rem;
   letter-spacing: 0.04em;
@@ -898,20 +1047,53 @@ button.item-slot:active:not(:disabled) {
   box-shadow: 0 0 0 2px #fff, 0 0 0 4px #000, 0 4px 14px rgba(0, 0, 0, 0.55);
 }
 
+/* Readable HTML duplicate of the art's own baked-in role text — hidden
+   above the mobile breakpoint, where the full-size art already shows it
+   plenty large; see the .storybook-page rules in the mobile media query
+   below for where it's switched on. */
+.cc-mobile-spec-descriptions {
+  display: none;
+}
+
+.cc-mobile-spec-desc {
+  text-align: left;
+  padding: 10px 16px;
+}
+
+.cc-mobile-spec-desc + .cc-mobile-spec-desc {
+  border-top: 1px solid var(--cc-gold-soft);
+}
+
+.cc-mobile-spec-desc strong {
+  display: block;
+  font-family: var(--cc-font-display);
+  color: var(--cc-gold);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 2px;
+}
+
+.cc-mobile-spec-desc span {
+  display: block;
+  color: var(--cc-parchment);
+  font-size: 0.85rem;
+}
+
 .storybook-art-fallback {
   display: flex;
   align-items: center;
   justify-content: center;
   height: 160px;
   margin-bottom: 12px;
-  background: rgba(0, 0, 0, 0.03);
-  border: 1px dashed #e2d9c8;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px dashed var(--cc-gold-soft);
   border-radius: 8px;
 }
 
 .storybook-art-fallback-icon {
   font-size: 3.5rem;
-  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.2));
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.4));
 }
 
 .storybook-class-name {
@@ -920,6 +1102,8 @@ button.item-slot:active:not(:disabled) {
   justify-content: center;
   gap: 8px;
   margin: 0 0 6px;
+  font-family: var(--cc-font-display);
+  color: var(--cc-ivory);
 }
 
 .storybook-class-icon {
@@ -928,7 +1112,7 @@ button.item-slot:active:not(:disabled) {
 
 .storybook-class-blurb {
   font-size: 0.85rem;
-  color: #6b6156;
+  color: var(--cc-parchment);
   margin: 0 0 16px;
 }
 
@@ -947,23 +1131,23 @@ button.storybook-spec-button {
   text-align: center;
   white-space: normal;
   padding: 12px;
-  background: rgba(0, 0, 0, 0.03);
-  border: 1px solid #e2d9c8;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--cc-gold-soft);
   border-radius: 8px;
-  color: inherit;
+  color: var(--cc-ivory);
   cursor: pointer;
   transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
 }
 
 button.storybook-spec-button:hover:not(:disabled) {
-  background: rgba(0, 0, 0, 0.05);
+  background: rgba(182, 138, 69, 0.15);
   color: inherit;
   transform: translateY(-2px);
 }
 
 .storybook-spec-button-selected {
-  border-color: var(--zone-primary, #8a6d3b);
-  box-shadow: 0 0 0 2px var(--zone-accent, #d8c38a) inset;
+  border-color: var(--cc-gold);
+  box-shadow: 0 0 0 2px var(--cc-gold-soft) inset;
 }
 
 .storybook-spec-icon {
@@ -972,7 +1156,7 @@ button.storybook-spec-button:hover:not(:disabled) {
 
 .storybook-spec-button small {
   font-size: 0.75rem;
-  color: #6b6156;
+  color: var(--cc-parchment);
   font-weight: 400;
 }
 
@@ -984,8 +1168,8 @@ button.storybook-spec-button:hover:not(:disabled) {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: #fdf8ee;
-  background: var(--zone-primary, #4a7c3f);
+  color: #19140f;
+  background: var(--cc-gold);
   border-radius: 4px;
   padding: 2px 6px;
 }
@@ -1001,11 +1185,12 @@ button.storybook-spec-button:hover:not(:disabled) {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #e2d9c8;
+  background: var(--cc-gold-soft);
 }
 
 .storybook-page-dot-active {
-  background: var(--zone-primary, #8a6d3b);
+  background: var(--cc-gold);
+  box-shadow: 0 0 6px rgba(182, 138, 69, 0.6);
 }
 
 /* ── App shell: persistent sidebar + top bar, content swapped per section ── */
@@ -1649,6 +1834,48 @@ button.storybook-spec-button:hover:not(:disabled) {
 
   .storybook-arrow {
     align-self: center;
+  }
+
+  /* Create Your Adventurer: less empty margin around the panel, smaller
+     corner brackets so they don't crowd the tighter padding, and the real
+     HTML spec descriptions switched on now that the art itself has shrunk
+     too far to read its own baked-in text comfortably. */
+  .pregame-shell {
+    padding: 24px 12px 48px;
+    overflow-x: hidden;
+  }
+
+  .character-creation {
+    padding: 32px 20px;
+  }
+
+  .cc-corner {
+    width: 18px;
+    height: 18px;
+  }
+
+  .cc-corner-top-left,
+  .cc-corner-top-right {
+    top: 8px;
+  }
+
+  .cc-corner-bottom-left,
+  .cc-corner-bottom-right {
+    bottom: 8px;
+  }
+
+  .cc-corner-top-left,
+  .cc-corner-bottom-left {
+    left: 8px;
+  }
+
+  .cc-corner-top-right,
+  .cc-corner-bottom-right {
+    right: 8px;
+  }
+
+  .cc-mobile-spec-descriptions {
+    display: block;
   }
 }
 

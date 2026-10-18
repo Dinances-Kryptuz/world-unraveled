@@ -11,6 +11,19 @@ import { PreGameShell } from './PreGameShell';
 // glyph + blurb). See public/class-art/README.md for the art spec.
 const ART_EXTENSIONS = ['webp', 'png'];
 
+// Purely decorative corner brackets for the panel frame — a single
+// top-left bracket+diamond, mirrored via CSS transform into the other 3
+// corners (see .cc-corner-* in index.css) rather than drawing 4 separate
+// paths. aria-hidden since it carries no information of its own.
+function CornerOrnament({ position }: { position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' }) {
+  return (
+    <svg className={`cc-corner cc-corner-${position}`} viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+      <path d="M2 14 V2 H14" fill="none" stroke="currentColor" strokeWidth="1.5" />
+      <rect x="0.2" y="0.2" width="3.6" height="3.6" transform="rotate(45 2 2)" fill="currentColor" />
+    </svg>
+  );
+}
+
 // `onArtAvailability` lets the parent know whether real artwork is showing
 // (so it can overlay the two Select buttons directly on the art, matching
 // its own dual-spec layout and colors) or only the emoji fallback (so it
@@ -77,12 +90,7 @@ export function CharacterCreationScreen() {
   const selectedClass: ClassId | null = selectedSpec
     ? CLASS_SHOWCASE.find((c) => c.specs.includes(selectedSpec))!.id
     : null;
-  // Begin Adventure picks up whichever spec's colors were last selected
-  // (SPEC_THEME, the same palette as that spec's overlay Select button) —
-  // only applied once the button is actually clickable, so it never shows
-  // "enabled" colors while still disabled waiting on a name.
   const canBegin = !creating && name.trim().length > 0 && !!selectedSpec;
-  const beginTheme = selectedSpec ? SPEC_THEME[selectedSpec] : undefined;
 
   function goTo(nextPage: number) {
     if (nextPage < 0 || nextPage >= CLASS_SHOWCASE.length) return;
@@ -117,14 +125,24 @@ export function CharacterCreationScreen() {
   return (
     <PreGameShell>
       <div className="character-creation storybook-creation">
-        <h1>Create Your Adventurer</h1>
-        <p>Your journey into Greenhollow Fields begins here.</p>
+        <CornerOrnament position="top-left" />
+        <CornerOrnament position="top-right" />
+        <CornerOrnament position="bottom-left" />
+        <CornerOrnament position="bottom-right" />
 
+        <h1>Create Your Adventurer</h1>
+        <div className="cc-title-divider" aria-hidden="true" />
+        <p className="cc-subtitle">Your journey into Greenhollow Fields begins here.</p>
+
+        <label htmlFor="character-name" className="cc-label">
+          Character Name
+        </label>
         <input
+          id="character-name"
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Character name"
+          placeholder="Enter your name"
           maxLength={20}
           disabled={creating}
         />
@@ -170,6 +188,22 @@ export function CharacterCreationScreen() {
                 </div>
               )}
             </div>
+
+            {/* The art's own baked-in role name/blurb text becomes too
+                small to read once the image shrinks down on a phone screen
+                — this duplicates it as real, readable HTML text, hidden
+                above the mobile breakpoint (see .cc-mobile-spec-descriptions
+                in index.css) where the full-size art already covers it. */}
+            {hasArt && (
+              <div className="cc-mobile-spec-descriptions">
+                {entry.specs.map((specId) => (
+                  <div key={specId} className="cc-mobile-spec-desc">
+                    <strong>{SPEC_INFO[specId].label}</strong>
+                    <span>{SPEC_INFO[specId].blurb}</span>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {/* Real art already carries the class name, spec names, and
                 blurbs baked into the image itself — this text block is only
@@ -221,14 +255,14 @@ export function CharacterCreationScreen() {
           ))}
         </div>
 
-        <button
-          onClick={handleCreate}
-          disabled={!canBegin}
-          style={canBegin && beginTheme ? { background: beginTheme.bg, borderColor: beginTheme.border, color: beginTheme.text } : undefined}
-        >
+        <button type="button" className="cc-begin-button" onClick={handleCreate} disabled={!canBegin}>
           {creating ? 'Creating…' : 'Begin Adventure'}
         </button>
-        {error && <p className="error">{error}</p>}
+        {error ? (
+          <p className="error">{error}</p>
+        ) : (
+          !canBegin && <p className="cc-begin-hint">Enter a name and select a specialization.</p>
+        )}
       </div>
     </PreGameShell>
   );
