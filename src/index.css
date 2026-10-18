@@ -823,7 +823,7 @@ button.item-slot:active:not(:disabled) {
 .storybook-card {
   flex: 1;
   min-width: 0;
-  max-width: 420px;
+  max-width: 720px;
   background: linear-gradient(180deg, rgba(255, 253, 249, 0.92), rgba(249, 244, 233, 0.92));
   border: 1px solid rgba(226, 217, 200, 0.8);
   border-top: 3px solid var(--zone-primary, #8a6d3b);
@@ -833,12 +833,55 @@ button.item-slot:active:not(:disabled) {
   text-align: center;
 }
 
+/* The dual-spec storybook art (public/class-art/) is a wide, fixed-aspect
+   illustration with each spec's own name/description baked into its own
+   half — this wrapper gives the two overlaid Select buttons below a
+   percentage-positioned box that always matches the rendered image
+   regardless of the card's actual width. */
+.storybook-art-wrap {
+  position: relative;
+  margin: 0 auto 16px;
+}
+
 .storybook-art-img {
   display: block;
   width: 100%;
-  max-height: 280px;
-  object-fit: contain;
-  margin: 0 auto 12px;
+  height: auto;
+  border-radius: 6px;
+  margin: 0;
+}
+
+.storybook-art-select-overlay {
+  position: absolute;
+  inset: 0;
+}
+
+/* Positioned just above each half's own role-name panel (already part of
+   the artwork) — left/right set inline per button (gameData/classInfo.ts's
+   SPEC_THEME supplies the background/border/text colors matching that
+   half's palette). */
+.storybook-select-overlay-btn {
+  position: absolute;
+  top: 68%;
+  transform: translate(-50%, -50%);
+  padding: 8px 22px;
+  border-radius: 999px;
+  border: 2px solid;
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.storybook-select-overlay-btn:hover:not(:disabled) {
+  transform: translate(-50%, -50%) translateY(-2px);
+}
+
+.storybook-select-overlay-btn-selected {
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px #000, 0 4px 14px rgba(0, 0, 0, 0.55);
 }
 
 .storybook-art-fallback {

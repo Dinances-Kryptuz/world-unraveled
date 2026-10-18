@@ -46,6 +46,26 @@ export const SPEC_INFO: Record<SpecId, { label: string; blurb: string }> = {
   rogue_poison: { label: 'Poisons', blurb: 'Excels at single-target, long fights — stacking poisons that cripple and wear a target down.' },
 };
 
+// Colors AND art-side for the storybook art's overlaid "Select" buttons
+// (see CharacterCreationScreen.tsx) — one per player-facing spec, picked to
+// match that spec's half of its class's dual-portrait artwork
+// (public/class-art/) so the button sits over the right half and reads as
+// part of that side's palette, rather than a generic UI color. `side` is
+// NOT the same as this spec's position in ClassShowcaseEntry.specs below —
+// the artwork's own left/right order doesn't follow that array order for
+// every class (Warrior and Priest both put their SECOND-listed spec on the
+// LEFT), so it's recorded explicitly here instead of assumed from index.
+// Only the 6 real player specs need entries; mage/rogue are companion-only
+// (see this file's own module comment) and never reach this screen.
+export const SPEC_THEME: Partial<Record<SpecId, { bg: string; border: string; text: string; side: 'left' | 'right' }>> = {
+  warrior_tank: { bg: '#15263f', border: '#d8b35a', text: '#f3e3b9', side: 'left' },
+  warrior_dps: { bg: '#2b0a0a', border: '#b2472f', text: '#f3e3b9', side: 'right' },
+  prot_paladin: { bg: '#2c3e5c', border: '#e0c17a', text: '#f6ecce', side: 'left' },
+  holy_paladin: { bg: '#f7ecd0', border: '#c9a227', text: '#4a3a12', side: 'right' },
+  holy_priest: { bg: '#f7ecd0', border: '#c9a227', text: '#4a3a12', side: 'left' },
+  shadow_priest: { bg: '#1f1030', border: '#9b59b6', text: '#e6d1f5', side: 'right' },
+};
+
 export interface ClassShowcaseEntry {
   id: ClassId;
   name: string;
