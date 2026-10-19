@@ -70,6 +70,14 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
   // comment for why mixing an independent JS timer into this would drift.
   const [livePreview, setLivePreview] = useState<CraftingOfflineResult | null>(null);
   const anchorRef = useRef<Date | null>(character.currentActivity.startedAt);
+  // How many whole items (relative to the current anchor) have already had
+  // their "crafted" notification fire — compared against the live preview's
+  // floor(itemsCrafted) on every TickBar loop so the toast appears in the
+  // same instant the bar visually completes, instead of waiting for the
+  // ~20s autosave to batch however many finished in the meantime. Reset
+  // whenever the anchor itself resets (a new recipe, or a successful
+  // autosave moving it to `now`) since the count then starts over from 0.
+  const notifiedWholeRef = useRef(0);
   const materialsRef = useRef<Record<string, number>>({});
   const goldRef = useRef(character.gold);
 
@@ -90,6 +98,7 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
     setOutOfMaterials(false);
     setLivePreview(null);
     anchorRef.current = character.currentActivity.startedAt;
+    notifiedWholeRef.current = 0;
     goldRef.current = character.gold;
     if (user) {
       getInventory(user.uid).then((inv) => {
@@ -214,12 +223,27 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
     // next TickBar loop completion computes a fresh one from the new anchor.
     setLivePreview(null);
 
-    if (currentCharacter.notificationsEnabled) {
-      const resultQty = recipe.resultQuantity * wholeCrafted;
+    // The normal case: every whole item in this window already got its own
+    // "crafted" toast the instant its TickBar loop completed (see
+    // handleTickIteration below), so there's nothing left to report here.
+    // This only fires for whatever a tick DIDN'T already cover — e.g. the
+    // tab was backgrounded and animationiteration stopped firing, or the
+    // last item of the window finished in the gap between the final tick
+    // and this autosave running.
+    const notYetNotified = wholeCrafted - notifiedWholeRef.current;
+    if (currentCharacter.notificationsEnabled && notYetNotified > 0) {
+      const resultQty = recipe.resultQuantity * notYetNotified;
       notify(`${ITEMS[recipe.resultItemId]?.name ?? recipe.resultItemId} crafted`, [
         `${resultQty}x ${ITEMS[recipe.resultItemId]?.name ?? recipe.resultItemId}`,
       ]);
     }
+    // Relative to the OLD anchor (still what `anchorRef.current` rolls back
+    // to if the write below fails), every whole item up through wholeCrafted
+    // is now accounted for — only reset to 0 (a fresh window) once the write
+    // actually succeeds and the anchor durably moves to `now`, in the try
+    // block below; a failed write must leave this matching the restored
+    // anchor so a retry can't re-fire the same toast.
+    notifiedWholeRef.current = wholeCrafted;
     if (currentCharacter.skillXpNotificationsEnabled && earnsProfessionXp && result.professionXpGained > 0) {
       notify(`${label} XP gained`, [`+${result.professionXpGained} XP`]);
     }
@@ -376,6 +400,9 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
         // activity started, risking an isLongAbsence flicker.
         currentActivity: { ...fresh.currentActivity, startedAt: now },
       }));
+      // The anchor durably moved to `now` — the next window's whole-item
+      // count (and the next tick's notification check) starts fresh from 0.
+      notifiedWholeRef.current = 0;
     } catch (err) {
       console.error('Crafting autosave failed, will retry next cycle:', err);
       anchorRef.current = previousAnchor;
@@ -383,6 +410,11 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
       goldRef.current = previousGold;
       setBankedCrafted((prev) => prev - wholeCrafted);
       setLivePreview(null);
+      // notifiedWholeRef is deliberately left at wholeCrafted (set above,
+      // before this write was attempted) — anchorRef just rolled back to
+      // previousAnchor too, so the next tick/retry is relative to the same
+      // anchor these whole items were already notified against; resetting
+      // to 0 here would re-fire the same "crafted" toast on a retry.
       applyOptimisticUpdate((c) => ({
         ...c,
         professions: {
@@ -482,25 +514,40 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
     previewCookingZoneMasteryInput;
   function handleTickIteration() {
     if (!anchorRef.current) return;
-    setLivePreview(
-      resolveCraftingOffline(
-        anchorRef.current,
-        new Date(),
-        recipeLike(),
-        prof.level,
-        prof.xp,
-        previewAnyZoneOrMaterialMastery ? 0 : masteryState.level,
-        previewAnyZoneOrMaterialMastery ? 0 : masteryState.xp,
-        cap,
-        materialsRef.current,
-        goldRef.current,
-        previewMaterialMasteryInput,
-        previewAlchemyZoneMasteryInput,
-        craftingShirtBonuses(character.currentActivity.equippedShirtItemId),
-        previewEnchantingZoneMasteryInput,
-        previewCookingZoneMasteryInput
-      )
+    const preview = resolveCraftingOffline(
+      anchorRef.current,
+      new Date(),
+      recipeLike(),
+      prof.level,
+      prof.xp,
+      previewAnyZoneOrMaterialMastery ? 0 : masteryState.level,
+      previewAnyZoneOrMaterialMastery ? 0 : masteryState.xp,
+      cap,
+      materialsRef.current,
+      goldRef.current,
+      previewMaterialMasteryInput,
+      previewAlchemyZoneMasteryInput,
+      craftingShirtBonuses(character.currentActivity.equippedShirtItemId),
+      previewEnchantingZoneMasteryInput,
+      previewCookingZoneMasteryInput
     );
+    setLivePreview(preview);
+    // Fires the "crafted" toast the instant the bar's own loop completes a
+    // whole item, rather than waiting for the next ~20s autosave to batch
+    // however many finished in the meantime (see notifiedWholeRef's doc
+    // comment above) — this is what keeps the bar, the "This session: N
+    // crafted" count, and the notification all visibly in sync.
+    const wholeNow = Math.floor(preview.itemsCrafted);
+    const newly = wholeNow - notifiedWholeRef.current;
+    if (newly > 0) {
+      notifiedWholeRef.current = wholeNow;
+      if (character.notificationsEnabled) {
+        const resultQty = recipe.resultQuantity * newly;
+        notify(`${ITEMS[recipe.resultItemId]?.name ?? recipe.resultItemId} crafted`, [
+          `${resultQty}x ${ITEMS[recipe.resultItemId]?.name ?? recipe.resultItemId}`,
+        ]);
+      }
+    }
   }
   const previewShirtSpeedPct = shirtBonusPct(
     shirtBonusForItemId(character.currentActivity.equippedShirtItemId),

@@ -24,6 +24,44 @@ function CornerOrnament({ position }: { position: 'top-left' | 'top-right' | 'bo
   );
 }
 
+// One of the two buttons flanking Begin Adventure (only rendered when real
+// art is showing — see CharacterCreationScreen's own render). Colored via
+// that spec's SPEC_THEME entry so it still reads as belonging to the
+// matching half of the artwork, even though it no longer sits on top of it.
+// `position` drives its placement within .cc-card-footer: on desktop it's
+// absolutely positioned at 25%/75% of that footer's width (which exactly
+// matches the art's width — see .cc-footer-row in index.css), so it sits
+// directly under that spec's own half of the artwork; on mobile it falls
+// back to a plain stacked flow position (see the mobile media query).
+function SpecSelectButton({
+  specId,
+  position,
+  selected,
+  disabled,
+  onSelect,
+}: {
+  specId: SpecId;
+  position: 'left' | 'right';
+  selected: boolean;
+  disabled: boolean;
+  onSelect: () => void;
+}) {
+  const theme = SPEC_THEME[specId];
+  return (
+    <button
+      type="button"
+      className={`cc-spec-select-btn cc-spec-select-btn-${position}${selected ? ' cc-spec-select-btn-selected' : ''}`}
+      style={{ background: theme?.bg, borderColor: theme?.border, color: theme?.text }}
+      onClick={onSelect}
+      disabled={disabled}
+      title={SPEC_INFO[specId].blurb}
+    >
+      {selected ? '✓ ' : ''}
+      {SPEC_INFO[specId].label}
+    </button>
+  );
+}
+
 // `onArtAvailability` lets the parent know whether real artwork is showing
 // (so it can overlay the two Select buttons directly on the art, matching
 // its own dual-spec layout and colors) or only the emoji fallback (so it
@@ -91,6 +129,14 @@ export function CharacterCreationScreen() {
     ? CLASS_SHOWCASE.find((c) => c.specs.includes(selectedSpec))!.id
     : null;
   const canBegin = !creating && name.trim().length > 0 && !!selectedSpec;
+
+  // The two Begin-Adventure-flanking spec buttons use each spec's own
+  // SPEC_THEME `side` (not CLASS_SHOWCASE.specs' array order — see
+  // classInfo.ts's own comment on why those can differ) so a button's color
+  // still matches the half of the artwork it picks, even though it no
+  // longer sits on top of that half.
+  const leftSpec = entry.specs.find((s) => SPEC_THEME[s]?.side === 'left') ?? entry.specs[0];
+  const rightSpec = entry.specs.find((s) => SPEC_THEME[s]?.side === 'right') ?? entry.specs[1];
 
   function goTo(nextPage: number) {
     if (nextPage < 0 || nextPage >= CLASS_SHOWCASE.length) return;
@@ -161,32 +207,6 @@ export function CharacterCreationScreen() {
           <div className={`storybook-card${hasArt ? ' storybook-card-flush' : ''}`}>
             <div className="storybook-art-wrap">
               <ClassStorybookArt key={entry.id} classId={entry.id} onArtAvailability={setHasArt} />
-              {hasArt && (
-                <div className="storybook-art-select-overlay">
-                  {entry.specs.map((specId) => {
-                    const theme = SPEC_THEME[specId];
-                    const selected = selectedSpec === specId;
-                    return (
-                      <button
-                        key={specId}
-                        type="button"
-                        className={`storybook-select-overlay-btn${selected ? ' storybook-select-overlay-btn-selected' : ''}`}
-                        style={{
-                          left: theme?.side === 'right' ? '75%' : '25%',
-                          background: theme?.bg,
-                          borderColor: theme?.border,
-                          color: theme?.text,
-                        }}
-                        onClick={() => setSelectedSpec(specId)}
-                        disabled={creating}
-                        title={`${SPEC_INFO[specId].label} — ${SPEC_INFO[specId].blurb}`}
-                      >
-                        {selected ? '✓ Selected' : 'Select'}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
             </div>
 
             {/* The art's own baked-in role name/blurb text becomes too
@@ -255,9 +275,46 @@ export function CharacterCreationScreen() {
           ))}
         </div>
 
-        <button type="button" className="cc-begin-button" onClick={handleCreate} disabled={!canBegin}>
-          {creating ? 'Creating…' : 'Begin Adventure'}
-        </button>
+        {/* Spec choice now lives here, flanking Begin Adventure, instead of
+            overlaid on the art — each button keeps that spec's SPEC_THEME
+            colors (so it still reads as "the red-bordered one is the DPS
+            half") but is labeled with its actual role instead of a generic
+            "Select". .cc-footer-row mirrors .storybook-page's own
+            arrow-width/gap recipe (see index.css) so .cc-card-footer ends
+            up exactly as wide as .storybook-card — that's what lets the
+            left/right buttons land at a true 25%/75%, directly under that
+            spec's half of the artwork, instead of just "centered as a
+            group." Only shown with real art loaded; the no-art fallback
+            above already has its own full spec buttons. */}
+        <div className="cc-footer-row">
+          <span className="cc-footer-spacer" aria-hidden="true" />
+          <div className="cc-card-footer">
+            {hasArt && (
+              <SpecSelectButton
+                specId={leftSpec}
+                position="left"
+                selected={selectedSpec === leftSpec}
+                disabled={creating}
+                onSelect={() => setSelectedSpec(leftSpec)}
+              />
+            )}
+
+            <button type="button" className="cc-begin-button" onClick={handleCreate} disabled={!canBegin}>
+              {creating ? 'Creating…' : 'Begin Adventure'}
+            </button>
+
+            {hasArt && (
+              <SpecSelectButton
+                specId={rightSpec}
+                position="right"
+                selected={selectedSpec === rightSpec}
+                disabled={creating}
+                onSelect={() => setSelectedSpec(rightSpec)}
+              />
+            )}
+          </div>
+          <span className="cc-footer-spacer" aria-hidden="true" />
+        </div>
         {error ? (
           <p className="error">{error}</p>
         ) : (

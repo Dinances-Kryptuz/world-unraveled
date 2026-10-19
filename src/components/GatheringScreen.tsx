@@ -53,6 +53,12 @@ export function GatheringScreen({ node }: { node: GatherNode }) {
   // comment for why an independent JS timer would drift against the bar.
   const [livePreview, setLivePreview] = useState<GatheringOfflineResult | null>(null);
   const anchorRef = useRef<Date | null>(character.currentActivity.startedAt);
+  // How many whole units (relative to the current anchor) have already had
+  // their "gathered" notification fire — see CraftingScreen's matching
+  // notifiedWholeRef for the full rationale (keeps the toast in lockstep
+  // with the TickBar loop that visually completes it, instead of waiting
+  // for the ~20s autosave to batch however many finished in the meantime).
+  const notifiedWholeRef = useRef(0);
 
   const characterRef = useRef<Character | null>(character);
   const userRef = useRef<User | null>(user);
@@ -68,6 +74,7 @@ export function GatheringScreen({ node }: { node: GatherNode }) {
     setBankedBonusQuantity(0);
     setLivePreview(null);
     anchorRef.current = character.currentActivity.startedAt;
+    notifiedWholeRef.current = 0;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [node.id]);
 
@@ -163,9 +170,18 @@ export function GatheringScreen({ node }: { node: GatherNode }) {
     setBankedBonusQuantity((prev) => prev + wholeBonus);
     setLivePreview(null);
 
-    if (currentCharacter.notificationsEnabled && wholeQuantity > 0) {
-      notify(`${ITEMS[node.itemId]?.name ?? node.itemId} gathered`, [`${wholeQuantity}x ${ITEMS[node.itemId]?.name ?? node.itemId}`]);
+    // The normal case: every whole unit in this window already got its own
+    // "gathered" toast the instant its TickBar loop completed (see
+    // handleTickIteration below) — see CraftingScreen's matching comment for
+    // why this only reports whatever a tick DIDN'T already cover.
+    const notYetNotified = wholeQuantity - notifiedWholeRef.current;
+    if (currentCharacter.notificationsEnabled && notYetNotified > 0) {
+      notify(`${ITEMS[node.itemId]?.name ?? node.itemId} gathered`, [`${notYetNotified}x ${ITEMS[node.itemId]?.name ?? node.itemId}`]);
     }
+    // See CraftingScreen's matching comment: left at wholeQuantity (not
+    // reset to 0) until the write below actually succeeds, so a failed
+    // autosave's rollback of anchorRef can't cause a retry to re-notify.
+    notifiedWholeRef.current = wholeQuantity;
     if (currentCharacter.skillXpNotificationsEnabled && result.professionXpGained > 0) {
       notify(`${PROFESSION_LABELS[node.profession]} XP gained`, [`+${result.professionXpGained} XP`]);
     }
@@ -265,6 +281,8 @@ export function GatheringScreen({ node }: { node: GatherNode }) {
         // activity started, risking a isLongAbsence flicker.
         currentActivity: { ...fresh.currentActivity, startedAt: now },
       }));
+      // The anchor durably moved to `now` — the next window starts fresh.
+      notifiedWholeRef.current = 0;
     } catch (err) {
       console.error('Gathering autosave failed, will retry next cycle:', err);
       anchorRef.current = previousAnchor;
@@ -319,21 +337,31 @@ export function GatheringScreen({ node }: { node: GatherNode }) {
     const previewHerbalismOverride: HerbalismOverride | undefined = herbZoneId
       ? { zoneMasteryStartingXp: herbalismZoneXp }
       : undefined;
-    setLivePreview(
-      resolveGatheringOffline(
-        anchorRef.current,
-        new Date(),
-        resourceLike(),
-        prof.level,
-        prof.xp,
-        masteryState.level,
-        masteryState.xp,
-        cap,
-        previewToolBonusPct,
-        previewHerbalismOverride,
-        gatheringShirtBonuses(character.currentActivity.equippedShirtItemId)
-      )
+    const preview = resolveGatheringOffline(
+      anchorRef.current,
+      new Date(),
+      resourceLike(),
+      prof.level,
+      prof.xp,
+      masteryState.level,
+      masteryState.xp,
+      cap,
+      previewToolBonusPct,
+      previewHerbalismOverride,
+      gatheringShirtBonuses(character.currentActivity.equippedShirtItemId)
     );
+    setLivePreview(preview);
+    // Fires the "gathered" toast the instant the bar's own loop completes a
+    // whole unit — see CraftingScreen's matching comment in its own
+    // handleTickIteration for the full rationale.
+    const wholeNow = Math.floor(preview.quantityGained);
+    const newly = wholeNow - notifiedWholeRef.current;
+    if (newly > 0) {
+      notifiedWholeRef.current = wholeNow;
+      if (character.notificationsEnabled) {
+        notify(`${ITEMS[node.itemId]?.name ?? node.itemId} gathered`, [`${newly}x ${ITEMS[node.itemId]?.name ?? node.itemId}`]);
+      }
+    }
   }
   const displayQuantity = bankedQuantity + Math.floor(livePreview?.quantityGained ?? 0);
   const displayBonusQuantity = bankedBonusQuantity + Math.floor(livePreview?.rareBonusQuantity ?? 0);

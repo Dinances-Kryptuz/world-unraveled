@@ -868,14 +868,14 @@ function computeEffectDamage(
   // closest honest fit for a non-duration, charge-based "more HP" effect.
   if (defensive?.maxHpBonusPct && defender.hp - amount <= 0) {
     const cushion = defender.maxHp * (defensive.maxHpBonusPct / 100);
-    amount = Math.max(0, amount - cushion);
+    amount = Math.round(Math.max(0, amount - cushion));
   }
 
   // Weak Troll's Blood Elixir's healOnTriggerPct — a small heal bundled into
   // this same hit-taken event, returned rather than applied here so the
   // caller (useAbility) can skip it for an already-dead defender exactly
   // like every other heal in this file does.
-  const healOnTrigger = defensive?.healOnTriggerPct ? defender.maxHp * (defensive.healOnTriggerPct / 100) : 0;
+  const healOnTrigger = defensive?.healOnTriggerPct ? Math.round(defender.maxHp * (defensive.healOnTriggerPct / 100)) : 0;
 
   // Enchanting overhaul's weapon procs — Fiery Weapon/Lifestealing/Crusader
   // (and their Ember-tier upgrades), player-attacker only (CasterProfile.
@@ -896,7 +896,7 @@ function computeEffectDamage(
     if (proc.kind === 'fiery_weapon') {
       amount += Math.round(amount * (proc.power / 100));
     } else if (proc.kind === 'lifestealing') {
-      attackerHealOnTrigger = Math.max(0, Math.min(amount * (proc.power / 100), attacker.maxHp - attacker.hp));
+      attackerHealOnTrigger = Math.round(Math.max(0, Math.min(amount * (proc.power / 100), attacker.maxHp - attacker.hp)));
     } else if (proc.kind === 'crusader') {
       upsertBuff(attacker, {
         abilityId: 'enchant_proc_crusader',
@@ -905,14 +905,19 @@ function computeEffectDamage(
         damageTakenPct: 0,
         actionSpeedPct: 0,
       });
-      attackerHealOnTrigger = Math.max(
-        0,
-        Math.min(attacker.maxHp * (CRUSADER_PROC_HEAL_PCT_OF_MAX_HP / 100), attacker.maxHp - attacker.hp)
+      attackerHealOnTrigger = Math.round(
+        Math.max(0, Math.min(attacker.maxHp * (CRUSADER_PROC_HEAL_PCT_OF_MAX_HP / 100), attacker.maxHp - attacker.hp))
       );
     }
   }
 
-  return { hit: true, amount, healOnTrigger, attackerHealOnTrigger, crit: isCrit, procTriggered };
+  // Final safety net: every adjustment above already rounds its own step,
+  // but `amount` is a running value threaded through several of them (the
+  // maxHpBonusPct cushion in particular used to leave it fractional, which
+  // then showed up as a long-decimal number in the combat log) — rounding
+  // once more here guarantees whatever reaches the log/HP math is always a
+  // whole number, regardless of what gets added to this pipeline later.
+  return { hit: true, amount: Math.round(amount), healOnTrigger, attackerHealOnTrigger, crit: isCrit, procTriggered };
 }
 
 export interface KillReward {
