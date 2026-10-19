@@ -34,10 +34,10 @@ export const SPEC_ICONS: Record<SpecId, string> = {
 export const SPEC_INFO: Record<SpecId, { label: string; blurb: string }> = {
   warrior_dps: { label: 'Melee DPS', blurb: 'Highest sustained damage. Fast kills, moderate durability.' },
   warrior_tank: { label: 'Tank', blurb: 'Slower kills, but the safest spec in the game.' },
-  shadow_priest: { label: 'Shadow', blurb: 'Ranged damage with self-sustain from the damage you deal.' },
-  holy_priest: { label: 'Holy', blurb: 'The best pure healer. Low damage, extremely hard to kill.' },
-  prot_paladin: { label: 'Protection', blurb: 'A hybrid tank — less durable than a Warrior Tank, but hits harder.' },
-  holy_paladin: { label: 'Holy', blurb: 'A battle healer — more durable and offensive than Holy Priest.' },
+  shadow_priest: { label: 'Shadow DPS', blurb: 'Ranged damage with self-sustain from the damage you deal.' },
+  holy_priest: { label: 'Healer', blurb: 'The best pure healer. Low damage, extremely hard to kill.' },
+  prot_paladin: { label: 'Tank', blurb: 'A hybrid tank — less durable than a Warrior Tank, but hits harder.' },
+  holy_paladin: { label: 'Healer', blurb: 'A battle healer — more durable and offensive than Holy Priest.' },
   // Present only so SPEC_INFO stays a true Record over every SpecId — Mage
   // is companion-only, see the module comment above.
   mage_fire: { label: 'Fire', blurb: 'Single-target burst damage.' },

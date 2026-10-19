@@ -816,7 +816,7 @@ button.item-slot:active:not(:disabled) {
   position: relative;
   z-index: 1;
   width: 100%;
-  max-width: 920px;
+  max-width: 1240px;
 }
 
 /* ── Title screen: full-bleed hero art (the game's logo is baked into the
@@ -910,7 +910,7 @@ button.item-slot:active:not(:disabled) {
 
   position: relative;
   width: 100%;
-  max-width: 820px;
+  max-width: 1120px;
   margin: 0 auto;
   text-align: center;
   padding: 40px 56px;
@@ -1038,7 +1038,6 @@ button.item-slot:active:not(:disabled) {
 }
 
 .cc-begin-button {
-  margin-top: 20px;
   font-family: var(--cc-font-display);
   font-weight: 600;
   letter-spacing: 0.03em;
@@ -1108,7 +1107,10 @@ button.item-slot:active:not(:disabled) {
 .storybook-card {
   flex: 1;
   min-width: 0;
-  max-width: 720px;
+  /* Roomy enough to let the art fill nearly the whole panel (per the
+     user's "make the art the majority of the screen" ask) — effectively
+     uncapped within .character-creation's own max-width. */
+  max-width: 1000px;
   background: rgba(10, 8, 6, 0.4);
   border: 1px solid var(--cc-gold);
   border-radius: 10px;
@@ -1150,20 +1152,21 @@ button.item-slot:active:not(:disabled) {
   margin: 0;
 }
 
-.storybook-art-select-overlay {
-  position: absolute;
-  inset: 0;
+/* ── Spec selection row: flanks Begin Adventure instead of overlaying the
+   art (see CharacterCreationScreen.tsx's SpecSelectButton) — each button
+   keeps that spec's SPEC_THEME colors so it still reads as belonging to
+   the matching half of the artwork above it. ── */
+.cc-action-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 20px;
+  flex-wrap: wrap;
 }
 
-/* Positioned just above each half's own role-name panel (already part of
-   the artwork) — left/right set inline per button (gameData/classInfo.ts's
-   SPEC_THEME supplies the background/border/text colors matching that
-   half's palette). */
-.storybook-select-overlay-btn {
-  position: absolute;
-  top: 68%;
-  transform: translate(-50%, -50%);
-  padding: 8px 22px;
+.cc-spec-select-btn {
+  padding: 10px 20px;
   border-radius: 999px;
   border: 2px solid;
   font-family: var(--cc-font-display);
@@ -1171,16 +1174,17 @@ button.item-slot:active:not(:disabled) {
   font-size: 0.85rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+  white-space: nowrap;
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
   transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
 
-.storybook-select-overlay-btn:hover:not(:disabled) {
-  transform: translate(-50%, -50%) translateY(-2px);
+.cc-spec-select-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
 }
 
-.storybook-select-overlay-btn-selected {
+.cc-spec-select-btn-selected {
   box-shadow: 0 0 0 2px #fff, 0 0 0 4px #000, 0 4px 14px rgba(0, 0, 0, 0.55);
 }
 
@@ -1988,12 +1992,30 @@ button.storybook-spec-button:hover:not(:disabled) {
     align-self: center;
   }
 
+  .cc-action-row {
+    flex-direction: column;
+  }
+
+  /* The now-bigger art panel pushes Begin Adventure/the spec buttons lower
+     on the page, close enough to the bottom of a phone viewport that the
+     always-on-top .bug-report-fab (fixed bottom-right) can land on top of
+     them depending on scroll position. Hiding it on this one screen at
+     this one breakpoint is simpler and safer than trying to guarantee no
+     scroll position ever overlaps a fixed element. */
+  body:has(.character-creation) .bug-report-fab {
+    display: none;
+  }
+
   /* Create Your Adventurer: less empty margin around the panel, smaller
      corner brackets so they don't crowd the tighter padding, and the real
      HTML spec descriptions switched on now that the art itself has shrunk
      too far to read its own baked-in text comfortably. */
   .pregame-shell {
-    padding: 24px 12px 48px;
+    /* Extra bottom clearance (vs. the 48px used elsewhere) so the fixed
+       bug-report FAB (bottom:20px, ~35px tall) never sits over the Begin
+       Adventure/spec buttons once this taller panel is scrolled all the
+       way down. */
+    padding: 24px 12px 88px;
     overflow-x: hidden;
   }
 
