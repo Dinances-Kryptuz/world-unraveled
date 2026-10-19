@@ -1153,19 +1153,40 @@ button.item-slot:active:not(:disabled) {
 }
 
 /* ── Spec selection row: flanks Begin Adventure instead of overlaying the
-   art (see CharacterCreationScreen.tsx's SpecSelectButton) — each button
-   keeps that spec's SPEC_THEME colors so it still reads as belonging to
-   the matching half of the artwork above it. ── */
-.cc-action-row {
+   art (see CharacterCreationScreen.tsx's SpecSelectButton). .cc-footer-row
+   repeats .storybook-page's own arrow(44px)+gap(12px) recipe via
+   .cc-footer-spacer, so .cc-card-footer is guaranteed to render at the
+   exact same width as .storybook-card — that's what lets the left/right
+   buttons sit at a true 25%/75% and land directly under that spec's own
+   half of the artwork, not just "centered as a group." Begin Adventure is
+   the only normal-flow child of .cc-card-footer (the spec buttons are
+   positioned absolute, out of flow), so text-align:center alone puts it
+   exactly in the middle. ── */
+.cc-footer-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  gap: 16px;
+  gap: 12px;
   margin-top: 20px;
-  flex-wrap: wrap;
+}
+
+.cc-footer-spacer {
+  flex-shrink: 0;
+  width: 44px;
+}
+
+.cc-card-footer {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  max-width: 1000px;
+  min-height: 56px;
+  text-align: center;
 }
 
 .cc-spec-select-btn {
+  position: absolute;
+  top: 0;
   padding: 10px 20px;
   border-radius: 999px;
   border: 2px solid;
@@ -1180,8 +1201,19 @@ button.item-slot:active:not(:disabled) {
   transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
 
-.cc-spec-select-btn:hover:not(:disabled) {
-  transform: translateY(-2px);
+.cc-spec-select-btn-left {
+  left: 25%;
+  transform: translateX(-50%);
+}
+
+.cc-spec-select-btn-right {
+  left: 75%;
+  transform: translateX(-50%);
+}
+
+.cc-spec-select-btn-left:hover:not(:disabled),
+.cc-spec-select-btn-right:hover:not(:disabled) {
+  transform: translate(-50%, -2px);
 }
 
 .cc-spec-select-btn-selected {
@@ -1992,8 +2024,38 @@ button.storybook-spec-button:hover:not(:disabled) {
     align-self: center;
   }
 
-  .cc-action-row {
+  /* Below this breakpoint there's no "under the matching art half" to align
+     to any more (the art itself has shrunk to one narrow column) — drop the
+     25%/75% absolute positioning and go back to a simple centered stack,
+     same visual order as the DOM (left spec, Begin Adventure, right spec). */
+  .cc-footer-row {
     flex-direction: column;
+  }
+
+  .cc-footer-spacer {
+    display: none;
+  }
+
+  .cc-card-footer {
+    position: static;
+    max-width: none;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .cc-spec-select-btn-left,
+  .cc-spec-select-btn-right {
+    position: static;
+    left: auto;
+    transform: none;
+  }
+
+  .cc-spec-select-btn-left:hover:not(:disabled),
+  .cc-spec-select-btn-right:hover:not(:disabled) {
+    transform: translateY(-2px);
   }
 
   /* The now-bigger art panel pushes Begin Adventure/the spec buttons lower

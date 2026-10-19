@@ -28,13 +28,20 @@ function CornerOrnament({ position }: { position: 'top-left' | 'top-right' | 'bo
 // art is showing — see CharacterCreationScreen's own render). Colored via
 // that spec's SPEC_THEME entry so it still reads as belonging to the
 // matching half of the artwork, even though it no longer sits on top of it.
+// `position` drives its placement within .cc-card-footer: on desktop it's
+// absolutely positioned at 25%/75% of that footer's width (which exactly
+// matches the art's width — see .cc-footer-row in index.css), so it sits
+// directly under that spec's own half of the artwork; on mobile it falls
+// back to a plain stacked flow position (see the mobile media query).
 function SpecSelectButton({
   specId,
+  position,
   selected,
   disabled,
   onSelect,
 }: {
   specId: SpecId;
+  position: 'left' | 'right';
   selected: boolean;
   disabled: boolean;
   onSelect: () => void;
@@ -43,7 +50,7 @@ function SpecSelectButton({
   return (
     <button
       type="button"
-      className={`cc-spec-select-btn${selected ? ' cc-spec-select-btn-selected' : ''}`}
+      className={`cc-spec-select-btn cc-spec-select-btn-${position}${selected ? ' cc-spec-select-btn-selected' : ''}`}
       style={{ background: theme?.bg, borderColor: theme?.border, color: theme?.text }}
       onClick={onSelect}
       disabled={disabled}
@@ -272,30 +279,41 @@ export function CharacterCreationScreen() {
             overlaid on the art — each button keeps that spec's SPEC_THEME
             colors (so it still reads as "the red-bordered one is the DPS
             half") but is labeled with its actual role instead of a generic
-            "Select". Only shown with real art loaded; the no-art fallback
+            "Select". .cc-footer-row mirrors .storybook-page's own
+            arrow-width/gap recipe (see index.css) so .cc-card-footer ends
+            up exactly as wide as .storybook-card — that's what lets the
+            left/right buttons land at a true 25%/75%, directly under that
+            spec's half of the artwork, instead of just "centered as a
+            group." Only shown with real art loaded; the no-art fallback
             above already has its own full spec buttons. */}
-        <div className="cc-action-row">
-          {hasArt && (
-            <SpecSelectButton
-              specId={leftSpec}
-              selected={selectedSpec === leftSpec}
-              disabled={creating}
-              onSelect={() => setSelectedSpec(leftSpec)}
-            />
-          )}
+        <div className="cc-footer-row">
+          <span className="cc-footer-spacer" aria-hidden="true" />
+          <div className="cc-card-footer">
+            {hasArt && (
+              <SpecSelectButton
+                specId={leftSpec}
+                position="left"
+                selected={selectedSpec === leftSpec}
+                disabled={creating}
+                onSelect={() => setSelectedSpec(leftSpec)}
+              />
+            )}
 
-          <button type="button" className="cc-begin-button" onClick={handleCreate} disabled={!canBegin}>
-            {creating ? 'Creating…' : 'Begin Adventure'}
-          </button>
+            <button type="button" className="cc-begin-button" onClick={handleCreate} disabled={!canBegin}>
+              {creating ? 'Creating…' : 'Begin Adventure'}
+            </button>
 
-          {hasArt && (
-            <SpecSelectButton
-              specId={rightSpec}
-              selected={selectedSpec === rightSpec}
-              disabled={creating}
-              onSelect={() => setSelectedSpec(rightSpec)}
-            />
-          )}
+            {hasArt && (
+              <SpecSelectButton
+                specId={rightSpec}
+                position="right"
+                selected={selectedSpec === rightSpec}
+                disabled={creating}
+                onSelect={() => setSelectedSpec(rightSpec)}
+              />
+            )}
+          </div>
+          <span className="cc-footer-spacer" aria-hidden="true" />
         </div>
         {error ? (
           <p className="error">{error}</p>
