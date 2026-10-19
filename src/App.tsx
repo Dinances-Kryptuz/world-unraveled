@@ -73,7 +73,11 @@ function AppShell({
   const xpProgressPct = Math.max(0, Math.min(100, (xpIntoLevel / xpNeededForLevel) * 100));
 
   return (
-    <div className="app-shell" style={zoneThemeStyle(character.currentZoneId) as CSSProperties}>
+    <div
+      className="app-shell"
+      data-class={character.class}
+      style={zoneThemeStyle(character.currentZoneId) as CSSProperties}
+    >
       <ZoneBackdrop zoneId={character.currentZoneId} />
       <Sidebar
         active={section}

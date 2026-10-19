@@ -74,7 +74,7 @@ function ConditionsEditor({
   return (
     <div style={{ marginTop: 6, marginLeft: 4, fontSize: '0.85rem' }}>
       {conditions.length === 0 ? (
-        <p style={{ margin: '2px 0', color: '#6b6156' }}>Always used when off cooldown.</p>
+        <p style={{ margin: '2px 0', color: 'var(--text-secondary)' }}>Always used when off cooldown.</p>
       ) : (
         <>
           {conditions.length > 1 && (
@@ -514,9 +514,9 @@ export function CombatSetupScreen() {
           Save current as preset
         </button>
       </div>
-      {dirty && <small style={{ color: '#6b6156' }}>Save your changes above first — presets snapshot your saved loadout.</small>}
+      {dirty && <small style={{ color: 'var(--text-secondary)' }}>Save your changes above first — presets snapshot your saved loadout.</small>}
       {character.combatPresets.length >= MAX_COMBAT_PRESETS && (
-        <small style={{ color: '#6b6156' }}>You've saved the maximum of {MAX_COMBAT_PRESETS} presets — delete one to save another.</small>
+        <small style={{ color: 'var(--text-secondary)' }}>You've saved the maximum of {MAX_COMBAT_PRESETS} presets — delete one to save another.</small>
       )}
       {presetError && <p className="error">{presetError}</p>}
     </div>

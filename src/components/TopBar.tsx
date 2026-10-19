@@ -58,7 +58,7 @@ export function TopBar({
           <div className="top-bar-xp-track">
             <div
               className="top-bar-xp-fill"
-              style={{ width: `${xpProgressPct}%`, background: 'var(--zone-primary)' }}
+              style={{ width: `${xpProgressPct}%`, background: 'var(--class-accent)' }}
             />
           </div>
           <small>
@@ -90,7 +90,7 @@ export function TopBar({
               onClick={() => clickable && onSelectZone(z.id)}
               disabled={!clickable}
               title={title}
-              style={isCurrent ? { background: 'var(--zone-primary)', color: '#fff' } : undefined}
+              style={isCurrent ? { background: 'var(--class-accent)', color: 'var(--class-accent-text)' } : undefined}
             >
               {z.name}
               {!unlocked && z.unlockRequirement.type === 'characterLevel' ? ` (Lv ${z.unlockRequirement.level})` : ''}

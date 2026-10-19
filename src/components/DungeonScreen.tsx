@@ -48,7 +48,7 @@ import type { Monster } from '../gameData/types';
 import type { Character, Inventory } from '../types/character';
 import type { User } from 'firebase/auth';
 import { TickBar } from './TickBar';
-import { StatBar, hpBarColor } from './StatBar';
+import { StatBar, HEALTH_BAR_COLOR, ENEMY_HEALTH_BAR_COLOR } from './StatBar';
 import { MonsterLevelBadge } from './MonsterLevelBadge';
 import { MonsterPortrait } from './MonsterPortrait';
 import { StatusBadges } from './StatusBadges';
@@ -714,7 +714,7 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
       {!retreated && (
         <>
           <MonsterPortrait monsterId={monster.id} isBoss={monster.isBoss} />
-          <StatBar label="You" current={player.hp} max={player.maxHp} color={hpBarColor((player.hp / player.maxHp) * 100)} />
+          <StatBar label="You" current={player.hp} max={player.maxHp} color={HEALTH_BAR_COLOR} />
           <ResourceBars combatant={player} />
           <StatusBadges combatant={player} />
 
@@ -724,7 +724,7 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
                 label={companion.name}
                 current={companion.hp}
                 max={companion.maxHp}
-                color={hpBarColor((companion.hp / companion.maxHp) * 100)}
+                color={HEALTH_BAR_COLOR}
               />
               <StatusBadges combatant={companion} />
             </div>
@@ -736,13 +736,13 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
                 label={state.enemies.length > 1 ? `${enemy.name} ${i + 1}` : enemy.name}
                 current={enemy.hp}
                 max={enemy.maxHp}
-                color={hpBarColor((enemy.hp / enemy.maxHp) * 100)}
+                color={ENEMY_HEALTH_BAR_COLOR}
               />
               <StatusBadges combatant={enemy} />
             </div>
           ))}
 
-          <TickBar seconds={ATTACK_INTERVAL_SECONDS} color="#6b4f2a" label="Attack rhythm" />
+          <TickBar seconds={ATTACK_INTERVAL_SECONDS} color="var(--class-accent)" label="Attack rhythm" />
 
           <AbilityBar player={player} onUse={handleManualUse} />
           <ConsumablesBar

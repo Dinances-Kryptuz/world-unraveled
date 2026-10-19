@@ -48,7 +48,7 @@ import type { Monster } from '../gameData/types';
 import type { Character, Inventory } from '../types/character';
 import type { User } from 'firebase/auth';
 import { TickBar } from './TickBar';
-import { StatBar, hpBarColor } from './StatBar';
+import { StatBar, HEALTH_BAR_COLOR, ENEMY_HEALTH_BAR_COLOR } from './StatBar';
 import { MonsterPortrait } from './MonsterPortrait';
 import { StatusBadges } from './StatusBadges';
 import { ResourceBars } from './ResourceBars';
@@ -516,7 +516,7 @@ export function TowerScreen() {
       </p>
 
       <MonsterPortrait monsterId={guardian.id} isBoss />
-      <StatBar label="You" current={player.hp} max={player.maxHp} color={hpBarColor((player.hp / player.maxHp) * 100)} />
+      <StatBar label="You" current={player.hp} max={player.maxHp} color={HEALTH_BAR_COLOR} />
       <ResourceBars combatant={player} />
       <StatusBadges combatant={player} />
 
@@ -526,7 +526,7 @@ export function TowerScreen() {
             label={companion.name}
             current={companion.hp}
             max={companion.maxHp}
-            color={hpBarColor((companion.hp / companion.maxHp) * 100)}
+            color={HEALTH_BAR_COLOR}
           />
           <StatusBadges combatant={companion} />
         </div>
@@ -534,12 +534,12 @@ export function TowerScreen() {
 
       {state.enemies.map((enemy) => (
         <div key={enemy.id}>
-          <StatBar label={enemy.name} current={enemy.hp} max={enemy.maxHp} color={hpBarColor((enemy.hp / enemy.maxHp) * 100)} />
+          <StatBar label={enemy.name} current={enemy.hp} max={enemy.maxHp} color={ENEMY_HEALTH_BAR_COLOR} />
           <StatusBadges combatant={enemy} />
         </div>
       ))}
 
-      <TickBar seconds={ATTACK_INTERVAL_SECONDS} color="#6b4f2a" label="Attack rhythm" />
+      <TickBar seconds={ATTACK_INTERVAL_SECONDS} color="var(--class-accent)" label="Attack rhythm" />
 
       <AbilityBar player={player} onUse={handleManualUse} />
       <ConsumablesBar

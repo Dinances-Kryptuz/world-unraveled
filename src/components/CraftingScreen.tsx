@@ -543,7 +543,7 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
                   : recipe.craftSeconds / (earnsProfessionXp ? speedMult : 1)) /
             (1 + previewShirtSpeedPct / 100)
           }
-          color="#6b4f2a"
+          color="var(--class-accent)"
           label="Crafting"
           onIteration={handleTickIteration}
         />

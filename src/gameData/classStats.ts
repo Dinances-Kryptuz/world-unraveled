@@ -177,11 +177,11 @@ export const CLASS_LABELS: Record<ClassId, string> = {
 // the display site rather than by picking different, less-true-to-the-
 // name hexes here.
 export const CLASS_NAME_COLORS: Record<ClassId, string> = {
-  warrior: '#8b5a2b',
+  warrior: '#A94444',
   priest: '#ffffff',
-  paladin: '#f58cba',
+  paladin: '#D4AF57',
   mage: '#19c3d6',
-  rogue: '#fff569',
+  rogue: '#5F7A4B',
 };
 
 // Which armor types each class can equip. Priest is cloth-only; the two

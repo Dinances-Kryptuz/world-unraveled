@@ -41,8 +41,8 @@ export function AbilityBar({ player, onUse }: { player: Combatant; onUse: (abili
               {cooldown > 0 ? `${ability.name} (${Math.ceil(cooldown)}s)` : autoCastOff ? `${ability.name} (manual)` : ability.name}
             </button>
             {ability.cooldownSeconds > 0 && (
-              <div style={{ background: '#e2d9c8', borderRadius: 3, height: 4, width: '100%', marginTop: 3, overflow: 'hidden' }}>
-                <div style={{ background: '#6b4f2a', height: '100%', width: `${cdPct}%`, transition: 'width 1s linear' }} />
+              <div style={{ background: 'var(--bg-secondary)', borderRadius: 3, height: 4, width: '100%', marginTop: 3, overflow: 'hidden' }}>
+                <div style={{ background: 'var(--class-accent)', height: '100%', width: `${cdPct}%`, transition: 'width 1s linear' }} />
               </div>
             )}
           </div>

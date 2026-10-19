@@ -571,7 +571,7 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
               key={t.id}
               className="zone-tab"
               onClick={() => setEnchantingTab(t.id)}
-              style={enchantingTab === t.id ? { background: 'var(--zone-primary)', color: '#fff' } : undefined}
+              style={enchantingTab === t.id ? { background: 'var(--class-accent)', color: 'var(--class-accent-text)' } : undefined}
             >
               {t.label}
             </button>

@@ -61,7 +61,7 @@ function NavButton({
     <button
       className="sidebar-item"
       onClick={() => onSelect(item.id)}
-      style={active === item.id ? { background: 'var(--zone-primary)', color: '#fff' } : undefined}
+      style={active === item.id ? { background: 'var(--class-accent)', color: 'var(--class-accent-text)' } : undefined}
     >
       {item.label}
       {showActivityDot && (
@@ -109,7 +109,7 @@ function ProfessionNavButton({
     <button
       className="sidebar-item sidebar-profession-item"
       onClick={() => onSelect(professionId)}
-      style={highlighted ? { background: 'var(--zone-primary)', color: '#fff' } : undefined}
+      style={highlighted ? { background: 'var(--class-accent)', color: 'var(--class-accent-text)' } : undefined}
     >
       <div className="sidebar-profession-row">
         <span>{PROFESSION_LABELS[professionId]}</span>
