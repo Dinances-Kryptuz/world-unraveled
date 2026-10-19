@@ -2,16 +2,8 @@ import { useEffect, useState } from 'react';
 import { ITEMS } from '../gameData/items';
 import { remainingCooldownSeconds } from '../firebase/consumables';
 import { ItemSlot } from './ItemSlot';
+import { isFoodItem, isPotionItem } from '../gameData/consumableClassification';
 import type { Character } from '../types/character';
-import type { ItemDef } from '../gameData/types';
-
-function isFoodItem(item: ItemDef): boolean {
-  return (
-    item.consumableEffect?.buff?.category === 'well_fed' ||
-    !!item.consumableEffect?.recoveryFood ||
-    !!item.consumableEffect?.isFood
-  );
-}
 
 // The two pinned quick-use slots (Character.equippedConsumables) — pick one
 // owned food and one owned potion once, then just click Use from here on
@@ -45,7 +37,7 @@ function EquippedSlot({
     (item) =>
       item.type === 'consumable' &&
       item.consumableEffect &&
-      isFoodItem(item) === (slot === 'food') &&
+      (slot === 'food' ? isFoodItem(item) : isPotionItem(item)) &&
       (allowRecoveryFood || !item.consumableEffect.recoveryFood) &&
       (inventoryItems[item.id] ?? 0) > 0
   );

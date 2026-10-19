@@ -1,12 +1,73 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useCharacter } from '../hooks/useCharacter';
-import { sellItem, buyItem } from '../firebase/vendor';
-import { subscribeToInventory } from '../firebase/inventory';
+import { sellItem, sellEquipmentInstance, sellChargedConsumable, buyItem, buyBagSlot } from '../firebase/vendor';
+import { subscribeToInventory, isLocked } from '../firebase/inventory';
 import { ITEMS } from '../gameData/items';
-import { VENDOR_STOCK } from '../gameData/vendors';
+import { VENDOR_STOCK, type VendorStockEntry } from '../gameData/vendors';
+import { shopkeeperMaxBagSlots, nextShopkeeperSlotCost } from '../gameData/bagSlotShop';
 import { ItemSlot } from './ItemSlot';
 import type { Inventory } from '../types/character';
+import type { BaseStat } from '../gameData/classStats';
+import type { ItemDef } from '../gameData/types';
+
+// One row per sellable "thing" the player holds, regardless of which of
+// the three inventory buckets it actually lives in (items/
+// equipmentInstances/chargedConsumables) — see buildSellableEntries below
+// for why all three need to show up here, not just `items`.
+interface SellableEntry {
+  key: string;
+  item: ItemDef;
+  quantity: number;
+  statOverride?: Partial<Record<BaseStat, number>>;
+  remainingCharges?: number;
+  locked: boolean;
+  sell: (uid: string, quantity: number) => Promise<void>;
+}
+
+// `inventory.items` was the ONLY bucket this screen ever looked at for
+// selling — but randomized-stat equipment (every piece of gear a player
+// actually wears, since the Equipment Rarity overhaul) lives in
+// equipmentInstances, and charge-distinguished potion stacks live in
+// chargedConsumables; neither bucket was ever reachable from the Sell
+// list, so no armor/weapon could be sold at all. This combines all three
+// into one list so every owned item shows up here exactly once.
+function buildSellableEntries(inventory: Inventory): SellableEntry[] {
+  const entries: SellableEntry[] = [];
+  for (const [itemId, quantity] of Object.entries(inventory.items)) {
+    if (quantity <= 0) continue;
+    const item = ITEMS[itemId];
+    if (!item) continue;
+    entries.push({ key: itemId, item, quantity, locked: isLocked(inventory, itemId), sell: (uid, q) => sellItem(uid, itemId, q) });
+  }
+  for (const [instanceId, instance] of Object.entries(inventory.equipmentInstances ?? {})) {
+    if (instance.quantity <= 0) continue;
+    const item = ITEMS[instance.itemId];
+    if (!item) continue;
+    entries.push({
+      key: instanceId,
+      item,
+      quantity: instance.quantity,
+      statOverride: instance.rolls,
+      locked: isLocked(inventory, instanceId),
+      sell: (uid, q) => sellEquipmentInstance(uid, instanceId, q),
+    });
+  }
+  for (const [instanceId, bucket] of Object.entries(inventory.chargedConsumables ?? {})) {
+    if (bucket.quantity <= 0) continue;
+    const item = ITEMS[bucket.itemId];
+    if (!item) continue;
+    entries.push({
+      key: instanceId,
+      item,
+      quantity: bucket.quantity,
+      remainingCharges: bucket.remainingCharges,
+      locked: isLocked(inventory, instanceId),
+      sell: (uid, q) => sellChargedConsumable(uid, instanceId, q),
+    });
+  }
+  return entries;
+}
 
 function parseQuantity(raw: string | undefined, max: number): number {
   const parsed = parseInt(raw ?? '', 10);
@@ -14,7 +75,22 @@ function parseQuantity(raw: string | undefined, max: number): number {
   return Math.min(parsed, max);
 }
 
-export function VendorScreen({ zoneId }: { zoneId: string }) {
+// `stockOverride` is the Grand Market's aggregated cross-zone list
+// (gameData/vendors.ts's grandMarketStock) — passed by CapitalScreen
+// instead of the plain per-zone VENDOR_STOCK lookup. Without it, the
+// per-zone Shopkeeper (Sidebar's standalone 'shop' section) only ever
+// shows zoneId's own stock — and since Ashenfall itself has no
+// VENDOR_STOCK entry, standing there and opening Shopkeeper shows a
+// redirect to the Grand Market instead of an empty Buy list.
+export function VendorScreen({
+  zoneId,
+  stockOverride,
+  title = 'Shopkeeper',
+}: {
+  zoneId: string;
+  stockOverride?: VendorStockEntry[];
+  title?: string;
+}) {
   const { user } = useAuth();
   const { character, refetch, applyOptimisticUpdate } = useCharacter();
   const [inventory, setInventory] = useState<Inventory | null>(null);
@@ -22,6 +98,7 @@ export function VendorScreen({ zoneId }: { zoneId: string }) {
   const [buying, setBuying] = useState<string | null>(null);
   const [buyQty, setBuyQty] = useState<Record<string, string>>({});
   const [sellQty, setSellQty] = useState<Record<string, string>>({});
+  const [buyingSlot, setBuyingSlot] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -31,15 +108,25 @@ export function VendorScreen({ zoneId }: { zoneId: string }) {
 
   if (!inventory || !character) return null;
 
-  const sellableEntries = Object.entries(inventory.items).filter(([, quantity]) => quantity > 0);
-  const stock = VENDOR_STOCK[zoneId] ?? [];
+  if (!stockOverride && zoneId === 'ashenfall') {
+    return (
+      <div className="vendor-screen">
+        <h2>{title}</h2>
+        <p>There's no shopkeeper out here in the streets — visit the Grand Market.</p>
+      </div>
+    );
+  }
 
-  async function handleSell(itemId: string, quantity: number, unitValue: number) {
+  const sellableEntries = buildSellableEntries(inventory);
+  const stock = stockOverride ?? (VENDOR_STOCK[zoneId] ?? []);
+
+  async function handleSell(entry: SellableEntry, quantity: number) {
     if (!user || quantity <= 0) return;
-    setSelling(itemId);
+    setSelling(entry.key);
+    const unitValue = entry.item.sellValue;
     applyOptimisticUpdate((c) => ({ ...c, gold: c.gold + unitValue * quantity }));
     try {
-      await sellItem(user.uid, itemId, quantity);
+      await entry.sell(user.uid, quantity);
       await refetch();
     } finally {
       setSelling(null);
@@ -58,9 +145,31 @@ export function VendorScreen({ zoneId }: { zoneId: string }) {
     }
   }
 
+  const slotsPurchased = character.shopkeeperBagSlotsPurchased ?? 0;
+  const maxSlots = shopkeeperMaxBagSlots(character.level);
+  const nextSlotCost = nextShopkeeperSlotCost(slotsPurchased);
+  const canBuySlot = slotsPurchased < maxSlots && character.gold >= nextSlotCost;
+
+  async function handleBuySlot() {
+    if (!user || !canBuySlot) return;
+    setBuyingSlot(true);
+    applyOptimisticUpdate((c) => ({
+      ...c,
+      gold: c.gold - nextSlotCost,
+      bagSlots: c.bagSlots + 1,
+      shopkeeperBagSlotsPurchased: (c.shopkeeperBagSlotsPurchased ?? 0) + 1,
+    }));
+    try {
+      await buyBagSlot(user.uid);
+      await refetch();
+    } finally {
+      setBuyingSlot(false);
+    }
+  }
+
   return (
     <div className="vendor-screen">
-      <h2>Shopkeeper</h2>
+      <h2>{title}</h2>
 
       {stock.length > 0 && (
         <>
@@ -102,40 +211,65 @@ export function VendorScreen({ zoneId }: { zoneId: string }) {
         </>
       )}
 
+      <h3>Bag Slots</h3>
+      <p>
+        {character.bagSlots} slots total — bought {slotsPurchased} / {maxSlots} available here (8 per zone you've
+        unlocked).
+      </p>
+      {slotsPurchased >= maxSlots ? (
+        <p>Unlock another zone to buy more bag slots here.</p>
+      ) : (
+        <button onClick={handleBuySlot} disabled={buyingSlot || character.gold < nextSlotCost}>
+          Buy 1 Slot ({nextSlotCost.toLocaleString()} gold)
+        </button>
+      )}
+
       <h3>Sell</h3>
       <p>Sell unwanted items for gold.</p>
       {sellableEntries.length === 0 ? (
         <p>Nothing to sell.</p>
       ) : (
         <ul>
-          {sellableEntries.map(([itemId, quantity]) => {
-            const item = ITEMS[itemId];
-            const unitValue = item?.sellValue ?? 0;
-            const isBusy = selling === itemId;
-            const qty = parseQuantity(sellQty[itemId], quantity);
+          {sellableEntries.map((entry) => {
+            const { key, item, quantity, locked } = entry;
+            const unitValue = item.sellValue;
+            const isBusy = selling === key;
+            const qty = parseQuantity(sellQty[key], quantity);
             return (
-              <li key={itemId}>
+              <li key={key}>
                 <div className="item-row-main">
-                  {item ? <ItemSlot item={item} quantity={quantity} /> : null}
+                  <ItemSlot
+                    item={item}
+                    quantity={quantity}
+                    statOverride={entry.statOverride}
+                    remainingCharges={entry.remainingCharges}
+                    locked={locked}
+                  />
                   <span>{unitValue} gold each</span>
                 </div>
-                <button onClick={() => handleSell(itemId, 1, unitValue)} disabled={isBusy}>
-                  Sell 1
-                </button>
-                <button onClick={() => handleSell(itemId, quantity, unitValue)} disabled={isBusy}>
-                  Sell All ({quantity * unitValue} gold)
-                </button>
-                <input
-                  type="number"
-                  min={1}
-                  max={quantity}
-                  value={sellQty[itemId] ?? ''}
-                  placeholder="qty"
-                  onChange={(e) => setSellQty((q) => ({ ...q, [itemId]: e.target.value }))}
-                />
-                <button onClick={() => handleSell(itemId, qty, unitValue)} disabled={isBusy}>
-                  Sell X ({qty * unitValue} gold)
-                </button>
+                {locked ? (
+                  <small>Locked — unlock it in Inventory to sell.</small>
+                ) : (
+                  <>
+                    <button onClick={() => handleSell(entry, 1)} disabled={isBusy}>
+                      Sell 1
+                    </button>
+                    <button onClick={() => handleSell(entry, quantity)} disabled={isBusy}>
+                      Sell All ({quantity * unitValue} gold)
+                    </button>
+                    <input
+                      type="number"
+                      min={1}
+                      max={quantity}
+                      value={sellQty[key] ?? ''}
+                      placeholder="qty"
+                      onChange={(e) => setSellQty((q) => ({ ...q, [key]: e.target.value }))}
+                    />
+                    <button onClick={() => handleSell(entry, qty)} disabled={isBusy}>
+                      Sell X ({qty * unitValue} gold)
+                    </button>
+                  </>
+                )}
               </li>
             );
           })}

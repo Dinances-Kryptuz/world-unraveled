@@ -743,6 +743,25 @@ export const ZONES: Record<string, Zone> = {
       'molten_lobster_hole',
     ],
   },
+
+  // The capital city — a hub, not a leveling zone: no monsters, gather
+  // nodes, or fishing holes of its own (see CapitalScreen.tsx and its
+  // districts). Always unlocked (type: 'none') so it's reachable from the
+  // very start rather than gated behind a level like the leveling zones
+  // above — deliberately placed last in this object so zoneForLevel's
+  // tie-break (both it and greenhollow_fields have an unlockRequirement.level
+  // of 0) keeps resolving to greenhollow_fields, the real starting zone.
+  ashenfall: {
+    id: 'ashenfall',
+    name: 'Ashenfall',
+    description:
+      'The last capital still standing against the fire below. Its gates never close — the Grand Market, the Wayfarer’s Tavern, the Artisan Quarter, and the Training Hall all keep this city running for adventurers passing through at any level.',
+    levelRange: [1, 60],
+    unlockRequirement: { type: 'none' },
+    monsterIds: [],
+    gatherNodeIds: [],
+    fishingHoleIds: [],
+  },
 };
 
 // Which zone "belongs to" a given character level — the zone with the

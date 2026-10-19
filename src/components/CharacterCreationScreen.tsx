@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useCharacter } from '../hooks/useCharacter';
 import { createCharacter } from '../firebase/character';
 import type { ClassId, SpecId } from '../gameData/classStats';
-import { CLASS_SHOWCASE, CLASS_ICONS, SPEC_ICONS, SPEC_INFO } from '../gameData/classInfo';
+import { CLASS_SHOWCASE, CLASS_ICONS, SPEC_ICONS, SPEC_INFO, SPEC_THEME } from '../gameData/classInfo';
 import { PreGameShell } from './PreGameShell';
 
 // Resolves to /class-art/{classId}.<ext> by convention — same approach as
@@ -11,8 +11,37 @@ import { PreGameShell } from './PreGameShell';
 // glyph + blurb). See public/class-art/README.md for the art spec.
 const ART_EXTENSIONS = ['webp', 'png'];
 
-function ClassStorybookArt({ classId }: { classId: ClassId }) {
+// Purely decorative corner brackets for the panel frame — a single
+// top-left bracket+diamond, mirrored via CSS transform into the other 3
+// corners (see .cc-corner-* in index.css) rather than drawing 4 separate
+// paths. aria-hidden since it carries no information of its own.
+function CornerOrnament({ position }: { position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' }) {
+  return (
+    <svg className={`cc-corner cc-corner-${position}`} viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+      <path d="M2 14 V2 H14" fill="none" stroke="currentColor" strokeWidth="1.5" />
+      <rect x="0.2" y="0.2" width="3.6" height="3.6" transform="rotate(45 2 2)" fill="currentColor" />
+    </svg>
+  );
+}
+
+// `onArtAvailability` lets the parent know whether real artwork is showing
+// (so it can overlay the two Select buttons directly on the art, matching
+// its own dual-spec layout and colors) or only the emoji fallback (so it
+// falls back to the old full text+button layout instead, since there'd be
+// nothing to overlay onto). Reports true as soon as the image loads, false
+// only once every extension has failed.
+function ClassStorybookArt({
+  classId,
+  onArtAvailability,
+}: {
+  classId: ClassId;
+  onArtAvailability: (ok: boolean) => void;
+}) {
   const [extIndex, setExtIndex] = useState(0);
+  useEffect(() => {
+    if (extIndex >= ART_EXTENSIONS.length) onArtAvailability(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [extIndex]);
   if (extIndex >= ART_EXTENSIONS.length) {
     return (
       <div className="storybook-art-fallback">
@@ -23,9 +52,9 @@ function ClassStorybookArt({ classId }: { classId: ClassId }) {
   return (
     <img
       className="storybook-art-img"
-      key={classId}
       src={`/class-art/${classId}.${ART_EXTENSIONS[extIndex]}`}
       alt=""
+      onLoad={() => onArtAvailability(true)}
       onError={() => setExtIndex((i) => i + 1)}
     />
   );
@@ -47,11 +76,21 @@ export function CharacterCreationScreen() {
   const [selectedSpec, setSelectedSpec] = useState<SpecId | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  // Optimistic per-page guess, confirmed/corrected by ClassStorybookArt's
+  // onArtAvailability once its image actually loads or every extension has
+  // failed — see that component's own doc comment. Reset on every page
+  // change so a prior class's confirmed state never leaks into the next.
+  const [hasArt, setHasArt] = useState(true);
+
+  useEffect(() => {
+    setHasArt(true);
+  }, [page]);
 
   const entry = CLASS_SHOWCASE[page];
   const selectedClass: ClassId | null = selectedSpec
     ? CLASS_SHOWCASE.find((c) => c.specs.includes(selectedSpec))!.id
     : null;
+  const canBegin = !creating && name.trim().length > 0 && !!selectedSpec;
 
   function goTo(nextPage: number) {
     if (nextPage < 0 || nextPage >= CLASS_SHOWCASE.length) return;
@@ -86,14 +125,24 @@ export function CharacterCreationScreen() {
   return (
     <PreGameShell>
       <div className="character-creation storybook-creation">
-        <h1>Create Your Adventurer</h1>
-        <p>Your journey into Greenhollow Fields begins here.</p>
+        <CornerOrnament position="top-left" />
+        <CornerOrnament position="top-right" />
+        <CornerOrnament position="bottom-left" />
+        <CornerOrnament position="bottom-right" />
 
+        <h1>Create Your Adventurer</h1>
+        <div className="cc-title-divider" aria-hidden="true" />
+        <p className="cc-subtitle">Your journey into Greenhollow Fields begins here.</p>
+
+        <label htmlFor="character-name" className="cc-label">
+          Character Name
+        </label>
         <input
+          id="character-name"
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Character name"
+          placeholder="Enter your name"
           maxLength={20}
           disabled={creating}
         />
@@ -109,32 +158,84 @@ export function CharacterCreationScreen() {
             ‹
           </button>
 
-          <div className="storybook-card">
-            <ClassStorybookArt classId={entry.id} />
-            <h2 className="storybook-class-name">
-              <span className="storybook-class-icon">{CLASS_ICONS[entry.id]}</span> {entry.name}
-            </h2>
-            <p className="storybook-class-blurb">{entry.blurb}</p>
-            <div className="storybook-spec-buttons">
-              {entry.specs.map((specId) => {
-                const info = SPEC_INFO[specId];
-                const selected = selectedSpec === specId;
-                return (
-                  <button
-                    key={specId}
-                    type="button"
-                    className={`storybook-spec-button${selected ? ' storybook-spec-button-selected' : ''}`}
-                    onClick={() => setSelectedSpec(specId)}
-                    disabled={creating}
-                  >
-                    <span className="storybook-spec-icon">{SPEC_ICONS[specId]}</span>
-                    <strong>{info.label}</strong>
-                    <small>{info.blurb}</small>
-                    {selected && <span className="storybook-spec-selected-badge">Selected</span>}
-                  </button>
-                );
-              })}
+          <div className={`storybook-card${hasArt ? ' storybook-card-flush' : ''}`}>
+            <div className="storybook-art-wrap">
+              <ClassStorybookArt key={entry.id} classId={entry.id} onArtAvailability={setHasArt} />
+              {hasArt && (
+                <div className="storybook-art-select-overlay">
+                  {entry.specs.map((specId) => {
+                    const theme = SPEC_THEME[specId];
+                    const selected = selectedSpec === specId;
+                    return (
+                      <button
+                        key={specId}
+                        type="button"
+                        className={`storybook-select-overlay-btn${selected ? ' storybook-select-overlay-btn-selected' : ''}`}
+                        style={{
+                          left: theme?.side === 'right' ? '75%' : '25%',
+                          background: theme?.bg,
+                          borderColor: theme?.border,
+                          color: theme?.text,
+                        }}
+                        onClick={() => setSelectedSpec(specId)}
+                        disabled={creating}
+                        title={`${SPEC_INFO[specId].label} — ${SPEC_INFO[specId].blurb}`}
+                      >
+                        {selected ? '✓ Selected' : 'Select'}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
+
+            {/* The art's own baked-in role name/blurb text becomes too
+                small to read once the image shrinks down on a phone screen
+                — this duplicates it as real, readable HTML text, hidden
+                above the mobile breakpoint (see .cc-mobile-spec-descriptions
+                in index.css) where the full-size art already covers it. */}
+            {hasArt && (
+              <div className="cc-mobile-spec-descriptions">
+                {entry.specs.map((specId) => (
+                  <div key={specId} className="cc-mobile-spec-desc">
+                    <strong>{SPEC_INFO[specId].label}</strong>
+                    <span>{SPEC_INFO[specId].blurb}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Real art already carries the class name, spec names, and
+                blurbs baked into the image itself — this text block is only
+                needed as a readable fallback when no art loaded. */}
+            {!hasArt && (
+              <>
+                <h2 className="storybook-class-name">
+                  <span className="storybook-class-icon">{CLASS_ICONS[entry.id]}</span> {entry.name}
+                </h2>
+                <p className="storybook-class-blurb">{entry.blurb}</p>
+                <div className="storybook-spec-buttons">
+                  {entry.specs.map((specId) => {
+                    const info = SPEC_INFO[specId];
+                    const selected = selectedSpec === specId;
+                    return (
+                      <button
+                        key={specId}
+                        type="button"
+                        className={`storybook-spec-button${selected ? ' storybook-spec-button-selected' : ''}`}
+                        onClick={() => setSelectedSpec(specId)}
+                        disabled={creating}
+                      >
+                        <span className="storybook-spec-icon">{SPEC_ICONS[specId]}</span>
+                        <strong>{info.label}</strong>
+                        <small>{info.blurb}</small>
+                        {selected && <span className="storybook-spec-selected-badge">Selected</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
           </div>
 
           <button
@@ -154,10 +255,14 @@ export function CharacterCreationScreen() {
           ))}
         </div>
 
-        <button onClick={handleCreate} disabled={creating || name.trim().length === 0 || !selectedSpec}>
+        <button type="button" className="cc-begin-button" onClick={handleCreate} disabled={!canBegin}>
           {creating ? 'Creating…' : 'Begin Adventure'}
         </button>
-        {error && <p className="error">{error}</p>}
+        {error ? (
+          <p className="error">{error}</p>
+        ) : (
+          !canBegin && <p className="cc-begin-hint">Enter a name and select a specialization.</p>
+        )}
       </div>
     </PreGameShell>
   );

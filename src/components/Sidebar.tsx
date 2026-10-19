@@ -9,12 +9,7 @@ export type AppSection =
   | 'shop'
   | 'equipment'
   | 'inventory'
-  | 'bank'
-  | 'companions'
   | 'quests'
-  | 'classTrainer'
-  | 'mountTrainer'
-  | 'professionsTrainer'
   | 'journal'
   | 'characters'
   | 'collection'
@@ -32,18 +27,18 @@ interface SidebarItem {
 // grouped with the new Spells & Abilities training page, rather than
 // scattered across the sidebar). 'shop' keeps its old id for minimal
 // plumbing churn; only its displayed label changed to Shopkeeper.
+// Companions, Class Trainer, and Professions Trainer are no longer
+// top-level entries — they're all now districts inside Ashenfall
+// (CapitalScreen's Wayfarer's Tavern, Training Hall, and Artisan Quarter
+// respectively), so keeping a duplicate standalone tab for each would just
+// be two paths to the same screen.
 const TOP_ITEMS: SidebarItem[] = [
   { id: 'adventure', label: 'Adventure' },
   { id: 'capital', label: 'Ashenfall' },
   { id: 'shop', label: 'Shopkeeper' },
   { id: 'equipment', label: 'Equipment' },
   { id: 'inventory', label: 'Inventory' },
-  { id: 'bank', label: 'Bank' },
-  { id: 'companions', label: 'Companions' },
   { id: 'quests', label: 'Quests' },
-  { id: 'classTrainer', label: 'Class Trainer' },
-  { id: 'mountTrainer', label: 'Mount Trainer' },
-  { id: 'professionsTrainer', label: 'Professions Trainer' },
   { id: 'journal', label: 'Journal' },
   { id: 'characters', label: 'Characters' },
   { id: 'collection', label: 'Collection' },
@@ -66,7 +61,7 @@ function NavButton({
     <button
       className="sidebar-item"
       onClick={() => onSelect(item.id)}
-      style={active === item.id ? { background: 'var(--zone-primary)', color: '#fff' } : undefined}
+      style={active === item.id ? { background: 'var(--class-accent)', color: 'var(--class-accent-text)' } : undefined}
     >
       {item.label}
       {showActivityDot && (
@@ -114,7 +109,7 @@ function ProfessionNavButton({
     <button
       className="sidebar-item sidebar-profession-item"
       onClick={() => onSelect(professionId)}
-      style={highlighted ? { background: 'var(--zone-primary)', color: '#fff' } : undefined}
+      style={highlighted ? { background: 'var(--class-accent)', color: 'var(--class-accent-text)' } : undefined}
     >
       <div className="sidebar-profession-row">
         <span>{PROFESSION_LABELS[professionId]}</span>

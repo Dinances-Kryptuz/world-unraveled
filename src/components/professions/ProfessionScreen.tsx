@@ -10,7 +10,7 @@ import { craftingColorTier, CRAFTING_COLOR_XP_PCT } from '../../gameData/craftin
 import { canUseRecipe } from '../../firebase/professions';
 import { useEnchantScroll, removeEnchant } from '../../firebase/enchanting';
 import { subscribeToInventory, isLocked } from '../../firebase/inventory';
-import { ENCHANTS, isDisenchantable, disenchantRequiredSkill, disenchantYieldRange } from '../../gameData/enchanting';
+import { ENCHANTS, isDisenchantable, disenchantRequiredSkill, disenchantYieldRange, type EnchantCategory } from '../../gameData/enchanting';
 import { ITEMS } from '../../gameData/items';
 import { equippedItemId } from '../../gameData/equipmentStats';
 import { describeItemStats } from '../../gameData/equipmentStats';
@@ -125,6 +125,42 @@ const ENCHANTING_ARMAMENTS_LABELS: Record<string, string> = {
   emberheart_wood: 'Ember Armaments',
 };
 
+// Enchanting UI cleanup — scrolls (both "Craft Scrolls" and "Use Scroll")
+// grouped by the enchant's own EnchantCategory (gameData/enchanting.ts)
+// instead of one long flat list, per the user's "offensive vs defensive vs
+// stats" sorting ask. 'passive' covers every flat stat/HP/mana/armor/
+// resistance enchant, which reads to a player as "stat bonuses."
+const SCROLL_CATEGORY_ORDER: EnchantCategory[] = ['offensive', 'defensive', 'passive'];
+const SCROLL_CATEGORY_LABELS: Record<EnchantCategory, string> = {
+  offensive: 'Offensive',
+  defensive: 'Defensive',
+  passive: 'Stat Bonuses',
+};
+function scrollCategory(scrollItemId: string): EnchantCategory {
+  const item = ITEMS[scrollItemId];
+  const enchant = item?.scrollEnchantId ? ENCHANTS[item.scrollEnchantId] : undefined;
+  return enchant?.category ?? 'passive';
+}
+function groupByScrollCategory<T>(list: T[], getScrollItemId: (entry: T) => string): Record<EnchantCategory, T[]> {
+  const groups: Record<EnchantCategory, T[]> = { offensive: [], defensive: [], passive: [] };
+  for (const entry of list) groups[scrollCategory(getScrollItemId(entry))].push(entry);
+  return groups;
+}
+
+// Enchanting's own sub-tabs — the panel used to be one long flat page
+// (Craft Equipment, Material Mastery, Craft Scrolls, every owned scroll,
+// Active Enchants, then finally Disenchant at the very bottom), which made
+// Disenchant — a page you reach for constantly, dozens of times a session —
+// the thing you had to scroll furthest to find. Each tab now renders only
+// its own section.
+type EnchantingTab = 'equipment' | 'scrolls' | 'enchants' | 'disenchant';
+const ENCHANTING_TABS: { id: EnchantingTab; label: string }[] = [
+  { id: 'equipment', label: 'Craft Equipment' },
+  { id: 'scrolls', label: 'Scrolls' },
+  { id: 'enchants', label: 'Active Enchants' },
+  { id: 'disenchant', label: 'Disenchant' },
+];
+
 // A single profession's own page — one per sidebar nav item (see
 // Sidebar.tsx), replacing the old three-category pages (Gathering/Fishing/
 // Crafting) that stacked every known crafting profession's full recipe list
@@ -165,6 +201,7 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
     materialId: '',
     suffix: '',
   });
+  const [enchantingTab, setEnchantingTab] = useState<EnchantingTab>('equipment');
 
   // Cooking overhaul Tier 1 — Auto Eat's own tiny bit of local state, same
   // shape as MountTrainerScreen's training/error pair.
@@ -523,64 +560,108 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
       ENCHANTING_EQUIPMENT_TIER_ORDER.some((s) => r.id.startsWith(`${s}_`))
     );
     const scrollRecipes = recipesForProfession.filter((r) => !equipmentRecipes.includes(r));
+    const scrollRecipeGroups = groupByScrollCategory(scrollRecipes, (r) => r.resultItemId);
+    const scrollEntryGroups = groupByScrollCategory(scrollEntries, ([itemId]) => itemId);
 
     return (
       <>
-        <h3>Craft Equipment</h3>
-        {renderGroupedRecipesByTier(ENCHANTING_EQUIPMENT_TIER_ORDER, ENCHANTING_EQUIPMENT_TIER_LABELS, equipmentRecipes)}
-        {renderMaterialMasteryPanel(WOOD_MATERIALS, ENCHANTING_ARMAMENTS_LABELS)}
+        <div className="zone-tabs">
+          {ENCHANTING_TABS.map((t) => (
+            <button
+              key={t.id}
+              className="zone-tab"
+              onClick={() => setEnchantingTab(t.id)}
+              style={enchantingTab === t.id ? { background: 'var(--class-accent)', color: 'var(--class-accent-text)' } : undefined}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
 
-        <h3>Craft Scrolls</h3>
-        {renderRecipeList(scrollRecipes)}
-
-        <h3>Use Scroll</h3>
-        {scrollEntries.length === 0 ? (
-          <p>No scrolls in your inventory — craft one above.</p>
-        ) : (
-          <ul>
-            {scrollEntries.map(([itemId, quantity]) => {
-              const scroll = ITEMS[itemId]!;
-              const enchant = scroll.scrollEnchantId ? ENCHANTS[scroll.scrollEnchantId] : undefined;
-              if (!enchant) return null;
-              const equippedEnchantItemId = equippedItemId(char.equipment[enchant.slot]);
-              const equippedItem = equippedEnchantItemId ? ITEMS[equippedEnchantItemId] : null;
-              return (
-                <li key={itemId}>
-                  <div className="item-row-main">
-                    <ItemSlot item={scroll} quantity={quantity} />
-                    <span>
-                      {scroll.name} ({enchant.description}) — {equippedItem ? `applies to your equipped ${equippedItem.name}` : `no ${enchant.slot} equipped`}
-                    </span>
-                  </div>
-                  <button onClick={() => handleUseScroll(itemId)}>Use</button>
-                </li>
-              );
-            })}
-          </ul>
+        {enchantingTab === 'equipment' && (
+          <>
+            <h3>Craft Equipment</h3>
+            {renderGroupedRecipesByTier(ENCHANTING_EQUIPMENT_TIER_ORDER, ENCHANTING_EQUIPMENT_TIER_LABELS, equipmentRecipes)}
+            {renderMaterialMasteryPanel(WOOD_MATERIALS, ENCHANTING_ARMAMENTS_LABELS)}
+          </>
         )}
 
-        <h3>Active Enchants</h3>
-        <ul>
-          {ENCHANT_SLOTS.filter((slot) => char.enchantments[slot]).map((slot) => {
-            const enchant = ENCHANTS[char.enchantments[slot]!];
-            const equippedSlotItemId = equippedItemId(char.equipment[slot]);
-            const equippedItem = equippedSlotItemId ? ITEMS[equippedSlotItemId] : null;
-            // Absent (not yet migrated to the charge model) reads as "still
-            // active" — see getEquipmentStatBonuses's matching doc comment.
-            const charges = char.enchantmentCharges?.[slot];
-            return (
-              <li key={slot}>
-                {slot} ({equippedItem ? equippedItem.name : 'empty'}): <em>{enchant.name}</em> ({enchant.description})
-                {charges !== undefined ? ` — ${charges} charges left` : ''}
-                <button onClick={() => handleRemoveEnchant(slot)}>Remove Enchant</button>
-              </li>
-            );
-          })}
-          {ENCHANT_SLOTS.every((slot) => !char.enchantments[slot]) && <li>No active enchants.</li>}
-        </ul>
+        {enchantingTab === 'scrolls' && (
+          <>
+            <h3>Craft Scrolls</h3>
+            {SCROLL_CATEGORY_ORDER.filter((cat) => scrollRecipeGroups[cat].length > 0).map((cat) => (
+              <details key={cat} open>
+                <summary>
+                  {SCROLL_CATEGORY_LABELS[cat]} ({scrollRecipeGroups[cat].length})
+                </summary>
+                {renderRecipeList(scrollRecipeGroups[cat])}
+              </details>
+            ))}
 
-        <h3>Disenchant</h3>
-        {disenchantableEntries.length === 0 ? (
+            <h3>Use Scroll</h3>
+            {scrollEntries.length === 0 ? (
+              <p>No scrolls in your inventory — craft one above.</p>
+            ) : (
+              SCROLL_CATEGORY_ORDER.filter((cat) => scrollEntryGroups[cat].length > 0).map((cat) => (
+                <details key={cat} open>
+                  <summary>
+                    {SCROLL_CATEGORY_LABELS[cat]} ({scrollEntryGroups[cat].length})
+                  </summary>
+                  <ul>
+                    {scrollEntryGroups[cat].map(([itemId, quantity]) => {
+                      const scroll = ITEMS[itemId]!;
+                      const enchant = scroll.scrollEnchantId ? ENCHANTS[scroll.scrollEnchantId] : undefined;
+                      if (!enchant) return null;
+                      const equippedEnchantItemId = equippedItemId(char.equipment[enchant.slot]);
+                      const equippedItem = equippedEnchantItemId ? ITEMS[equippedEnchantItemId] : null;
+                      return (
+                        <li key={itemId}>
+                          <div className="item-row-main">
+                            <ItemSlot item={scroll} quantity={quantity} />
+                            <span>
+                              {scroll.name} ({enchant.description}) —{' '}
+                              {equippedItem ? `applies to your equipped ${equippedItem.name}` : `no ${enchant.slot} equipped`}
+                            </span>
+                          </div>
+                          <button onClick={() => handleUseScroll(itemId)}>Use</button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </details>
+              ))
+            )}
+          </>
+        )}
+
+        {enchantingTab === 'enchants' && (
+          <>
+            <h3>Active Enchants</h3>
+            <ul>
+              {ENCHANT_SLOTS.filter((slot) => char.enchantments[slot]).map((slot) => {
+                const enchant = ENCHANTS[char.enchantments[slot]!];
+                const equippedSlotItemId = equippedItemId(char.equipment[slot]);
+                const equippedItem = equippedSlotItemId ? ITEMS[equippedSlotItemId] : null;
+                // Absent (not yet migrated to the charge model) reads as "still
+                // active" — see getEquipmentStatBonuses's matching doc comment.
+                const charges = char.enchantmentCharges?.[slot];
+                return (
+                  <li key={slot}>
+                    {slot} ({equippedItem ? equippedItem.name : 'empty'}): <em>{enchant.name}</em> ({enchant.description})
+                    {charges !== undefined ? ` — ${charges} charges left` : ''}
+                    <button onClick={() => handleRemoveEnchant(slot)}>Remove Enchant</button>
+                  </li>
+                );
+              })}
+              {ENCHANT_SLOTS.every((slot) => !char.enchantments[slot]) && <li>No active enchants.</li>}
+            </ul>
+          </>
+        )}
+
+        {enchantingTab === 'disenchant' && (
+          <>
+            <h3>Disenchant</h3>
+            {disenchantableEntries.length === 0 ? (
           <p>No disenchantable equipment in your inventory.</p>
         ) : (
           (() => {
@@ -672,6 +753,37 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
                   <button onClick={() => setSelectedForQueue(new Set())} disabled={selectedForQueue.size === 0}>
                     Clear selection
                   </button>
+                  {/* One click to start disenchanting — respects your
+                      checkboxes when anything is checked (same set "Queue N
+                      selected" below acts on), so it never destroys an item
+                      you deliberately unchecked. Only when NOTHING is
+                      checked does it fall back to "everything currently
+                      shown and skill-eligible," matching "Select all shown"
+                      followed by Queue in one click. */}
+                  <button
+                    onClick={() => {
+                      const eligibleShown = filtered.filter((e) => skill >= disenchantRequiredSkill(ITEMS[e.itemId]!));
+                      const toQueue = selectedForQueue.size > 0 ? selectedEntries : eligibleShown;
+                      handleAddToDisenchantQueue(
+                        toQueue.map((e) => ({
+                          itemId: e.itemId,
+                          instanceId: e.instanceId,
+                          quantity: Math.min(disenchantQty[e.instanceId ?? e.itemId] ?? e.quantity, e.quantity),
+                        }))
+                      );
+                    }}
+                    disabled={
+                      selectedForQueue.size === 0 &&
+                      filtered.filter((e) => skill >= disenchantRequiredSkill(ITEMS[e.itemId]!)).length === 0
+                    }
+                    title={
+                      selectedForQueue.size > 0
+                        ? `Disenchant the ${selectedForQueue.size} item${selectedForQueue.size === 1 ? '' : 's'} you've checked below`
+                        : 'Nothing checked — disenchants every item currently shown that you have the skill for'
+                    }
+                  >
+                    {selectedForQueue.size > 0 ? `Disenchant Selected (${selectedForQueue.size})` : 'Disenchant All Shown'}
+                  </button>
                 </div>
 
                 <ul>
@@ -722,24 +834,19 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
                 </ul>
 
                 {selectedForQueue.size > 0 && (
-                  <button
-                    onClick={() =>
-                      handleAddToDisenchantQueue(
-                        selectedEntries.map((e) => ({
-                          itemId: e.itemId,
-                          instanceId: e.instanceId,
-                          quantity: Math.min(disenchantQty[e.instanceId ?? e.itemId] ?? e.quantity, e.quantity),
-                        }))
-                      )
-                    }
-                  >
-                    Queue {selectedForQueue.size} selected ({totalSelectedPieces} pieces)
-                    {character?.currentActivity.type === 'disenchanting' ? ' — adds to running queue' : ''}
-                  </button>
+                  <p>
+                    <small>
+                      {totalSelectedPieces} piece{totalSelectedPieces === 1 ? '' : 's'} selected — click "Disenchant
+                      Selected" above to start
+                      {character?.currentActivity.type === 'disenchanting' ? ' (adds to the running queue)' : ''}.
+                    </small>
+                  </p>
                 )}
               </>
             );
           })()
+        )}
+          </>
         )}
       </>
     );

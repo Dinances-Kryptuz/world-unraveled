@@ -4,11 +4,9 @@
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  background:
-    radial-gradient(ellipse at top, rgba(255, 255, 255, 0.5), transparent 60%),
-    linear-gradient(180deg, #efe9dc 0%, #e5ddc9 100%);
-  color: #2a2420;
+  font-family: var(--font-body);
+  background: var(--bg-main);
+  color: var(--text-primary);
   line-height: 1.5;
   /* Safety net for the mobile layout below — the shell is built around a
      fixed-width sidebar column, and a stray element wider than its
@@ -23,6 +21,9 @@ body {
 h1 {
   font-size: 1.6rem;
   margin: 0 0 8px;
+  font-family: var(--font-heading);
+  letter-spacing: 0.02em;
+  color: var(--text-primary);
 }
 
 h2 {
@@ -30,22 +31,24 @@ h2 {
   margin: 24px 0 10px;
   padding-bottom: 8px;
   padding-left: 10px;
-  border-bottom: 2px solid #d8cfc0;
-  border-left: 4px solid var(--zone-primary, #8a6d3b);
+  border-bottom: 2px solid var(--border-default);
+  border-left: 4px solid var(--class-accent, #8a6d3b);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   font-weight: 700;
-  color: #3a322a;
+  color: var(--text-primary);
+  font-family: var(--font-heading);
 }
 
 h3 {
   font-size: 0.95rem;
   margin: 16px 0 8px;
   padding-left: 8px;
-  border-left: 3px solid #d8cfc0;
+  border-left: 3px solid var(--border-default);
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  color: #6b6156;
+  color: var(--text-secondary);
+  font-family: var(--font-heading);
 }
 
 p {
@@ -63,48 +66,54 @@ li {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  background: linear-gradient(180deg, #fffdf9, #f8f3e8);
-  border: 1px solid #e2d9c8;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-default);
   border-radius: 6px;
   padding: 10px 14px;
   margin-bottom: 8px;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) inset, 0 1px 2px rgba(60, 45, 20, 0.05);
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  transition: border-color 0.15s ease, background 0.15s ease;
 }
 
 li:hover {
-  border-color: #d2c3a3;
+  border-color: var(--class-accent-border, var(--border-default));
+  background: var(--bg-elevated);
 }
 
 button {
-  background: linear-gradient(180deg, #8a6a3e, #6b4f2a);
-  color: #fdf8ee;
-  border: 1px solid #503a1c;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-default);
   border-radius: 5px;
   padding: 8px 14px;
   font-size: 0.9rem;
   font-weight: 600;
+  font-family: var(--font-body);
   cursor: pointer;
   white-space: nowrap;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.25) inset, 0 2px 3px rgba(40, 28, 10, 0.25);
-  transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.15s ease;
+  box-shadow: none;
+  transition: border-color 0.12s ease, background 0.12s ease, transform 0.08s ease;
 }
 
 button:hover:not(:disabled) {
-  background: linear-gradient(180deg, #9c7a4a, #7a5c32);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.3) inset, 0 3px 5px rgba(40, 28, 10, 0.3);
+  background: var(--bg-elevated);
+  border-color: var(--class-accent-border, var(--border-default));
   transform: translateY(-1px);
 }
 
 button:active:not(:disabled) {
   transform: translateY(0);
-  box-shadow: 0 1px 1px rgba(40, 28, 10, 0.2) inset;
+}
+
+button:focus-visible {
+  outline: 2px solid var(--class-accent);
+  outline-offset: 2px;
 }
 
 button:disabled {
-  background: #b8b0a2;
-  border-color: #a39b8d;
-  color: #e8e2d6;
+  background: var(--bg-secondary);
+  border-color: var(--border-default);
+  color: var(--text-disabled);
   box-shadow: none;
   cursor: not-allowed;
 }
@@ -112,10 +121,38 @@ button:disabled {
 input[type="text"],
 input[type="number"] {
   padding: 8px 10px;
-  border: 1px solid #cfc3ac;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-default);
   border-radius: 5px;
+  color: var(--text-primary);
   font-size: 0.95rem;
+  font-family: var(--font-body);
   margin-right: 8px;
+}
+
+/* Minimal padding here (vs. the text/number inputs above) so recoloring a
+   native <select> doesn't grow it enough to wrap the inline filter rows
+   that sit next to one (e.g. Inventory's Sort by/Slot/Tier/Suffix row). */
+select {
+  padding: 2px 4px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: 5px;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  font-family: var(--font-body);
+  margin-right: 8px;
+}
+
+select:focus-visible {
+  outline: 2px solid var(--class-accent);
+  outline-offset: 1px;
+}
+
+input[type="text"]:focus-visible,
+input[type="number"]:focus-visible {
+  outline: 2px solid var(--class-accent);
+  outline-offset: 1px;
 }
 
 input[type="number"] {
@@ -123,7 +160,7 @@ input[type="number"] {
 }
 
 .error {
-  color: #a3312a;
+  color: #D97066;
   font-weight: 500;
 }
 
@@ -132,7 +169,7 @@ input[type="number"] {
 }
 
 .tick-bar-track {
-  background: #e2d9c8;
+  background: var(--bg-secondary);
   border-radius: 4px;
   height: 8px;
   width: 100%;
@@ -159,10 +196,35 @@ input[type="number"] {
 }
 
 :root {
+  /* Dark-fantasy base palette, applied throughout the main game (every
+     screen after character creation) — character creation and the login
+     screen keep their own separate cc-prefixed/bronze look untouched. */
+  --bg-main: #10151B;
+  --bg-secondary: #171E26;
+  --bg-panel: #1A1F26;
+  --bg-elevated: #252D36;
+  --border-default: #3A424D;
+  --text-primary: #E8E5DC;
+  --text-secondary: #9AA6B2;
+  --text-disabled: #697581;
+
+  --font-heading: 'Cinzel', Georgia, 'Times New Roman', serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+  /* Class accent — keyed by [data-class] on .app-shell (set in App.tsx from
+     the character's class, never their spec). This fallback only shows
+     before .app-shell mounts, i.e. never in practice once signed in. */
+  --class-accent: #A94444;
+  --class-accent-hover: #D66A61;
+  --class-accent-border: #633535;
+  --class-accent-text: #E8E5DC;
+
   /* Fallback accent before a zone theme is applied (App.tsx sets these
      inline from gameData/zoneThemes.ts as soon as a character exists) —
      matches Greenhollow Fields so the very first screen a new character
-     sees isn't an unthemed grey. */
+     sees isn't an unthemed grey. Still drives the ZoneBackdrop's own
+     scenery and the zone tabs/banner/flight bar, which stay zone-colored
+     as "which zone" identity rather than switching to class colors. */
   --zone-primary: #4a7c3f;
   --zone-primary-dark: #375d2e;
   --zone-accent: #8fae6a;
@@ -170,10 +232,35 @@ input[type="number"] {
   --zone-bg-to: #dce8cc;
 }
 
+[data-class="warrior"] {
+  --class-accent: #A94444;
+  --class-accent-hover: #D66A61;
+  --class-accent-border: #633535;
+  --class-accent-text: #E8E5DC;
+}
+
+[data-class="priest"] {
+  --class-accent: #E6E2D8;
+  --class-accent-hover: #C9D4E8;
+  --class-accent-border: #626C79;
+  /* Priest's accent is light (near-white) — dark text keeps on-accent
+     labels readable instead of white-on-white (see item 10's explicit
+     contrast callout). */
+  --class-accent-text: #171E26;
+}
+
+[data-class="paladin"] {
+  --class-accent: #D4AF57;
+  --class-accent-hover: #F0D68A;
+  --class-accent-border: #75613A;
+  /* Gold is too light for white text to read reliably. */
+  --class-accent-text: #171E26;
+}
+
 .loading-screen {
   padding: 48px 0;
   text-align: center;
-  color: #6b6156;
+  color: var(--text-secondary);
 }
 
 .error-boundary-screen {
@@ -181,15 +268,15 @@ input[type="number"] {
   margin: 15vh auto 0;
   padding: 32px 28px;
   text-align: center;
-  background: linear-gradient(180deg, rgba(255, 253, 249, 0.95), rgba(249, 244, 233, 0.95));
-  border: 1px solid rgba(226, 217, 200, 0.8);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-default);
   border-top: 3px solid #a33;
   border-radius: 8px;
-  box-shadow: 0 6px 16px rgba(20, 14, 8, 0.2);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
 }
 
 .error-boundary-screen p {
-  color: #4a4038;
+  color: var(--text-secondary);
   margin: 12px 0 20px;
 }
 
@@ -217,30 +304,29 @@ input[type="number"] {
 .professions-trainer-screen,
 .capital-screen,
 .spec-selection {
-  background: linear-gradient(180deg, rgba(255, 253, 249, 0.88), rgba(249, 244, 233, 0.88));
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(226, 217, 200, 0.8);
-  border-top: 3px solid var(--zone-primary, #8a6d3b);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-default);
+  border-top: 3px solid var(--class-accent, #8a6d3b);
   border-radius: 8px;
   padding: 16px 20px;
   margin-bottom: 20px;
-  box-shadow: 0 2px 0 rgba(255, 255, 255, 0.5) inset, 0 8px 20px rgba(20, 14, 8, 0.18);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
 }
 
 .companion-card {
-  border: 1px solid #e2d9c8;
+  border: 1px solid var(--border-default);
   border-radius: 6px;
   padding: 8px 12px;
   margin-bottom: 12px;
-  background: linear-gradient(180deg, #fffdf9, #f8f3e8);
-  box-shadow: 0 1px 2px rgba(60, 45, 20, 0.05);
+  background: var(--bg-panel);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .monster-loot-panel {
   margin: 4px 0 10px 1.5rem;
   padding: 8px 12px;
-  background: #f4efe4;
-  border: 1px solid #d8ccb4;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-default);
   border-radius: 6px;
 }
 
@@ -306,10 +392,10 @@ input[type="number"] {
   width: 56px;
   height: 56px;
   padding: 0;
-  background: linear-gradient(180deg, #fffdf9, #efe6d4);
-  border: 2px solid #d8cfc0;
+  background: var(--bg-panel);
+  border: 2px solid var(--border-default);
   border-radius: 8px;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) inset, 0 2px 3px rgba(60, 45, 20, 0.08);
+  box-shadow: none;
   cursor: default;
 }
 
@@ -318,7 +404,7 @@ button.item-slot {
 }
 
 button.item-slot:hover:not(:disabled) {
-  border-color: var(--zone-primary, #b08d4f);
+  border-color: var(--class-accent-border, var(--border-default));
   transform: translateY(-2px);
   /* `transform` makes this tile its own stacking context, which otherwise
      traps the tooltip's z-index:20 inside it — the tile (as one atomic
@@ -327,7 +413,7 @@ button.item-slot:hover:not(:disabled) {
      paint over this one's tooltip. Lifting the whole hovered tile above
      its siblings keeps the tooltip on top regardless of DOM order. */
   z-index: 30;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) inset, 0 4px 8px rgba(60, 45, 20, 0.18);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 button.item-slot:active:not(:disabled) {
@@ -335,8 +421,8 @@ button.item-slot:active:not(:disabled) {
 }
 
 .item-slot-highlight {
-  border-color: var(--zone-primary, #b08d4f);
-  box-shadow: 0 0 0 2px var(--zone-accent, #d8c38a) inset, 0 2px 3px rgba(60, 45, 20, 0.08);
+  border-color: var(--class-accent, #b08d4f);
+  box-shadow: 0 0 0 2px var(--class-accent-border, #d8c38a) inset;
 }
 
 .item-slot-disabled {
@@ -344,7 +430,7 @@ button.item-slot:active:not(:disabled) {
 }
 
 .item-slot-empty {
-  background: repeating-linear-gradient(45deg, #efe9dc, #efe9dc 6px, #e5ddc9 6px, #e5ddc9 12px);
+  background: repeating-linear-gradient(45deg, var(--bg-secondary), var(--bg-secondary) 6px, var(--bg-main) 6px, var(--bg-main) 12px);
   border-style: dashed;
   box-shadow: none;
 }
@@ -393,13 +479,13 @@ button.item-slot:active:not(:disabled) {
   border-radius: 6px;
   font-weight: 800;
   font-size: 1.1rem;
-  background: linear-gradient(180deg, #fffdf9, #efe6d4);
-  border: 2px solid #d8cfc0;
+  background: var(--bg-panel);
+  border: 2px solid var(--border-default);
 }
 
 .quest-marker-incomplete {
-  color: #8c8c8c;
-  border-color: #8c8c8c;
+  color: var(--text-disabled);
+  border-color: var(--text-disabled);
 }
 
 .quest-marker-completed {
@@ -410,7 +496,7 @@ button.item-slot:active:not(:disabled) {
 .quest-marker-available {
   color: #d2a300;
   border-color: #d2a300;
-  background: linear-gradient(180deg, #fff9e6, #fdeec4);
+  background: var(--bg-elevated);
 }
 
 .item-slot-mystery {
@@ -509,9 +595,9 @@ button.item-slot:active:not(:disabled) {
   flex: 1;
   min-width: 200px;
   max-width: 320px;
-  border: 1px solid rgba(0, 0, 0, 0.15);
+  border: 1px solid var(--border-default);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.4);
+  background: var(--bg-secondary);
   padding: 12px 16px;
   align-self: stretch;
 }
@@ -525,7 +611,7 @@ button.item-slot:active:not(:disabled) {
   justify-content: space-between;
   align-items: baseline;
   padding: 4px 0;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  border-bottom: 1px solid var(--border-default);
   cursor: help;
 }
 
@@ -536,7 +622,7 @@ button.item-slot:active:not(:disabled) {
 .equipment-stat-value {
   font-size: 1.1rem;
   font-weight: 700;
-  color: #3a322a;
+  color: var(--text-primary);
 }
 
 .equipment-bottom-row {
@@ -551,8 +637,8 @@ button.item-slot:active:not(:disabled) {
 }
 
 .equipment-picker {
-  background: rgba(255, 255, 255, 0.5);
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-default);
   border-radius: 6px;
   padding: 10px 14px;
   margin-bottom: 16px;
@@ -566,13 +652,13 @@ button.item-slot:active:not(:disabled) {
   transform: translateX(-50%);
   z-index: 20;
   width: 200px;
-  background: #241f1a;
-  color: #efe6d4;
-  border: 1px solid #5a4a30;
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  border: 1px solid var(--border-default);
   border-radius: 6px;
   padding: 8px 10px;
   text-align: left;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
   white-space: normal;
   pointer-events: none;
 }
@@ -583,7 +669,7 @@ button.item-slot:active:not(:disabled) {
 
 .item-tooltip-name {
   font-weight: 700;
-  color: #f3d99b;
+  color: var(--text-primary);
   margin-bottom: 2px;
 }
 
@@ -595,7 +681,7 @@ button.item-slot:active:not(:disabled) {
 
 .item-tooltip-meta {
   font-size: 0.72rem;
-  color: #b8ac97;
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.03em;
   margin-bottom: 4px;
@@ -624,7 +710,7 @@ button.item-slot:active:not(:disabled) {
 .item-tooltip-compare-total {
   font-weight: 700;
   margin-top: 2px;
-  border-top: 1px solid rgba(216, 207, 190, 0.25);
+  border-top: 1px solid var(--border-default);
   padding-top: 2px;
 }
 
@@ -637,7 +723,7 @@ button.item-slot:active:not(:disabled) {
 }
 
 .stat-diff-same {
-  color: #a39a89;
+  color: var(--text-secondary);
 }
 
 /* Equipment Locking overhaul — small corner badge, opposite side from
@@ -653,7 +739,7 @@ button.item-slot:active:not(:disabled) {
 
 .item-tooltip-desc {
   font-size: 0.78rem;
-  color: #d8cfbe;
+  color: var(--text-secondary);
   margin: 4px 0;
   font-style: italic;
 }
@@ -661,7 +747,7 @@ button.item-slot:active:not(:disabled) {
 .item-tooltip-sell {
   font-size: 0.75rem;
   color: #d8b85a;
-  border-top: 1px solid #44392a;
+  border-top: 1px solid var(--border-default);
   padding-top: 4px;
   margin-top: 4px;
 }
@@ -676,10 +762,10 @@ button.item-slot:active:not(:disabled) {
   width: 96px;
   height: 96px;
   margin: 4px auto 12px;
-  background: radial-gradient(circle at 35% 30%, #fffdf9, #e5d9bd 70%);
-  border: 3px solid #b8a06a;
+  background: var(--bg-panel);
+  border: 3px solid var(--border-default);
   border-radius: 50%;
-  box-shadow: 0 2px 0 rgba(255, 255, 255, 0.6) inset, 0 4px 10px rgba(60, 45, 20, 0.25);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
 }
 
 .monster-portrait span {
@@ -749,6 +835,9 @@ button.item-slot:active:not(:disabled) {
   background-position: center 30%;
   background-repeat: no-repeat;
   background-color: #1a1410;
+  /* Pinned against the dark-fantasy reskin's body { font-family: Inter }
+     below — the pregame Login screen must keep its original look. */
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 .title-screen-card {
@@ -774,32 +863,220 @@ button.item-slot:active:not(:disabled) {
   margin-bottom: 0;
 }
 
+/* Pinned against the dark-fantasy reskin of the global button/.error rules
+   below — the pregame Login screen is explicitly out of scope for that
+   reskin and must keep its original bronze look exactly. */
+.title-screen-card button {
+  background: linear-gradient(180deg, #8a6a3e, #6b4f2a);
+  color: #fdf8ee;
+  border: 1px solid #503a1c;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.25) inset, 0 2px 3px rgba(40, 28, 10, 0.25);
+}
+
+.title-screen-card button:hover:not(:disabled) {
+  background: linear-gradient(180deg, #9c7a4a, #7a5c32);
+  border-color: #503a1c;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.3) inset, 0 3px 5px rgba(40, 28, 10, 0.3);
+}
+
+.title-screen-card button:disabled {
+  background: #b8b0a2;
+  border-color: #a39b8d;
+  color: #e8e2d6;
+  box-shadow: none;
+}
+
+.title-screen .error {
+  color: #a3312a;
+}
+
+/* ── Create Your Adventurer: dark, antique-gold "storybook" theme — all
+   variables/rules below are scoped under .character-creation so no other
+   screen is affected. The woodland ZoneBackdrop behind PreGameShell stays
+   visible around (and, where backdrop-filter is supported, faintly
+   through) this panel rather than being covered by an opaque card. ── */
 .character-creation {
+  --cc-ivory: #f0e3c8;
+  --cc-parchment: #c9b999;
+  --cc-gold: #b68a45;
+  --cc-gold-soft: rgba(182, 138, 69, 0.45);
+  --cc-font-display: 'Cinzel', Georgia, 'Times New Roman', serif;
+
+  /* Pinned against the dark-fantasy reskin's body { font-family: Inter }
+     below — this screen's plain text (not tagged --cc-font-display) must
+     keep its original system-font look. */
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+  position: relative;
   width: 100%;
   max-width: 820px;
   margin: 0 auto;
   text-align: center;
-  padding: 40px 32px;
-  background: linear-gradient(180deg, rgba(255, 253, 249, 0.92), rgba(249, 244, 233, 0.92));
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(226, 217, 200, 0.8);
-  border-top: 3px solid var(--zone-primary, #8a6d3b);
-  border-radius: 10px;
-  box-shadow: 0 2px 0 rgba(255, 255, 255, 0.5) inset, 0 10px 28px rgba(20, 14, 8, 0.25);
+  padding: 40px 56px;
+  color: var(--cc-parchment);
+  /* Opaque fallback first (no backdrop-filter support = no blur, so the
+     panel needs to be solid to stay readable over the busy background);
+     @supports below upgrades it to translucent + blurred. */
+  background: #19140f;
+  border: 1px solid var(--cc-gold-soft);
+  border-radius: 14px;
+  box-shadow: 0 2px 0 rgba(255, 255, 255, 0.04) inset, 0 18px 44px rgba(0, 0, 0, 0.55);
 }
+
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .character-creation {
+    background: rgba(25, 20, 15, 0.88);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+}
+
+.character-creation h1 {
+  font-family: var(--cc-font-display);
+  color: var(--cc-ivory);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  margin: 0;
+}
+
+.cc-title-divider {
+  width: 160px;
+  height: 1px;
+  margin: 14px auto;
+  background: linear-gradient(90deg, transparent, var(--cc-gold), transparent);
+}
+
+.cc-title-divider::before {
+  content: '◆';
+  display: block;
+  margin: -0.55em auto 0;
+  width: 1.2em;
+  color: var(--cc-gold);
+  font-size: 0.7rem;
+  background: #19140f;
+}
+
+.cc-subtitle {
+  color: var(--cc-parchment);
+  margin: 0 0 20px;
+}
+
+.cc-label {
+  display: block;
+  max-width: 280px;
+  margin: 0 auto 6px;
+  font-family: var(--cc-font-display);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--cc-gold);
+  text-align: left;
+}
+
+.cc-corner {
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  color: var(--cc-gold);
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+.cc-corner-top-left { top: 12px; left: 12px; }
+.cc-corner-top-right { top: 12px; right: 12px; transform: scaleX(-1); }
+.cc-corner-bottom-left { bottom: 12px; left: 12px; transform: scaleY(-1); }
+.cc-corner-bottom-right { bottom: 12px; right: 12px; transform: scale(-1, -1); }
 
 /* ── Character-creation storybook: one page per class (Warrior/Priest/
    Paladin), arrow-navigable, each showing that class's artwork (or a
    fallback icon) and 2 spec buttons — see CharacterCreationScreen.tsx. ── */
 
 .character-creation input[type="text"] {
-  margin: 8px 0 16px;
+  margin: 0 0 20px;
   width: 100%;
   max-width: 280px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--cc-gold-soft);
+  border-radius: 6px;
+  padding: 10px 12px;
+  color: var(--cc-ivory);
+  font-size: 0.95rem;
+  font-family: inherit;
 }
 
-.character-creation > button {
+.character-creation input[type="text"]::placeholder {
+  color: rgba(201, 185, 153, 0.55);
+}
+
+.character-creation input[type="text"]:disabled {
+  opacity: 0.6;
+}
+
+/* A visible gold ring on every focusable control in this screen — inputs,
+   nav arrows, spec Select buttons, Begin Adventure — since this is the one
+   screen-specific control group item 4/5 call out "a clear keyboard-focus
+   outline" for; nothing outside .character-creation is touched. */
+.character-creation input:focus-visible,
+.character-creation button:focus-visible {
+  outline: 2px solid var(--cc-gold);
+  outline-offset: 3px;
+}
+
+/* The dark theme needs its own disabled look — the global button:disabled
+   rule's light grey would clash badly against this panel's charcoal/gold
+   palette, so this (class+pseudo-class, same specificity pattern already
+   used by .storybook-select-overlay-btn) overrides it within this screen
+   only, keeping the text legible per item 6's "keep disabled text
+   readable." */
+.character-creation button:disabled {
+  background: rgba(80, 58, 28, 0.35);
+  border-color: rgba(182, 138, 69, 0.3);
+  color: rgba(240, 227, 200, 0.5);
+  box-shadow: none;
+}
+
+.cc-begin-button {
   margin-top: 20px;
+  font-family: var(--cc-font-display);
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  /* Pinned against the dark-fantasy reskin of the global button rules below
+     — Character Creation is explicitly out of scope for that reskin and
+     must keep its original bronze look exactly. */
+  background: linear-gradient(180deg, #8a6a3e, #6b4f2a);
+  color: #fdf8ee;
+  border: 1px solid #503a1c;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.25) inset, 0 2px 3px rgba(40, 28, 10, 0.25);
+}
+
+.cc-begin-button:hover:not(:disabled) {
+  background: linear-gradient(180deg, #9c7a4a, #7a5c32);
+  border-color: #503a1c;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.3) inset, 0 3px 5px rgba(40, 28, 10, 0.3);
+}
+
+.cc-begin-hint {
+  margin: 10px 0 0;
+  color: var(--cc-parchment);
+  font-size: 0.85rem;
+}
+
+.character-creation .error {
+  margin: 10px 0 0;
+  color: #e2756a;
+}
+
+/* Reduced-motion: neutralize this screen's hover-lift/selection
+   transitions and keep the mobile drawer-style corner ornaments static —
+   color/border changes on hover/selection still apply instantly, just
+   without the animated transform. */
+@media (prefers-reduced-motion: reduce) {
+  .character-creation * {
+    transition: none !important;
+    animation: none !important;
+  }
 }
 
 .storybook-page {
@@ -812,33 +1089,132 @@ button.item-slot:active:not(:disabled) {
 
 .storybook-arrow {
   flex-shrink: 0;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   font-size: 1.4rem;
   line-height: 1;
   padding: 0;
+  background: rgba(10, 8, 6, 0.6);
+  border: 1px solid var(--cc-gold);
+  color: var(--cc-ivory);
+  font-family: inherit;
+}
+
+.storybook-arrow:hover:not(:disabled) {
+  background: rgba(40, 30, 18, 0.8);
 }
 
 .storybook-card {
   flex: 1;
   min-width: 0;
-  max-width: 420px;
-  background: linear-gradient(180deg, rgba(255, 253, 249, 0.92), rgba(249, 244, 233, 0.92));
-  border: 1px solid rgba(226, 217, 200, 0.8);
-  border-top: 3px solid var(--zone-primary, #8a6d3b);
+  max-width: 720px;
+  background: rgba(10, 8, 6, 0.4);
+  border: 1px solid var(--cc-gold);
   border-radius: 10px;
   padding: 20px;
-  box-shadow: 0 2px 0 rgba(255, 255, 255, 0.5) inset, 0 6px 16px rgba(20, 14, 8, 0.15);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
   text-align: center;
+  overflow: hidden;
+}
+
+/* When real art is showing (not the emoji fallback), the art IS the card —
+   no padding/background around it, just the card's own border and rounded
+   corners (overflow:hidden above clips the image to match them). The
+   fallback-only text block below (emoji icon, class name, blurb, spec
+   buttons) still needs its own padding, which this removes from the card
+   itself, so storybook-art-wrap's margin is zeroed here too. */
+.storybook-card-flush {
+  padding: 0;
+  background: transparent;
+}
+
+.storybook-card-flush .storybook-art-wrap {
+  margin: 0;
+}
+
+/* The dual-spec storybook art (public/class-art/) is a wide, fixed-aspect
+   illustration with each spec's own name/description baked into its own
+   half — this wrapper gives the two overlaid Select buttons below a
+   percentage-positioned box that always matches the rendered image
+   regardless of the card's actual width. */
+.storybook-art-wrap {
+  position: relative;
+  margin: 0 auto 16px;
 }
 
 .storybook-art-img {
   display: block;
   width: 100%;
-  max-height: 280px;
-  object-fit: contain;
-  margin: 0 auto 12px;
+  height: auto;
+  margin: 0;
+}
+
+.storybook-art-select-overlay {
+  position: absolute;
+  inset: 0;
+}
+
+/* Positioned just above each half's own role-name panel (already part of
+   the artwork) — left/right set inline per button (gameData/classInfo.ts's
+   SPEC_THEME supplies the background/border/text colors matching that
+   half's palette). */
+.storybook-select-overlay-btn {
+  position: absolute;
+  top: 68%;
+  transform: translate(-50%, -50%);
+  padding: 8px 22px;
+  border-radius: 999px;
+  border: 2px solid;
+  font-family: var(--cc-font-display);
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.storybook-select-overlay-btn:hover:not(:disabled) {
+  transform: translate(-50%, -50%) translateY(-2px);
+}
+
+.storybook-select-overlay-btn-selected {
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px #000, 0 4px 14px rgba(0, 0, 0, 0.55);
+}
+
+/* Readable HTML duplicate of the art's own baked-in role text — hidden
+   above the mobile breakpoint, where the full-size art already shows it
+   plenty large; see the .storybook-page rules in the mobile media query
+   below for where it's switched on. */
+.cc-mobile-spec-descriptions {
+  display: none;
+}
+
+.cc-mobile-spec-desc {
+  text-align: left;
+  padding: 10px 16px;
+}
+
+.cc-mobile-spec-desc + .cc-mobile-spec-desc {
+  border-top: 1px solid var(--cc-gold-soft);
+}
+
+.cc-mobile-spec-desc strong {
+  display: block;
+  font-family: var(--cc-font-display);
+  color: var(--cc-gold);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 2px;
+}
+
+.cc-mobile-spec-desc span {
+  display: block;
+  color: var(--cc-parchment);
+  font-size: 0.85rem;
 }
 
 .storybook-art-fallback {
@@ -847,14 +1223,14 @@ button.item-slot:active:not(:disabled) {
   justify-content: center;
   height: 160px;
   margin-bottom: 12px;
-  background: rgba(0, 0, 0, 0.03);
-  border: 1px dashed #e2d9c8;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px dashed var(--cc-gold-soft);
   border-radius: 8px;
 }
 
 .storybook-art-fallback-icon {
   font-size: 3.5rem;
-  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.2));
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.4));
 }
 
 .storybook-class-name {
@@ -863,6 +1239,19 @@ button.item-slot:active:not(:disabled) {
   justify-content: center;
   gap: 8px;
   margin: 0 0 6px;
+  font-family: var(--cc-font-display);
+  color: var(--cc-ivory);
+  /* Pinned against the dark-fantasy reskin of the global h2 rule below —
+     this fallback-only heading (shown only if class art fails to load)
+     must keep its exact original look. */
+  font-size: 1.15rem;
+  padding-bottom: 8px;
+  padding-left: 10px;
+  border-bottom: 2px solid #d8cfc0;
+  border-left: 4px solid var(--zone-primary, #8a6d3b);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 700;
 }
 
 .storybook-class-icon {
@@ -871,7 +1260,7 @@ button.item-slot:active:not(:disabled) {
 
 .storybook-class-blurb {
   font-size: 0.85rem;
-  color: #6b6156;
+  color: var(--cc-parchment);
   margin: 0 0 16px;
 }
 
@@ -890,23 +1279,24 @@ button.storybook-spec-button {
   text-align: center;
   white-space: normal;
   padding: 12px;
-  background: rgba(0, 0, 0, 0.03);
-  border: 1px solid #e2d9c8;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--cc-gold-soft);
   border-radius: 8px;
-  color: inherit;
+  color: var(--cc-ivory);
   cursor: pointer;
+  font-family: inherit;
   transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
 }
 
 button.storybook-spec-button:hover:not(:disabled) {
-  background: rgba(0, 0, 0, 0.05);
+  background: rgba(182, 138, 69, 0.15);
   color: inherit;
   transform: translateY(-2px);
 }
 
 .storybook-spec-button-selected {
-  border-color: var(--zone-primary, #8a6d3b);
-  box-shadow: 0 0 0 2px var(--zone-accent, #d8c38a) inset;
+  border-color: var(--cc-gold);
+  box-shadow: 0 0 0 2px var(--cc-gold-soft) inset;
 }
 
 .storybook-spec-icon {
@@ -915,7 +1305,7 @@ button.storybook-spec-button:hover:not(:disabled) {
 
 .storybook-spec-button small {
   font-size: 0.75rem;
-  color: #6b6156;
+  color: var(--cc-parchment);
   font-weight: 400;
 }
 
@@ -927,8 +1317,8 @@ button.storybook-spec-button:hover:not(:disabled) {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: #fdf8ee;
-  background: var(--zone-primary, #4a7c3f);
+  color: #19140f;
+  background: var(--cc-gold);
   border-radius: 4px;
   padding: 2px 6px;
 }
@@ -944,11 +1334,12 @@ button.storybook-spec-button:hover:not(:disabled) {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #e2d9c8;
+  background: var(--cc-gold-soft);
 }
 
 .storybook-page-dot-active {
-  background: var(--zone-primary, #8a6d3b);
+  background: var(--cc-gold);
+  box-shadow: 0 0 6px rgba(182, 138, 69, 0.6);
 }
 
 /* ── App shell: persistent sidebar + top bar, content swapped per section ── */
@@ -1145,7 +1536,7 @@ button.storybook-spec-button:hover:not(:disabled) {
 
 .sidebar-item {
   background: transparent;
-  color: #ddd4c6;
+  color: var(--text-primary);
   text-align: left;
   border-radius: 5px;
   padding: 10px 12px;
@@ -1153,7 +1544,7 @@ button.storybook-spec-button:hover:not(:disabled) {
 }
 
 .sidebar-item:hover:not(:disabled) {
-  background: #40392f;
+  background: var(--bg-elevated);
 }
 
 .sidebar-activity-dot {
@@ -1181,7 +1572,7 @@ button.storybook-spec-button:hover:not(:disabled) {
 }
 
 .sidebar-heading {
-  color: #8c8275;
+  color: var(--text-secondary);
   text-transform: uppercase;
   font-size: 0.7rem;
   letter-spacing: 0.06em;
@@ -1205,12 +1596,12 @@ button.storybook-spec-button:hover:not(:disabled) {
 }
 
 .sidebar-profession-level {
-  color: #ab9f8c;
+  color: var(--text-secondary);
   font-size: 0.78rem;
 }
 
 .sidebar-profession-bar-track {
-  background: #40392f;
+  background: var(--bg-secondary);
   border-radius: 3px;
   height: 5px;
   width: 100%;
@@ -1218,7 +1609,7 @@ button.storybook-spec-button:hover:not(:disabled) {
 }
 
 .sidebar-profession-bar-fill {
-  background: #c9a15a;
+  background: var(--class-accent);
   height: 100%;
 }
 
@@ -1227,16 +1618,16 @@ button.storybook-spec-button:hover:not(:disabled) {
 }
 
 .sidebar-profession-xp-fill {
-  background: #6fa8c9;
+  background: var(--class-accent);
 }
 
 .sidebar-profession-xp-label {
-  color: #ab9f8c;
+  color: var(--text-secondary);
   font-size: 0.68rem;
 }
 
 .profession-xp-bar-track {
-  background: #e2d9c8;
+  background: var(--bg-secondary);
   border-radius: 4px;
   height: 8px;
   width: 100%;
@@ -1246,7 +1637,7 @@ button.storybook-spec-button:hover:not(:disabled) {
 }
 
 .profession-xp-bar-fill {
-  background: #6fa8c9;
+  background: var(--class-accent);
   height: 100%;
 }
 
@@ -1264,14 +1655,14 @@ button.storybook-spec-button:hover:not(:disabled) {
 
 .top-bar {
   position: relative;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.85), var(--zone-bg-to));
-  backdrop-filter: blur(10px);
-  border: 1px solid var(--zone-primary);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-default);
+  border-top: 3px solid var(--class-accent);
   border-radius: 6px;
   padding: 12px 16px;
   margin-bottom: 20px;
   max-width: 820px;
-  box-shadow: 0 6px 16px rgba(20, 14, 8, 0.15);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
 }
 
 .top-bar-main {
@@ -1284,7 +1675,7 @@ button.storybook-spec-button:hover:not(:disabled) {
 .top-bar-zone-tabs {
   margin: 10px 0 0;
   padding-top: 10px;
-  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  border-top: 1px solid var(--border-default);
 }
 
 .top-bar-identity {
@@ -1293,14 +1684,14 @@ button.storybook-spec-button:hover:not(:disabled) {
 
 .top-bar-title {
   font-style: italic;
-  color: var(--zone-primary, #8a6d3b);
+  color: var(--class-accent, #8a6d3b);
 }
 
 .top-bar-stats {
   display: flex;
   gap: 14px;
   font-size: 0.9rem;
-  color: #4a4038;
+  color: var(--text-secondary);
 }
 
 .top-bar-xp {
@@ -1308,7 +1699,7 @@ button.storybook-spec-button:hover:not(:disabled) {
 }
 
 .top-bar-xp-track {
-  background: #e2d9c8;
+  background: var(--bg-secondary);
   border-radius: 4px;
   height: 8px;
   width: 100%;
@@ -1335,7 +1726,7 @@ button.storybook-spec-button:hover:not(:disabled) {
 
 .active-buff-entry small {
   font-variant-numeric: tabular-nums;
-  color: #4a4038;
+  color: var(--text-secondary);
 }
 
 .equipped-consumable-slots {
@@ -1364,12 +1755,13 @@ button.storybook-spec-button:hover:not(:disabled) {
 }
 
 .zone-tab {
-  background: #efe9dd;
-  color: #4a4038;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border-color: var(--border-default);
 }
 
 .zone-tab:hover:not(:disabled) {
-  background: #e2d9c8;
+  background: var(--bg-elevated);
 }
 
 .zone-banner {
@@ -1410,7 +1802,7 @@ button.storybook-spec-button:hover:not(:disabled) {
   right: 20px;
   bottom: 20px;
   z-index: 50;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.25) inset, 0 4px 12px rgba(20, 14, 8, 0.35);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
 }
 
 .bug-report-backdrop {
@@ -1427,9 +1819,9 @@ button.storybook-spec-button:hover:not(:disabled) {
 .bug-report-modal {
   width: 100%;
   max-width: 420px;
-  background: linear-gradient(180deg, #fffdf9, #f9f4e9);
-  border: 1px solid #e2d9c8;
-  border-top: 3px solid var(--zone-primary, #8a6d3b);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-default);
+  border-top: 3px solid var(--class-accent, #8a6d3b);
   border-radius: 10px;
   padding: 20px 22px;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
@@ -1440,7 +1832,9 @@ button.storybook-spec-button:hover:not(:disabled) {
   width: 100%;
   margin: 10px 0;
   padding: 8px 10px;
-  border: 1px solid #cfc3ac;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-default);
   border-radius: 5px;
   font: inherit;
   font-size: 0.9rem;
@@ -1479,12 +1873,12 @@ button.storybook-spec-button:hover:not(:disabled) {
 }
 
 .notification-toast {
-  background: linear-gradient(180deg, #fffdf9, #f9f4e9);
-  border: 1px solid #e2d9c8;
-  border-left: 3px solid var(--zone-primary, #8a6d3b);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-default);
+  border-left: 3px solid var(--class-accent, #8a6d3b);
   border-radius: 8px;
   padding: 10px 14px;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
   animation: notification-toast-in 0.2s ease;
 }
 
@@ -1506,7 +1900,7 @@ button.storybook-spec-button:hover:not(:disabled) {
 
 .notification-toast-line {
   font-size: 0.85rem;
-  color: #6b6156;
+  color: var(--text-secondary);
 }
 
 /* ── Settings screen ── */
@@ -1520,8 +1914,8 @@ button.storybook-spec-button:hover:not(:disabled) {
   align-items: flex-start;
   gap: 10px;
   padding: 10px 12px;
-  background: rgba(0, 0, 0, 0.03);
-  border: 1px solid #e2d9c8;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-default);
   border-radius: 6px;
   cursor: pointer;
 }
@@ -1540,8 +1934,8 @@ button.storybook-spec-button:hover:not(:disabled) {
     gap: 6px;
     margin-bottom: 10px;
     padding: 8px 14px;
-    background: rgba(20, 17, 14, 0.82);
-    color: #ddd4c6;
+    background: var(--bg-elevated);
+    color: var(--text-primary);
     border: none;
     border-radius: 6px;
     font-size: 0.95rem;
@@ -1593,6 +1987,48 @@ button.storybook-spec-button:hover:not(:disabled) {
   .storybook-arrow {
     align-self: center;
   }
+
+  /* Create Your Adventurer: less empty margin around the panel, smaller
+     corner brackets so they don't crowd the tighter padding, and the real
+     HTML spec descriptions switched on now that the art itself has shrunk
+     too far to read its own baked-in text comfortably. */
+  .pregame-shell {
+    padding: 24px 12px 48px;
+    overflow-x: hidden;
+  }
+
+  .character-creation {
+    padding: 32px 20px;
+  }
+
+  .cc-corner {
+    width: 18px;
+    height: 18px;
+  }
+
+  .cc-corner-top-left,
+  .cc-corner-top-right {
+    top: 8px;
+  }
+
+  .cc-corner-bottom-left,
+  .cc-corner-bottom-right {
+    bottom: 8px;
+  }
+
+  .cc-corner-top-left,
+  .cc-corner-bottom-left {
+    left: 8px;
+  }
+
+  .cc-corner-top-right,
+  .cc-corner-bottom-right {
+    right: 8px;
+  }
+
+  .cc-mobile-spec-descriptions {
+    display: block;
+  }
 }
 
 .settings-checkbox-row input[type="checkbox"] {
@@ -1608,7 +2044,7 @@ button.storybook-spec-button:hover:not(:disabled) {
 
 .settings-checkbox-row small {
   display: block;
-  color: #6b6156;
+  color: var(--text-secondary);
   font-weight: 400;
   margin-top: 2px;
 }
@@ -1622,8 +2058,8 @@ button.storybook-spec-button:hover:not(:disabled) {
 }
 
 .guild-panel {
-  background: linear-gradient(180deg, #fffdf9, #f8f3e8);
-  border: 1px solid #e2d9c8;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-default);
   border-radius: 8px;
   padding: 14px 16px;
 }
@@ -1633,16 +2069,16 @@ button.storybook-spec-button:hover:not(:disabled) {
 }
 
 .guild-tag {
-  color: #8a7f6f;
+  color: var(--text-secondary);
   font-weight: 400;
 }
 
 .guild-meta-line {
-  color: #6b6156;
+  color: var(--text-secondary);
 }
 
 .guild-placeholder-note {
-  color: #8a7f6f;
+  color: var(--text-secondary);
   font-style: italic;
   margin-bottom: 0;
 }
@@ -1656,12 +2092,12 @@ button.storybook-spec-button:hover:not(:disabled) {
 
 .guild-create-form input {
   padding: 6px 10px;
-  border: 1px solid #d8ccb4;
+  border: 1px solid var(--border-default);
   border-radius: 4px;
 }
 
 .guild-empty {
-  color: #8a7f6f;
+  color: var(--text-secondary);
 }
 
 .guild-browse-list,
@@ -1681,8 +2117,8 @@ button.storybook-spec-button:hover:not(:disabled) {
   gap: 12px;
   flex-wrap: wrap;
   padding: 8px 10px;
-  background: #f4efe4;
-  border: 1px solid #d8ccb4;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-default);
   border-radius: 6px;
 }
 
@@ -1693,7 +2129,7 @@ button.storybook-spec-button:hover:not(:disabled) {
 
 .guild-browse-meta,
 .guild-roster-meta {
-  color: #6b6156;
+  color: var(--text-secondary);
   font-size: 0.9rem;
 }
 
@@ -1704,7 +2140,7 @@ button.storybook-spec-button:hover:not(:disabled) {
 .guild-roster-role {
   margin-left: auto;
   font-weight: 600;
-  color: var(--zone-primary, #8a6d3b);
+  color: var(--class-accent, #8a6d3b);
 }
 
 .guild-roster-actions {
@@ -1723,8 +2159,8 @@ button.storybook-spec-button:hover:not(:disabled) {
 
 .guild-contract-row {
   padding: 10px 12px;
-  background: #f4efe4;
-  border: 1px solid #d8ccb4;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-default);
   border-radius: 6px;
 }
 
@@ -1737,7 +2173,7 @@ button.storybook-spec-button:hover:not(:disabled) {
 
 .guild-contract-category {
   font-weight: 700;
-  color: var(--zone-primary, #8a6d3b);
+  color: var(--class-accent, #8a6d3b);
 }
 
 .guild-contract-label {
@@ -1745,7 +2181,7 @@ button.storybook-spec-button:hover:not(:disabled) {
 }
 
 .guild-contract-bar-track {
-  background: #e2d9c8;
+  background: var(--bg-main);
   border-radius: 4px;
   height: 10px;
   overflow: hidden;
@@ -1753,12 +2189,12 @@ button.storybook-spec-button:hover:not(:disabled) {
 }
 
 .guild-contract-bar-fill {
-  background: var(--zone-primary, #8a6d3b);
+  background: var(--class-accent, #8a6d3b);
   height: 100%;
 }
 
 .guild-contract-meta {
-  color: #6b6156;
+  color: var(--text-secondary);
   font-size: 0.9rem;
 }
 
@@ -1770,9 +2206,15 @@ button.storybook-spec-button:hover:not(:disabled) {
 
 .guild-contract-actions input {
   padding: 6px 10px;
-  border: 1px solid #d8ccb4;
+  border: 1px solid var(--border-default);
   border-radius: 4px;
   width: 140px;
+}
+
+.guild-contract-held {
+  align-self: center;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
 }
 
 /* ── Capital City hub — district tiles (see CapitalScreen.tsx) ── */
@@ -1790,36 +2232,46 @@ button.storybook-spec-button:hover:not(:disabled) {
   align-items: flex-start;
   gap: 6px;
   text-align: left;
-  background: linear-gradient(180deg, #fffdf9, #f8f3e8);
-  border: 1px solid #e2d9c8;
-  border-top: 3px solid var(--zone-primary, #8a6d3b);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-default);
+  border-top: 3px solid var(--class-accent, #8a6d3b);
   border-radius: 8px;
   padding: 14px 16px;
   cursor: pointer;
-  box-shadow: 0 1px 2px rgba(60, 45, 20, 0.05);
-  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  box-shadow: none;
+  transition: transform 0.1s ease, border-color 0.1s ease;
+  /* A flex item's default min-width is its content's max-content width, so
+     a long description otherwise refuses to wrap and bleeds past the tile's
+     edge instead of taking another line. */
+  min-width: 0;
 }
 
 .capital-district-tile:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 10px rgba(60, 45, 20, 0.15);
+  border-color: var(--class-accent-border, var(--border-default));
 }
 
 .capital-district-name {
   font-weight: 700;
   font-size: 1.05rem;
-  color: #3c2d14;
+  color: var(--text-primary);
+  width: 100%;
+  white-space: normal;
+  overflow-wrap: break-word;
 }
 
 .capital-district-description {
-  color: #6b6156;
+  color: var(--text-secondary);
   font-size: 0.9rem;
+  width: 100%;
+  white-space: normal;
+  overflow-wrap: break-word;
 }
 
 .capital-back-button {
   background: none;
   border: none;
-  color: var(--zone-primary, #8a6d3b);
+  color: var(--class-accent, #8a6d3b);
   font-weight: 600;
   cursor: pointer;
   padding: 0;
@@ -1835,7 +2287,7 @@ button.storybook-spec-button:hover:not(:disabled) {
 }
 
 .capital-placeholder-note {
-  color: #8a7f6f;
+  color: var(--text-secondary);
   font-style: italic;
 }
 
@@ -1854,9 +2306,9 @@ button.storybook-spec-button:hover:not(:disabled) {
   flex-direction: column;
   gap: 4px;
   padding: 12px 14px;
-  background: #f4efe4;
-  border: 1px solid #d8ccb4;
-  border-top: 3px solid var(--zone-primary, #8a6d3b);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-default);
+  border-top: 3px solid var(--class-accent, #8a6d3b);
   border-radius: 6px;
 }
 
@@ -1865,7 +2317,7 @@ button.storybook-spec-button:hover:not(:disabled) {
 }
 
 .expedition-tier-meta {
-  color: #6b6156;
+  color: var(--text-secondary);
   font-size: 0.85rem;
 }
 
@@ -1898,9 +2350,9 @@ button.storybook-spec-button:hover:not(:disabled) {
 /* ── Journal — one collapsible entry per zone (see JournalScreen.tsx) ── */
 
 .journal-zone-entry {
-  background: linear-gradient(180deg, rgba(255, 253, 249, 0.92), rgba(249, 244, 233, 0.92));
-  border: 1px solid rgba(226, 217, 200, 0.8);
-  border-top: 3px solid var(--zone-primary, #8a6d3b);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-default);
+  border-top: 3px solid var(--class-accent, #8a6d3b);
   border-radius: 10px;
   padding: 14px 18px;
   margin-bottom: 12px;
@@ -1925,28 +2377,6 @@ button.storybook-spec-button:hover:not(:disabled) {
 }
 
 .journal-empty {
-  color: #6b6156;
+  color: var(--text-secondary);
   font-size: 0.85rem;
-}
-
-.journal-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.journal-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.journal-monster-icon {
-  font-size: 1.3rem;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
 }

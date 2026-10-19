@@ -6,7 +6,7 @@ import { ITEMS } from '../gameData/items';
 import { RECIPES } from '../gameData/recipes';
 import { checkLearnProfession, checkRankUp, nextTier } from '../gameData/professionTiers';
 import { TRAINER_ZONE_BY_RANK } from '../gameData/professionTrainers';
-import { ZONES } from '../gameData/zones';
+import { ZONES, isZoneUnlocked } from '../gameData/zones';
 import { FISHING_ZONE_MASTERY_THRESHOLD } from '../gameData/gatheringEngine';
 import type { ProfessionId } from '../gameData/types';
 import type { Character, ZoneMasteryState } from '../types/character';
@@ -20,9 +20,11 @@ export interface ProfessionActionResult {
 // see checkLearnProfession for the primary-slot-cap/level/gold gating this
 // re-validates server side (never trust the client's "can I afford this"
 // check alone, same posture as respecTalents/activateCombatPreset). The
-// zone check mirrors firebase/mounts.ts's trainMount — this used to be
-// enforced ONLY by the UI filtering the trainer list to the current zone
-// (ProfessionTrainerList), which a direct call could bypass entirely.
+// zone check only requires the trainer's zone to be UNLOCKED, not that the
+// character is currently standing in it — professions are now trained from
+// the Artisan Quarter in Ashenfall (CapitalScreen), reachable regardless of
+// currentZoneId, so a physical-presence check would make every rank
+// untrainable from there.
 export async function learnProfession(uid: string, profession: ProfessionId): Promise<ProfessionActionResult> {
   const character = await getCharacter(uid);
   if (!character) return { success: false, reason: 'Character not found.' };
@@ -32,8 +34,8 @@ export async function learnProfession(uid: string, profession: ProfessionId): Pr
   if (!check.ok) return { success: false, reason: check.reason };
 
   const requiredZoneId = TRAINER_ZONE_BY_RANK.apprentice;
-  if (character.currentZoneId !== requiredZoneId) {
-    return { success: false, reason: `Train this at ${ZONES[requiredZoneId]?.name ?? requiredZoneId}.` };
+  if (!isZoneUnlocked(ZONES[requiredZoneId], character.level)) {
+    return { success: false, reason: `Requires ${ZONES[requiredZoneId]?.name ?? requiredZoneId} to be unlocked.` };
   }
 
   await updateDoc(doc(db, 'characters', uid), {
@@ -74,8 +76,8 @@ export async function advanceProfessionRank(uid: string, profession: ProfessionI
   const next = nextTier(profession, state.unlockedTier)!;
 
   const requiredZoneId = TRAINER_ZONE_BY_RANK[next.tier];
-  if (character.currentZoneId !== requiredZoneId) {
-    return { success: false, reason: `Train this at ${ZONES[requiredZoneId]?.name ?? requiredZoneId}.` };
+  if (!isZoneUnlocked(ZONES[requiredZoneId], character.level)) {
+    return { success: false, reason: `Requires ${ZONES[requiredZoneId]?.name ?? requiredZoneId} to be unlocked.` };
   }
 
   await updateDoc(doc(db, 'characters', uid), {

@@ -43,7 +43,7 @@ export function TravelScreen({ travel }: { travel: TravelState }) {
         Traveling from <strong>{fromZone?.name ?? travel.fromZoneId}</strong> to{' '}
         <strong>{toZone?.name ?? travel.toZoneId}</strong>
       </p>
-      <div style={{ background: '#e2d9c8', borderRadius: 4, height: 14, width: '100%', overflow: 'hidden', marginBottom: 8 }}>
+      <div style={{ background: 'var(--bg-secondary)', borderRadius: 4, height: 14, width: '100%', overflow: 'hidden', marginBottom: 8 }}>
         <div
           style={{
             background: 'var(--zone-primary)',

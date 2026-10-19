@@ -42,6 +42,7 @@ import { equipmentRefInventoryDelta, resolveEquippedRef } from './equipmentInsta
 import { MATERIALS, LEATHER_MATERIALS, type MaterialDef } from '../gameData/materials';
 import { MATERIAL_MASTERY_XP_THRESHOLDS, rollArmorStats, canonicalInstanceId } from '../gameData/equipmentRolls';
 import { herbZoneOf } from '../gameData/herbs';
+import { isoWeekId, currentHuntingKills } from '../gameData/guildContracts';
 import { ALCHEMY_ZONE_MASTERY_THRESHOLD } from '../gameData/alchemyMastery';
 import { ENCHANTING_ZONE_MASTERY_THRESHOLD } from '../gameData/enchantingMastery';
 import { COOKING_ZONE_MASTERY_THRESHOLD } from '../gameData/cookingMastery';
@@ -623,7 +624,19 @@ export async function setCharacterLevel(uid: string, level: number, restoredHp: 
 export async function advanceQuests(uid: string, character: Character, events: QuestEvent[]): Promise<void> {
   if (events.length === 0) return;
   const active = applyQuestEvents(character, events);
-  await updateDoc(doc(db, 'characters', uid), { 'quests.active': active });
+  const update: Record<string, unknown> = { 'quests.active': active };
+
+  // Guild Contracts' Hunting category tally (Character.huntingKillTally) —
+  // folded into this same write rather than a separate call, since every
+  // call site here already has a fresh `character` and a batch of kill
+  // events to report to quests at the same time.
+  const killCount = events.reduce((sum, e) => (e.type === 'kill' ? sum + e.count : sum), 0);
+  if (killCount > 0) {
+    const now = new Date();
+    update.huntingKillTally = { weekId: isoWeekId(now), kills: currentHuntingKills(character.huntingKillTally, now) + killCount };
+  }
+
+  await updateDoc(doc(db, 'characters', uid), update);
 }
 
 // The player's explicit "Complete Quest" click — see questEngine.ts's

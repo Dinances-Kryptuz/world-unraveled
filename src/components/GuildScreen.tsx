@@ -23,7 +23,16 @@ import {
   claimContractReward,
   claimCompanionContributions,
 } from '../firebase/guildContracts';
-import { contractCategoryLabel, myShareOfContract, MAX_MOMENTUM, type GuildWeek } from '../gameData/guildContracts';
+import {
+  contractCategoryLabel,
+  myShareOfContract,
+  currentHuntingKills,
+  HUNTING_KILLS_PER_CALL_MAX,
+  MAX_MOMENTUM,
+  type GuildWeek,
+} from '../gameData/guildContracts';
+import { subscribeToInventory } from '../firebase/inventory';
+import type { Inventory } from '../types/character';
 import { donateGoldToGuild, upgradeGuildRoom } from '../firebase/guildHeadquarters';
 import {
   ROOM_IDS,
@@ -141,6 +150,7 @@ function ContractRowView({
   guildId,
   weekId,
   myUid,
+  heldAmount,
   onChanged,
 }: {
   contract: GuildWeek['contracts'][number];
@@ -148,11 +158,16 @@ function ContractRowView({
   guildId: string;
   weekId: string;
   myUid: string;
+  // How many of contract.materialId the player currently holds (0 for a
+  // Hunting contract, which has no materialId) — read from the live
+  // inventory subscription in ContractsPanel, so "how many to turn in" is
+  // always grounded in what's actually in the bag rather than a free-typed
+  // number the server would've silently clamped anyway.
+  heldAmount: number;
   onChanged: () => void;
 }) {
-  const { refetch } = useCharacter();
+  const { character, refetch } = useCharacter();
   const [amount, setAmount] = useState('');
-  const [kills, setKills] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -160,9 +175,10 @@ function ContractRowView({
   const complete = contract.completedAt !== null;
   const myShare = myShareOfContract(contract, myUid);
   const alreadyClaimed = !!contract.claims[myUid];
+  const remaining = contract.requirement - contract.progress;
+  const maxContribution = Math.max(0, Math.min(heldAmount, remaining));
 
-  async function handleContribute() {
-    const n = Math.floor(Number(amount));
+  async function handleContribute(n: number) {
     if (!(n > 0)) return;
     setError(null);
     setBusy(true);
@@ -177,14 +193,23 @@ function ContractRowView({
     }
   }
 
+  // Real client-tracked kill count since the contract's ISO week opened
+  // (Character.huntingKillTally, bumped by advanceQuests on every combat
+  // kill) minus whatever's already been reported to THIS contract
+  // (contract.playerContributions[myUid], the server's own authoritative
+  // record) — so "Report Kills" always submits exactly the newly-earned
+  // kills, never re-submits ones already credited, and never needs a
+  // manually typed number at all.
+  const trackedKills = character ? currentHuntingKills(character.huntingKillTally, new Date()) : 0;
+  const alreadyReportedKills = contract.playerContributions[myUid] ?? 0;
+  const killsToReport = Math.max(0, Math.min(trackedKills - alreadyReportedKills, remaining, HUNTING_KILLS_PER_CALL_MAX));
+
   async function handleReportKills() {
-    const n = Math.floor(Number(kills));
-    if (!(n > 0)) return;
+    if (!(killsToReport > 0)) return;
     setError(null);
     setBusy(true);
     try {
-      await reportHuntingKills(guildId, weekId, index, n);
-      setKills('');
+      await reportHuntingKills(guildId, weekId, index, killsToReport);
       onChanged();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to report kills.');
@@ -225,23 +250,30 @@ function ContractRowView({
       {error && <p className="error">{error}</p>}
       {!complete && contract.category !== 'hunting' && (
         <div className="guild-contract-actions">
+          <span className="guild-contract-held">You have {heldAmount}{materialName ? ` ${materialName}` : ''}.</span>
           <input
             type="number"
             min={1}
-            placeholder={materialName ? `${materialName} to turn in` : 'Amount'}
+            max={maxContribution}
+            placeholder="Amount"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
           />
-          <button onClick={handleContribute} disabled={busy || !(Number(amount) > 0)}>
+          <button onClick={() => handleContribute(Math.min(Math.floor(Number(amount)), maxContribution))} disabled={busy || !(Number(amount) > 0) || maxContribution <= 0}>
             Contribute
+          </button>
+          <button onClick={() => handleContribute(maxContribution)} disabled={busy || maxContribution <= 0}>
+            Contribute All ({maxContribution})
           </button>
         </div>
       )}
       {!complete && contract.category === 'hunting' && (
         <div className="guild-contract-actions">
-          <input type="number" min={1} max={20} placeholder="Kills to report" value={kills} onChange={(e) => setKills(e.target.value)} />
-          <button onClick={handleReportKills} disabled={busy || !(Number(kills) > 0)}>
-            Report Kills
+          <span className="guild-contract-held">
+            {trackedKills} kill{trackedKills === 1 ? '' : 's'} tracked this week · {killsToReport} not yet reported.
+          </span>
+          <button onClick={handleReportKills} disabled={busy || killsToReport <= 0}>
+            Report {killsToReport} Kill{killsToReport === 1 ? '' : 's'}
           </button>
         </div>
       )}
@@ -258,8 +290,16 @@ function ContractRowView({
 }
 
 function ContractsPanel({ guildId, myUid }: { guildId: string; myUid: string }) {
+  const { user } = useAuth();
   const [week, setWeek] = useState<GuildWeek | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [inventory, setInventory] = useState<Inventory | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    const unsubscribe = subscribeToInventory(user.uid, setInventory);
+    return unsubscribe;
+  }, [user]);
 
   async function load() {
     try {
@@ -292,7 +332,16 @@ function ContractsPanel({ guildId, myUid }: { guildId: string; myUid: string }) 
       <h3>Weekly Contracts — {week.weekId}</h3>
       <ul className="guild-contract-list">
         {week.contracts.map((c, i) => (
-          <ContractRowView key={i} contract={c} index={i} guildId={guildId} weekId={week.weekId} myUid={myUid} onChanged={load} />
+          <ContractRowView
+            key={i}
+            contract={c}
+            index={i}
+            guildId={guildId}
+            weekId={week.weekId}
+            myUid={myUid}
+            heldAmount={c.materialId ? inventory?.items[c.materialId] ?? 0 : 0}
+            onChanged={load}
+          />
         ))}
       </ul>
     </div>

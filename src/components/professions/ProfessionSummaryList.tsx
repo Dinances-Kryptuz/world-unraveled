@@ -41,7 +41,7 @@ export function ProfessionSummaryList({ professionIds }: { professionIds: Profes
             label={`${PROFESSION_LABELS[professionId]} (${state.unlockedTier})`}
             current={state.level}
             max={maxSkillForUnlockedTier(professionId, state.unlockedTier)}
-            color="#6b4f2a"
+            color="var(--class-accent)"
           />
           <button onClick={() => handleAbandon(professionId)}>Abandon {PROFESSION_LABELS[professionId]}</button>
         </div>

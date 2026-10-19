@@ -13,13 +13,13 @@ export function ZoneBanner({ zoneId }: { zoneId: string }) {
     <div
       className="zone-banner"
       style={{
-        background: 'linear-gradient(135deg, var(--zone-bg-from), var(--zone-bg-to))',
-        borderColor: 'var(--zone-primary)',
+        background: 'var(--bg-panel)',
+        borderColor: 'var(--border-default)',
       }}
     >
       <div className="zone-banner-bar" style={{ background: 'var(--zone-primary)' }} />
       <div className="zone-banner-body">
-        <h1 style={{ color: 'var(--zone-primary-dark)' }}>{zone.name}</h1>
+        <h1 style={{ color: 'var(--zone-primary)' }}>{zone.name}</h1>
         <p className="zone-banner-level">Levels {zone.levelRange[0]}–{zone.levelRange[1]}</p>
         <p>{zone.description}</p>
       </div>

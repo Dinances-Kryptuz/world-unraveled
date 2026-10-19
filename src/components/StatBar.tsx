@@ -18,7 +18,7 @@ export function StatBar({
       <small>
         {label}: {Math.round(current)} / {Math.round(max)}
       </small>
-      <div style={{ background: '#e2d9c8', borderRadius: 4, height: 10, width: '100%', overflow: 'hidden' }}>
+      <div style={{ background: 'var(--bg-secondary)', borderRadius: 4, height: 10, width: '100%', overflow: 'hidden' }}>
         <div
           style={{
             background: color,
@@ -32,10 +32,8 @@ export function StatBar({
   );
 }
 
-// HP bar color follows the same "getting dangerous" convention as a WoW-
-// style health bar: green while healthy, yellow at moderate, red once low.
-export function hpBarColor(pct: number): string {
-  if (pct > 50) return '#2e9e4f';
-  if (pct > 20) return '#b8960c';
-  return '#c0392b';
-}
+// Flat HP-bar colors per the dark-fantasy reskin spec — replaces the prior
+// green/gold/red "getting dangerous" threshold convention with one fixed
+// color each for an ally's bar and an enemy's bar, regardless of %.
+export const HEALTH_BAR_COLOR = '#55956D';
+export const ENEMY_HEALTH_BAR_COLOR = '#AD625C';

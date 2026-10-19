@@ -4,7 +4,7 @@ import { useCharacter } from '../hooks/useCharacter';
 import { trainAbility } from '../firebase/character';
 import { ABILITIES } from '../combatEngine/abilities';
 import { abilityTrainingCost, abilityTrainingZoneId } from '../gameData/abilityTraining';
-import { ZONES } from '../gameData/zones';
+import { ZONES, isZoneUnlocked } from '../gameData/zones';
 import type { Ability } from '../combatEngine/types';
 
 // The full catalog for the character's class/spec — shown regardless of
@@ -18,7 +18,11 @@ function abilitiesForClassSpec(cls: string, spec: string | null): Ability[] {
     .sort((a, b) => a.unlockLevel - b.unlockLevel);
 }
 
-export function SpellTrainerScreen({ zoneId }: { zoneId: string }) {
+// Now hosted inside Ashenfall's Training Hall (CapitalScreen) rather than at
+// a standalone zone-bound sidebar tab, so training no longer requires
+// physically standing in the required zone — it only needs that zone to be
+// unlocked (isZoneUnlocked), same relaxation as ProfessionTrainerList's.
+export function SpellTrainerScreen() {
   const { user } = useAuth();
   const { character, refetch } = useCharacter();
   const [training, setTraining] = useState<string | null>(null);
@@ -48,13 +52,13 @@ export function SpellTrainerScreen({ zoneId }: { zoneId: string }) {
   return (
     <div className="spell-trainer-screen">
       <h2>Spells &amp; Abilities</h2>
-      <p>Every ability your class (and spec, once chosen) can ever learn. Training one requires reaching its level and standing in the right zone.</p>
+      <p>Every ability your class (and spec, once chosen) can ever learn. Training one requires reaching its level and having unlocked the right zone.</p>
       <ul style={{ listStyle: 'none', paddingLeft: 0 }}>
         {abilities.map((ability) => {
           const known = trainedSet.has(ability.id);
           const reachedLevel = character.level >= ability.unlockLevel;
           const requiredZoneId = abilityTrainingZoneId(ability.unlockLevel);
-          const inZone = zoneId === requiredZoneId;
+          const inZone = isZoneUnlocked(ZONES[requiredZoneId], character.level);
           const cost = abilityTrainingCost(ability.unlockLevel);
           const canAfford = character.gold >= cost;
           const isBusy = training === ability.id;
@@ -63,7 +67,7 @@ export function SpellTrainerScreen({ zoneId }: { zoneId: string }) {
           let statusNote: string | null = null;
           if (!known) {
             if (!reachedLevel) statusNote = `Requires character level ${ability.unlockLevel}`;
-            else if (!inZone) statusNote = `Train this at ${zoneName}`;
+            else if (!inZone) statusNote = `Requires ${zoneName} to be unlocked`;
           }
 
           return (
