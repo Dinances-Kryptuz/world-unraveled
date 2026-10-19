@@ -52,6 +52,10 @@ export function FishingScreen({ hole }: { hole: FishingHole }) {
   // would drift against the bar's visual completion.
   const [livePreview, setLivePreview] = useState<GatheringOfflineResult | null>(null);
   const anchorRef = useRef<Date | null>(character.currentActivity.startedAt);
+  // How many whole units (relative to the current anchor) have already had
+  // their "caught" notification fire — see CraftingScreen's matching
+  // notifiedWholeRef for the full rationale.
+  const notifiedWholeRef = useRef(0);
 
   const characterRef = useRef<Character | null>(character);
   const userRef = useRef<User | null>(user);
@@ -67,6 +71,7 @@ export function FishingScreen({ hole }: { hole: FishingHole }) {
     setBankedBonusQuantity(0);
     setLivePreview(null);
     anchorRef.current = character.currentActivity.startedAt;
+    notifiedWholeRef.current = 0;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hole.id]);
 
@@ -136,9 +141,17 @@ export function FishingScreen({ hole }: { hole: FishingHole }) {
     setBankedBonusQuantity((prev) => prev + wholeBonus);
     setLivePreview(null);
 
-    if (currentCharacter.notificationsEnabled && wholeQuantity > 0) {
-      notify(`${ITEMS[hole.itemId]?.name ?? hole.itemId} caught`, [`${wholeQuantity}x ${ITEMS[hole.itemId]?.name ?? hole.itemId}`]);
+    // The normal case: every whole catch in this window already got its own
+    // "caught" toast the instant its TickBar loop completed (see
+    // handleTickIteration below) — see CraftingScreen's matching comment for
+    // why this only reports whatever a tick DIDN'T already cover.
+    const notYetNotified = wholeQuantity - notifiedWholeRef.current;
+    if (currentCharacter.notificationsEnabled && notYetNotified > 0) {
+      notify(`${ITEMS[hole.itemId]?.name ?? hole.itemId} caught`, [`${notYetNotified}x ${ITEMS[hole.itemId]?.name ?? hole.itemId}`]);
     }
+    // See CraftingScreen's matching comment: left at wholeQuantity (not
+    // reset to 0) until the write below actually succeeds.
+    notifiedWholeRef.current = wholeQuantity;
     if (currentCharacter.skillXpNotificationsEnabled && result.professionXpGained > 0) {
       notify('Fishing XP gained', [`+${result.professionXpGained} XP`]);
     }
@@ -207,6 +220,8 @@ export function FishingScreen({ hole }: { hole: FishingHole }) {
         // activity started, risking a isLongAbsence flicker.
         currentActivity: { ...fresh.currentActivity, startedAt: now },
       }));
+      // The anchor durably moved to `now` — the next window starts fresh.
+      notifiedWholeRef.current = 0;
     } catch (err) {
       console.error('Fishing autosave failed, will retry next cycle:', err);
       anchorRef.current = previousAnchor;
@@ -254,22 +269,29 @@ export function FishingScreen({ hole }: { hole: FishingHole }) {
   const cap = maxSkillForUnlockedTier('fishing', prof.unlockedTier);
   function handleTickIteration() {
     if (!anchorRef.current) return;
-    setLivePreview(
-      resolveGatheringOffline(
-        anchorRef.current,
-        new Date(),
-        resourceLike(),
-        prof.level,
-        prof.xp,
-        0,
-        0,
-        cap,
-        previewToolBonusPct,
-        undefined,
-        undefined,
-        { zoneMasteryStartingXp: zoneMasteryXp }
-      )
+    const preview = resolveGatheringOffline(
+      anchorRef.current,
+      new Date(),
+      resourceLike(),
+      prof.level,
+      prof.xp,
+      0,
+      0,
+      cap,
+      previewToolBonusPct,
+      undefined,
+      undefined,
+      { zoneMasteryStartingXp: zoneMasteryXp }
     );
+    setLivePreview(preview);
+    const wholeNow = Math.floor(preview.quantityGained);
+    const newly = wholeNow - notifiedWholeRef.current;
+    if (newly > 0) {
+      notifiedWholeRef.current = wholeNow;
+      if (character.notificationsEnabled) {
+        notify(`${ITEMS[hole.itemId]?.name ?? hole.itemId} caught`, [`${newly}x ${ITEMS[hole.itemId]?.name ?? hole.itemId}`]);
+      }
+    }
   }
   const displayQuantity = bankedQuantity + Math.floor(livePreview?.quantityGained ?? 0);
   const displayBonusQuantity = bankedBonusQuantity + Math.floor(livePreview?.rareBonusQuantity ?? 0);

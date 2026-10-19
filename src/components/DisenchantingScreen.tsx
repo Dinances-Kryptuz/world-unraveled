@@ -64,6 +64,11 @@ export function DisenchantingScreen({ itemId, instanceId }: { itemId: string; in
   // static "queued" listing (see render below).
   const [livePreview, setLivePreview] = useState<DisenchantOfflineResult | null>(null);
   const anchorRef = useRef<Date | null>(character.currentActivity.startedAt);
+  // Whole items of the CURRENT item (not the queue — queued items have no
+  // live preview, only a static listing, so they stay batched to autosave)
+  // already notified relative to anchorRef.current — same pattern/rollback
+  // safety as CraftingScreen/GatheringScreen/FishingScreen's notifiedWholeRef.
+  const notifiedWholeRef = useRef(0);
   const stockRef = useRef(0);
   const remainingRequestedRef = useRef(character.currentActivity.disenchantQuantity ?? 1);
   // Continuous Disenchanting Queue overhaul — the upcoming queue (not yet
@@ -100,6 +105,7 @@ export function DisenchantingScreen({ itemId, instanceId }: { itemId: string; in
     setDone(false);
     setLivePreview(null);
     anchorRef.current = character.currentActivity.startedAt;
+    notifiedWholeRef.current = 0;
     remainingRequestedRef.current = character.currentActivity.disenchantQuantity ?? 1;
     queueRef.current = character.currentActivity.disenchantQueue ?? [];
     if (user) {
@@ -215,16 +221,27 @@ export function DisenchantingScreen({ itemId, instanceId }: { itemId: string; in
     setSessionDisenchanted((prev) => prev + totalThisTick);
     setLivePreview(null);
 
+    // The current item's own whole-count may already have been reported by
+    // handleTickIteration below (tick-synced, same instant the bar visually
+    // completes a loop) — only report whatever a tick didn't already cover.
+    // Queued items have no live preview, so they're always reported here in
+    // full, same as before.
+    const currentEntry = result.perItem.find((entry) => entry.itemId === itemId && entry.instanceId === instanceId);
     if (currentCharacter.notificationsEnabled) {
-      notify(
-        'Disenchanted',
-        result.perItem.map((entry) => {
+      const lines = result.perItem
+        .map((entry) => {
+          const isCurrent = entry.itemId === itemId && entry.instanceId === instanceId;
+          const qty = isCurrent ? entry.itemsDisenchanted - notifiedWholeRef.current : entry.itemsDisenchanted;
+          if (qty <= 0) return null;
           const srcItem = ITEMS[entry.itemId];
           const yieldItem = ITEMS[entry.yieldItemId];
-          return `${entry.itemsDisenchanted}x ${srcItem?.name ?? entry.itemId} -> ${Math.floor(entry.yieldQuantity)}x ${yieldItem?.name ?? entry.yieldItemId}`;
+          const yieldQty = isCurrent && entry.itemsDisenchanted > 0 ? entry.yieldQuantity * (qty / entry.itemsDisenchanted) : entry.yieldQuantity;
+          return `${qty}x ${srcItem?.name ?? entry.itemId} -> ${Math.floor(yieldQty)}x ${yieldItem?.name ?? entry.yieldItemId}`;
         })
-      );
+        .filter((line): line is string => line !== null);
+      if (lines.length > 0) notify('Disenchanted', lines);
     }
+    if (currentEntry) notifiedWholeRef.current = currentEntry.itemsDisenchanted;
     if (currentCharacter.skillXpNotificationsEnabled && result.professionXpGained > 0) {
       notify('Enchanting XP gained', [`+${result.professionXpGained} XP`]);
     }
@@ -289,8 +306,14 @@ export function DisenchantingScreen({ itemId, instanceId }: { itemId: string; in
                 startedAt: now,
               },
       }));
+      // The anchor durably moved to `now` — the next window's whole-item
+      // count (and the next tick's notification check) starts fresh from 0.
+      notifiedWholeRef.current = 0;
     } catch (err) {
       console.error('Disenchant autosave failed, will retry next cycle:', err);
+      // notifiedWholeRef deliberately left at currentEntry's wholeX (set
+      // above) — matching anchorRef's rollback to previousAnchor below, so a
+      // retry against the same anchor can't re-fire the same toast.
       anchorRef.current = previousAnchor;
       stockRef.current = previousStock;
       remainingRequestedRef.current = previousRemaining;
@@ -340,21 +363,30 @@ export function DisenchantingScreen({ itemId, instanceId }: { itemId: string; in
   function handleTickIteration() {
     const previewMaxQuantity = Math.min(remainingRequestedRef.current, stockRef.current);
     if (done || !anchorRef.current || !yieldRange || previewMaxQuantity <= 0) return;
-    setLivePreview(
-      resolveDisenchantOffline(
-        anchorRef.current,
-        new Date(),
-        requiredSkill,
-        baseXp,
-        yieldRange.min,
-        yieldRange.max,
-        previewMaxQuantity,
-        prof.level,
-        prof.xp,
-        cap,
-        shirtBonusPct(shirtBonusForItemId(character.currentActivity.equippedShirtItemId), 'salvage_bonus')
-      )
+    const preview = resolveDisenchantOffline(
+      anchorRef.current,
+      new Date(),
+      requiredSkill,
+      baseXp,
+      yieldRange.min,
+      yieldRange.max,
+      previewMaxQuantity,
+      prof.level,
+      prof.xp,
+      cap,
+      shirtBonusPct(shirtBonusForItemId(character.currentActivity.equippedShirtItemId), 'salvage_bonus')
     );
+    setLivePreview(preview);
+    const wholeNow = Math.floor(preview.itemsDisenchanted);
+    const newly = wholeNow - notifiedWholeRef.current;
+    if (newly > 0) {
+      notifiedWholeRef.current = wholeNow;
+      if (character.notificationsEnabled) {
+        const yieldItem = ITEMS[yieldRange.itemId];
+        const newlyYield = preview.itemsDisenchanted > 0 ? Math.floor(preview.yieldQuantity * (newly / preview.itemsDisenchanted)) : 0;
+        notify('Disenchanted', [`${newly}x ${item.name} -> ${newlyYield}x ${yieldItem?.name ?? yieldRange.itemId}`]);
+      }
+    }
   }
   const displayDisenchanted = sessionDisenchanted + (livePreview?.itemsDisenchanted ?? 0);
 

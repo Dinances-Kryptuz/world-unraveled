@@ -30,6 +30,19 @@ export function TickBar({
       <small>{label}</small>
       <div className="tick-bar-track">
         <div
+          // Keyed on `seconds` so a real duration change (a crafting/gathering
+          // screen recomputes it whenever Mastery/tool/shirt speed changes,
+          // typically once per ~20s autosave) forces React to mount a BRAND
+          // NEW element instead of mutating animation-duration on the one
+          // that's already mid-loop. Browsers don't cleanly restart a live,
+          // infinitely-looping CSS animation when its duration changes —
+          // they reinterpret the time already elapsed against the new
+          // duration, which can fire extra animationiteration events (or
+          // skip part of a loop) and desync the bar's visual pace from the
+          // real elapsed-time math the onIteration callback uses. A fresh
+          // element always starts its clock at 0, so the bar's pace can
+          // never drift ahead of (or behind) what's actually being produced.
+          key={seconds.toFixed(3)}
           className="tick-bar-fill"
           style={{ background: color, animationDuration: `${seconds}s` }}
           onAnimationIteration={onIteration}
