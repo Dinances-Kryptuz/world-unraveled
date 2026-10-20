@@ -12,7 +12,7 @@ import {
 } from '../gameData/gatheringEngine';
 import type { ProfessionState } from '../types/character';
 import { BASE_BANK_SLOTS } from '../gameData/bank';
-import { DEFAULT_ZONE_ID, ZONES } from '../gameData/zones';
+import { DEFAULT_ZONE_ID, ZONES, isZoneUnlocked } from '../gameData/zones';
 import { abilityTrainingCost, abilityTrainingZoneId } from '../gameData/abilityTraining';
 import type { TravelState } from '../gameData/travel';
 import { maxHp } from '../gameData/combatFormulas';
@@ -1473,11 +1473,12 @@ export async function setMasteryXpNotificationsEnabled(uid: string, enabled: boo
 
 // Pays gold to add one ability to Character.trainedAbilityIds — the Class
 // Trainer's "Spells & Abilities" page, the only path that ever writes this
-// field for a post-training-system character. Requires the character to
-// already be standing in the ability's training zone (gameData/
-// abilityTraining.ts's abilityTrainingZoneId) — same "ownership-scoped,
-// zone-checked server-side" posture as firebase/professions.ts's
-// learnProfession/advanceProfessionRank.
+// field for a post-training-system character. Trained from Ashenfall's
+// Training Hall (ClassTrainerScreen/SpellTrainerScreen), so this only
+// requires the ability's training zone (gameData/abilityTraining.ts's
+// abilityTrainingZoneId) to have ever been UNLOCKED, not that the
+// character is currently standing in it — same relaxation already applied
+// to firebase/professions.ts's learnProfession/advanceProfessionRank.
 export async function trainAbility(uid: string, abilityId: string): Promise<{ success: boolean; reason?: string }> {
   const ability = ABILITIES[abilityId];
   if (!ability || ability.isBasicAttack) return { success: false, reason: 'Unknown ability.' };
@@ -1493,8 +1494,8 @@ export async function trainAbility(uid: string, abilityId: string): Promise<{ su
   }
 
   const requiredZoneId = abilityTrainingZoneId(ability.unlockLevel);
-  if (character.currentZoneId !== requiredZoneId) {
-    return { success: false, reason: `Train this at ${ZONES[requiredZoneId]?.name ?? requiredZoneId}.` };
+  if (!isZoneUnlocked(ZONES[requiredZoneId], character.level)) {
+    return { success: false, reason: `Requires ${ZONES[requiredZoneId]?.name ?? requiredZoneId} to be unlocked.` };
   }
 
   const cost = abilityTrainingCost(ability.unlockLevel);
