@@ -12,6 +12,21 @@
 // hop adds another full flight), never faster.
 export const FLIGHT_MINUTES_FLAT = 5;
 
+// Ashenfall is the capital — the hub every other zone's flight routes
+// through — and Greenhollow Fields is the one zone every character starts
+// standing in. Treating that one pair as a free, instant hop (both
+// directions, no mount needed) means a brand-new character is never stuck
+// waiting out a 5-minute flight just to reach the capital for the first
+// time, while every other zone-to-zone flight keeps the flat 5-minute base
+// untouched.
+function isFreeAshenfallHop(fromZoneId?: string, toZoneId?: string): boolean {
+  if (!fromZoneId || !toZoneId) return false;
+  return (
+    (fromZoneId === 'ashenfall' && toZoneId === 'greenhollow_fields') ||
+    (fromZoneId === 'greenhollow_fields' && toZoneId === 'ashenfall')
+  );
+}
+
 // speedBonusPct comes from gameData/mounts.ts's bestMountSpeedBonusPct — 0
 // for a mountless character (the default), up to a mount's own
 // speedBonusPct for one who owns a mount. 50 means "flights take half as
@@ -26,7 +41,14 @@ export const FLIGHT_MINUTES_FLAT = 5;
 // nit, since firebase/travel.ts's arrivesAt is computed straight from this
 // value. Seconds give 300 distinct values instead of 5, so none of the six
 // speedBonusPct tiers (0/10/20/30/60/80) can ever land on the same number.
-export function travelSeconds(speedBonusPct = 0): number {
+//
+// fromZoneId/toZoneId are optional so every existing caller that only cares
+// about the generic flat-5-minute case (the mount trainer's own preview,
+// for instance, which has no particular destination in mind) keeps working
+// unchanged — only a caller that actually knows both ends of the flight
+// can get the Ashenfall<->Greenhollow Fields exception.
+export function travelSeconds(speedBonusPct = 0, fromZoneId?: string, toZoneId?: string): number {
+  if (isFreeAshenfallHop(fromZoneId, toZoneId)) return 0;
   return Math.round(FLIGHT_MINUTES_FLAT * 60 * (1 - speedBonusPct / 100));
 }
 
@@ -34,8 +56,8 @@ export function travelSeconds(speedBonusPct = 0): number {
 // when the duration isn't a whole number of minutes, so the label itself
 // visibly changes between every mount rank instead of re-rounding
 // travelSeconds back into the same collision this function replaced.
-export function formatTravelMinutes(speedBonusPct = 0): string {
-  const minutes = travelSeconds(speedBonusPct) / 60;
+export function formatTravelMinutes(speedBonusPct = 0, fromZoneId?: string, toZoneId?: string): string {
+  const minutes = travelSeconds(speedBonusPct, fromZoneId, toZoneId) / 60;
   return Number.isInteger(minutes) ? `${minutes}` : minutes.toFixed(1);
 }
 

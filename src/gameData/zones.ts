@@ -764,6 +764,20 @@ export const ZONES: Record<string, Zone> = {
   },
 };
 
+// Display-only ordering for anywhere zones are listed to the player (the
+// top bar's zone tabs) — Ashenfall first, since it's the capital and the
+// hub everything else routes through, then every other zone in ZONES'
+// own iteration order. Deliberately NOT a change to ZONES itself: that
+// object's insertion order is load-bearing for zoneForLevel's tie-break
+// (see the comment on the `ashenfall` entry above), so this only reorders
+// a derived array for rendering.
+export function orderedZonesForDisplay(zones: Record<string, Zone>): Zone[] {
+  const all = Object.values(zones);
+  const ashenfall = all.find((z) => z.id === 'ashenfall');
+  const rest = all.filter((z) => z.id !== 'ashenfall');
+  return ashenfall ? [ashenfall, ...rest] : all;
+}
+
 // Which zone "belongs to" a given character level — the zone with the
 // highest unlockRequirement.level that's still <= level, i.e. the most
 // advanced zone that level could actually be standing in. Used anywhere
