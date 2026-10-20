@@ -34,6 +34,7 @@ import {
 import { subscribeToInventory } from '../firebase/inventory';
 import type { Inventory } from '../types/character';
 import { donateGoldToGuild, upgradeGuildRoom } from '../firebase/guildHeadquarters';
+import { GUILD_MILESTONES } from '../gameData/guildMilestones';
 import {
   ROOM_IDS,
   ROOM_LABELS,
@@ -437,6 +438,32 @@ function HeadquartersPanel({
   );
 }
 
+// Every 5 guild levels grants a permanent bonus for every member, not just
+// whoever contributed the XP — see gameData/guildMilestones.ts for how each
+// bonus is actually applied (mount speed, gathering/crafting time, Mastery
+// XP rate).
+function GuildMilestonesPanel({ guildLevel }: { guildLevel: number }) {
+  return (
+    <div className="guild-panel">
+      <h3>Guild Milestones</h3>
+      <div className="expedition-tier-grid">
+        {GUILD_MILESTONES.map((m) => {
+          const unlocked = guildLevel >= m.level;
+          return (
+            <div key={m.id} className="expedition-tier-card">
+              <span className="expedition-tier-name">
+                Level {m.level} — {m.label}
+              </span>
+              <span className="expedition-tier-meta">{m.description}</span>
+              <span className="guild-placeholder-note">{unlocked ? 'Unlocked' : `Locked — ${m.level - guildLevel} level${m.level - guildLevel === 1 ? '' : 's'} to go`}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function sortRoster(members: GuildMemberRow[]): GuildMemberRow[] {
   return members
     .slice()
@@ -530,8 +557,28 @@ function GuildOverview({ guildId, myUid, onChanged }: { guildId: string; myUid: 
         <p className="guild-meta-line">
           Level {guildXpProgress(guild.xp).level} · {guild.memberIds.length}/{MAX_GUILD_MEMBERS} members · {officerCount}/{MAX_OFFICERS} Officers
         </p>
+        {(() => {
+          const { level, xpIntoLevel, xpForNextLevel } = guildXpProgress(guild.xp);
+          return (
+            <>
+              <div className="profession-xp-bar-track">
+                <div
+                  className="profession-xp-bar-fill"
+                  style={{ width: `${Math.min(100, (xpIntoLevel / xpForNextLevel) * 100)}%` }}
+                />
+              </div>
+              <p className="guild-meta-line">
+                <small>
+                  {Math.floor(xpIntoLevel).toLocaleString()} / {xpForNextLevel.toLocaleString()} guild XP to level {level + 1}
+                </small>
+              </p>
+            </>
+          );
+        })()}
         <p className="guild-meta-line">Guild Momentum: {guild.momentum}/{MAX_MOMENTUM}</p>
       </div>
+
+      <GuildMilestonesPanel guildLevel={guildXpProgress(guild.xp).level} />
 
       <HeadquartersPanel guild={guild} canManage={canManage} onChanged={load} />
 

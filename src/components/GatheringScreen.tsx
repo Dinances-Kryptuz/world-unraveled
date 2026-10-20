@@ -26,6 +26,7 @@ import { shirtBonusForItemId, shirtBonusPct } from '../gameData/shirts';
 import { herbZoneOf } from '../gameData/herbs';
 import { ZONES } from '../gameData/zones';
 import { notify } from '../utils/notifications';
+import { useGuildMilestoneBonuses } from '../hooks/useGuildMilestones';
 import { TickBar } from './TickBar';
 import type { Character } from '../types/character';
 import type { User } from 'firebase/auth';
@@ -69,6 +70,17 @@ export function GatheringScreen({ node }: { node: GatherNode }) {
     userRef.current = user;
   }, [user]);
 
+  // Guild Milestones (level 10/20) — read through a ref, same reason
+  // characterRef exists: autosave() runs from a setInterval callback whose
+  // effect only depends on [node.id], so a plain closure over the hook's
+  // return value would freeze at whatever it was when that effect last
+  // ran, not whenever the guild's bonuses actually change.
+  const guildBonuses = useGuildMilestoneBonuses();
+  const guildBonusesRef = useRef(guildBonuses);
+  useEffect(() => {
+    guildBonusesRef.current = guildBonuses;
+  }, [guildBonuses]);
+
   useEffect(() => {
     setBankedQuantity(0);
     setBankedBonusQuantity(0);
@@ -101,7 +113,10 @@ export function GatheringScreen({ node }: { node: GatherNode }) {
     return {
       gatheringSpeedPct: shirtBonusPct(shirtBonus, 'gathering_speed'),
       professionXpPct: shirtBonusPct(shirtBonus, 'profession_xp'),
-      masteryXpPct: shirtBonusPct(shirtBonus, 'mastery_xp'),
+      // Guild Milestone (level 20) stacks onto the same lever Shirt of
+      // Mastery already uses — see gameData/guildMilestones.ts's comment
+      // on why this reuses masteryXpPct instead of a second, parallel axis.
+      masteryXpPct: shirtBonusPct(shirtBonus, 'mastery_xp') + guildBonusesRef.current.gatheringMasteryPct,
     };
   }
 
@@ -137,9 +152,9 @@ export function GatheringScreen({ node }: { node: GatherNode }) {
     const equippedToolId = equippedItemId(currentCharacter.equipment.tool);
     const equippedTool = equippedToolId ? ITEMS[equippedToolId] : null;
     const toolBonusPct =
-      equippedTool && node.requiredToolType && equippedTool.toolType === node.requiredToolType
+      (equippedTool && node.requiredToolType && equippedTool.toolType === node.requiredToolType
         ? equippedTool.gatherBonusPct ?? 0
-        : 0;
+        : 0) + guildBonusesRef.current.gatheringTimePct;
 
     const herbalismOverride: HerbalismOverride | undefined = herbZoneId
       ? { zoneMasteryStartingXp: currentCharacter.herbalismZoneMastery?.[herbZoneId]?.xp ?? 0 }
@@ -328,10 +343,17 @@ export function GatheringScreen({ node }: { node: GatherNode }) {
   const previewEquippedToolId = equippedItemId(character.equipment.tool);
   const previewEquippedTool = previewEquippedToolId ? ITEMS[previewEquippedToolId] : null;
   const previewToolBonusPct =
-    previewEquippedTool && node.requiredToolType && previewEquippedTool.toolType === node.requiredToolType
+    (previewEquippedTool && node.requiredToolType && previewEquippedTool.toolType === node.requiredToolType
       ? previewEquippedTool.gatherBonusPct ?? 0
-      : 0;
+      : 0) + guildBonuses.gatheringTimePct;
   const cap = maxSkillForUnlockedTier(node.profession, prof.unlockedTier);
+  // The bar's displayed duration must fold in every speed source the
+  // resolver itself applies (tool + shirt + Guild Milestone), not just
+  // Mastery — a bar that only reflects part of the real speed is exactly
+  // the desync TickBar.tsx's own key-on-seconds fix exists to prevent; it
+  // just can't catch a gap in what feeds `seconds` in the first place.
+  const previewShirtSpeedPct = gatheringShirtBonuses(character.currentActivity.equippedShirtItemId).gatheringSpeedPct ?? 0;
+  const displaySpeedMult = speedMult * (1 + (previewToolBonusPct + previewShirtSpeedPct) / 100);
   function handleTickIteration() {
     if (!anchorRef.current) return;
     const previewHerbalismOverride: HerbalismOverride | undefined = herbZoneId
@@ -371,7 +393,7 @@ export function GatheringScreen({ node }: { node: GatherNode }) {
       <h2>
         {label}: {node.name}
       </h2>
-      <TickBar seconds={node.secondsPerAction / speedMult} color="var(--class-accent)" label={label} onIteration={handleTickIteration} />
+      <TickBar seconds={node.secondsPerAction / displaySpeedMult} color="var(--class-accent)" label={label} onIteration={handleTickIteration} />
       <p>
         {tier[0].toUpperCase() + tier.slice(1)} — {(xpPct * 100).toFixed(0)}% profession XP
       </p>

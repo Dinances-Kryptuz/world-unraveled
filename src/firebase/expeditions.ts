@@ -25,6 +25,7 @@ function parseExpedition(id: string, data: Record<string, unknown>): ExpeditionD
     completesAt: parseTimestamp(data.completesAt),
     successChance: data.successChance as number,
     party: (data.party as ExpeditionDoc['party']) ?? [],
+    companionIds: (data.companionIds as string[]) ?? [],
     resolved: !!data.resolved,
     success: (data.success as boolean | null) ?? null,
     claimed: !!data.claimed,
@@ -32,10 +33,13 @@ function parseExpedition(id: string, data: Record<string, unknown>): ExpeditionD
   };
 }
 
-export async function startExpedition(guildId: string, tier: ExpeditionTier): Promise<string> {
+export async function startExpedition(guildId: string, tier: ExpeditionTier, companionIds: string[] = []): Promise<string> {
   try {
-    const call = httpsCallable<{ guildId: string; tier: ExpeditionTier }, { expeditionId: string }>(functions, 'startExpedition');
-    const result = await call({ guildId, tier });
+    const call = httpsCallable<{ guildId: string; tier: ExpeditionTier; companionIds: string[] }, { expeditionId: string }>(
+      functions,
+      'startExpedition'
+    );
+    const result = await call({ guildId, tier, companionIds });
     return result.data.expeditionId;
   } catch (err) {
     throw unwrapCallableError(err);

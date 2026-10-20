@@ -34,6 +34,7 @@ import { shirtBonusForItemId, shirtBonusPct } from '../gameData/shirts';
 import { ItemSlot } from './ItemSlot';
 import { TickBar } from './TickBar';
 import { notify } from '../utils/notifications';
+import { useGuildMilestoneBonuses } from '../hooks/useGuildMilestones';
 import type { Character } from '../types/character';
 import type { User } from 'firebase/auth';
 import type { Recipe } from '../gameData/types';
@@ -83,6 +84,15 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
 
   const characterRef = useRef<Character | null>(character);
   const userRef = useRef<User | null>(user);
+  // Guild Milestones (level 15/25) — read through a ref for the same
+  // reason characterRef exists: autosave() runs from a setInterval
+  // callback whose effect only depends on [recipe.id], so closing over the
+  // hook's value directly would freeze it at mount time.
+  const guildBonuses = useGuildMilestoneBonuses();
+  const guildBonusesRef = useRef(guildBonuses);
+  useEffect(() => {
+    guildBonusesRef.current = guildBonuses;
+  }, [guildBonuses]);
   useEffect(() => {
     characterRef.current = character;
   }, [character]);
@@ -128,9 +138,13 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
   function craftingShirtBonuses(shirtItemId: string | null | undefined): CraftingShirtBonuses {
     const shirtBonus = shirtBonusForItemId(shirtItemId);
     return {
-      craftingSpeedPct: shirtBonusPct(shirtBonus, 'crafting_speed'),
+      // Guild Milestone (level 15) stacks onto the same channel Shirt of
+      // the Artisan already uses.
+      craftingSpeedPct: shirtBonusPct(shirtBonus, 'crafting_speed') + guildBonusesRef.current.craftingTimePct,
       professionXpPct: shirtBonusPct(shirtBonus, 'profession_xp'),
-      masteryXpPct: shirtBonusPct(shirtBonus, 'mastery_xp'),
+      // Guild Milestone (level 25) stacks onto the same channel Shirt of
+      // Mastery already uses — see gameData/guildMilestones.ts.
+      masteryXpPct: shirtBonusPct(shirtBonus, 'mastery_xp') + guildBonusesRef.current.craftingMasteryPct,
       materialPreservePct: shirtBonusPct(shirtBonus, 'material_preserve'),
     };
   }
@@ -549,10 +563,9 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
       }
     }
   }
-  const previewShirtSpeedPct = shirtBonusPct(
-    shirtBonusForItemId(character.currentActivity.equippedShirtItemId),
-    'crafting_speed'
-  );
+  const previewShirtSpeedPct =
+    shirtBonusPct(shirtBonusForItemId(character.currentActivity.equippedShirtItemId), 'crafting_speed') +
+    guildBonuses.craftingTimePct;
   const displayCrafted = bankedCrafted + Math.floor(livePreview?.itemsCrafted ?? 0);
   const previewConsumedByItem: Record<string, number> = {};
   for (const c of livePreview?.materialsConsumed ?? []) previewConsumedByItem[c.itemId] = c.quantity;

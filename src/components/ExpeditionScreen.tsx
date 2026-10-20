@@ -5,13 +5,19 @@ import { startExpedition, claimExpedition, getExpedition, getMyActiveExpedition,
 import {
   EXPEDITION_TIERS,
   expeditionTierLabel,
+  expeditionLootItemIds,
   EXPEDITION_DURATION_SECONDS,
   EXPEDITION_SEALS_REWARD,
   EXPEDITION_XP_REWARD,
+  EXPEDITION_BASE_SUCCESS,
+  EXPEDITION_DROP_CHANCE,
+  EXPEDITION_SUCCESS_PCT_PER_PERSON,
   type ExpeditionTier,
   type ExpeditionDoc,
 } from '../gameData/expeditions';
+import { COMPANIONS } from '../gameData/companions';
 import { ITEMS } from '../gameData/items';
+import type { Character } from '../types/character';
 
 function formatDuration(seconds: number): string {
   const hours = Math.floor(seconds / 3600);
@@ -28,15 +34,34 @@ function formatRemaining(ms: number): string {
   return `${hours}h ${minutes}m ${seconds}s remaining`;
 }
 
-function TierPicker({ guildId, onStarted }: { guildId: string; onStarted: () => void }) {
+// One active expedition per character is enforced server-side (see
+// functions/src/expeditions.ts's module comment), so by the time this
+// picker is showing at all, no companion can already be away on another
+// one — every recruited companion is always a free pick here.
+function TierPicker({ guildId, character, onStarted }: { guildId: string; character: Character; onStarted: () => void }) {
   const [starting, setStarting] = useState<ExpeditionTier | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const recruitedIds = Object.keys(character.companions).filter((id) => COMPANIONS[id]);
+  // Defaults to every recruited companion selected — matches the previous
+  // "send everyone you've recruited" behavior unless the player opts one
+  // out (e.g. to keep it free for a dungeon run instead).
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set(recruitedIds));
+  const partySize = 1 + selectedIds.size;
+
+  function toggleCompanion(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
 
   async function handleStart(tier: ExpeditionTier) {
     setError(null);
     setStarting(tier);
     try {
-      await startExpedition(guildId, tier);
+      await startExpedition(guildId, tier, Array.from(selectedIds));
       onStarted();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to start expedition.');
@@ -49,22 +74,52 @@ function TierPicker({ guildId, onStarted }: { guildId: string; onStarted: () => 
     <div className="guild-panel">
       <h3>Launch an Expedition</h3>
       <p className="guild-placeholder-note">
-        Your party is yourself plus your currently recruited companions. Longer expeditions take longer but pay out more.
+        Your party is yourself plus whichever recruited companions you bring — each person adds {Math.round(EXPEDITION_SUCCESS_PCT_PER_PERSON * 100)}%
+        to the success chance. A companion you send becomes unavailable for dungeons until the expedition returns.
       </p>
+      {recruitedIds.length > 0 && (
+        <div className="expedition-party-list">
+          {recruitedIds.map((id) => {
+            const def = COMPANIONS[id];
+            return (
+              <label key={id} style={{ display: 'block' }}>
+                <input type="checkbox" checked={selectedIds.has(id)} onChange={() => toggleCompanion(id)} /> {def.name}
+              </label>
+            );
+          })}
+        </div>
+      )}
       {error && <p className="error">{error}</p>}
       <div className="expedition-tier-grid">
-        {EXPEDITION_TIERS.map((tier) => (
-          <div key={tier} className={`expedition-tier-card expedition-tier-${tier}`}>
-            <span className="expedition-tier-name">{expeditionTierLabel(tier)}</span>
-            <span className="expedition-tier-meta">{formatDuration(EXPEDITION_DURATION_SECONDS[tier])}</span>
-            <span className="expedition-tier-meta">
-              {EXPEDITION_SEALS_REWARD[tier]} Seals · {EXPEDITION_XP_REWARD[tier]} Guild XP
-            </span>
-            <button onClick={() => handleStart(tier)} disabled={starting !== null}>
-              {starting === tier ? 'Launching…' : 'Launch'}
-            </button>
-          </div>
-        ))}
+        {EXPEDITION_TIERS.map((tier) => {
+          const successChance = Math.max(
+            0.05,
+            Math.min(0.98, EXPEDITION_BASE_SUCCESS[tier] + partySize * EXPEDITION_SUCCESS_PCT_PER_PERSON)
+          );
+          const lootNames = expeditionLootItemIds(tier)
+            .map((id) => ITEMS[id]?.name)
+            .filter((name): name is string => !!name);
+          return (
+            <div key={tier} className={`expedition-tier-card expedition-tier-${tier}`}>
+              <span className="expedition-tier-name">{expeditionTierLabel(tier)}</span>
+              <span className="expedition-tier-meta">{formatDuration(EXPEDITION_DURATION_SECONDS[tier])}</span>
+              <span className="expedition-tier-meta">
+                {EXPEDITION_SEALS_REWARD[tier]} Seals · {EXPEDITION_XP_REWARD[tier]} Guild XP
+              </span>
+              <span className="expedition-tier-meta">{Math.round(successChance * 100)}% success chance ({partySize} in party)</span>
+              {lootNames.length > 0 && (
+                <span className="expedition-tier-meta">
+                  <small>
+                    {Math.round(EXPEDITION_DROP_CHANCE[tier] * 100)}% chance of: {lootNames.join(', ')}
+                  </small>
+                </span>
+              )}
+              <button onClick={() => handleStart(tier)} disabled={starting !== null}>
+                {starting === tier ? 'Launching…' : 'Launch'}
+              </button>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -171,5 +226,5 @@ export function ExpeditionScreen() {
     return <ActiveExpeditionPanel expedition={expedition} onResolved={() => setRefreshKey((k) => k + 1)} />;
   }
 
-  return <TierPicker guildId={character.guildId} onStarted={() => setRefreshKey((k) => k + 1)} />;
+  return <TierPicker guildId={character.guildId} character={character} onStarted={() => setRefreshKey((k) => k + 1)} />;
 }

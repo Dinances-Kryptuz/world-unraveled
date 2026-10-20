@@ -1,6 +1,7 @@
 import { useState, type CSSProperties, type ReactNode } from 'react';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { CharacterProvider, useCharacter } from './hooks/useCharacter';
+import { GuildMilestoneProvider, useGuildMilestoneBonuses } from './hooks/useGuildMilestones';
 import { LoginScreen } from './components/LoginScreen';
 import { CharacterCreationScreen } from './components/CharacterCreationScreen';
 import { ZoneScreen } from './components/ZoneScreen';
@@ -118,6 +119,7 @@ function AppShell({
 function AppContent() {
   const { user, loading: authLoading } = useAuth();
   const { character, loading: characterLoading, refetch } = useCharacter();
+  const guildBonuses = useGuildMilestoneBonuses();
   const [selectedProfessionId, setSelectedProfessionId] = useState<ProfessionId>(ALL_PROFESSION_IDS[0]);
   const [activeSection, setActiveSection] = useState<AppSection>('adventure');
   const [activeDungeonId, setActiveDungeonId] = useState<string | null>(null);
@@ -157,7 +159,7 @@ function AppContent() {
     // dungeon run is local React state, not persisted to currentActivity) —
     // startTravel's own currentActivity check covers everything else.
     if (activeDungeonId) return;
-    void startTravel(uid, confirmedCharacter, zoneId).then((result) => {
+    void startTravel(uid, confirmedCharacter, zoneId, guildBonuses.mountSpeedPct).then((result) => {
       if (result.success) void refetch();
     });
   }
@@ -259,7 +261,9 @@ export default function App() {
     <AuthProvider>
       <ErrorBoundary>
         <CharacterProvider>
-          <AppContent />
+          <GuildMilestoneProvider>
+            <AppContent />
+          </GuildMilestoneProvider>
         </CharacterProvider>
       </ErrorBoundary>
       <BugReportButton />

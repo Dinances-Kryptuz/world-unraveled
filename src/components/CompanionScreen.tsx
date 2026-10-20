@@ -4,6 +4,7 @@ import { useCharacter } from '../hooks/useCharacter';
 import { recruitCompanion, addCompanionToParty, removeCompanionFromParty, equipCompanionItem, unequipCompanionItem } from '../firebase/companions';
 import { getAccount, listRosterSummaries, addAltToParty, removeAltFromParty } from '../firebase/characterSlots';
 import { subscribeToInventory } from '../firebase/inventory';
+import { getExpedition } from '../firebase/expeditions';
 import { COMPANIONS, checkRecruitCompanion, MAX_ACTIVE_COMPANIONS, REQUIRED_DUNGEON_PARTY_SIZE } from '../gameData/companions';
 import type { RosterSlotSummary } from '../gameData/characterSlots';
 import { CLASS_LABELS, SPEC_LABELS, type ClassId, type SpecId } from '../gameData/classStats';
@@ -13,16 +14,52 @@ import { ClassColoredName } from './ClassColoredName';
 import type { Inventory } from '../types/character';
 import type { EquipmentSlot } from '../gameData/types';
 
+function formatReturnTime(ms: number): string {
+  if (ms <= 0) return 'any moment now';
+  const totalMinutes = Math.ceil(ms / 60000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+}
+
 export function CompanionScreen() {
   const { user } = useAuth();
   const { character, refetch } = useCharacter();
   const [inventory, setInventory] = useState<Inventory | null>(null);
   const [roster, setRoster] = useState<RosterSlotSummary[]>([]);
+  // Which companions are away on the character's active expedition (if
+  // any) and when it returns — expeditions.ts's module comment on why
+  // activeExpeditionId is only a UI pointer, not authoritative, still
+  // applies here: a stale one just means this fetch 404s and nothing
+  // shows as locked, no different from no expedition at all.
+  const [expeditionLock, setExpeditionLock] = useState<{ companionIds: string[]; completesAt: Date } | null>(null);
+  const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
     if (!user) return;
     return subscribeToInventory(user.uid, setInventory);
   }, [user]);
+
+  useEffect(() => {
+    if (!character?.activeExpeditionId) {
+      setExpeditionLock(null);
+      return;
+    }
+    let cancelled = false;
+    getExpedition(character.activeExpeditionId).then((exp) => {
+      if (cancelled || !exp || exp.resolved) return;
+      setExpeditionLock({ companionIds: exp.companionIds, completesAt: exp.completesAt });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [character?.activeExpeditionId]);
+
+  useEffect(() => {
+    if (!expeditionLock) return;
+    const interval = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, [expeditionLock]);
 
   async function loadRoster() {
     if (!user) return;
@@ -191,12 +228,15 @@ export function CompanionScreen() {
             if (!def || !state) return null;
             const isActive = character.activeCompanionIds.includes(companionId);
             const partyFull = groupHeadcount >= MAX_ACTIVE_COMPANIONS;
+            const onExpedition = !!expeditionLock?.companionIds.includes(companionId);
             return (
               <div key={companionId} className="companion-card">
                 <h4>
                   <ClassColoredName name={def.name} cls={def.class} /> — {CLASS_LABELS[def.class]} ({SPEC_LABELS[def.specId]}), level {character.level}
                 </h4>
-                {isActive ? (
+                {onExpedition ? (
+                  <button disabled>On expedition — back in {formatReturnTime(expeditionLock!.completesAt.getTime() - now)}</button>
+                ) : isActive ? (
                   <button onClick={() => handleRemoveFromParty(companionId)}>Remove from party</button>
                 ) : (
                   <button onClick={() => handleAddToParty(companionId)} disabled={partyFull}>

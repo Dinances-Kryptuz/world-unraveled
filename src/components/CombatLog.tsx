@@ -1,7 +1,7 @@
 import type { CombatEvent, CombatEventKind } from '../combatEngine/types';
 
 const LOG_COLORS: Record<CombatEventKind, string> = {
-  damage_out: '#2a2420',
+  damage_out: '#3ddc5f',
   damage_in: '#c0392b',
   heal: '#2e9e4f',
   miss_out: '#8c8c8c',

@@ -4,6 +4,7 @@ import { getTitle } from '../gameData/titles';
 import { ZONES, isZoneUnlocked, orderedZonesForDisplay } from '../gameData/zones';
 import { formatTravelMinutes, travelSeconds } from '../gameData/travel';
 import { bestMountSpeedBonusPct } from '../gameData/mounts';
+import { useGuildMilestoneBonuses } from '../hooks/useGuildMilestones';
 import { ActiveBuffsBar } from './ActiveBuffsBar';
 import { ClassColoredName } from './ClassColoredName';
 import type { Character } from '../types/character';
@@ -34,7 +35,12 @@ export function TopBar({
   onSelectZone: (zoneId: string) => void;
 }) {
   const traveling = !!character.travel;
-  const speedBonusPct = bestMountSpeedBonusPct(character.mounts);
+  const guildBonuses = useGuildMilestoneBonuses();
+  // Guild Milestone (level 5) stacks additively with the character's own
+  // mount bonus — Master Mount (80%) + this (20%) reaches the 100% that
+  // makes travelSeconds resolve to 0, genuinely instant rather than merely
+  // fast. Capped at 100 so no future stacking source can go negative.
+  const speedBonusPct = Math.min(100, bestMountSpeedBonusPct(character.mounts) + guildBonuses.mountSpeedPct);
   return (
     <div className="top-bar">
       <div className="top-bar-main">

@@ -22,6 +22,7 @@ import { ITEMS } from '../gameData/items';
 import { ZONES } from '../gameData/zones';
 import { equippedItemId } from '../gameData/equipmentStats';
 import { notify } from '../utils/notifications';
+import { useGuildMilestoneBonuses } from '../hooks/useGuildMilestones';
 import { TickBar } from './TickBar';
 import type { Character } from '../types/character';
 import type { User } from 'firebase/auth';
@@ -59,6 +60,15 @@ export function FishingScreen({ hole }: { hole: FishingHole }) {
 
   const characterRef = useRef<Character | null>(character);
   const userRef = useRef<User | null>(user);
+  // Guild Milestones (level 10/20) — read through a ref for the same
+  // reason characterRef exists: autosave() runs from a setInterval
+  // callback whose effect only depends on [hole.id] (below), so closing
+  // over the hook's value directly would freeze it at mount time.
+  const guildBonuses = useGuildMilestoneBonuses();
+  const guildBonusesRef = useRef(guildBonuses);
+  useEffect(() => {
+    guildBonusesRef.current = guildBonuses;
+  }, [guildBonuses]);
   useEffect(() => {
     characterRef.current = character;
   }, [character]);
@@ -110,7 +120,8 @@ export function FishingScreen({ hole }: { hole: FishingHole }) {
     const cap = maxSkillForUnlockedTier('fishing', prof.unlockedTier);
     const equippedToolId = equippedItemId(currentCharacter.equipment.tool);
     const equippedTool = equippedToolId ? ITEMS[equippedToolId] : null;
-    const toolBonusPct = equippedTool?.toolType === 'fishing_rod' ? equippedTool.gatherBonusPct ?? 0 : 0;
+    const toolBonusPct =
+      (equippedTool?.toolType === 'fishing_rod' ? equippedTool.gatherBonusPct ?? 0 : 0) + guildBonusesRef.current.gatheringTimePct;
 
     const zoneMasteryStartingXp = currentCharacter.fishingZoneMastery?.[hole.zoneId]?.xp ?? 0;
     const fishingZoneOverride: FishingZoneOverride = { zoneMasteryStartingXp };
@@ -126,7 +137,11 @@ export function FishingScreen({ hole }: { hole: FishingHole }) {
       cap,
       toolBonusPct,
       undefined,
-      undefined,
+      // Guild Milestone (level 20) — the same masteryXpPct channel a
+      // profession shirt would use, see gameData/guildMilestones.ts.
+      // Fishing has no shirt bonus of its own today, so this is the first
+      // thing to populate this param for it.
+      { masteryXpPct: guildBonusesRef.current.gatheringMasteryPct },
       fishingZoneOverride
     );
 
@@ -265,8 +280,14 @@ export function FishingScreen({ hole }: { hole: FishingHole }) {
   // drift against the bar's visual completion.
   const previewEquippedToolId = equippedItemId(character.equipment.tool);
   const previewEquippedTool = previewEquippedToolId ? ITEMS[previewEquippedToolId] : null;
-  const previewToolBonusPct = previewEquippedTool?.toolType === 'fishing_rod' ? previewEquippedTool.gatherBonusPct ?? 0 : 0;
+  const previewToolBonusPct =
+    (previewEquippedTool?.toolType === 'fishing_rod' ? previewEquippedTool.gatherBonusPct ?? 0 : 0) + guildBonuses.gatheringTimePct;
   const cap = maxSkillForUnlockedTier('fishing', prof.unlockedTier);
+  // The bar's displayed duration must fold in the tool + Guild Milestone
+  // speed bonus, not just zone Mastery — see GatheringScreen's matching
+  // comment for why a partial speed input here would reintroduce the exact
+  // desync TickBar.tsx's key-on-seconds fix exists to prevent.
+  const displaySpeedMult = speedMult * (1 + previewToolBonusPct / 100);
   function handleTickIteration() {
     if (!anchorRef.current) return;
     const preview = resolveGatheringOffline(
@@ -280,7 +301,7 @@ export function FishingScreen({ hole }: { hole: FishingHole }) {
       cap,
       previewToolBonusPct,
       undefined,
-      undefined,
+      { masteryXpPct: guildBonuses.gatheringMasteryPct },
       { zoneMasteryStartingXp: zoneMasteryXp }
     );
     setLivePreview(preview);
@@ -299,7 +320,7 @@ export function FishingScreen({ hole }: { hole: FishingHole }) {
   return (
     <div className="fishing-screen">
       <h2>Fishing: {hole.name}</h2>
-      <TickBar seconds={hole.secondsPerAction / speedMult} color="#2a5a6b" label="Casting" onIteration={handleTickIteration} />
+      <TickBar seconds={hole.secondsPerAction / displaySpeedMult} color="#2a5a6b" label="Casting" onIteration={handleTickIteration} />
       <p>
         {tier[0].toUpperCase() + tier.slice(1)} — {(xpPct * 100).toFixed(0)}% profession XP, {(hole.catchChance * 100).toFixed(0)}% catch
         chance
