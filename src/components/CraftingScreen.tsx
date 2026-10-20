@@ -546,6 +546,12 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
       previewCookingZoneMasteryInput
     );
     setLivePreview(preview);
+    // Stop the bar the instant a loop detects there's nothing left to make,
+    // rather than waiting for the next ~20s autosave to notice — without
+    // this the bar kept visibly looping (and the player kept thinking
+    // something was happening) for up to a full autosave cycle after
+    // materials actually ran out.
+    if (preview.stoppedForMaterials) setOutOfMaterials(true);
     // Fires the "crafted" toast the instant the bar's own loop completes a
     // whole item, rather than waiting for the next ~20s autosave to batch
     // however many finished in the meantime (see notifiedWholeRef's doc
@@ -581,11 +587,13 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
           {recipe.materials.map((m) => {
             const material = ITEMS[m.itemId];
             if (!material) return null;
-            const liveQuantity = (materialsRef.current[m.itemId] ?? 0) - (previewConsumedByItem[m.itemId] ?? 0);
+            const liveQuantity = Math.max(0, (materialsRef.current[m.itemId] ?? 0) - (previewConsumedByItem[m.itemId] ?? 0));
             return (
               <div key={m.itemId} className="loot-entry">
-                <ItemSlot item={material} quantity={Math.max(0, liveQuantity)} />
-                <small>need {m.quantity}</small>
+                <ItemSlot item={material} quantity={liveQuantity} />
+                <small style={liveQuantity < m.quantity ? { color: '#c0392b' } : undefined}>
+                  {liveQuantity}/{m.quantity}
+                </small>
               </div>
             );
           })}

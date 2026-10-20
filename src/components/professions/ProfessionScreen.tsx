@@ -336,7 +336,8 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
             const meetsSkill = professionLevel >= recipe.requiredSkill;
             const meetsLevel = !recipe.requiredCharacterLevel || char.level >= recipe.requiredCharacterLevel;
             const meetsGold = !recipe.goldCost || char.gold >= recipe.goldCost;
-            const canCraft = meetsSkill && meetsLevel && meetsGold;
+            const meetsMaterials = recipe.materials.every((m) => (inventory?.items[m.itemId] ?? 0) >= m.quantity);
+            const canCraft = meetsSkill && meetsLevel && meetsGold && meetsMaterials;
             // All 6 crafting professions now share craftingEngine.ts's
             // level-delta color formula — "red" (below requiredSkill) stays
             // a purely gating display on top of it. Mining's Smelting
@@ -363,7 +364,17 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
                     {recipe.requiredCharacterLevel ? `, Lv ${recipe.requiredCharacterLevel}` : ''}
                     {meetsSkill ? `, ${(CRAFTING_COLOR_XP_PCT[tier as keyof typeof CRAFTING_COLOR_XP_PCT] * 100).toFixed(0)}% XP` : ''}
                     ) — materials:{' '}
-                    {recipe.materials.map((m) => `${m.quantity}x ${ITEMS[m.itemId]?.name ?? m.itemId}`).join(', ')}
+                    {recipe.materials
+                      .map((m, i) => {
+                        const have = inventory?.items[m.itemId] ?? 0;
+                        const short = have < m.quantity;
+                        return (
+                          <span key={m.itemId} style={short ? { color: '#c0392b' } : undefined}>
+                            {i > 0 ? ', ' : ''}
+                            {have}/{m.quantity} {ITEMS[m.itemId]?.name ?? m.itemId}
+                          </span>
+                        );
+                      })}
                     {recipe.goldCost ? ` + ${recipe.goldCost} gold` : ''}
                     {known ? ` — Mastery ${masteryLevel}%` : ''}
                   </span>
@@ -375,7 +386,9 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
                       ? `Need Lv ${recipe.requiredCharacterLevel}`
                       : !meetsSkill
                         ? `Need skill ${recipe.requiredSkill}`
-                        : `Need ${recipe.goldCost} gold`}
+                        : !meetsMaterials
+                          ? 'Need materials'
+                          : `Need ${recipe.goldCost} gold`}
                 </button>
               </li>
             );
