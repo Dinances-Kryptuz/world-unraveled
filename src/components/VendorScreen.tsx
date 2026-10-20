@@ -69,12 +69,6 @@ function buildSellableEntries(inventory: Inventory): SellableEntry[] {
   return entries;
 }
 
-function parseQuantity(raw: string | undefined, max: number): number {
-  const parsed = parseInt(raw ?? '', 10);
-  if (!Number.isFinite(parsed) || parsed < 1) return 1;
-  return Math.min(parsed, max);
-}
-
 // `stockOverride` is the Grand Market's aggregated cross-zone list
 // (gameData/vendors.ts's grandMarketStock) — passed by CapitalScreen
 // instead of the plain per-zone VENDOR_STOCK lookup. Without it, the
@@ -96,9 +90,15 @@ export function VendorScreen({
   const [inventory, setInventory] = useState<Inventory | null>(null);
   const [selling, setSelling] = useState<string | null>(null);
   const [buying, setBuying] = useState<string | null>(null);
-  const [buyQty, setBuyQty] = useState<Record<string, string>>({});
-  const [sellQty, setSellQty] = useState<Record<string, string>>({});
   const [buyingSlot, setBuyingSlot] = useState(false);
+  // Click-a-tile-to-open-a-slider overhaul — one item selected at a time
+  // per side (Buy/Sell), so the grid itself stays compact (just icons, like
+  // Inventory's) instead of every row carrying its own always-visible
+  // input + three buttons. Quantity resets to 1 on every new selection.
+  const [selectedBuyItemId, setSelectedBuyItemId] = useState<string | null>(null);
+  const [selectedSellKey, setSelectedSellKey] = useState<string | null>(null);
+  const [buyQty, setBuyQty] = useState(1);
+  const [sellQty, setSellQty] = useState(1);
 
   useEffect(() => {
     if (!user) return;
@@ -128,6 +128,7 @@ export function VendorScreen({
     try {
       await entry.sell(user.uid, quantity);
       await refetch();
+      setSelectedSellKey(null);
     } finally {
       setSelling(null);
     }
@@ -147,9 +148,21 @@ export function VendorScreen({
         applyOptimisticUpdate((c) => ({ ...c, [currency]: c[currency] + price * quantity }));
       }
       await refetch();
+      setSelectedBuyItemId(null);
     } finally {
       setBuying(null);
     }
+  }
+
+  function selectBuyItem(itemId: string) {
+    setSelectedBuyItemId((prev) => (prev === itemId ? null : itemId));
+    setBuyQty(1);
+  }
+
+  function selectSellEntry(entry: SellableEntry) {
+    if (entry.locked) return;
+    setSelectedSellKey((prev) => (prev === entry.key ? null : entry.key));
+    setSellQty(1);
   }
 
   const slotsPurchased = character.shopkeeperBagSlotsPurchased ?? 0;
@@ -181,40 +194,62 @@ export function VendorScreen({
       {stock.length > 0 && (
         <>
           <h3>Buy</h3>
-          <ul>
+          <div className="inventory-grid">
             {stock.map(({ itemId, price, currency = 'gold' }) => {
               const item = ITEMS[itemId];
-              const isBusy = buying === itemId;
-              const qty = parseQuantity(buyQty[itemId], Infinity);
-              const label = currency === 'voidShards' ? 'Void Shards' : 'gold';
+              if (!item) return null;
               const balance = character[currency];
-              const canAffordOne = balance >= price;
-              const canAffordQty = balance >= price * qty;
               return (
-                <li key={itemId}>
-                  <div className="item-row-main">
-                    {item ? <ItemSlot item={item} /> : null}
-                    <span>
-                      {price} {label} each
-                    </span>
-                  </div>
-                  <button onClick={() => handleBuy(itemId, price, 1, currency)} disabled={isBusy || !canAffordOne}>
-                    Buy 1
-                  </button>
-                  <input
-                    type="number"
-                    min={1}
-                    value={buyQty[itemId] ?? ''}
-                    placeholder="qty"
-                    onChange={(e) => setBuyQty((q) => ({ ...q, [itemId]: e.target.value }))}
-                  />
-                  <button onClick={() => handleBuy(itemId, price, qty, currency)} disabled={isBusy || !canAffordQty}>
-                    Buy X ({price * qty} {label})
-                  </button>
-                </li>
+                <ItemSlot
+                  key={itemId}
+                  item={item}
+                  highlight={selectedBuyItemId === itemId}
+                  disabled={balance < price}
+                  onClick={() => selectBuyItem(itemId)}
+                />
               );
             })}
-          </ul>
+          </div>
+          {selectedBuyItemId &&
+            (() => {
+              const entry = stock.find((s) => s.itemId === selectedBuyItemId);
+              const item = entry ? ITEMS[entry.itemId] : undefined;
+              if (!entry || !item) return null;
+              const { price, currency = 'gold' } = entry;
+              const label = currency === 'voidShards' ? 'Void Shards' : 'gold';
+              const balance = character[currency];
+              const maxAffordable = Math.max(1, Math.floor(balance / price));
+              const isBusy = buying === item.id;
+              const canAfford = balance >= price * buyQty;
+              return (
+                <div className="vendor-trade-panel">
+                  <div className="item-row-main">
+                    <ItemSlot item={item} />
+                    <span>
+                      {item.name} — {price.toLocaleString()} {label} each
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min={1}
+                    max={maxAffordable}
+                    value={Math.min(buyQty, maxAffordable)}
+                    disabled={maxAffordable <= 1}
+                    onChange={(e) => setBuyQty(Number(e.target.value))}
+                  />
+                  <span>{buyQty}</span>
+                  <button onClick={() => handleBuy(item.id, price, buyQty, currency)} disabled={isBusy || !canAfford}>
+                    Buy {buyQty} ({(price * buyQty).toLocaleString()} {label})
+                  </button>
+                  <button onClick={() => setSelectedBuyItemId(null)}>Cancel</button>
+                  {!canAfford && (
+                    <p>
+                      <small>Not enough {label.toLowerCase()} for {buyQty}.</small>
+                    </p>
+                  )}
+                </div>
+              );
+            })()}
         </>
       )}
 
@@ -232,55 +267,62 @@ export function VendorScreen({
       )}
 
       <h3>Sell</h3>
-      <p>Sell unwanted items for gold.</p>
+      <p>Sell unwanted items for gold. Click an item to choose how many.</p>
       {sellableEntries.length === 0 ? (
         <p>Nothing to sell.</p>
       ) : (
-        <ul>
-          {sellableEntries.map((entry) => {
-            const { key, item, quantity, locked } = entry;
-            const unitValue = item.sellValue;
-            const isBusy = selling === key;
-            const qty = parseQuantity(sellQty[key], quantity);
-            return (
-              <li key={key}>
-                <div className="item-row-main">
-                  <ItemSlot
-                    item={item}
-                    quantity={quantity}
-                    statOverride={entry.statOverride}
-                    remainingCharges={entry.remainingCharges}
-                    locked={locked}
+        <>
+          <div className="inventory-grid">
+            {sellableEntries.map((entry) => (
+              <ItemSlot
+                key={entry.key}
+                item={entry.item}
+                quantity={entry.quantity}
+                statOverride={entry.statOverride}
+                remainingCharges={entry.remainingCharges}
+                locked={entry.locked}
+                highlight={selectedSellKey === entry.key}
+                disabled={entry.locked}
+                onClick={() => selectSellEntry(entry)}
+              />
+            ))}
+          </div>
+          {selectedSellKey &&
+            (() => {
+              const entry = sellableEntries.find((e) => e.key === selectedSellKey);
+              if (!entry) return null;
+              const { item, quantity } = entry;
+              const unitValue = item.sellValue;
+              const isBusy = selling === entry.key;
+              const qty = Math.min(sellQty, quantity);
+              return (
+                <div className="vendor-trade-panel">
+                  <div className="item-row-main">
+                    <ItemSlot item={item} statOverride={entry.statOverride} remainingCharges={entry.remainingCharges} />
+                    <span>
+                      {item.name} — {unitValue} gold each ({quantity} owned)
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min={1}
+                    max={quantity}
+                    value={qty}
+                    disabled={quantity <= 1}
+                    onChange={(e) => setSellQty(Number(e.target.value))}
                   />
-                  <span>{unitValue} gold each</span>
+                  <span>{qty}</span>
+                  <button onClick={() => handleSell(entry, qty)} disabled={isBusy}>
+                    Sell {qty} ({(qty * unitValue).toLocaleString()} gold)
+                  </button>
+                  <button onClick={() => handleSell(entry, quantity)} disabled={isBusy}>
+                    Sell All ({(quantity * unitValue).toLocaleString()} gold)
+                  </button>
+                  <button onClick={() => setSelectedSellKey(null)}>Cancel</button>
                 </div>
-                {locked ? (
-                  <small>Locked — unlock it in Inventory to sell.</small>
-                ) : (
-                  <>
-                    <button onClick={() => handleSell(entry, 1)} disabled={isBusy}>
-                      Sell 1
-                    </button>
-                    <button onClick={() => handleSell(entry, quantity)} disabled={isBusy}>
-                      Sell All ({quantity * unitValue} gold)
-                    </button>
-                    <input
-                      type="number"
-                      min={1}
-                      max={quantity}
-                      value={sellQty[key] ?? ''}
-                      placeholder="qty"
-                      onChange={(e) => setSellQty((q) => ({ ...q, [key]: e.target.value }))}
-                    />
-                    <button onClick={() => handleSell(entry, qty)} disabled={isBusy}>
-                      Sell X ({qty * unitValue} gold)
-                    </button>
-                  </>
-                )}
-              </li>
-            );
-          })}
-        </ul>
+              );
+            })()}
+        </>
       )}
     </div>
   );
