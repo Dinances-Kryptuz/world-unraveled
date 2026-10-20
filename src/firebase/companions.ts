@@ -1,9 +1,16 @@
-import { doc, updateDoc, increment } from 'firebase/firestore';
+import { doc, updateDoc, increment, serverTimestamp } from 'firebase/firestore';
 import { db } from './config';
 import { getCharacter } from './character';
 import { getInventory } from './inventory';
 import { equipmentRefInventoryDelta, resolveEquippedRef } from './equipmentInstances';
-import { COMPANIONS, checkRecruitCompanion, emptyCompanionEquipment, MAX_ACTIVE_COMPANIONS, dungeonCompanionFee } from '../gameData/companions';
+import {
+  COMPANIONS,
+  checkRecruitCompanion,
+  emptyCompanionEquipment,
+  randomCompanionProfessions,
+  MAX_ACTIVE_COMPANIONS,
+  dungeonCompanionFee,
+} from '../gameData/companions';
 import { canClassEquip, EQUIP_ROLE_BY_SPEC } from '../gameData/classStats';
 import { ITEMS } from '../gameData/items';
 import { canEquipInOffhand, canEquipWeaponLoadout, equippedItemId, isTwoHandedWeapon } from '../gameData/equipmentStats';
@@ -24,9 +31,22 @@ export async function recruitCompanion(uid: string, companionId: string): Promis
   const check = checkRecruitCompanion(companionId, alreadyRecruited, character.level, character.gold);
   if (!check.ok) return { success: false, reason: check.reason };
 
+  // Guild auto-contribution (Phase 7) — every recruit gets a random
+  // gathering + crafting profession and starts its hourly guild-gold
+  // trickle (functions/src/guilds.ts's claimCompanionGuildContributions)
+  // immediately, whether or not the player is actually in a guild yet;
+  // that function itself is a no-op for a guildless character, and
+  // joining a guild LATER should credit time from this recruit forward,
+  // not from whenever they happen to join.
+  const { gatheringProfession, craftingProfession } = randomCompanionProfessions();
   await updateDoc(doc(db, 'characters', uid), {
     gold: increment(-check.goldCost),
-    [`companions.${companionId}`]: { equipment: emptyCompanionEquipment() },
+    [`companions.${companionId}`]: {
+      equipment: emptyCompanionEquipment(),
+      gatheringProfession,
+      craftingProfession,
+      lastContributionAt: serverTimestamp(),
+    },
   });
   return { success: true };
 }

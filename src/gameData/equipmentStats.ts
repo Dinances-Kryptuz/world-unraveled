@@ -312,6 +312,24 @@ export function getEquipmentStatBonuses(
   return totals;
 }
 
+// Gear Score — the total of every stat bonus currently added by equipped
+// gear (and its enchants), e.g. leggings with +2 Stamina/+3 Strength plus a
+// helm with +5 Stamina/+1 Strength is a gear score of 11 (2+3+5+1). A flat
+// sum rather than a weighted one on purpose: this is a first-pass, display-
+// only number (see gameData/expeditions.ts's module comment on where it's
+// headed) — a per-stat weighting scheme is a real future refinement, not
+// something to invent speculatively before anything actually consumes it.
+// Reuses getEquipmentStatBonuses exactly as EquipmentScreen's own stat
+// sheet does, so this always agrees with what a player already sees there.
+export function computeGearScore(
+  equipment: Record<EquipmentSlot, EquippedItemRef | null>,
+  enchantments: Partial<Record<EquipmentSlot, string>> = {},
+  enchantmentCharges: Partial<Record<EquipmentSlot, number>> = {}
+): number {
+  const totals = getEquipmentStatBonuses(equipment, enchantments, enchantmentCharges);
+  return Object.values(totals).reduce((sum, value) => sum + (value ?? 0), 0);
+}
+
 // The Citadel of Krypt — sums each equipped item's OWN innate
 // fireResistancePct (ItemDef.fireResistancePct, e.g. Citadel Level 3's BiS
 // weapons), separate from getEquipmentStatBonuses above (raw stats) and from

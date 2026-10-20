@@ -135,6 +135,11 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
   // matching comment; built once per run (the dungeonId setup effect below)
   // and mutated in place through every tick/manual-use via ctx.
   const consumableStateRef = useRef<ConsumableAutomationRuntimeState>(emptyConsumableAutomationState());
+  // See CombatScreen.tsx's matching comment — guards against building
+  // automation state before the inventory subscription below has
+  // delivered its first snapshot (inventory starts as null), which
+  // otherwise silently locked auto-potions/auto-eat out of the whole run.
+  const consumableStateReadyRef = useRef(false);
   const retreatedRef = useRef(false);
   // Cooking overhaul Tier 3 — Feasts. Chosen ONCE per run via the pre-run
   // picker below (before createEncounterState's first call, so it's baked
@@ -328,13 +333,23 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
     pendingDungeonClearsRef.current = 0;
     currentMonsterRef.current = MONSTERS[dungeon.stages[0]];
     combatStateRef.current = null;
-    consumableStateRef.current = buildConsumableAutomationState(character, inventory ?? { items: {} }, new Date());
+    consumableStateRef.current = emptyConsumableAutomationState();
+    consumableStateReadyRef.current = false;
     goldFindPctRef.current = shirtBonusPct(shirtBonusForItemId(equippedItemId(character.equipment.shirt)), 'gold_find');
     feastStatBonusesRef.current = {};
     setFeastPending(true);
     setFeastError(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dungeonId]);
+
+  // Builds consumableStateRef as soon as real inventory data is available —
+  // see CombatScreen.tsx's matching effect. Only ever builds once per run.
+  useEffect(() => {
+    if (!inventory || consumableStateReadyRef.current) return;
+    consumableStateRef.current = buildConsumableAutomationState(characterRef.current ?? character, inventory, new Date());
+    consumableStateReadyRef.current = true;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dungeonId, inventory]);
 
   // Resolves alt setups (an async Firestore read per recruited alt — see
   // altSetupsRef's doc comment) and creates the actual encounter — held

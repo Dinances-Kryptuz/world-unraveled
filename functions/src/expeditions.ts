@@ -94,10 +94,23 @@ function deterministicFraction(seed: string): number {
   return (hash >>> 0) / 0xffffffff;
 }
 
+// Every person in the party (yourself + however many companions you send)
+// adds a flat 10% to the tier's base success chance — see
+// gameData/expeditions.ts's EXPEDITION_SUCCESS_PCT_PER_PERSON doc comment
+// for why this replaced the old tank/healer-presence bonuses rather than
+// stacking alongside them.
+const SUCCESS_PCT_PER_PERSON = 0.1;
+
 export const startExpedition = onCall(async (request) => {
   const uid = requireUid(request);
   const guildId = String((request.data as { guildId?: unknown })?.guildId ?? '');
   const tier = String((request.data as { tier?: unknown })?.tier ?? '') as ExpeditionTier;
+  // Which recruited companions to send — client-chosen (see
+  // ExpeditionScreen.tsx's companion checklist), but never trusted blindly:
+  // filtered below to only ids the character actually has recruited.
+  const requestedCompanionIds = Array.isArray((request.data as { companionIds?: unknown })?.companionIds)
+    ? ((request.data as { companionIds?: unknown }).companionIds as unknown[]).filter((id): id is string => typeof id === 'string')
+    : [];
   if (!guildId || !VALID_TIERS.includes(tier)) {
     throw new HttpsError('invalid-argument', 'guildId and a valid tier are required.');
   }
@@ -119,17 +132,18 @@ export const startExpedition = onCall(async (request) => {
   const party: PartyMember[] = [
     { label: 'You', class: char.class, spec, role: ROLE_BY_SPEC[spec] ?? 'dps' },
   ];
-  const companionIds: string[] = Object.keys(char.companions || {});
+  // Only ids the character has actually recruited — a requested id that
+  // isn't recruited (or isn't a real companion) is silently dropped rather
+  // than erroring, same "harmless subset, never trust the client for more
+  // than that" posture as every other client-supplied list in this app.
+  const ownedCompanionIds = new Set(Object.keys(char.companions || {}));
+  const companionIds: string[] = requestedCompanionIds.filter((id) => ownedCompanionIds.has(id) && COMPANIONS[id]);
   for (const id of companionIds) {
     const def = COMPANIONS[id];
-    if (!def) continue;
     party.push({ label: def.name, class: def.class, spec: def.specId, role: ROLE_BY_SPEC[def.specId] ?? 'dps' });
   }
 
-  const hasTank = party.some((m) => m.role === 'tank');
-  const hasHealer = party.some((m) => m.role === 'healer');
-  const companionBonus = Math.min(0.08, companionIds.length * 0.02);
-  let successChance = BASE_SUCCESS[tier] + (hasTank ? 0.05 : 0) + (hasHealer ? 0.05 : 0) + companionBonus;
+  let successChance = BASE_SUCCESS[tier] + party.length * SUCCESS_PCT_PER_PERSON;
   successChance = Math.max(0.05, Math.min(0.98, successChance));
 
   const expeditionRef = db.collection('expeditions').doc();
@@ -145,12 +159,20 @@ export const startExpedition = onCall(async (request) => {
       completesAt,
       successChance,
       party,
+      companionIds,
       resolved: false,
       success: null,
       claimed: false,
       lootItemId: null,
     });
-    tx.update(db.collection('characters').doc(uid), { activeExpeditionId: expeditionRef.id });
+    // Companions sent on the expedition can't also be standing in a
+    // dungeon party — pull them out of the active dungeon roster for the
+    // expedition's duration (see CompanionScreen.tsx's lock/timer display).
+    const charUpdate: Record<string, unknown> = { activeExpeditionId: expeditionRef.id };
+    if (companionIds.length > 0) {
+      charUpdate.activeCompanionIds = FieldValue.arrayRemove(...companionIds);
+    }
+    tx.update(db.collection('characters').doc(uid), charUpdate);
   });
 
   return { expeditionId: expeditionRef.id };

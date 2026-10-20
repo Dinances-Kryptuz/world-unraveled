@@ -9,6 +9,10 @@ export {
   kickGuildMember,
   setGuildMemberRole,
   refreshGuildMemberProfile,
+  inviteToGuild,
+  acceptGuildInvite,
+  declineGuildInvite,
+  claimCompanionContributionsToGuild,
 } from './guilds';
 
 export {

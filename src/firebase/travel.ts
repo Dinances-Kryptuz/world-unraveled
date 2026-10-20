@@ -13,7 +13,12 @@ import { bestMountSpeedBonusPct } from '../gameData/mounts';
 export async function startTravel(
   uid: string,
   character: Character,
-  toZoneId: string
+  toZoneId: string,
+  // Guild Milestone (level 5) mount-speed bonus — stacks additively with
+  // the character's own best mount, same convention as every other speed
+  // source in this game (see gameData/guildMilestones.ts). 0 for a
+  // guildless character or one in a guild below level 5.
+  guildMountSpeedBonusPct = 0
 ): Promise<{ success: boolean; reason?: string }> {
   if (character.travel) return { success: false, reason: 'Already in the air.' };
   if (toZoneId === character.currentZoneId) return { success: false, reason: 'Already there.' };
@@ -21,7 +26,8 @@ export async function startTravel(
     return { success: false, reason: 'Finish your current activity before traveling.' };
   }
 
-  const seconds = travelSeconds(bestMountSpeedBonusPct(character.mounts), character.currentZoneId, toZoneId);
+  const combinedSpeedBonusPct = Math.min(100, bestMountSpeedBonusPct(character.mounts) + guildMountSpeedBonusPct);
+  const seconds = travelSeconds(combinedSpeedBonusPct, character.currentZoneId, toZoneId);
   const departedAt = new Date();
   const arrivesAt = new Date(departedAt.getTime() + seconds * 1_000);
 

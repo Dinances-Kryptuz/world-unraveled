@@ -1,7 +1,7 @@
 import { doc, updateDoc, increment } from 'firebase/firestore';
 import { db } from './config';
 import { getCharacter } from './character';
-import { getInventory, isLocked } from './inventory';
+import { getInventory, isLocked, grantInventoryItems } from './inventory';
 import { ITEMS } from '../gameData/items';
 import { shopkeeperMaxBagSlots, nextShopkeeperSlotCost } from '../gameData/bagSlotShop';
 
@@ -105,23 +105,36 @@ export async function sellChargedConsumable(uid: string, instanceId: string, qua
   });
 }
 
+// Routes through grantInventoryItems (the single bagSlots choke point every
+// other loot-granting write already uses — see its own doc comment) instead
+// of an unconditional increment(), which previously let a brand-new item id
+// be bought straight past a full bag (the direct cause of inventories
+// observed sitting over their cap, e.g. 25/24). Unlike passive loot, buying
+// is a paid transaction the player chose and paid gold/void shards for, so
+// if the bag genuinely has no room for a NEW item id, the purchase is
+// refused and refunded rather than silently eating the cost for nothing.
 export async function buyItem(
   uid: string,
   itemId: string,
   quantity: number,
   unitPrice: number,
   currency: 'gold' | 'voidShards' = 'gold'
-): Promise<void> {
-  if (quantity <= 0) return;
+): Promise<{ success: boolean; reason?: string }> {
+  if (quantity <= 0) return { success: false };
   const cost = unitPrice * quantity;
 
   const character = await getCharacter(uid);
-  if (!character || character[currency] < cost) return;
+  if (!character || character[currency] < cost) return { success: false, reason: 'Not enough gold.' };
 
   await updateDoc(doc(db, 'characters', uid), {
     [currency]: increment(-cost),
   });
-  await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), {
-    [`items.${itemId}`]: increment(quantity),
-  });
+  const granted = await grantInventoryItems(uid, [{ itemId, quantity }]);
+  if (granted.length === 0) {
+    await updateDoc(doc(db, 'characters', uid), {
+      [currency]: increment(cost),
+    });
+    return { success: false, reason: 'Your bag is full — purchase refunded.' };
+  }
+  return { success: true };
 }

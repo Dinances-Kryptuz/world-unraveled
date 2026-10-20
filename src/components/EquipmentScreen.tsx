@@ -15,8 +15,11 @@ import type { BaseStat } from '../gameData/classStats';
 
 export { SLOT_LABEL };
 
-const BASE_STATS: BaseStat[] = ['STR', 'STA', 'INT', 'SPI', 'AGI'];
-const BASE_STAT_LABEL: Record<BaseStat, string> = {
+// Exported so CompanionScreen can build the same centered stat panel for a
+// companion's own paper doll, instead of a second, drifting copy of this
+// list.
+export const BASE_STATS: BaseStat[] = ['STR', 'STA', 'INT', 'SPI', 'AGI'];
+export const BASE_STAT_LABEL: Record<BaseStat, string> = {
   STR: 'Strength', STA: 'Stamina', INT: 'Intellect', SPI: 'Spirit', AGI: 'Agility',
 };
 

@@ -141,6 +141,24 @@ export interface QuestState {
 // there's nothing else to persist per companion.
 export interface CompanionState {
   equipment: Record<EquipmentSlot, EquippedItemRef | null>;
+  // Guild auto-contribution (Phase 7) — assigned once, randomly, at recruit
+  // time (firebase/companions.ts's recruitCompanion) and never changed
+  // after. Purely flavor/display plus the future "gear score per
+  // profession" hook mentioned in this feature's design brief; the actual
+  // hourly contribution amount is currently a flat per-companion rate (see
+  // functions/src/guilds.ts's claimCompanionGuildContributions), not yet
+  // differentiated by which profession rolled — a deliberate v1
+  // simplification, same posture as the expedition success-rate formula's
+  // own scoped simplification.
+  gatheringProfession?: ProfessionId;
+  craftingProfession?: ProfessionId;
+  // Lazy-accrual anchor for the hourly guild-gold trickle — hours elapsed
+  // since this timestamp (capped at OFFLINE_CAP_HOURS) are claimed and
+  // this bumped to "now" the next time claimCompanionGuildContributions
+  // runs for this character. Absent for a companion recruited before this
+  // field existed, or one not yet claimed even once; both read as "no
+  // backlog yet" rather than defaulting to some arbitrary start time.
+  lastContributionAt?: Date;
 }
 
 export interface Character {
@@ -446,6 +464,13 @@ export interface Character {
   // Absent means not in a guild, same "absence is the zero state"
   // convention as every other optional field here.
   guildId?: string;
+  // Guild invites (Phase 7) — set ONLY by functions/src/guilds.ts's
+  // inviteToGuild (Admin SDK), never written directly by the client, same
+  // Cloud-Function-only posture as guildId itself (see firestore.rules'
+  // isValidCharacterUpdate). A character can hold at most one pending
+  // invite at a time; both fields are present together or absent together.
+  pendingGuildInviteId?: string;
+  pendingGuildInviteGuildName?: string;
   // Guild Expeditions (Phase 4) — one active expedition per character, same
   // "absence is the zero state" convention as everywhere else. Set/cleared
   // ONLY by functions/src/expeditions.ts (Admin SDK), never written

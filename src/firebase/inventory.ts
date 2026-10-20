@@ -4,6 +4,23 @@ import type { Inventory } from '../types/character';
 import type { BaseStat } from '../gameData/classStats';
 import { MAX_VARIANTS_PER_BASE_ITEM } from '../gameData/equipmentRolls';
 import { chargedInstanceId } from '../gameData/consumableCharges';
+import { ITEMS } from '../gameData/items';
+import { notify } from '../utils/notifications';
+
+// Shared by all three grant functions below — surfaces exactly what the bag
+// being full actually cost the player, the "message saying you received
+// this loot but your inventory was full" half of the "don't cancel the
+// action, just don't add the loot" convention documented on
+// grantInventoryItems. Not gated by notificationsEnabled (unlike the
+// routine "crafted"/"defeated" toasts) since this reports something
+// actually lost, not just flavor.
+function notifyDroppedForFullBag(dropped: { itemId: string; quantity: number }[]): void {
+  if (dropped.length === 0) return;
+  notify(
+    'Inventory full',
+    dropped.map((d) => `${d.quantity}x ${ITEMS[d.itemId]?.name ?? d.itemId} — not added, your bag was full`)
+  );
+}
 
 export async function getInventory(uid: string): Promise<Inventory> {
   const snap = await getDoc(doc(db, 'characters', uid, 'inventory', 'main'));
@@ -75,16 +92,21 @@ export async function grantInventoryItems(
   let distinctCount = Object.values(items).filter((q) => q > 0).length;
   const seenNew = new Set<string>();
   const accepted: { itemId: string; quantity: number }[] = [];
+  const dropped: { itemId: string; quantity: number }[] = [];
 
   for (const grant of positiveGrants) {
     const alreadyHeld = (items[grant.itemId] ?? 0) > 0 || seenNew.has(grant.itemId);
     if (!alreadyHeld) {
-      if (distinctCount >= bagSlots) continue; // bag full — this one new item is dropped
+      if (distinctCount >= bagSlots) {
+        dropped.push(grant); // bag full — this one new item is dropped
+        continue;
+      }
       distinctCount++;
       seenNew.add(grant.itemId);
     }
     accepted.push(grant);
   }
+  notifyDroppedForFullBag(dropped);
 
   if (accepted.length === 0) return [];
 
@@ -141,12 +163,19 @@ export async function grantEquipmentInstances(
   let distinctCount = Object.values(inventory.items).filter((q) => q > 0).length + countDistinctBaseItems(inventory);
 
   const accepted: { instanceId: string; quantity: number }[] = [];
+  const droppedQuantity = { total: 0 };
   for (const [instanceId, quantity] of requestedQuantities) {
     const isNewVariant = !existingVariantIds.has(instanceId);
     if (isNewVariant) {
-      if (existingVariantIds.size >= MAX_VARIANTS_PER_BASE_ITEM) continue; // variant cap — this roll is dropped
+      if (existingVariantIds.size >= MAX_VARIANTS_PER_BASE_ITEM) {
+        droppedQuantity.total += quantity; // variant cap — this roll is dropped
+        continue;
+      }
       if (!baseItemSlotSpent) {
-        if (distinctCount >= bagSlots) continue; // bag full — this item id is dropped entirely
+        if (distinctCount >= bagSlots) {
+          droppedQuantity.total += quantity; // bag full — this item id is dropped entirely
+          continue;
+        }
         distinctCount++;
         baseItemSlotSpent = true;
       }
@@ -154,6 +183,7 @@ export async function grantEquipmentInstances(
     }
     accepted.push({ instanceId, quantity });
   }
+  notifyDroppedForFullBag(droppedQuantity.total > 0 ? [{ itemId, quantity: droppedQuantity.total }] : []);
   if (accepted.length === 0) return [];
 
   const updates: Record<string, unknown> = {};
@@ -230,14 +260,19 @@ export async function grantChargedConsumables(
     Object.values(inventory.items).filter((q) => q > 0).length + countDistinctBaseItems(inventory);
 
   const accepted: { remainingCharges: number; quantity: number }[] = [];
+  let droppedQuantity = 0;
   for (const [remainingCharges, quantity] of requestedQuantities) {
     if (!baseItemSlotSpent) {
-      if (distinctCount >= bagSlots) continue; // bag full — this item id is dropped entirely
+      if (distinctCount >= bagSlots) {
+        droppedQuantity += quantity; // bag full — this item id is dropped entirely
+        continue;
+      }
       distinctCount++;
       baseItemSlotSpent = true;
     }
     accepted.push({ remainingCharges, quantity });
   }
+  notifyDroppedForFullBag(droppedQuantity > 0 ? [{ itemId, quantity: droppedQuantity }] : []);
   if (accepted.length === 0) return [];
 
   const updates: Record<string, unknown> = {};

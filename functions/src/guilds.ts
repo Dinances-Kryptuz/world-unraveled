@@ -107,6 +107,35 @@ export const createGuild = onCall(async (request) => {
   return { guildId: guildRef.id };
 });
 
+// Shared by joinGuild (self-service, browsing the discovery list) and
+// acceptGuildInvite (invited by a member) — both land a caller in the
+// exact same member state, differing only in HOW they found the guild and
+// in acceptGuildInvite's case, also clearing the pending-invite fields
+// right after this runs. Pulled out so that isn't two copies of the same
+// five writes drifting apart.
+function performJoinWrites(
+  tx: FirebaseFirestore.Transaction,
+  guildId: string,
+  uid: string,
+  char: FirebaseFirestore.DocumentData,
+  charRef: FirebaseFirestore.DocumentReference
+): void {
+  const now = FieldValue.serverTimestamp();
+  tx.update(db.collection('guilds').doc(guildId), { memberIds: FieldValue.arrayUnion(uid) });
+  tx.set(db.collection('guildMembers').doc(memberDocId(guildId, uid)), {
+    guildId,
+    uid,
+    name: char.name,
+    class: char.class,
+    spec: char.spec ?? null,
+    level: char.level,
+    role: 'member',
+    joinedAt: now,
+  });
+  tx.update(db.collection('guildPublicSummaries').doc(guildId), { memberCount: FieldValue.increment(1) });
+  tx.update(charRef, { guildId });
+}
+
 export const joinGuild = onCall(async (request) => {
   const uid = requireUid(request);
   const guildId = String((request.data as { guildId?: unknown })?.guildId ?? '');
@@ -126,23 +155,144 @@ export const joinGuild = onCall(async (request) => {
     if (memberIds.includes(uid)) throw new HttpsError('already-exists', 'Already a member of this guild.');
     if (memberIds.length >= MAX_GUILD_MEMBERS) throw new HttpsError('resource-exhausted', 'That guild is full.');
 
-    const now = FieldValue.serverTimestamp();
-    tx.update(guildRef, { memberIds: FieldValue.arrayUnion(uid) });
-    tx.set(db.collection('guildMembers').doc(memberDocId(guildId, uid)), {
-      guildId,
-      uid,
-      name: char.name,
-      class: char.class,
-      spec: char.spec ?? null,
-      level: char.level,
-      role: 'member',
-      joinedAt: now,
-    });
-    tx.update(db.collection('guildPublicSummaries').doc(guildId), { memberCount: FieldValue.increment(1) });
-    tx.update(charRef, { guildId });
+    performJoinWrites(tx, guildId, uid, char, charRef);
   });
 
   return { guildId };
+});
+
+// Guild invites (Phase 7) — any current member can invite a character by
+// name (single-field equality query, same pattern guild-name-clash
+// checking already uses — no new Firestore index needed). The invited
+// character gets ONE pending invite slot (pendingGuildInviteId/
+// pendingGuildInviteGuildName on their own character doc); sending a new
+// one simply overwrites whichever was there before, same "latest wins, no
+// queue" posture as every other single-pointer field in this codebase.
+// Character names are not enforced unique anywhere, so "first match wins"
+// is the documented behavior for a duplicate name, same as createGuild's
+// own name-clash check already assumes uniqueness it doesn't strictly
+// guarantee for characters.
+export const inviteToGuild = onCall(async (request) => {
+  const uid = requireUid(request);
+  const guildId = String((request.data as { guildId?: unknown })?.guildId ?? '');
+  const characterName = String((request.data as { characterName?: unknown })?.characterName ?? '').trim();
+  if (!guildId || !characterName) throw new HttpsError('invalid-argument', 'guildId and characterName are required.');
+
+  const guildSnap = await db.collection('guilds').doc(guildId).get();
+  if (!guildSnap.exists) throw new HttpsError('not-found', 'Guild not found.');
+  const guild = guildSnap.data() as GuildDoc;
+  if (!(guild.memberIds || []).includes(uid)) {
+    throw new HttpsError('permission-denied', 'Only a member of this guild can send invites.');
+  }
+  if ((guild.memberIds || []).length >= MAX_GUILD_MEMBERS) {
+    throw new HttpsError('resource-exhausted', 'This guild is full.');
+  }
+
+  const targetSnap = await db.collection('characters').where('name', '==', characterName).limit(1).get();
+  if (targetSnap.empty) throw new HttpsError('not-found', `No character named "${characterName}" found.`);
+  const targetDoc = targetSnap.docs[0];
+  const target = targetDoc.data();
+  if (targetDoc.id === uid) throw new HttpsError('invalid-argument', "You can't invite yourself.");
+  if (target.guildId) throw new HttpsError('failed-precondition', `${characterName} is already in a guild.`);
+  if ((guild.memberIds || []).includes(targetDoc.id)) {
+    throw new HttpsError('already-exists', `${characterName} is already a member of this guild.`);
+  }
+
+  await targetDoc.ref.update({ pendingGuildInviteId: guildId, pendingGuildInviteGuildName: guild.name });
+  return { ok: true, invitedName: target.name as string };
+});
+
+export const acceptGuildInvite = onCall(async (request) => {
+  const uid = requireUid(request);
+  const charRef = db.collection('characters').doc(uid);
+
+  const guildId = await db.runTransaction(async (tx) => {
+    const charSnap = await tx.get(charRef);
+    if (!charSnap.exists) throw new HttpsError('failed-precondition', 'No character found.');
+    const char = charSnap.data()!;
+    const invitedGuildId: string | undefined = char.pendingGuildInviteId;
+    if (!invitedGuildId) throw new HttpsError('failed-precondition', 'No pending guild invite.');
+    if (char.guildId) throw new HttpsError('failed-precondition', 'Already in a guild. Leave it first.');
+
+    const guildRef = db.collection('guilds').doc(invitedGuildId);
+    const guildSnap = await tx.get(guildRef);
+    if (!guildSnap.exists) {
+      // The invited guild no longer exists (disbanded) — just clear the
+      // stale invite rather than leaving the player stuck with a dead one.
+      tx.update(charRef, { pendingGuildInviteId: FieldValue.delete(), pendingGuildInviteGuildName: FieldValue.delete() });
+      throw new HttpsError('not-found', 'That guild no longer exists.');
+    }
+    const guild = guildSnap.data() as GuildDoc;
+    const memberIds = guild.memberIds || [];
+    if (memberIds.includes(uid)) throw new HttpsError('already-exists', 'Already a member of this guild.');
+    if (memberIds.length >= MAX_GUILD_MEMBERS) throw new HttpsError('resource-exhausted', 'That guild is now full.');
+
+    performJoinWrites(tx, invitedGuildId, uid, char, charRef);
+    tx.update(charRef, { pendingGuildInviteId: FieldValue.delete(), pendingGuildInviteGuildName: FieldValue.delete() });
+    return invitedGuildId;
+  });
+
+  return { guildId };
+});
+
+export const declineGuildInvite = onCall(async (request) => {
+  const uid = requireUid(request);
+  await db.collection('characters').doc(uid).update({
+    pendingGuildInviteId: FieldValue.delete(),
+    pendingGuildInviteGuildName: FieldValue.delete(),
+  });
+  return { ok: true };
+});
+
+// Companion guild auto-contribution (Phase 7) — lazy-accrual, same
+// "compute elapsed time since the stored anchor, cap it, credit it,
+// advance the anchor to now" shape as every offline-resolver in this game,
+// just driven by a client-triggered claim (like refreshGuildMemberProfile)
+// instead of a tick loop, since there's no per-second simulation to run
+// here. A flat gold-per-hour rate per companion, NOT yet differentiated by
+// which gathering/crafting profession it rolled (see CompanionState.
+// gatheringProfession's doc comment) — a deliberate v1 simplification.
+// No-ops (zero writes) for a guildless character, or one with no
+// recruited companions yet, same as refreshGuildMemberProfile's own no-op
+// posture.
+const COMPANION_CONTRIBUTION_GOLD_PER_HOUR = 2;
+const COMPANION_CONTRIBUTION_CAP_HOURS = 24;
+
+export const claimCompanionContributionsToGuild = onCall(async (request) => {
+  const uid = requireUid(request);
+  const charRef = db.collection('characters').doc(uid);
+  const charSnap = await charRef.get();
+  if (!charSnap.exists) throw new HttpsError('failed-precondition', 'No character found.');
+  const char = charSnap.data()!;
+  const guildId: string | undefined = char.guildId;
+  if (!guildId) return { claimedGold: 0 };
+
+  const guildRef = db.collection('guilds').doc(guildId);
+  const guildSnap = await guildRef.get();
+  if (!guildSnap.exists || !((guildSnap.data() as GuildDoc).memberIds || []).includes(uid)) {
+    return { claimedGold: 0 };
+  }
+
+  const companions = (char.companions ?? {}) as Record<string, { lastContributionAt?: FirebaseFirestore.Timestamp }>;
+  const now = Date.now();
+  let totalHours = 0;
+  const charUpdate: Record<string, unknown> = {};
+  for (const [companionId, state] of Object.entries(companions)) {
+    if (!state.lastContributionAt) continue;
+    const elapsedHours = (now - state.lastContributionAt.toMillis()) / (1000 * 60 * 60);
+    if (elapsedHours < 0.01) continue; // nothing meaningful to claim yet
+    totalHours += Math.min(elapsedHours, COMPANION_CONTRIBUTION_CAP_HOURS);
+    charUpdate[`companions.${companionId}.lastContributionAt`] = FieldValue.serverTimestamp();
+  }
+  if (totalHours <= 0) return { claimedGold: 0 };
+
+  const claimedGold = Math.floor(totalHours * COMPANION_CONTRIBUTION_GOLD_PER_HOUR);
+  const batch = db.batch();
+  batch.update(charRef, charUpdate);
+  if (claimedGold > 0) batch.update(guildRef, { gold: FieldValue.increment(claimedGold) });
+  await batch.commit();
+
+  return { claimedGold };
 });
 
 export const leaveGuild = onCall(async (request) => {

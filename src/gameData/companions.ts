@@ -1,11 +1,12 @@
 import type { ClassId, SpecDef, SpecId } from './classStats';
 import { FALLBACK_SPEC_BY_CLASS, SPECS } from './classStats';
 import type { BaseStat } from './classStats';
-import type { EquipmentSlot, EquippedItemRef } from './types';
+import type { EquipmentSlot, EquippedItemRef, ProfessionId } from './types';
 import { getEquipmentStatBonuses, getInnateItemFireResistance, isShieldEquipped } from './equipmentStats';
 import { evaluateTalents, EMPTY_TALENT_TOTALS, type TalentBonusTotals } from '../utils/talentEvaluator';
 import type { TalentPicks } from './talents';
 import type { Character } from '../types/character';
+import { ALL_PROFESSION_IDS, PROFESSION_CATEGORY } from './professionTiers';
 
 // A companion is a second, AI-controlled party member: its own class/fixed
 // spec/level (always matches the player's level — see
@@ -198,6 +199,23 @@ export function checkRecruitCompanion(
     return { ok: false, reason: `Requires ${def.recruitGoldCost} gold.`, goldCost: def.recruitGoldCost };
   }
   return { ok: true, goldCost: def.recruitGoldCost };
+}
+
+// Guild auto-contribution (Phase 7) — picks one random "gathering-type"
+// profession (herbalism/skinning/mining/fishing — PROFESSION_CATEGORY
+// 'gathering' or 'fishing') and one random "crafting-type" profession
+// (PROFESSION_CATEGORY 'production') for a newly recruited companion. Pure
+// and random, so it's called once at recruit time by firebase/
+// companions.ts and the result persisted — calling it again would reroll,
+// which is why nothing else in this codebase calls it after recruitment.
+const GATHERING_TYPE_PROFESSIONS = ALL_PROFESSION_IDS.filter((id) => PROFESSION_CATEGORY[id] !== 'production');
+const CRAFTING_TYPE_PROFESSIONS = ALL_PROFESSION_IDS.filter((id) => PROFESSION_CATEGORY[id] === 'production');
+
+export function randomCompanionProfessions(): { gatheringProfession: ProfessionId; craftingProfession: ProfessionId } {
+  return {
+    gatheringProfession: GATHERING_TYPE_PROFESSIONS[Math.floor(Math.random() * GATHERING_TYPE_PROFESSIONS.length)],
+    craftingProfession: CRAFTING_TYPE_PROFESSIONS[Math.floor(Math.random() * CRAFTING_TYPE_PROFESSIONS.length)],
+  };
 }
 
 export function emptyCompanionEquipment(): Record<EquipmentSlot, string | null> {

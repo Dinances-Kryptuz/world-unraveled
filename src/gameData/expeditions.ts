@@ -6,6 +6,18 @@
 // — forming real cross-account parties would need an invite/accept flow
 // this phase doesn't build. "Asynchronous" here means the expedition runs
 // for hours while the player is offline, which this delivers either way.
+//
+// Success-rate math (locked): BASE_SUCCESS[tier] + 10% per party member
+// (yourself plus however many recruited companions you choose to send),
+// clamped to [5%, 98%] same as before. Up to 9 companions can be recruited
+// (gameData/companions.ts's COMPANIONS) + yourself = a 10-person party cap.
+// This flat per-person bonus is the whole formula for now — the old tank/
+// healer-presence bonuses it replaced are gone, not stacked alongside it.
+// A gear-score-weighted version (equipmentStats.ts's computeGearScore) is
+// the planned next refinement: this phase intentionally ships the simple
+// headcount-based version first and leaves gear score computed but unused
+// anywhere success chance is calculated.
+export const EXPEDITION_SUCCESS_PCT_PER_PERSON = 0.1;
 export type ExpeditionTier = 'common' | 'uncommon' | 'rare' | 'epic';
 
 export const EXPEDITION_TIERS: ExpeditionTier[] = ['common', 'uncommon', 'rare', 'epic'];
@@ -80,6 +92,11 @@ export interface ExpeditionDoc {
   completesAt: Date;
   successChance: number;
   party: ExpeditionPartyMember[];
+  // The companion ids actually sent on this expedition (a subset of
+  // `party`, which also includes "You") — used to lock those companions
+  // out of dungeon parties for the expedition's duration (see
+  // CompanionScreen.tsx) and to show a return timer on the recruit screen.
+  companionIds: string[];
   resolved: boolean;
   success: boolean | null;
   claimed: boolean;

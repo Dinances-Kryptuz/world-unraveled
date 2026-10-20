@@ -313,6 +313,33 @@ input[type="number"] {
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
 }
 
+/* Vendor buy/sell grids — clicking an ItemSlot tile opens this panel
+   (slider + confirm) instead of every row carrying its own always-visible
+   controls (VendorScreen.tsx's click-a-tile-to-open-a-slider overhaul). */
+.vendor-trade-panel {
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-top: 12px;
+  background: var(--bg-panel-alt, rgba(0, 0, 0, 0.15));
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.vendor-trade-panel .item-row-main {
+  width: 100%;
+}
+
+.guild-invite-row {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .companion-card {
   border: 1px solid var(--border-default);
   border-radius: 6px;

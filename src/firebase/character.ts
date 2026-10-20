@@ -184,7 +184,21 @@ export async function getCharacter(uid: string): Promise<Character | null> {
           def ? EQUIP_ROLE_BY_SPEC[def.specId] : null,
           `companions.${id}.equipment`
         );
-        return [id, { ...state, equipment: companionEquipment }];
+        return [
+          id,
+          {
+            ...state,
+            equipment: companionEquipment,
+            // Guild auto-contribution (Phase 7) — same Timestamp->Date
+            // conversion every other persisted timestamp in this function
+            // gets; omitted entirely (not set to `undefined`) for a
+            // companion recruited before this field existed, same
+            // "absent key, not an explicit undefined value" convention as
+            // activeBuffs' expiresAt above (this object can get spread
+            // again later, e.g. by an optimistic update).
+            ...(state.lastContributionAt ? { lastContributionAt: (state.lastContributionAt as Timestamp).toDate() } : {}),
+          },
+        ];
       })
     )
   );
