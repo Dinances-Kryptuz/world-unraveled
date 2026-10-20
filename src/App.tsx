@@ -250,7 +250,14 @@ function AppContent() {
   return (
     <AppShell {...shellProps}>
       <div style={{ display: showActivityPane ? 'block' : 'none' }}>
-        {activityNode ?? (section === 'adventure' ? <ZoneScreen selectedZoneId={character.currentZoneId} onEnterDungeon={setActiveDungeonId} /> : null)}
+        {activityNode ??
+          (section === 'adventure' ? (
+            <ZoneScreen
+              selectedZoneId={character.currentZoneId}
+              onEnterDungeon={setActiveDungeonId}
+              onEnterCapital={() => setActiveSection('capital')}
+            />
+          ) : null)}
       </div>
       {section === 'equipment' && <EquipmentScreen />}
       {section === 'inventory' && <InventoryScreen />}

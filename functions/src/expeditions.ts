@@ -28,7 +28,18 @@ const DURATION_SECONDS: Record<ExpeditionTier, number> = {
 };
 const SEALS_REWARD: Record<ExpeditionTier, number> = { common: 5, uncommon: 10, rare: 20, epic: 40 };
 const XP_REWARD: Record<ExpeditionTier, number> = { common: 100, uncommon: 200, rare: 400, epic: 800 };
-const BASE_SUCCESS: Record<ExpeditionTier, number> = { common: 0.85, uncommon: 0.75, rare: 0.65, epic: 0.55 };
+// Rebalanced (was 0.85/0.75/0.65/0.55) — those were tuned for the OLD
+// formula's small flat +5%/+5%/+8% tank/healer/companion-count bonuses.
+// Carried over unchanged when that formula was replaced with +10% per
+// party member, they made the base rate alone dominate: even a modest
+// party (party.length ~6 of the 10-person max) already saturated the 98%
+// clamp on every tier, so party size barely mattered and solo vs. full-
+// group outcomes looked nearly identical — the exact "90% solo" complaint
+// the per-person formula was meant to fix. These lower bases make the
+// +10%/person term the real driver across the whole 1-10 person range
+// (mirrors gameData/expeditions.ts's EXPEDITION_BASE_SUCCESS — keep both
+// in sync).
+const BASE_SUCCESS: Record<ExpeditionTier, number> = { common: 0.3, uncommon: 0.2, rare: 0.1, epic: 0.05 };
 const DROP_CHANCE: Record<ExpeditionTier, number> = { common: 0.08, uncommon: 0.12, rare: 0.15, epic: 0.2 };
 
 // Mirrors gameData/classStats.ts's FALLBACK_SPEC_BY_CLASS (a character with

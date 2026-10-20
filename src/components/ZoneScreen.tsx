@@ -23,9 +23,20 @@ import { equippedItemId } from '../gameData/equipmentStats';
 export function ZoneScreen({
   selectedZoneId,
   onEnterDungeon,
+  onEnterCapital,
 }: {
   selectedZoneId: string;
   onEnterDungeon: (dungeonId: string) => void;
+  // Ashenfall has no standalone nav entry anymore (folded into clicking the
+  // zone itself — see App.tsx's handleRequestTravel) and the zone tile for
+  // wherever you're CURRENTLY standing is disabled (TopBar.tsx's
+  // `clickable = unlocked && !isCurrent && !traveling`), so once you've
+  // navigated away from the district grid to this Adventure tab while
+  // already in Ashenfall, there was no way back to it short of actually
+  // traveling elsewhere and back. This callback (App.tsx's
+  // handleEnterCapital) gives the "visit its districts instead" message
+  // below a real way to do that.
+  onEnterCapital: () => void;
 }) {
   const { user } = useAuth();
   const { character, refetch } = useCharacter();
@@ -87,7 +98,10 @@ export function ZoneScreen({
     <div className="zone-screen">
       <ZoneBanner zoneId={zone.id} />
       {zone.monsterIds.length === 0 ? (
-        <p>There's nothing to hunt here — Ashenfall is a capital city. Visit its districts instead.</p>
+        <p>
+          There's nothing to hunt here — Ashenfall is a capital city.{' '}
+          <button onClick={onEnterCapital}>Visit its districts instead</button>
+        </p>
       ) : (
         <>
           <p>

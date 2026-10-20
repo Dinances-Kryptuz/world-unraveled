@@ -1,5 +1,6 @@
 import { onCall, HttpsError, type CallableRequest } from 'firebase-functions/v2/https';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { getFirestore, FieldValue, Timestamp } from 'firebase-admin/firestore';
+import { isoWeekId } from './weekId';
 
 // Guild mutations are the one place this game trusts the SERVER over the
 // client — every other system (combat, gathering, crafting) only validates
@@ -244,19 +245,54 @@ export const declineGuildInvite = onCall(async (request) => {
   return { ok: true };
 });
 
-// Companion guild auto-contribution (Phase 7) — lazy-accrual, same
-// "compute elapsed time since the stored anchor, cap it, credit it,
-// advance the anchor to now" shape as every offline-resolver in this game,
-// just driven by a client-triggered claim (like refreshGuildMemberProfile)
-// instead of a tick loop, since there's no per-second simulation to run
-// here. A flat gold-per-hour rate per companion, NOT yet differentiated by
-// which gathering/crafting profession it rolled (see CompanionState.
-// gatheringProfession's doc comment) — a deliberate v1 simplification.
-// No-ops (zero writes) for a guildless character, or one with no
-// recruited companions yet, same as refreshGuildMemberProfile's own no-op
-// posture.
+// Companion guild auto-contribution (Phase 7, extended for specialization
+// routing) — lazy-accrual, same "compute elapsed time since the stored
+// anchor, cap it, credit it, advance the anchor to now" shape as every
+// offline-resolver in this game, just driven by a client-triggered claim
+// (like refreshGuildMemberProfile) instead of a tick loop, since there's no
+// per-second simulation to run here.
+//
+// Each companion's elapsed hours route by its rolled gathering/crafting
+// profession (CompanionState.gatheringProfession/craftingProfession):
+// Skinning routes to the weekly gathering contract's material, Smithing to
+// the weekly crafting contract's material — a FIXED lookup, not a dynamic
+// material-to-profession search, because this game's weekly contracts
+// (CONTRACT_TEMPLATES in contracts.ts) are a hardcoded set that never
+// rotates (see that file's module comment), so "gathering contract" always
+// means light_hide/Skinning and "crafting contract" always means
+// copper_bar/Smithing. A companion with neither matching profession — or
+// whose matching contract doesn't exist this week, is already complete, or
+// has hit this path's own contribution cap — falls back to flat gold for
+// those hours instead of losing them. A companion that happens to roll
+// BOTH matching professions contributes to both contracts independently
+// from the same elapsed hours (the same idle-game abstraction already used
+// for a single companion holding two unrelated professions at once).
+//
+// The material contribution is capped at COMPANION_AUTO_CONTRACT_CAP_PCT of
+// the contract's requirement, enforced against the SAME
+// companionContributions[uid] running total the older, manual
+// claimCompanionContributions (contracts.ts) already writes to — so the two
+// mechanisms compose under one shared ceiling rather than stacking two
+// independent ones; this path's lower 10% cap binds well before that older
+// system's own 25% aggregate cap. Deliberately skips the Library room-bonus
+// XP multiplier contracts.ts's claim paths apply on completion (a scoped
+// simplification to avoid pulling in guildRooms here for an auto-triggered,
+// best-effort path).
+const CONTRACT_CATEGORY_PROFESSION_MATCH = { gathering: 'skinning', crafting: 'smithing' } as const;
+const COMPANION_AUTO_CONTRACT_CAP_PCT = 0.1;
+const COMPANION_MATERIAL_PER_HOUR = 2;
 const COMPANION_CONTRIBUTION_GOLD_PER_HOUR = 2;
 const COMPANION_CONTRIBUTION_CAP_HOURS = 24;
+const COMPANION_AUTO_CONTRACT_XP_REWARD = 50;
+
+interface AutoContractRow {
+  category: 'gathering' | 'crafting' | 'hunting';
+  materialId: string | null;
+  requirement: number;
+  progress: number;
+  companionContributions: Record<string, number>;
+  completedAt: FirebaseFirestore.Timestamp | null;
+}
 
 export const claimCompanionContributionsToGuild = onCall(async (request) => {
   const uid = requireUid(request);
@@ -265,34 +301,103 @@ export const claimCompanionContributionsToGuild = onCall(async (request) => {
   if (!charSnap.exists) throw new HttpsError('failed-precondition', 'No character found.');
   const char = charSnap.data()!;
   const guildId: string | undefined = char.guildId;
-  if (!guildId) return { claimedGold: 0 };
+  if (!guildId) return { claimedGold: 0, claimedMaterials: [] };
 
   const guildRef = db.collection('guilds').doc(guildId);
   const guildSnap = await guildRef.get();
   if (!guildSnap.exists || !((guildSnap.data() as GuildDoc).memberIds || []).includes(uid)) {
-    return { claimedGold: 0 };
+    return { claimedGold: 0, claimedMaterials: [] };
   }
 
-  const companions = (char.companions ?? {}) as Record<string, { lastContributionAt?: FirebaseFirestore.Timestamp }>;
+  const companions = (char.companions ?? {}) as Record<
+    string,
+    { lastContributionAt?: FirebaseFirestore.Timestamp; gatheringProfession?: string; craftingProfession?: string }
+  >;
   const now = Date.now();
-  let totalHours = 0;
+  let goldHours = 0;
+  const materialHoursByCategory: Record<'gathering' | 'crafting', number> = { gathering: 0, crafting: 0 };
   const charUpdate: Record<string, unknown> = {};
+
   for (const [companionId, state] of Object.entries(companions)) {
     if (!state.lastContributionAt) continue;
     const elapsedHours = (now - state.lastContributionAt.toMillis()) / (1000 * 60 * 60);
     if (elapsedHours < 0.01) continue; // nothing meaningful to claim yet
-    totalHours += Math.min(elapsedHours, COMPANION_CONTRIBUTION_CAP_HOURS);
+    const cappedHours = Math.min(elapsedHours, COMPANION_CONTRIBUTION_CAP_HOURS);
     charUpdate[`companions.${companionId}.lastContributionAt`] = FieldValue.serverTimestamp();
-  }
-  if (totalHours <= 0) return { claimedGold: 0 };
 
-  const claimedGold = Math.floor(totalHours * COMPANION_CONTRIBUTION_GOLD_PER_HOUR);
+    let matched = false;
+    if (state.gatheringProfession === CONTRACT_CATEGORY_PROFESSION_MATCH.gathering) {
+      materialHoursByCategory.gathering += cappedHours;
+      matched = true;
+    }
+    if (state.craftingProfession === CONTRACT_CATEGORY_PROFESSION_MATCH.crafting) {
+      materialHoursByCategory.crafting += cappedHours;
+      matched = true;
+    }
+    if (!matched) goldHours += cappedHours;
+  }
+
+  if (goldHours <= 0 && materialHoursByCategory.gathering <= 0 && materialHoursByCategory.crafting <= 0) {
+    return { claimedGold: 0, claimedMaterials: [] };
+  }
+
+  const claimedMaterials: { materialId: string; amount: number }[] = [];
+
+  if (materialHoursByCategory.gathering > 0 || materialHoursByCategory.crafting > 0) {
+    const weekRef = db.collection('guildWeeks').doc(`${guildId}_${isoWeekId(new Date())}`);
+    const materialResult = await db.runTransaction(async (tx) => {
+      const weekSnap = await tx.get(weekRef);
+      if (!weekSnap.exists) return { claimedMaterials: [] as { materialId: string; amount: number }[], xpToAward: 0, overflowGoldHours: 0 };
+
+      const week = weekSnap.data() as { contracts: AutoContractRow[] };
+      const contracts = week.contracts.map((c) => ({ ...c, companionContributions: { ...c.companionContributions } }));
+      const applied: { materialId: string; amount: number }[] = [];
+      let xpToAward = 0;
+      let overflowGoldHours = 0;
+
+      (['gathering', 'crafting'] as const).forEach((category) => {
+        const hours = materialHoursByCategory[category];
+        if (hours <= 0) return;
+        const contractIndex = contracts.findIndex((c) => c.category === category && !c.completedAt);
+        const wantedUnits = Math.round(hours * COMPANION_MATERIAL_PER_HOUR);
+        if (contractIndex < 0) {
+          overflowGoldHours += hours; // no open matching contract this week — refund as gold
+          return;
+        }
+        const c = contracts[contractIndex];
+        const currentTotal = c.companionContributions[uid] ?? 0;
+        const capRoom = Math.floor(c.requirement * COMPANION_AUTO_CONTRACT_CAP_PCT) - currentTotal;
+        const amount = Math.max(0, Math.min(wantedUnits, capRoom, c.requirement - c.progress));
+        if (wantedUnits > amount) overflowGoldHours += (wantedUnits - amount) / COMPANION_MATERIAL_PER_HOUR;
+        if (amount <= 0) return;
+
+        c.progress += amount;
+        c.companionContributions[uid] = currentTotal + amount;
+        if (c.progress >= c.requirement && !c.completedAt) {
+          c.completedAt = Timestamp.now();
+          xpToAward += COMPANION_AUTO_CONTRACT_XP_REWARD;
+        }
+        if (c.materialId) applied.push({ materialId: c.materialId, amount });
+      });
+
+      if (applied.length > 0 || xpToAward > 0) {
+        tx.update(weekRef, { contracts });
+        if (xpToAward > 0) tx.update(guildRef, { xp: FieldValue.increment(xpToAward) });
+      }
+      return { claimedMaterials: applied, xpToAward, overflowGoldHours };
+    });
+
+    claimedMaterials.push(...materialResult.claimedMaterials);
+    goldHours += materialResult.overflowGoldHours;
+  }
+
+  const claimedGold = Math.floor(goldHours * COMPANION_CONTRIBUTION_GOLD_PER_HOUR);
   const batch = db.batch();
   batch.update(charRef, charUpdate);
   if (claimedGold > 0) batch.update(guildRef, { gold: FieldValue.increment(claimedGold) });
   await batch.commit();
 
-  return { claimedGold };
+  return { claimedGold, claimedMaterials };
 });
 
 export const leaveGuild = onCall(async (request) => {

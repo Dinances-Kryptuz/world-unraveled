@@ -43,11 +43,14 @@ export const EXPEDITION_XP_REWARD: Record<ExpeditionTier, number> = {
   epic: 800,
 };
 
+// Rebalanced (was 0.85/0.75/0.65/0.55 — see functions/src/expeditions.ts's
+// matching comment for why those, carried over from the old formula,
+// made party size barely matter once the +10%/person term was added).
 export const EXPEDITION_BASE_SUCCESS: Record<ExpeditionTier, number> = {
-  common: 0.85,
-  uncommon: 0.75,
-  rare: 0.65,
-  epic: 0.55,
+  common: 0.3,
+  uncommon: 0.2,
+  rare: 0.1,
+  epic: 0.05,
 };
 
 export const EXPEDITION_DROP_CHANCE: Record<ExpeditionTier, number> = {

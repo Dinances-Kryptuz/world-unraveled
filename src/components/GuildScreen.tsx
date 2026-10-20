@@ -19,6 +19,9 @@ import {
 } from '../firebase/guilds';
 import { MAX_GUILD_MEMBERS, MAX_OFFICERS, roleLabel, type GuildDetails, type GuildMemberRow, type GuildPublicSummary } from '../gameData/guilds';
 import { CLASS_LABELS, SPEC_LABELS, type ClassId, type SpecId } from '../gameData/classStats';
+import { COMPANIONS } from '../gameData/companions';
+import { PROFESSION_LABELS } from '../gameData/professionTiers';
+import type { CompanionState } from '../types/character';
 import { ClassColoredName } from './ClassColoredName';
 import {
   getOrCreateGuildWeek,
@@ -474,7 +477,22 @@ function sortRoster(members: GuildMemberRow[]): GuildMemberRow[] {
     .sort((a, b) => (a.role === b.role ? b.level - a.level : a.role === 'master' ? -1 : b.role === 'master' ? 1 : a.role === 'officer' ? -1 : 1));
 }
 
-function GuildOverview({ guildId, myUid, onChanged }: { guildId: string; myUid: string; onChanged: () => void }) {
+function GuildOverview({
+  guildId,
+  myUid,
+  companions,
+  onChanged,
+}: {
+  guildId: string;
+  myUid: string;
+  // The current player's own recruited companions, rendered as extra roster
+  // rows below (see the Roster panel) — Firestore rules restrict a
+  // character doc to its own owner, so there's no way to show OTHER
+  // members' companions without new denormalization; scoped to "your own
+  // companions show up under your own roster row" for this first pass.
+  companions: Partial<Record<string, CompanionState>>;
+  onChanged: () => void;
+}) {
   const [guild, setGuild] = useState<GuildDetails | null>(null);
   const [members, setMembers] = useState<GuildMemberRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -650,7 +668,31 @@ function GuildOverview({ guildId, myUid, onChanged }: { guildId: string; myUid: 
               )}
             </li>
           ))}
+          {Object.entries(companions).map(([companionId, state]) => {
+              if (!state) return null;
+              const def = COMPANIONS[companionId];
+              if (!def) return null;
+              const specialty = [state.gatheringProfession, state.craftingProfession]
+                .filter((p): p is NonNullable<typeof p> => !!p)
+                .map((p) => PROFESSION_LABELS[p])
+                .join(' / ');
+              return (
+                <li key={`companion:${companionId}`} className="guild-roster-row guild-roster-row-companion">
+                  <span className="guild-roster-name">
+                    <ClassColoredName name={def.name} cls={def.class} />
+                  </span>
+                  <span className="guild-roster-meta">
+                    {CLASS_LABELS[def.class] ?? def.class} {SPEC_LABELS[def.specId] ?? def.specId}
+                    {specialty ? ` — ${specialty}` : ''}
+                  </span>
+                  <span className="guild-roster-role">Companion</span>
+                </li>
+              );
+            })}
         </ul>
+        <p className="guild-meta-line">
+          <small>Your recruited companions contribute to the guild automatically and don't count toward the member cap.</small>
+        </p>
         {guild.memberIds.length < MAX_GUILD_MEMBERS && (
           <div className="guild-invite-row">
             <input
@@ -739,7 +781,15 @@ export function GuildScreen() {
   }
 
   if (character.guildId) {
-    return <GuildOverview key={refreshKey} guildId={character.guildId} myUid={user.uid} onChanged={handleChanged} />;
+    return (
+      <GuildOverview
+        key={refreshKey}
+        guildId={character.guildId}
+        myUid={user.uid}
+        companions={character.companions}
+        onChanged={handleChanged}
+      />
+    );
   }
 
   return (
