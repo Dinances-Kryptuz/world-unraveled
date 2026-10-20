@@ -244,6 +244,15 @@ service cloud.firestore {
       // can't grant any actual guild permission.)
       && (('guildId' in before) == ('guildId' in after))
       && (!('guildId' in before) || before.guildId == after.guildId)
+      // Guild invites (Phase 7) — same Cloud-Function-only posture as
+      // guildId above: inviteToGuild/acceptGuildInvite/declineGuildInvite
+      // (functions/src/guilds.ts) are the only things that may set, clear,
+      // or change these two fields; an ordinary client autosave may only
+      // carry them through unchanged.
+      && (('pendingGuildInviteId' in before) == ('pendingGuildInviteId' in after))
+      && (!('pendingGuildInviteId' in before) || before.pendingGuildInviteId == after.pendingGuildInviteId)
+      && (('pendingGuildInviteGuildName' in before) == ('pendingGuildInviteGuildName' in after))
+      && (!('pendingGuildInviteGuildName' in before) || before.pendingGuildInviteGuildName == after.pendingGuildInviteGuildName)
       && isValidCharacterShape(after);
   }
 

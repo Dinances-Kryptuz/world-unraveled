@@ -74,6 +74,56 @@ export async function setGuildMemberRole(guildId: string, targetUid: string, rol
   }
 }
 
+// Guild invites (Phase 7) — invitedName in the success case is the
+// target's own on-file name (not just an echo of what was typed), so the
+// caller can show "Invited <real name>" even if the search was
+// case-different.
+export async function inviteToGuild(guildId: string, characterName: string): Promise<{ invitedName: string }> {
+  try {
+    const call = httpsCallable<{ guildId: string; characterName: string }, { ok: boolean; invitedName: string }>(
+      functions,
+      'inviteToGuild',
+    );
+    const result = await call({ guildId, characterName });
+    return { invitedName: result.data.invitedName };
+  } catch (err) {
+    throw unwrapCallableError(err);
+  }
+}
+
+export async function acceptGuildInvite(): Promise<{ guildId: string }> {
+  try {
+    const call = httpsCallable<Record<string, never>, { guildId: string }>(functions, 'acceptGuildInvite');
+    const result = await call({});
+    return { guildId: result.data.guildId };
+  } catch (err) {
+    throw unwrapCallableError(err);
+  }
+}
+
+export async function declineGuildInvite(): Promise<void> {
+  try {
+    const call = httpsCallable(functions, 'declineGuildInvite');
+    await call({});
+  } catch (err) {
+    throw unwrapCallableError(err);
+  }
+}
+
+// Companion guild auto-contribution (Phase 7) — fire-and-forget, same
+// best-effort posture as refreshGuildMemberProfile above: a failed claim
+// just means the small gold trickle is picked up on the next successful
+// call instead (lastContributionAt never advances until the write lands),
+// never worth blocking the Guild Hall screen on.
+export async function claimCompanionContributionsToGuild(): Promise<void> {
+  try {
+    const call = httpsCallable(functions, 'claimCompanionContributionsToGuild');
+    await call({});
+  } catch {
+    // Best-effort — see doc comment above.
+  }
+}
+
 // Fire-and-forget: called once whenever Guild Hall opens for a guilded
 // character. No-ops server-side (zero writes) if nothing has changed since
 // the last snapshot — see functions/src/guilds.ts's own comment on why

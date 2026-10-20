@@ -332,6 +332,14 @@ input[type="number"] {
   width: 100%;
 }
 
+.guild-invite-row {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .companion-card {
   border: 1px solid var(--border-default);
   border-radius: 6px;

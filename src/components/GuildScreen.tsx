@@ -12,6 +12,10 @@ import {
   listGuildMembers,
   browseGuilds,
   backfillGuildRoster,
+  inviteToGuild,
+  acceptGuildInvite,
+  declineGuildInvite,
+  claimCompanionContributionsToGuild,
 } from '../firebase/guilds';
 import { MAX_GUILD_MEMBERS, MAX_OFFICERS, roleLabel, type GuildDetails, type GuildMemberRow, type GuildPublicSummary } from '../gameData/guilds';
 import { CLASS_LABELS, SPEC_LABELS, type ClassId, type SpecId } from '../gameData/classStats';
@@ -499,8 +503,35 @@ function GuildOverview({ guildId, myUid, onChanged }: { guildId: string; myUid: 
 
   useEffect(() => {
     refreshGuildMemberProfile().finally(load);
+    // Companion guild auto-contribution (Phase 7) — fire-and-forget on
+    // every Guild Hall open, same posture as refreshGuildMemberProfile
+    // right above (best-effort, never blocks or reruns `load`). A
+    // successful claim doesn't need to force a reload here either — the
+    // small gold trickle shows up next time `guild.gold` is read, same as
+    // any other guild-gold change this screen doesn't optimistically patch.
+    void claimCompanionContributionsToGuild();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [guildId]);
+
+  const [inviteName, setInviteName] = useState('');
+  const [inviting, setInviting] = useState(false);
+  const [inviteMessage, setInviteMessage] = useState<string | null>(null);
+
+  async function handleInvite() {
+    const name = inviteName.trim();
+    if (!name) return;
+    setInviting(true);
+    setInviteMessage(null);
+    try {
+      const result = await inviteToGuild(guildId, name);
+      setInviteMessage(`Invited ${result.invitedName}.`);
+      setInviteName('');
+    } catch (err) {
+      setInviteMessage(err instanceof Error ? err.message : 'Failed to send invite.');
+    } finally {
+      setInviting(false);
+    }
+  }
 
   async function handleKick(targetUid: string) {
     setError(null);
@@ -620,6 +651,21 @@ function GuildOverview({ guildId, myUid, onChanged }: { guildId: string; myUid: 
             </li>
           ))}
         </ul>
+        {guild.memberIds.length < MAX_GUILD_MEMBERS && (
+          <div className="guild-invite-row">
+            <input
+              type="text"
+              placeholder="Character name"
+              value={inviteName}
+              onChange={(e) => setInviteName(e.target.value)}
+              disabled={inviting}
+            />
+            <button onClick={handleInvite} disabled={inviting || !inviteName.trim()}>
+              {inviting ? 'Inviting…' : 'Invite'}
+            </button>
+            {inviteMessage && <p className="guild-meta-line"><small>{inviteMessage}</small></p>}
+          </div>
+        )}
       </div>
 
       <div className="guild-panel">
@@ -627,6 +673,55 @@ function GuildOverview({ guildId, myUid, onChanged }: { guildId: string; myUid: 
           {leaving ? 'Leaving…' : isOwner && guild.memberIds.length === 1 ? 'Disband Guild' : 'Leave Guild'}
         </button>
       </div>
+    </div>
+  );
+}
+
+// Guild invites (Phase 7) — shown above the create/browse screen whenever
+// a guild member has invited this character; not reachable once already
+// in a guild (acceptGuildInvite itself also refuses that case, same guard
+// duplicated here just so the button isn't even clickable).
+function PendingInviteBanner({ guildName, onChanged }: { guildName: string; onChanged: () => void }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleAccept() {
+    setBusy(true);
+    setError(null);
+    try {
+      await acceptGuildInvite();
+      onChanged();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to accept invite.');
+      setBusy(false);
+    }
+  }
+
+  async function handleDecline() {
+    setBusy(true);
+    setError(null);
+    try {
+      await declineGuildInvite();
+      onChanged();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to decline invite.');
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="guild-panel">
+      <h3>Guild Invite</h3>
+      <p>
+        <strong>{guildName}</strong> has invited you to join.
+      </p>
+      {error && <p className="error">{error}</p>}
+      <button onClick={handleAccept} disabled={busy}>
+        Accept
+      </button>
+      <button onClick={handleDecline} disabled={busy}>
+        Decline
+      </button>
     </div>
   );
 }
@@ -647,5 +742,12 @@ export function GuildScreen() {
     return <GuildOverview key={refreshKey} guildId={character.guildId} myUid={user.uid} onChanged={handleChanged} />;
   }
 
-  return <CreateOrBrowseGuild key={refreshKey} onChanged={handleChanged} />;
+  return (
+    <div key={refreshKey}>
+      {character.pendingGuildInviteId && character.pendingGuildInviteGuildName && (
+        <PendingInviteBanner guildName={character.pendingGuildInviteGuildName} onChanged={handleChanged} />
+      )}
+      <CreateOrBrowseGuild onChanged={handleChanged} />
+    </div>
+  );
 }
