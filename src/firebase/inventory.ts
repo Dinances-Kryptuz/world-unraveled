@@ -1,4 +1,15 @@
-import { doc, getDoc, updateDoc, increment, onSnapshot, serverTimestamp, arrayUnion, arrayRemove, type Unsubscribe } from 'firebase/firestore';
+import {
+  doc,
+  getDoc,
+  updateDoc,
+  increment,
+  onSnapshot,
+  serverTimestamp,
+  arrayUnion,
+  arrayRemove,
+  runTransaction,
+  type Unsubscribe,
+} from 'firebase/firestore';
 import { db } from './config';
 import type { Inventory } from '../types/character';
 import type { BaseStat } from '../gameData/classStats';
@@ -82,39 +93,54 @@ export async function grantInventoryItems(
   const positiveGrants = grants.filter((g) => g.quantity > 0);
   if (positiveGrants.length === 0) return [];
 
-  const [invSnap, charSnap] = await Promise.all([
-    getDoc(doc(db, 'characters', uid, 'inventory', 'main')),
-    getDoc(doc(db, 'characters', uid)),
-  ]);
-  const items: Record<string, number> = invSnap.exists() ? ((invSnap.data() as Inventory).items ?? {}) : {};
-  const bagSlots: number = charSnap.exists() ? ((charSnap.data().bagSlots as number) ?? 0) : 0;
+  const invRef = doc(db, 'characters', uid, 'inventory', 'main');
+  const charRef = doc(db, 'characters', uid);
+  // The bag-slot check-then-write below must be atomic relative to any
+  // OTHER grant happening around the same moment (a kill reward and a
+  // quest reward landing within the same autosave window, two tabs open,
+  // etc.) — two independent getDoc()-then-updateDoc() calls could each
+  // read "one slot free" and both accept a new distinct item, pushing the
+  // bag over its cap (e.g. 25/24). A transaction makes the whole read+
+  // decide+write one atomic unit instead, same fix for all three grant
+  // functions below.
+  let dropped: { itemId: string; quantity: number }[] = [];
 
-  let distinctCount = Object.values(items).filter((q) => q > 0).length;
-  const seenNew = new Set<string>();
-  const accepted: { itemId: string; quantity: number }[] = [];
-  const dropped: { itemId: string; quantity: number }[] = [];
+  const accepted = await runTransaction(db, async (tx) => {
+    const [invSnap, charSnap] = await Promise.all([tx.get(invRef), tx.get(charRef)]);
+    const items: Record<string, number> = invSnap.exists() ? ((invSnap.data() as Inventory).items ?? {}) : {};
+    const bagSlots: number = charSnap.exists() ? ((charSnap.data().bagSlots as number) ?? 0) : 0;
 
-  for (const grant of positiveGrants) {
-    const alreadyHeld = (items[grant.itemId] ?? 0) > 0 || seenNew.has(grant.itemId);
-    if (!alreadyHeld) {
-      if (distinctCount >= bagSlots) {
-        dropped.push(grant); // bag full — this one new item is dropped
-        continue;
+    let distinctCount = Object.values(items).filter((q) => q > 0).length;
+    const seenNew = new Set<string>();
+    const acceptedInner: { itemId: string; quantity: number }[] = [];
+    dropped = [];
+
+    for (const grant of positiveGrants) {
+      const alreadyHeld = (items[grant.itemId] ?? 0) > 0 || seenNew.has(grant.itemId);
+      if (!alreadyHeld) {
+        if (distinctCount >= bagSlots) {
+          dropped.push(grant); // bag full — this one new item is dropped
+          continue;
+        }
+        distinctCount++;
+        seenNew.add(grant.itemId);
       }
-      distinctCount++;
-      seenNew.add(grant.itemId);
+      acceptedInner.push(grant);
     }
-    accepted.push(grant);
-  }
+
+    if (acceptedInner.length > 0) {
+      const updates: Record<string, unknown> = {};
+      for (const g of acceptedInner) updates[`items.${g.itemId}`] = increment(g.quantity);
+      tx.update(invRef, updates);
+    }
+    return acceptedInner;
+  });
+
+  // Side effects (the toast) happen AFTER the transaction settles, never
+  // inside the callback above — Firestore retries a transaction callback
+  // on contention, and a notify() call inside it could fire more than
+  // once for the same logical grant.
   notifyDroppedForFullBag(dropped);
-
-  if (accepted.length === 0) return [];
-
-  const updates: Record<string, unknown> = {};
-  for (const g of accepted) {
-    updates[`items.${g.itemId}`] = increment(g.quantity);
-  }
-  await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), updates);
   return accepted;
 }
 
@@ -150,61 +176,69 @@ export async function grantEquipmentInstances(
   }
   if (requestedQuantities.size === 0) return [];
 
-  const [invSnap, charSnap] = await Promise.all([
-    getDoc(doc(db, 'characters', uid, 'inventory', 'main')),
-    getDoc(doc(db, 'characters', uid)),
-  ]);
-  const inventory = (invSnap.exists() ? (invSnap.data() as Inventory) : { items: {} }) as Inventory;
-  const bagSlots: number = charSnap.exists() ? ((charSnap.data().bagSlots as number) ?? 0) : 0;
+  const invRef = doc(db, 'characters', uid, 'inventory', 'main');
+  const charRef = doc(db, 'characters', uid);
+  // Same atomicity fix as grantInventoryItems above — see its doc comment.
+  let droppedTotal = 0;
 
-  const existingInstances = inventory.equipmentInstances ?? {};
-  const existingVariantIds = new Set(Object.keys(existingInstances).filter((id) => existingInstances[id].itemId === itemId));
-  let baseItemSlotSpent = (inventory.items[itemId] ?? 0) > 0 || existingVariantIds.size > 0;
-  let distinctCount = Object.values(inventory.items).filter((q) => q > 0).length + countDistinctBaseItems(inventory);
+  const accepted = await runTransaction(db, async (tx) => {
+    const [invSnap, charSnap] = await Promise.all([tx.get(invRef), tx.get(charRef)]);
+    const inventory = (invSnap.exists() ? (invSnap.data() as Inventory) : { items: {} }) as Inventory;
+    const bagSlots: number = charSnap.exists() ? ((charSnap.data().bagSlots as number) ?? 0) : 0;
 
-  const accepted: { instanceId: string; quantity: number }[] = [];
-  const droppedQuantity = { total: 0 };
-  for (const [instanceId, quantity] of requestedQuantities) {
-    const isNewVariant = !existingVariantIds.has(instanceId);
-    if (isNewVariant) {
-      if (existingVariantIds.size >= MAX_VARIANTS_PER_BASE_ITEM) {
-        droppedQuantity.total += quantity; // variant cap — this roll is dropped
-        continue;
-      }
-      if (!baseItemSlotSpent) {
-        if (distinctCount >= bagSlots) {
-          droppedQuantity.total += quantity; // bag full — this item id is dropped entirely
+    const existingInstances = inventory.equipmentInstances ?? {};
+    const existingVariantIds = new Set(Object.keys(existingInstances).filter((id) => existingInstances[id].itemId === itemId));
+    let baseItemSlotSpent = (inventory.items[itemId] ?? 0) > 0 || existingVariantIds.size > 0;
+    let distinctCount = Object.values(inventory.items).filter((q) => q > 0).length + countDistinctBaseItems(inventory);
+
+    const acceptedInner: { instanceId: string; quantity: number }[] = [];
+    droppedTotal = 0;
+    for (const [instanceId, quantity] of requestedQuantities) {
+      const isNewVariant = !existingVariantIds.has(instanceId);
+      if (isNewVariant) {
+        if (existingVariantIds.size >= MAX_VARIANTS_PER_BASE_ITEM) {
+          droppedTotal += quantity; // variant cap — this roll is dropped
           continue;
         }
-        distinctCount++;
-        baseItemSlotSpent = true;
+        if (!baseItemSlotSpent) {
+          if (distinctCount >= bagSlots) {
+            droppedTotal += quantity; // bag full — this item id is dropped entirely
+            continue;
+          }
+          distinctCount++;
+          baseItemSlotSpent = true;
+        }
+        existingVariantIds.add(instanceId);
       }
-      existingVariantIds.add(instanceId);
+      acceptedInner.push({ instanceId, quantity });
     }
-    accepted.push({ instanceId, quantity });
-  }
-  notifyDroppedForFullBag(droppedQuantity.total > 0 ? [{ itemId, quantity: droppedQuantity.total }] : []);
-  if (accepted.length === 0) return [];
 
-  const updates: Record<string, unknown> = {};
-  for (const { instanceId, quantity } of accepted) {
-    if (existingInstances[instanceId]) {
-      updates[`equipmentInstances.${instanceId}.quantity`] = increment(quantity);
-    } else {
-      // A brand-new bucket — no existing quantity to add to, so no
-      // increment() sentinel needed here, just the literal starting value.
-      // acquiredAt is stamped ONLY here (never touched again by later
-      // grants of more of this exact roll) — see Inventory.equipmentInstances'
-      // doc comment for why that's the right "when was this acquired" value.
-      updates[`equipmentInstances.${instanceId}`] = {
-        itemId,
-        rolls: rollsByInstance.get(instanceId) ?? {},
-        quantity,
-        acquiredAt: serverTimestamp(),
-      };
+    if (acceptedInner.length > 0) {
+      const updates: Record<string, unknown> = {};
+      for (const { instanceId, quantity } of acceptedInner) {
+        if (existingInstances[instanceId]) {
+          updates[`equipmentInstances.${instanceId}.quantity`] = increment(quantity);
+        } else {
+          // A brand-new bucket — no existing quantity to add to, so no
+          // increment() sentinel needed here, just the literal starting
+          // value. acquiredAt is stamped ONLY here (never touched again by
+          // later grants of more of this exact roll) — see
+          // Inventory.equipmentInstances' doc comment for why that's the
+          // right "when was this acquired" value.
+          updates[`equipmentInstances.${instanceId}`] = {
+            itemId,
+            rolls: rollsByInstance.get(instanceId) ?? {},
+            quantity,
+            acquiredAt: serverTimestamp(),
+          };
+        }
+      }
+      tx.update(invRef, updates);
     }
-  }
-  await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), updates);
+    return acceptedInner;
+  });
+
+  notifyDroppedForFullBag(droppedTotal > 0 ? [{ itemId, quantity: droppedTotal }] : []);
   return accepted;
 }
 
@@ -244,47 +278,54 @@ export async function grantChargedConsumables(
   }
   if (requestedQuantities.size === 0) return [];
 
-  const [invSnap, charSnap] = await Promise.all([
-    getDoc(doc(db, 'characters', uid, 'inventory', 'main')),
-    getDoc(doc(db, 'characters', uid)),
-  ]);
-  const inventory = (invSnap.exists() ? (invSnap.data() as Inventory) : { items: {} }) as Inventory;
-  const bagSlots: number = charSnap.exists() ? ((charSnap.data().bagSlots as number) ?? 0) : 0;
-
-  const existingBuckets = inventory.chargedConsumables ?? {};
-  const existingLevelsForItem = new Set(
-    Object.values(existingBuckets).filter((b) => b.itemId === itemId).map((b) => b.remainingCharges)
-  );
-  let baseItemSlotSpent = (inventory.items[itemId] ?? 0) > 0 || existingLevelsForItem.size > 0;
-  let distinctCount =
-    Object.values(inventory.items).filter((q) => q > 0).length + countDistinctBaseItems(inventory);
-
-  const accepted: { remainingCharges: number; quantity: number }[] = [];
+  const invRef = doc(db, 'characters', uid, 'inventory', 'main');
+  const charRef = doc(db, 'characters', uid);
+  // Same atomicity fix as grantInventoryItems above — see its doc comment.
   let droppedQuantity = 0;
-  for (const [remainingCharges, quantity] of requestedQuantities) {
-    if (!baseItemSlotSpent) {
-      if (distinctCount >= bagSlots) {
-        droppedQuantity += quantity; // bag full — this item id is dropped entirely
-        continue;
-      }
-      distinctCount++;
-      baseItemSlotSpent = true;
-    }
-    accepted.push({ remainingCharges, quantity });
-  }
-  notifyDroppedForFullBag(droppedQuantity > 0 ? [{ itemId, quantity: droppedQuantity }] : []);
-  if (accepted.length === 0) return [];
 
-  const updates: Record<string, unknown> = {};
-  for (const { remainingCharges, quantity } of accepted) {
-    const id = chargedInstanceId(itemId, remainingCharges);
-    if (existingBuckets[id]) {
-      updates[`chargedConsumables.${id}.quantity`] = increment(quantity);
-    } else {
-      updates[`chargedConsumables.${id}`] = { itemId, remainingCharges, quantity };
+  const accepted = await runTransaction(db, async (tx) => {
+    const [invSnap, charSnap] = await Promise.all([tx.get(invRef), tx.get(charRef)]);
+    const inventory = (invSnap.exists() ? (invSnap.data() as Inventory) : { items: {} }) as Inventory;
+    const bagSlots: number = charSnap.exists() ? ((charSnap.data().bagSlots as number) ?? 0) : 0;
+
+    const existingBuckets = inventory.chargedConsumables ?? {};
+    const existingLevelsForItem = new Set(
+      Object.values(existingBuckets).filter((b) => b.itemId === itemId).map((b) => b.remainingCharges)
+    );
+    let baseItemSlotSpent = (inventory.items[itemId] ?? 0) > 0 || existingLevelsForItem.size > 0;
+    let distinctCount =
+      Object.values(inventory.items).filter((q) => q > 0).length + countDistinctBaseItems(inventory);
+
+    const acceptedInner: { remainingCharges: number; quantity: number }[] = [];
+    droppedQuantity = 0;
+    for (const [remainingCharges, quantity] of requestedQuantities) {
+      if (!baseItemSlotSpent) {
+        if (distinctCount >= bagSlots) {
+          droppedQuantity += quantity; // bag full — this item id is dropped entirely
+          continue;
+        }
+        distinctCount++;
+        baseItemSlotSpent = true;
+      }
+      acceptedInner.push({ remainingCharges, quantity });
     }
-  }
-  await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), updates);
+
+    if (acceptedInner.length > 0) {
+      const updates: Record<string, unknown> = {};
+      for (const { remainingCharges, quantity } of acceptedInner) {
+        const id = chargedInstanceId(itemId, remainingCharges);
+        if (existingBuckets[id]) {
+          updates[`chargedConsumables.${id}.quantity`] = increment(quantity);
+        } else {
+          updates[`chargedConsumables.${id}`] = { itemId, remainingCharges, quantity };
+        }
+      }
+      tx.update(invRef, updates);
+    }
+    return acceptedInner;
+  });
+
+  notifyDroppedForFullBag(droppedQuantity > 0 ? [{ itemId, quantity: droppedQuantity }] : []);
   return accepted;
 }
 

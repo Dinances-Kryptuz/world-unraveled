@@ -978,3 +978,55 @@ export function disenchantYieldRange(item: ItemDef): { itemId: string; min: numb
   const itemId = ZONE_DISENCHANT_MATERIALS[zoneTier]?.[category] ?? 'strange_dust';
   return { itemId, ...CATEGORY_YIELD_RANGE[category] };
 }
+
+// Which category a disenchant "upgrades" into on a rare roll — one step up
+// the same scarcity ladder disenchantCategory already walks (dust ->
+// lesser essence -> greater essence -> shard), never skipping a tier.
+const CATEGORY_UPGRADE: Record<DisenchantCategory, DisenchantCategory | null> = {
+  dust: 'lesser_essence',
+  lesser_essence: 'greater_essence',
+  greater_essence: 'shard',
+  shard: null,
+};
+
+// A small rare chance that disenchanting yields the NEXT tier's material
+// instead of the item's normal one (e.g. a chance at Lesser Magic Essence
+// instead of Strange Dust) — without this, low-stat gear that only ever
+// qualifies for the "dust" category had NO drop source at all for the
+// lesser/greater essence materials several enchant scroll recipes need,
+// since disenchantCategory is a fixed function of the item, never random.
+// Rolled per unit of the already-resolved yield quantity (see
+// splitDisenchantUpgradeYield below), not per item disenchanted, so a
+// bigger batch gets proportionally more rare chances rather than one
+// all-or-nothing roll for the whole session.
+const DISENCHANT_UPGRADE_CHANCE = 0.08;
+
+// Splits an already-resolved disenchant yield total (gameData/
+// craftingEngine.ts's resolveDisenchantOffline/resolveDisenchantQueueOffline
+// — neither one changed by this; they still only ever compute ONE material's
+// quantity) into its normal portion and a small upgraded-material portion,
+// for whichever writer actually grants the result to inventory
+// (firebase/enchanting.ts's applyDisenchantResult/
+// applyDisenchantQueueResult). upgradedItemId is null — and upgradedQuantity
+// always 0 — when this item's category has no tier above it (shard) or
+// that zone's material family has no item for the next category (zones 1-4
+// have no shard material at all; see ZONE_DISENCHANT_MATERIALS).
+export function splitDisenchantUpgradeYield(
+  item: ItemDef,
+  totalYieldQuantity: number
+): { upgradedItemId: string | null; upgradedQuantity: number; baseQuantity: number } {
+  const zoneTier = ZONE_TIER[originZoneId(item)] ?? 1;
+  const category = disenchantCategory(item, zoneTier);
+  const nextCategory = CATEGORY_UPGRADE[category];
+  const upgradedItemId = nextCategory ? ZONE_DISENCHANT_MATERIALS[zoneTier]?.[nextCategory] ?? null : null;
+  const wholeTotal = Math.round(totalYieldQuantity);
+  if (!upgradedItemId || wholeTotal <= 0) {
+    return { upgradedItemId: null, upgradedQuantity: 0, baseQuantity: wholeTotal };
+  }
+
+  let upgradedQuantity = 0;
+  for (let i = 0; i < wholeTotal; i++) {
+    if (Math.random() < DISENCHANT_UPGRADE_CHANCE) upgradedQuantity++;
+  }
+  return { upgradedItemId, upgradedQuantity, baseQuantity: wholeTotal - upgradedQuantity };
+}

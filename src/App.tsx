@@ -257,7 +257,13 @@ function AppContent() {
       {section === 'characters' && <CharacterSelectScreen />}
       {section === 'collection' && <CollectionScreen />}
       {section === 'shop' && <VendorScreen zoneId={character.currentZoneId} />}
-      {section === 'profession' && <ProfessionScreen professionId={selectedProfessionId} zoneId={character.currentZoneId} />}
+      {section === 'profession' && (
+        <ProfessionScreen
+          professionId={selectedProfessionId}
+          zoneId={character.currentZoneId}
+          onActivityStarted={() => setActiveDungeonId(null)}
+        />
+      )}
       {section === 'journal' && <JournalScreen />}
       {section === 'capital' && <CapitalScreen onRequestTravel={handleRequestTravel} />}
       {section === 'quests' && <QuestLog />}

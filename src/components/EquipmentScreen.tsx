@@ -75,12 +75,19 @@ export function EquipmentScreen() {
   }
 
   const equipmentBonuses = getEquipmentStatBonuses(character.equipment, character.enchantments, character.enchantmentCharges);
+  // statAtLevel's class growth rates are deliberately fractional (e.g.
+  // warrior STR +1.2/level), and combat math elsewhere (combatEngine/
+  // engine.ts, gameData/combatFormulas.ts) depends on that real precision
+  // — rounding inside statAtLevel itself would quietly shift damage/HP
+  // balance. This panel is display-only, so it rounds just its OWN total
+  // (base + equipment) at the end, which is what was showing raw float
+  // noise like 14.399999999999999 instead of 14.4.
   const totalStats: Record<BaseStat, number> = {
-    STR: statAtLevel(character.class, 'STR', character.level) + (equipmentBonuses.STR ?? 0),
-    STA: statAtLevel(character.class, 'STA', character.level) + (equipmentBonuses.STA ?? 0),
-    INT: statAtLevel(character.class, 'INT', character.level) + (equipmentBonuses.INT ?? 0),
-    SPI: statAtLevel(character.class, 'SPI', character.level) + (equipmentBonuses.SPI ?? 0),
-    AGI: statAtLevel(character.class, 'AGI', character.level) + (equipmentBonuses.AGI ?? 0),
+    STR: Math.round(statAtLevel(character.class, 'STR', character.level) + (equipmentBonuses.STR ?? 0)),
+    STA: Math.round(statAtLevel(character.class, 'STA', character.level) + (equipmentBonuses.STA ?? 0)),
+    INT: Math.round(statAtLevel(character.class, 'INT', character.level) + (equipmentBonuses.INT ?? 0)),
+    SPI: Math.round(statAtLevel(character.class, 'SPI', character.level) + (equipmentBonuses.SPI ?? 0)),
+    AGI: Math.round(statAtLevel(character.class, 'AGI', character.level) + (equipmentBonuses.AGI ?? 0)),
   };
 
   return (
