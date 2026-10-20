@@ -168,21 +168,44 @@ const ENCHANTING_TABS: { id: EnchantingTab; label: string }[] = [
 // zone (gather nodes/fishing holes are genuinely zone-specific); Crafting's
 // recipe list is NOT (a known recipe has no zoneId in the data model at all
 // and is craftable anywhere — only the trainer below is zone-scoped).
-export function ProfessionScreen({ professionId, zoneId }: { professionId: ProfessionId; zoneId: string }) {
+export function ProfessionScreen({
+  professionId,
+  zoneId,
+  onActivityStarted,
+}: {
+  professionId: ProfessionId;
+  zoneId: string;
+  // Starting a gather/fish/craft/disenchant activity from here writes a
+  // brand-new currentActivity to Firestore — that always succeeds and
+  // takes over immediately EXCEPT when a dungeon run is active, since
+  // App.tsx's activityNode selection checks activeDungeonId (local React
+  // state, never part of currentActivity) before currentActivity.type, so
+  // the Dungeon pane kept monopolizing the activity slot regardless of
+  // what the player just started here — the player had to leave the
+  // dungeon first before the new activity's own screen would ever show.
+  // This callback (App.tsx's handleActivityStarted) clears that local
+  // state too, so any action started here actually takes over right away.
+  onActivityStarted?: () => void;
+}) {
   const { user } = useAuth();
   const { character, refetch } = useCharacter();
   const zone = ZONES[zoneId];
   const label = PROFESSION_LABELS[professionId];
   const category = PROFESSION_CATEGORY[professionId];
 
-  // Only Enchanting's panel needs live inventory (to list scrolls to use and
-  // equipment to disenchant) — every other profession tab skips the
-  // subscription entirely.
+  // Every profession's recipe list needs live inventory now (the have/need
+  // material display and the Craft button's material-sufficiency gate —
+  // see renderRecipeList below), not just Enchanting's own panel (listing
+  // scrolls to use and equipment to disenchant). This used to be gated to
+  // `professionId === 'enchanting'` only, which left `inventory` stuck at
+  // null for every other profession — meaning every recipe's have/need
+  // line showed 0 and its Craft button was wrongly disabled as "Need
+  // materials" regardless of what was actually owned.
   const [inventory, setInventory] = useState<Inventory | null>(null);
   useEffect(() => {
-    if (!user || professionId !== 'enchanting') return;
+    if (!user) return;
     return subscribeToInventory(user.uid, setInventory);
-  }, [user, professionId]);
+  }, [user]);
 
   // The quantity slider's chosen value per disenchantable item id — defaults
   // to the full owned stack (see renderEnchantingPanel) the first time an
@@ -226,6 +249,7 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
 
   async function handleGather(nodeId: string) {
     if (!user) return;
+    onActivityStarted?.();
     await startActivity(user.uid, {
       type: 'gathering',
       targetId: nodeId,
@@ -237,6 +261,7 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
 
   async function handleFish(holeId: string) {
     if (!user) return;
+    onActivityStarted?.();
     await startActivity(user.uid, {
       type: 'fishing',
       targetId: holeId,
@@ -248,6 +273,7 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
 
   async function handleCraft(recipeId: string) {
     if (!user) return;
+    onActivityStarted?.();
     await startActivity(user.uid, {
       type: 'crafting',
       targetId: recipeId,
@@ -271,6 +297,7 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
 
   async function handleStartDisenchanting(itemId: string, quantity: number, instanceId?: string) {
     if (!user) return;
+    onActivityStarted?.();
     await startActivity(user.uid, {
       type: 'disenchanting',
       targetId: itemId,
@@ -305,6 +332,7 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
         equippedShirtItemId: character.currentActivity.equippedShirtItemId,
       });
     } else {
+      onActivityStarted?.();
       const [first, ...rest] = entries;
       await startActivity(user.uid, {
         type: 'disenchanting',

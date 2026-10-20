@@ -2,7 +2,7 @@ import { doc, updateDoc, increment } from 'firebase/firestore';
 import { db } from './config';
 import { getInventory, grantInventoryItems, isLocked } from './inventory';
 import { ITEMS } from '../gameData/items';
-import { ENCHANTS, ENCHANT_SCROLL_CHARGES } from '../gameData/enchanting';
+import { ENCHANTS, ENCHANT_SCROLL_CHARGES, splitDisenchantUpgradeYield } from '../gameData/enchanting';
 import type { EquipmentSlot } from '../gameData/types';
 import type { Character } from '../types/character';
 
@@ -140,7 +140,20 @@ export async function applyDisenchantResult(
     : { [`items.${itemId}`]: increment(-result.itemsDisenchanted) };
   await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), consumeUpdate);
   if (result.yieldQuantity > 0) {
-    await grantInventoryItems(uid, [{ itemId: result.yieldItemId, quantity: result.yieldQuantity }]);
+    const item = ITEMS[itemId];
+    // Small rare chance of the next-tier material instead of the normal
+    // one (e.g. Lesser Magic Essence instead of Strange Dust) — see
+    // splitDisenchantUpgradeYield's doc comment. Falls back to granting
+    // the whole yield as the normal material if this item has no tier
+    // above it to roll into.
+    const split = item
+      ? splitDisenchantUpgradeYield(item, result.yieldQuantity)
+      : { upgradedItemId: null, upgradedQuantity: 0, baseQuantity: result.yieldQuantity };
+    const grants = [{ itemId: result.yieldItemId, quantity: split.baseQuantity }];
+    if (split.upgradedItemId && split.upgradedQuantity > 0) {
+      grants.push({ itemId: split.upgradedItemId, quantity: split.upgradedQuantity });
+    }
+    await grantInventoryItems(uid, grants.filter((g) => g.quantity > 0));
   }
 }
 
@@ -181,13 +194,27 @@ export async function applyDisenchantQueueResult(
   await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), consumeUpdate);
 
   // Combine same-material yields (several queued items commonly disenchant
-  // into the same dust/essence) into one grantInventoryItems call.
+  // into the same dust/essence) into one grantInventoryItems call — now
+  // also splitting off each entry's small rare upgraded-material chance
+  // (see splitDisenchantUpgradeYield's doc comment) before combining, so
+  // e.g. two different items both rolling a bit of Lesser Magic Essence
+  // still land in the same grant line.
   const yieldsByItemId = new Map<string, number>();
   for (const entry of perItem) {
     if (entry.yieldQuantity <= 0) continue;
-    yieldsByItemId.set(entry.yieldItemId, (yieldsByItemId.get(entry.yieldItemId) ?? 0) + Math.floor(entry.yieldQuantity));
+    const item = ITEMS[entry.itemId];
+    const split = item
+      ? splitDisenchantUpgradeYield(item, entry.yieldQuantity)
+      : { upgradedItemId: null, upgradedQuantity: 0, baseQuantity: Math.floor(entry.yieldQuantity) };
+    yieldsByItemId.set(entry.yieldItemId, (yieldsByItemId.get(entry.yieldItemId) ?? 0) + split.baseQuantity);
+    if (split.upgradedItemId && split.upgradedQuantity > 0) {
+      yieldsByItemId.set(split.upgradedItemId, (yieldsByItemId.get(split.upgradedItemId) ?? 0) + split.upgradedQuantity);
+    }
   }
   if (yieldsByItemId.size > 0) {
-    await grantInventoryItems(uid, Array.from(yieldsByItemId, ([itemId, quantity]) => ({ itemId, quantity })));
+    await grantInventoryItems(
+      uid,
+      Array.from(yieldsByItemId, ([itemId, quantity]) => ({ itemId, quantity })).filter((g) => g.quantity > 0)
+    );
   }
 }

@@ -6,6 +6,7 @@ import { getAccount, listRosterSummaries, addAltToParty, removeAltFromParty } fr
 import { subscribeToInventory } from '../firebase/inventory';
 import { getExpedition } from '../firebase/expeditions';
 import { COMPANIONS, checkRecruitCompanion, MAX_ACTIVE_COMPANIONS, REQUIRED_DUNGEON_PARTY_SIZE } from '../gameData/companions';
+import { PROFESSION_LABELS } from '../gameData/professionTiers';
 import type { RosterSlotSummary } from '../gameData/characterSlots';
 import { CLASS_LABELS, SPEC_LABELS, type ClassId, type SpecId } from '../gameData/classStats';
 import { ZONES } from '../gameData/zones';
@@ -239,18 +240,35 @@ export function CompanionScreen() {
             // enchant args, same as it already defaults to for the player
             // before any are applied.
             const companionEquipmentBonuses = getEquipmentStatBonuses(state.equipment);
+            // Rounded for the same reason as EquipmentScreen.tsx's
+            // totalStats — statAtLevel's fractional growth rates are real
+            // (combat math elsewhere depends on that precision), this
+            // panel just rounds its own display total.
             const companionStats: Record<BaseStat, number> = {
-              STR: statAtLevel(def.class, 'STR', character.level) + (companionEquipmentBonuses.STR ?? 0),
-              STA: statAtLevel(def.class, 'STA', character.level) + (companionEquipmentBonuses.STA ?? 0),
-              INT: statAtLevel(def.class, 'INT', character.level) + (companionEquipmentBonuses.INT ?? 0),
-              SPI: statAtLevel(def.class, 'SPI', character.level) + (companionEquipmentBonuses.SPI ?? 0),
-              AGI: statAtLevel(def.class, 'AGI', character.level) + (companionEquipmentBonuses.AGI ?? 0),
+              STR: Math.round(statAtLevel(def.class, 'STR', character.level) + (companionEquipmentBonuses.STR ?? 0)),
+              STA: Math.round(statAtLevel(def.class, 'STA', character.level) + (companionEquipmentBonuses.STA ?? 0)),
+              INT: Math.round(statAtLevel(def.class, 'INT', character.level) + (companionEquipmentBonuses.INT ?? 0)),
+              SPI: Math.round(statAtLevel(def.class, 'SPI', character.level) + (companionEquipmentBonuses.SPI ?? 0)),
+              AGI: Math.round(statAtLevel(def.class, 'AGI', character.level) + (companionEquipmentBonuses.AGI ?? 0)),
             };
             return (
               <div key={companionId} className="companion-card">
                 <h4>
                   <ClassColoredName name={def.name} cls={def.class} /> — {CLASS_LABELS[def.class]} ({SPEC_LABELS[def.specId]}), level {character.level}
                 </h4>
+                {(state.gatheringProfession || state.craftingProfession) && (
+                  <p>
+                    <small>
+                      Specialty:{' '}
+                      {[
+                        state.gatheringProfession ? PROFESSION_LABELS[state.gatheringProfession] : null,
+                        state.craftingProfession ? PROFESSION_LABELS[state.craftingProfession] : null,
+                      ]
+                        .filter(Boolean)
+                        .join(', ')}
+                    </small>
+                  </p>
+                )}
                 {onExpedition ? (
                   <button disabled>On expedition — back in {formatReturnTime(expeditionLock!.completesAt.getTime() - now)}</button>
                 ) : isActive ? (
