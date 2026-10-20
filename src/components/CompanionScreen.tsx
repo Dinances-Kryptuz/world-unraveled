@@ -11,8 +11,12 @@ import { CLASS_LABELS, SPEC_LABELS, type ClassId, type SpecId } from '../gameDat
 import { ZONES } from '../gameData/zones';
 import { EquipmentPaperDoll } from './EquipmentPaperDoll';
 import { ClassColoredName } from './ClassColoredName';
+import { BASE_STATS, BASE_STAT_LABEL } from './EquipmentScreen';
+import { statAtLevel } from '../gameData/classStats';
+import { getEquipmentStatBonuses, baseStatTooltip } from '../gameData/equipmentStats';
 import type { Inventory } from '../types/character';
 import type { EquipmentSlot } from '../gameData/types';
+import type { BaseStat } from '../gameData/classStats';
 
 function formatReturnTime(ms: number): string {
   if (ms <= 0) return 'any moment now';
@@ -229,6 +233,19 @@ export function CompanionScreen() {
             const isActive = character.activeCompanionIds.includes(companionId);
             const partyFull = groupHeadcount >= MAX_ACTIVE_COMPANIONS;
             const onExpedition = !!expeditionLock?.companionIds.includes(companionId);
+            // Same stat-sheet math as EquipmentScreen.tsx's player-facing
+            // panel — a companion has no enchantments of its own (only
+            // `equipment`), so getEquipmentStatBonuses is called with no
+            // enchant args, same as it already defaults to for the player
+            // before any are applied.
+            const companionEquipmentBonuses = getEquipmentStatBonuses(state.equipment);
+            const companionStats: Record<BaseStat, number> = {
+              STR: statAtLevel(def.class, 'STR', character.level) + (companionEquipmentBonuses.STR ?? 0),
+              STA: statAtLevel(def.class, 'STA', character.level) + (companionEquipmentBonuses.STA ?? 0),
+              INT: statAtLevel(def.class, 'INT', character.level) + (companionEquipmentBonuses.INT ?? 0),
+              SPI: statAtLevel(def.class, 'SPI', character.level) + (companionEquipmentBonuses.SPI ?? 0),
+              AGI: statAtLevel(def.class, 'AGI', character.level) + (companionEquipmentBonuses.AGI ?? 0),
+            };
             return (
               <div key={companionId} className="companion-card">
                 <h4>
@@ -250,6 +267,21 @@ export function CompanionScreen() {
                   onEquip={(slot, itemId, instanceId) => handleEquip(companionId, slot, itemId, instanceId)}
                   onUnequip={(slot) => handleUnequip(companionId, slot)}
                   showTool={false}
+                  centerPanel={
+                    <div className="equipment-stats-panel">
+                      <h3>Stats</h3>
+                      {BASE_STATS.map((stat) => (
+                        <div
+                          key={stat}
+                          className="equipment-stat-row"
+                          title={baseStatTooltip(stat, def.class, def.specId)}
+                        >
+                          <span>{BASE_STAT_LABEL[stat]}</span>
+                          <span className="equipment-stat-value">{companionStats[stat]}</span>
+                        </div>
+                      ))}
+                    </div>
+                  }
                 />
               </div>
             );
