@@ -767,7 +767,7 @@ export function ProfessionScreen({ professionId, zoneId }: { professionId: Profe
                       handleAddToDisenchantQueue(
                         toQueue.map((e) => ({
                           itemId: e.itemId,
-                          instanceId: e.instanceId,
+                          ...(e.instanceId !== undefined ? { instanceId: e.instanceId } : {}),
                           quantity: Math.min(disenchantQty[e.instanceId ?? e.itemId] ?? e.quantity, e.quantity),
                         }))
                       );

@@ -149,7 +149,7 @@ export const ENCHANTS: Record<string, EnchantDef> = {
   },
   enchant_minor_striking: {
     id: 'enchant_minor_striking', name: 'Enchant Weapon: Minor Striking',
-    description: 'Use on an equipped weapon item to apply the Minor Striking enchant.', slot: 'weapon', category: 'offensive',
+    description: 'Use on an equipped weapon item to apply the Minor Striking enchant: +1 damage on every hit.', slot: 'weapon', category: 'offensive',
     statBonuses: {}, scrollItemId: 'scroll_minor_striking',
     flatDamageBonus: 1,
   },
