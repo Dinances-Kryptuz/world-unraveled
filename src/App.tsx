@@ -159,6 +159,17 @@ function AppContent() {
     // dungeon run is local React state, not persisted to currentActivity) —
     // startTravel's own currentActivity check covers everything else.
     if (activeDungeonId) return;
+    // Ashenfall has no standalone nav button anymore — clicking the zone
+    // (here, or CapitalScreen's own "Travel to Ashenfall" fallback button)
+    // is how you bring up its district menu. Heading anywhere else while
+    // that menu is open switches back to the normal zone view instead of
+    // leaving CapitalScreen showing a stale "travel to Ashenfall" prompt
+    // for a zone you're not even going to.
+    if (zoneId === 'ashenfall') {
+      setActiveSection('capital');
+    } else if (activeSection === 'capital') {
+      setActiveSection('adventure');
+    }
     void startTravel(uid, confirmedCharacter, zoneId, guildBonuses.mountSpeedPct).then((result) => {
       if (result.success) void refetch();
     });

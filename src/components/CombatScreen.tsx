@@ -107,6 +107,16 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
   // back to 0 — chargesRemaining/stockRemaining/cooldownRemaining keep
   // draining continuously across autosave cycles within this one fight.
   const consumableStateRef = useRef<ConsumableAutomationRuntimeState>(emptyConsumableAutomationState());
+  // Guards against building automation state before the inventory
+  // subscription below has delivered its first snapshot — without this,
+  // a fresh CombatScreen mount built consumableStateRef from an empty
+  // `{ items: {} }` stand-in (inventory starts as null) and never
+  // rebuilt it once the real inventory arrived, so auto-potions/auto-eat
+  // silently never had any charges/stock to work with for the whole
+  // fight. Reset alongside consumableStateRef whenever the fight resets
+  // (monsterId changes) so the next fight gets a fresh build once
+  // inventory is actually available.
+  const consumableStateReadyRef = useRef(false);
   const retreatedRef = useRef(false);
 
   const characterRef = useRef<Character | null>(character);
@@ -182,7 +192,8 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
     pendingQuestSignalsRef.current = { healingDone: 0, abilityUseCounts: {} };
     pendingBuffTriggersRef.current = { offensive_action: 0, damage_taken: 0, stat_food_use: 0 };
     pendingEnchantTriggersRef.current = { offensive_action: 0, damage_taken: 0 };
-    consumableStateRef.current = buildConsumableAutomationState(character, inventory ?? { items: {} }, new Date());
+    consumableStateRef.current = emptyConsumableAutomationState();
+    consumableStateReadyRef.current = false;
     combatStateRef.current = createEncounterState(buildEncounterInput(character));
     // Refs don't trigger a re-render on their own — without this, the
     // screen would render nothing for up to a second, until the first
@@ -190,6 +201,19 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
     setTick((t) => t + 1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [monsterId]);
+
+  // Builds consumableStateRef as soon as real inventory data is available
+  // (immediately, if the subscription already delivered a snapshot before
+  // this fight started; otherwise the moment it does) — see
+  // consumableStateReadyRef's doc comment above. Only ever builds once per
+  // fight, so charges/stock already consumed mid-fight are never reset by
+  // a later inventory update (e.g. looting a kill).
+  useEffect(() => {
+    if (!inventory || consumableStateReadyRef.current) return;
+    consumableStateRef.current = buildConsumableAutomationState(characterRef.current ?? character, inventory, new Date());
+    consumableStateReadyRef.current = true;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [monsterId, inventory]);
 
   useEffect(() => {
     const interval = setInterval(() => {

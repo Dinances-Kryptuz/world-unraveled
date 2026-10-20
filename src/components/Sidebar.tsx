@@ -31,10 +31,12 @@ interface SidebarItem {
 // top-level entries — they're all now districts inside Ashenfall
 // (CapitalScreen's Wayfarer's Tavern, Training Hall, and Artisan Quarter
 // respectively), so keeping a duplicate standalone tab for each would just
-// be two paths to the same screen.
+// be two paths to the same screen. 'capital' itself also has no nav
+// button anymore — traveling into the Ashenfall zone (App.tsx's
+// handleRequestTravel) switches straight to it, since clicking the zone
+// IS how you ask to see its menu now.
 const TOP_ITEMS: SidebarItem[] = [
   { id: 'adventure', label: 'Adventure' },
-  { id: 'capital', label: 'Ashenfall' },
   { id: 'shop', label: 'Shopkeeper' },
   { id: 'equipment', label: 'Equipment' },
   { id: 'inventory', label: 'Inventory' },

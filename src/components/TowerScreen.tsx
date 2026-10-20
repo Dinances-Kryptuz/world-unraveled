@@ -107,6 +107,9 @@ export function TowerScreen() {
   });
   const consumableStateRef = useRef<ConsumableAutomationRuntimeState>(emptyConsumableAutomationState());
   const generationRef = useRef(0);
+  // See CombatScreen.tsx's matching comment — falls back to building with
+  // an empty inventory only on the (rare) chance the subscription below
+  // hasn't delivered a snapshot yet by the time Attempt is clicked.
   const characterRef = useRef<Character | null>(character);
   const userRef = useRef<User | null>(user);
 
