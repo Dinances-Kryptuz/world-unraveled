@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useCharacter } from '../hooks/useCharacter';
 import { createCharacter } from '../firebase/character';
+import { signOut } from '../firebase/auth';
 import type { ClassId, SpecId } from '../gameData/classStats';
 import { CLASS_SHOWCASE, CLASS_ICONS, SPEC_ICONS, SPEC_INFO, SPEC_THEME } from '../gameData/classInfo';
 import { PreGameShell } from './PreGameShell';
@@ -175,6 +176,13 @@ export function CharacterCreationScreen() {
         <CornerOrnament position="top-right" />
         <CornerOrnament position="bottom-left" />
         <CornerOrnament position="bottom-right" />
+
+        {/* There's no other way back off this screen once signed in — if
+            the wrong Google account got used (e.g. a second email clicked
+            by accident), this is the only exit before a character exists. */}
+        <button type="button" className="cc-signout-link" onClick={() => signOut()} disabled={creating}>
+          Not you? Sign out
+        </button>
 
         <h1>Create Your Adventurer</h1>
         <div className="cc-title-divider" aria-hidden="true" />

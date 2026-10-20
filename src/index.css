@@ -984,6 +984,30 @@ button.item-slot:active:not(:disabled) {
   pointer-events: none;
 }
 
+.cc-signout-link {
+  position: absolute;
+  top: 16px;
+  right: 56px;
+  background: none;
+  border: none;
+  padding: 4px 6px;
+  font-size: 0.72rem;
+  color: var(--cc-parchment);
+  opacity: 0.65;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.cc-signout-link:hover:not(:disabled) {
+  opacity: 1;
+  color: var(--cc-ivory);
+}
+
+.cc-signout-link:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
 .cc-corner-top-left { top: 12px; left: 12px; }
 .cc-corner-top-right { top: 12px; right: 12px; transform: scaleX(-1); }
 .cc-corner-bottom-left { bottom: 12px; left: 12px; transform: scaleY(-1); }
@@ -2079,6 +2103,12 @@ button.storybook-spec-button:hover:not(:disabled) {
        way down. */
     padding: 24px 12px 88px;
     overflow-x: hidden;
+  }
+
+  .cc-signout-link {
+    top: 42px;
+    right: 10px;
+    font-size: 0.68rem;
   }
 
   .character-creation {

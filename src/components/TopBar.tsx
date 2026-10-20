@@ -1,8 +1,8 @@
 import { signOut } from '../firebase/auth';
 import { CLASS_LABELS, SPEC_LABELS } from '../gameData/classStats';
 import { getTitle } from '../gameData/titles';
-import { ZONES, isZoneUnlocked } from '../gameData/zones';
-import { formatTravelMinutes } from '../gameData/travel';
+import { ZONES, isZoneUnlocked, orderedZonesForDisplay } from '../gameData/zones';
+import { formatTravelMinutes, travelSeconds } from '../gameData/travel';
 import { bestMountSpeedBonusPct } from '../gameData/mounts';
 import { ActiveBuffsBar } from './ActiveBuffsBar';
 import { ClassColoredName } from './ClassColoredName';
@@ -70,16 +70,25 @@ export function TopBar({
       </div>
       <ActiveBuffsBar character={character} />
       <div className="zone-tabs top-bar-zone-tabs">
-        {Object.values(ZONES).map((z) => {
+        {/* Ashenfall first — it's the capital, the hub everything else
+            routes through, so it leads the list rather than trailing at
+            the end (where ZONES itself deliberately keeps it, for
+            zoneForLevel's own tie-break — see zones.ts). Display order
+            only; ZONES' own iteration order is untouched. */}
+        {orderedZonesForDisplay(ZONES).map((z) => {
           const unlocked = isZoneUnlocked(z, character.level);
           const isCurrent = z.id === character.currentZoneId;
-          const minutes = isCurrent ? '0' : formatTravelMinutes(speedBonusPct);
+          const seconds = isCurrent ? 0 : travelSeconds(speedBonusPct, character.currentZoneId, z.id);
+          const isInstant = !isCurrent && seconds === 0;
+          const minutes = isCurrent ? '0' : formatTravelMinutes(speedBonusPct, character.currentZoneId, z.id);
           const clickable = unlocked && !isCurrent && !traveling;
           let title: string | undefined;
           if (!unlocked) {
             title = `Unlocks at level ${z.unlockRequirement.type === 'characterLevel' ? z.unlockRequirement.level : '?'}`;
           } else if (traveling) {
             title = 'Already in the air';
+          } else if (isInstant) {
+            title = 'Instant travel';
           } else if (!isCurrent) {
             title = `${minutes} minute flight`;
           }
@@ -94,7 +103,8 @@ export function TopBar({
             >
               {z.name}
               {!unlocked && z.unlockRequirement.type === 'characterLevel' ? ` (Lv ${z.unlockRequirement.level})` : ''}
-              {unlocked && !isCurrent ? ` (${minutes}m)` : ''}
+              {unlocked && isInstant ? ' (Instant)' : ''}
+              {unlocked && !isCurrent && !isInstant ? ` (${minutes}m)` : ''}
             </button>
           );
         })}
