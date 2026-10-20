@@ -138,7 +138,14 @@ export function VendorScreen({
     setBuying(itemId);
     applyOptimisticUpdate((c) => ({ ...c, [currency]: c[currency] - price * quantity }));
     try {
-      await buyItem(user.uid, itemId, quantity, price, currency);
+      const result = await buyItem(user.uid, itemId, quantity, price, currency);
+      if (!result.success) {
+        // Refused (not enough currency) or refunded (bag was full) —
+        // either way nothing was actually spent, so undo the optimistic
+        // deduction above rather than leaving the displayed balance wrong
+        // until the next refetch.
+        applyOptimisticUpdate((c) => ({ ...c, [currency]: c[currency] + price * quantity }));
+      }
       await refetch();
     } finally {
       setBuying(null);
