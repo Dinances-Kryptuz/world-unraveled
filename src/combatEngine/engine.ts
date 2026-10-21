@@ -754,6 +754,16 @@ function applyDeadlyPoisonStack(target: Combatant, source: Combatant): void {
 const CRUSADER_PROC_DAMAGE_DEALT_PCT = 10;
 const CRUSADER_PROC_HEAL_PCT_OF_MAX_HP = 5;
 
+// Icy Chill — 10% chance on a landed hit to slow the DEFENDER's own action
+// speed by 10% for a short window, same ActiveBuff/actionSpeedPct
+// mechanism (and same upsertBuff "refresh, don't stack" posture) as the
+// rogue companion's Crippling Poison debuff just applied to a weapon-proc
+// target instead. Previously defined/craftable/appliable but mechanically
+// inert — see EnchantProcKind's doc comment — this is that gap closed,
+// ahead of a future ice-themed expansion rather than tied to one.
+const ICY_CHILL_SLOW_PCT = 10;
+const ICY_CHILL_DEBUFF_DURATION_SECONDS = 15;
+
 // One roll for a landed hit's damage: attacker's normalized hit, spec/talent
 // coefficient, active buffs, the defender's armor, and a level-gap accuracy
 // check when the attacker is the player (mirrors the old aggregate model's
@@ -877,17 +887,15 @@ function computeEffectDamage(
   // like every other heal in this file does.
   const healOnTrigger = defensive?.healOnTriggerPct ? Math.round(defender.maxHp * (defensive.healOnTriggerPct / 100)) : 0;
 
-  // Enchanting overhaul's weapon procs — Fiery Weapon/Lifestealing/Crusader
-  // (and their Ember-tier upgrades), player-attacker only (CasterProfile.
-  // weaponProc is always undefined for monsters/companions). Rolled once
-  // per landed hit, AFTER every mitigation step above, off the hit's final
-  // amount ("approximately 15% of the character's normal attack damage,"
-  // per the design brief). The bonus fire damage this adds to `amount`
-  // itself never re-triggers this same roll — there is no second
-  // computeEffectDamage call for it — satisfying "procs cannot trigger
-  // additional enchant procs." Icy Chill is intentionally a no-op here (see
-  // EnchantProcKind's doc comment — no attack-speed-debuff concept exists
-  // on the defender side of this engine).
+  // Enchanting overhaul's weapon procs — Fiery Weapon/Lifestealing/Crusader/
+  // Icy Chill (and their Ember-tier upgrades), player-attacker only
+  // (CasterProfile.weaponProc is always undefined for monsters/companions).
+  // Rolled once per landed hit, AFTER every mitigation step above, off the
+  // hit's final amount ("approximately 15% of the character's normal
+  // attack damage," per the design brief). The bonus fire damage this adds
+  // to `amount` itself never re-triggers this same roll — there is no
+  // second computeEffectDamage call for it — satisfying "procs cannot
+  // trigger additional enchant procs."
   let attackerHealOnTrigger = 0;
   let procTriggered: EnchantProcKind | undefined;
   const proc = attacker.profile.weaponProc;
@@ -897,6 +905,14 @@ function computeEffectDamage(
       amount += Math.round(amount * (proc.power / 100));
     } else if (proc.kind === 'lifestealing') {
       attackerHealOnTrigger = Math.round(Math.max(0, Math.min(amount * (proc.power / 100), attacker.maxHp - attacker.hp)));
+    } else if (proc.kind === 'icy_chill') {
+      upsertBuff(defender, {
+        abilityId: 'enchant_proc_icy_chill',
+        remainingSeconds: ICY_CHILL_DEBUFF_DURATION_SECONDS,
+        damageDealtPct: 0,
+        damageTakenPct: 0,
+        actionSpeedPct: -ICY_CHILL_SLOW_PCT,
+      });
     } else if (proc.kind === 'crusader') {
       upsertBuff(attacker, {
         abilityId: 'enchant_proc_crusader',
@@ -1368,6 +1384,8 @@ export function useAbility(
             events.push({ message: `${source.name}'s weapon enchant drains life from ${target.name}.`, kind: 'status' });
           } else if (procTriggered === 'crusader') {
             events.push({ message: `${source.name} is empowered by a Crusader enchant.`, kind: 'status' });
+          } else if (procTriggered === 'icy_chill') {
+            events.push({ message: `${target.name} is chilled, slowing their actions.`, kind: 'status' });
           } else if (procTriggered === 'chain_lightning') {
             // Lightningfury — chains bonus damage (power% of this hit) to up
             // to 2 OTHER alive enemies on the same side as `target`, and
