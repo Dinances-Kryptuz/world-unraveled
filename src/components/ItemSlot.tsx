@@ -3,7 +3,7 @@ import { getItemIcon } from '../gameData/itemIcons';
 import { getItemDisplayName } from '../gameData/equipmentSuffixes';
 import { compareEquipmentStats } from '../gameData/equipmentComparison';
 import { inferItemRarity, RARITY_COLORS, RARITY_LABELS } from '../gameData/itemRarity';
-import { ARMOR_STAT_RANGES } from '../gameData/equipmentRolls';
+import { ARMOR_STAT_VALUES } from '../gameData/equipmentRolls';
 import { ENCHANTS, describeEnchantEffect } from '../gameData/enchanting';
 import type { BaseStat } from '../gameData/classStats';
 import type { ItemDef } from '../gameData/types';
@@ -45,14 +45,15 @@ function buildTooltip(
   const stats = statOverride ?? item.statBonuses;
   // Previewing a base item (no statOverride — e.g. a recipe's result in
   // ProfessionScreen) that actually rolls 2 random stats at craft time
-  // (equipmentRolls.ts's ARMOR_STAT_RANGES) — item.statBonuses here is
+  // (equipmentRolls.ts's ARMOR_STAT_VALUES) — item.statBonuses here is
   // stale pre-Mastery-overhaul data never actually applied at craft time,
-  // so showing its specific numbers as if guaranteed is misleading. Show
-  // "Random Stat" placeholders instead of a real preview in that case.
-  const isRandomRollPreview = !statOverride && !!ARMOR_STAT_RANGES[item.id];
+  // so showing its specific numbers as if guaranteed is misleading. The
+  // Stat Budget Redesign fixed the magnitude, though (only which 2 stats
+  // land is still random), so the preview shows that real, known number.
+  const randomRollValue = !statOverride ? ARMOR_STAT_VALUES[item.id] : undefined;
   const comparison = compareStats !== undefined ? compareEquipmentStats(stats, compareStats) : null;
-  const statLine = isRandomRollPreview
-    ? 'Random Stat 1, Random Stat 2'
+  const statLine = randomRollValue !== undefined
+    ? `+${randomRollValue} to 2 random stats`
     : !comparison && stats
       ? Object.entries(stats).map(([stat, val]) => `+${val} ${stat}`).join('  ')
       : '';

@@ -2450,7 +2450,7 @@ export const RECIPES: Record<string, Recipe> = {
   // ── Enchanting overhaul — Wand/Staff/Book equipment (6 zones x 3 types),
   // using the exact same randomized-2-stat system and Recipe.materialId
   // Mastery wiring as Blacksmithing/Leatherworking/Tailoring's armor (see
-  // equipmentRolls.ts's matching ARMOR_STAT_RANGES section and
+  // equipmentRolls.ts's matching ARMOR_STAT_VALUES section and
   // gameData/materials.ts's WOOD_MATERIALS). craftSeconds/xpAward reuse the
   // same 6-zone progression every other profession's helm-tier piece
   // already established (8/10, 8.5/13, 9.6/23, 9.8/40, 10/53, 10.7/92) —

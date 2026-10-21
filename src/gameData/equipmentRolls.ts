@@ -1,8 +1,13 @@
 // Randomized armor stat rolls + material Mastery math — the engine behind
 // the Blacksmithing overhaul's "every consolidated armor piece rolls 2
-// distinct random stats, Mastery improves their quality" design. Pure
-// functions only; no Firestore access here (see firebase/character.ts for
-// where these get called during crafting resolution).
+// distinct random stats" design. Which TWO of the 5 stats land on a given
+// piece is still random (and still drives the "of the Bear"-style suffix
+// naming — see equipmentSuffixes.ts, which only ever looks at the stat
+// KEYS, never their magnitude); the magnitude itself is now a fixed,
+// deliberately modest number per item (Stat Budget Redesign — see
+// ARMOR_STAT_VALUES below), not a Mastery-improvable roll. Pure functions
+// only; no Firestore access here (see firebase/character.ts for where these
+// get called during crafting resolution).
 import type { BaseStat } from './classStats';
 
 // AGI added for Leatherworking (see combatFormulas.ts for its crit/dodge
@@ -11,196 +16,203 @@ import type { BaseStat } from './classStats';
 // Blacksmithing gear included, not just new Leatherworking gear.
 const ARMOR_STATS: BaseStat[] = ['STR', 'STA', 'INT', 'SPI', 'AGI'];
 
-// Per-base-item roll range, derived once (not hand-transcribed) from each
-// item's old plain+Sacred pair's values, padded ±1 so the roll's average
-// lands on the old static value (preserving pre-overhaul power level) while
-// adding real variance. See the Phase 0 balancing pass for how these were
-// computed; regenerate by re-running that script if an item's old values
-// ever change (they won't, post-consolidation — the 48 old "sacred_*"
-// armor/jewelry pairs these ranges were derived from were deleted outright
-// after a full account reset; see items.ts's module comment).
-export const ARMOR_STAT_RANGES: Record<string, { min: number; max: number }> = {
-  copper_helm: { min: 2, max: 4 },
-  copper_chestplate: { min: 3, max: 5 },
-  copper_gauntlets: { min: 1, max: 3 },
-  copper_bracers: { min: 1, max: 3 },
-  copper_legplates: { min: 2, max: 5 },
-  copper_greaves: { min: 1, max: 4 },
-  copper_shield: { min: 2, max: 4 },
-  bronze_helm: { min: 3, max: 5 },
-  bronze_chestplate: { min: 4, max: 8 },
-  bronze_gauntlets: { min: 2, max: 5 },
-  bronze_bracers: { min: 2, max: 5 },
-  bronze_legplates: { min: 4, max: 7 },
-  bronze_greaves: { min: 2, max: 5 },
-  bronze_shield: { min: 4, max: 7 },
-  iron_helm: { min: 4, max: 7 },
-  iron_chestplate: { min: 6, max: 10 },
-  iron_gauntlets: { min: 3, max: 6 },
-  iron_bracers: { min: 3, max: 6 },
-  iron_legplates: { min: 5, max: 9 },
-  iron_greaves: { min: 4, max: 7 },
-  iron_shield: { min: 5, max: 8 },
-  steel_helm: { min: 5, max: 9 },
-  steel_chestplate: { min: 8, max: 12 },
-  steel_gauntlets: { min: 4, max: 7 },
-  steel_bracers: { min: 4, max: 7 },
-  steel_legplates: { min: 7, max: 11 },
-  steel_greaves: { min: 4, max: 8 },
-  steel_shield: { min: 6, max: 10 },
-  mithril_helm: { min: 7, max: 10 },
-  mithril_chestplate: { min: 10, max: 14 },
-  mithril_gauntlets: { min: 5, max: 8 },
-  mithril_bracers: { min: 5, max: 8 },
-  mithril_legplates: { min: 9, max: 13 },
-  mithril_greaves: { min: 5, max: 9 },
-  mithril_shield: { min: 8, max: 11 },
-  thorium_helm: { min: 8, max: 12 },
-  thorium_chestplate: { min: 12, max: 16 },
-  thorium_gauntlets: { min: 6, max: 9 },
-  thorium_bracers: { min: 6, max: 9 },
-  thorium_legplates: { min: 10, max: 15 },
-  thorium_greaves: { min: 7, max: 10 },
-  thorium_shield: { min: 9, max: 13 },
-  obsidian_helm: { min: 9, max: 13 },
-  obsidian_chestplate: { min: 13, max: 19 },
-  obsidian_gauntlets: { min: 7, max: 11 },
-  obsidian_bracers: { min: 7, max: 11 },
-  obsidian_legplates: { min: 12, max: 17 },
-  obsidian_greaves: { min: 8, max: 11 },
-  obsidian_shield: { min: 11, max: 15 },
+// Stat Budget Redesign — every crafted armor/jewelry/wand piece's 2 random
+// stats now roll this ONE guaranteed number each, not a range. Previously
+// each item rolled within a {min,max} band that improved toward `max` as
+// material Mastery rose (the per-material speed/bonus-chance rewards from
+// Mastery are untouched — only the "grinding Mastery eventually makes your
+// gear noticeably stronger" lever is gone). That upside was quietly
+// trivializing content over a long-played character: a maxed crafter's
+// near-`max` rolls pushed survival margins well past what monsters/dungeons
+// were tuned for (see combatFormulas.ts's MONSTER_DAMAGE_SCALE comment for
+// that tuning). Fixing every value at the OLD range's `min` keeps each
+// tier's already-tested escalation intact (every tier's min is still higher
+// than the previous tier's) while removing the trivializing upside, so a
+// zone's monsters/dungeons stay a real fight at every point in that zone's
+// gearing curve, not just at the very start of it — leaning on potions/food
+// for sustained difficulty stays meaningful throughout, not just early on.
+export const ARMOR_STAT_VALUES: Record<string, number> = {
+  copper_helm: 2,
+  copper_chestplate: 3,
+  copper_gauntlets: 1,
+  copper_bracers: 1,
+  copper_legplates: 2,
+  copper_greaves: 1,
+  copper_shield: 2,
+  bronze_helm: 3,
+  bronze_chestplate: 4,
+  bronze_gauntlets: 2,
+  bronze_bracers: 2,
+  bronze_legplates: 4,
+  bronze_greaves: 2,
+  bronze_shield: 4,
+  iron_helm: 4,
+  iron_chestplate: 6,
+  iron_gauntlets: 3,
+  iron_bracers: 3,
+  iron_legplates: 5,
+  iron_greaves: 4,
+  iron_shield: 5,
+  steel_helm: 5,
+  steel_chestplate: 8,
+  steel_gauntlets: 4,
+  steel_bracers: 4,
+  steel_legplates: 7,
+  steel_greaves: 4,
+  steel_shield: 6,
+  mithril_helm: 7,
+  mithril_chestplate: 10,
+  mithril_gauntlets: 5,
+  mithril_bracers: 5,
+  mithril_legplates: 9,
+  mithril_greaves: 5,
+  mithril_shield: 8,
+  thorium_helm: 8,
+  thorium_chestplate: 12,
+  thorium_gauntlets: 6,
+  thorium_bracers: 6,
+  thorium_legplates: 10,
+  thorium_greaves: 7,
+  thorium_shield: 9,
+  obsidian_helm: 9,
+  obsidian_chestplate: 13,
+  obsidian_gauntlets: 7,
+  obsidian_bracers: 7,
+  obsidian_legplates: 12,
+  obsidian_greaves: 8,
+  obsidian_shield: 11,
   // ── Blacksmithing Shoulders (7 tiers) — Equipment overhaul's itemization
   // parity fix (user-confirmed): Blacksmithing had every other plate slot
   // (Bracers included) but no Shoulders. Ranges mirror each tier's own
   // Gauntlets 1:1, same "Shoulders mirrors Gauntlets'" rule this file
   // already uses for Leatherworking/Tailoring's Shoulders below.
-  copper_shoulders: { min: 1, max: 3 },
-  bronze_shoulders: { min: 2, max: 5 },
-  iron_shoulders: { min: 3, max: 6 },
-  steel_shoulders: { min: 4, max: 7 },
-  mithril_shoulders: { min: 5, max: 8 },
-  thorium_shoulders: { min: 6, max: 9 },
-  obsidian_shoulders: { min: 7, max: 11 },
+  copper_shoulders: 1,
+  bronze_shoulders: 2,
+  iron_shoulders: 3,
+  steel_shoulders: 4,
+  mithril_shoulders: 5,
+  thorium_shoulders: 6,
+  obsidian_shoulders: 7,
 
-  silver_necklace: { min: 2, max: 4 },
-  silver_ring: { min: 1, max: 4 },
-  gold_necklace: { min: 4, max: 8 },
-  gold_ring: { min: 4, max: 7 },
-  platinum_necklace: { min: 6, max: 10 },
-  platinum_ring: { min: 5, max: 8 },
+  silver_necklace: 2,
+  silver_ring: 1,
+  gold_necklace: 4,
+  gold_ring: 4,
+  platinum_necklace: 6,
+  platinum_ring: 5,
 
   // ── Leatherworking (6 tiers × 7 pieces) — ranges copied 1:1 from the
   // Blacksmithing analog piece of the same tier (helm/chestplate/gauntlets/
   // legplates/greaves respectively; Shoulders and Belt mirror Gauntlets',
   // since Blacksmithing has no equivalent of those two slots).
-  handstitched_leather_helm: { min: 2, max: 4 },
-  handstitched_leather_chest: { min: 3, max: 5 },
-  handstitched_leather_gloves: { min: 1, max: 3 },
-  handstitched_leather_legs: { min: 2, max: 5 },
-  handstitched_leather_boots: { min: 1, max: 4 },
-  handstitched_leather_shoulders: { min: 1, max: 3 },
-  handstitched_leather_belt: { min: 1, max: 3 },
-  fine_leather_helm: { min: 3, max: 5 },
-  fine_leather_chest: { min: 4, max: 8 },
-  fine_leather_gloves: { min: 2, max: 5 },
-  fine_leather_legs: { min: 4, max: 7 },
-  fine_leather_boots: { min: 2, max: 5 },
-  fine_leather_shoulders: { min: 2, max: 5 },
-  fine_leather_belt: { min: 2, max: 5 },
-  barbaric_leather_helm: { min: 4, max: 7 },
-  barbaric_leather_chest: { min: 6, max: 10 },
-  barbaric_leather_gloves: { min: 3, max: 6 },
-  barbaric_leather_legs: { min: 5, max: 9 },
-  barbaric_leather_boots: { min: 4, max: 7 },
-  barbaric_leather_shoulders: { min: 3, max: 6 },
-  barbaric_leather_belt: { min: 3, max: 6 },
-  nightscape_leather_helm: { min: 5, max: 9 },
-  nightscape_leather_chest: { min: 8, max: 12 },
-  nightscape_leather_gloves: { min: 4, max: 7 },
-  nightscape_leather_legs: { min: 7, max: 11 },
-  nightscape_leather_boots: { min: 4, max: 8 },
-  nightscape_leather_shoulders: { min: 4, max: 7 },
-  nightscape_leather_belt: { min: 4, max: 7 },
-  wicked_leather_helm: { min: 7, max: 10 },
-  wicked_leather_chest: { min: 10, max: 14 },
-  wicked_leather_gloves: { min: 5, max: 8 },
-  wicked_leather_legs: { min: 9, max: 13 },
-  wicked_leather_boots: { min: 5, max: 9 },
-  wicked_leather_shoulders: { min: 5, max: 8 },
-  wicked_leather_belt: { min: 5, max: 8 },
-  emberscar_leather_helm: { min: 8, max: 12 },
-  emberscar_leather_chest: { min: 12, max: 16 },
-  emberscar_leather_gloves: { min: 6, max: 9 },
-  emberscar_leather_legs: { min: 10, max: 15 },
-  emberscar_leather_boots: { min: 7, max: 10 },
-  emberscar_leather_shoulders: { min: 6, max: 9 },
-  emberscar_leather_belt: { min: 6, max: 9 },
+  handstitched_leather_helm: 2,
+  handstitched_leather_chest: 3,
+  handstitched_leather_gloves: 1,
+  handstitched_leather_legs: 2,
+  handstitched_leather_boots: 1,
+  handstitched_leather_shoulders: 1,
+  handstitched_leather_belt: 1,
+  fine_leather_helm: 3,
+  fine_leather_chest: 4,
+  fine_leather_gloves: 2,
+  fine_leather_legs: 4,
+  fine_leather_boots: 2,
+  fine_leather_shoulders: 2,
+  fine_leather_belt: 2,
+  barbaric_leather_helm: 4,
+  barbaric_leather_chest: 6,
+  barbaric_leather_gloves: 3,
+  barbaric_leather_legs: 5,
+  barbaric_leather_boots: 4,
+  barbaric_leather_shoulders: 3,
+  barbaric_leather_belt: 3,
+  nightscape_leather_helm: 5,
+  nightscape_leather_chest: 8,
+  nightscape_leather_gloves: 4,
+  nightscape_leather_legs: 7,
+  nightscape_leather_boots: 4,
+  nightscape_leather_shoulders: 4,
+  nightscape_leather_belt: 4,
+  wicked_leather_helm: 7,
+  wicked_leather_chest: 10,
+  wicked_leather_gloves: 5,
+  wicked_leather_legs: 9,
+  wicked_leather_boots: 5,
+  wicked_leather_shoulders: 5,
+  wicked_leather_belt: 5,
+  emberscar_leather_helm: 8,
+  emberscar_leather_chest: 12,
+  emberscar_leather_gloves: 6,
+  emberscar_leather_legs: 10,
+  emberscar_leather_boots: 7,
+  emberscar_leather_shoulders: 6,
+  emberscar_leather_belt: 6,
 
   // ── Leatherworking Bracers (6 tiers) — Equipment overhaul's itemization
   // parity fix (user-confirmed): Leatherworking had Shoulders at every
   // tier but no Bracers. Ranges mirror each tier's own Gloves 1:1.
-  handstitched_leather_bracers: { min: 1, max: 3 },
-  fine_leather_bracers: { min: 2, max: 5 },
-  barbaric_leather_bracers: { min: 3, max: 6 },
-  nightscape_leather_bracers: { min: 4, max: 7 },
-  wicked_leather_bracers: { min: 5, max: 8 },
-  emberscar_leather_bracers: { min: 6, max: 9 },
+  handstitched_leather_bracers: 1,
+  fine_leather_bracers: 2,
+  barbaric_leather_bracers: 3,
+  nightscape_leather_bracers: 4,
+  wicked_leather_bracers: 5,
+  emberscar_leather_bracers: 6,
 
   // ── Tailoring (6 tiers × 6 armor pieces + 6 capes) — ranges copied 1:1
   // from the Blacksmithing analog piece of the same tier (helm/chestplate/
   // gauntlets/legplates/greaves; Shoulders AND Cape mirror Gauntlets').
-  tailored_linen_helm: { min: 2, max: 4 },
-  tailored_linen_robe: { min: 3, max: 5 },
-  tailored_linen_gloves: { min: 1, max: 3 },
-  tailored_linen_leggings: { min: 2, max: 5 },
-  tailored_linen_boots: { min: 1, max: 4 },
-  tailored_linen_shoulders: { min: 1, max: 3 },
-  wool_robe_helm: { min: 3, max: 5 },
-  wool_robe: { min: 4, max: 8 },
-  wool_gloves: { min: 2, max: 5 },
-  wool_leggings: { min: 4, max: 7 },
-  wool_boots: { min: 2, max: 5 },
-  wool_shoulders: { min: 2, max: 5 },
-  silk_robe_helm: { min: 4, max: 7 },
-  silk_robe: { min: 6, max: 10 },
-  silk_gloves: { min: 3, max: 6 },
-  silk_leggings: { min: 5, max: 9 },
-  silk_boots: { min: 4, max: 7 },
-  silk_shoulders: { min: 3, max: 6 },
-  mageweave_robe_helm: { min: 5, max: 9 },
-  mageweave_robe: { min: 8, max: 12 },
-  mageweave_gloves: { min: 4, max: 7 },
-  mageweave_leggings: { min: 7, max: 11 },
-  mageweave_boots: { min: 4, max: 8 },
-  mageweave_shoulders: { min: 4, max: 7 },
-  runecloth_robe_helm: { min: 7, max: 10 },
-  runecloth_robe: { min: 10, max: 14 },
-  runecloth_gloves: { min: 5, max: 8 },
-  runecloth_leggings: { min: 9, max: 13 },
-  runecloth_boots: { min: 5, max: 9 },
-  runecloth_shoulders: { min: 5, max: 8 },
-  ember_robe_helm: { min: 8, max: 12 },
-  ember_robe: { min: 12, max: 16 },
-  ember_gloves: { min: 6, max: 9 },
-  ember_leggings: { min: 10, max: 15 },
-  ember_boots: { min: 7, max: 10 },
-  ember_shoulders: { min: 6, max: 9 },
+  tailored_linen_helm: 2,
+  tailored_linen_robe: 3,
+  tailored_linen_gloves: 1,
+  tailored_linen_leggings: 2,
+  tailored_linen_boots: 1,
+  tailored_linen_shoulders: 1,
+  wool_robe_helm: 3,
+  wool_robe: 4,
+  wool_gloves: 2,
+  wool_leggings: 4,
+  wool_boots: 2,
+  wool_shoulders: 2,
+  silk_robe_helm: 4,
+  silk_robe: 6,
+  silk_gloves: 3,
+  silk_leggings: 5,
+  silk_boots: 4,
+  silk_shoulders: 3,
+  mageweave_robe_helm: 5,
+  mageweave_robe: 8,
+  mageweave_gloves: 4,
+  mageweave_leggings: 7,
+  mageweave_boots: 4,
+  mageweave_shoulders: 4,
+  runecloth_robe_helm: 7,
+  runecloth_robe: 10,
+  runecloth_gloves: 5,
+  runecloth_leggings: 9,
+  runecloth_boots: 5,
+  runecloth_shoulders: 5,
+  ember_robe_helm: 8,
+  ember_robe: 12,
+  ember_gloves: 6,
+  ember_leggings: 10,
+  ember_boots: 7,
+  ember_shoulders: 6,
   // ── Tailoring Bracers (6 tiers) — Equipment overhaul's itemization
   // parity fix (user-confirmed): Tailoring had Shoulders at every tier but
   // no Bracers. Ranges mirror each tier's own Gloves 1:1.
-  tailored_linen_bracers: { min: 1, max: 3 },
-  wool_bracers: { min: 2, max: 5 },
-  silk_bracers: { min: 3, max: 6 },
-  mageweave_bracers: { min: 4, max: 7 },
-  runecloth_bracers: { min: 5, max: 8 },
-  ember_bracers: { min: 6, max: 9 },
+  tailored_linen_bracers: 1,
+  wool_bracers: 2,
+  silk_bracers: 3,
+  mageweave_bracers: 4,
+  runecloth_bracers: 5,
+  ember_bracers: 6,
 
-  cape_of_linen: { min: 1, max: 3 },
-  cape_of_wool: { min: 2, max: 5 },
-  cape_of_silk: { min: 3, max: 6 },
-  cape_of_mageweave: { min: 4, max: 7 },
-  cape_of_runecloth: { min: 5, max: 8 },
-  cape_of_ember: { min: 6, max: 9 },
+  cape_of_linen: 1,
+  cape_of_wool: 2,
+  cape_of_silk: 3,
+  cape_of_mageweave: 4,
+  cape_of_runecloth: 5,
+  cape_of_ember: 6,
 
   // ── Enchanting (6 zones x Wand/Staff/Book) — Wand/Book reuse the same
   // "helm"-tier budget as Blacksmithing/Tailoring's own lightest accessory
@@ -209,24 +221,24 @@ export const ARMOR_STAT_RANGES: Record<string, { min: number; max: number }> = {
   // engine has no actual 1h/2h slot exclusivity to compensate for — see
   // types.ts's EquipmentSlot comment — so this is purely an itemization
   // choice, not an engine rule).
-  rough_wand: { min: 2, max: 4 },
-  rough_staff: { min: 4, max: 8 },
-  rough_tome: { min: 2, max: 4 },
-  aged_wand: { min: 3, max: 5 },
-  aged_staff: { min: 6, max: 10 },
-  aged_tome: { min: 3, max: 5 },
-  heartwood_wand: { min: 4, max: 7 },
-  heartwood_staff: { min: 8, max: 14 },
-  heartwood_tome: { min: 4, max: 7 },
-  ironwood_wand: { min: 5, max: 9 },
-  ironwood_staff: { min: 10, max: 18 },
-  ironwood_tome: { min: 5, max: 9 },
-  charwood_wand: { min: 7, max: 10 },
-  charwood_staff: { min: 14, max: 20 },
-  charwood_tome: { min: 7, max: 10 },
-  emberwood_wand: { min: 8, max: 12 },
-  emberwood_staff: { min: 16, max: 24 },
-  emberwood_tome: { min: 8, max: 12 },
+  rough_wand: 2,
+  rough_staff: 4,
+  rough_tome: 2,
+  aged_wand: 3,
+  aged_staff: 6,
+  aged_tome: 3,
+  heartwood_wand: 4,
+  heartwood_staff: 8,
+  heartwood_tome: 4,
+  ironwood_wand: 5,
+  ironwood_staff: 10,
+  ironwood_tome: 5,
+  charwood_wand: 7,
+  charwood_staff: 14,
+  charwood_tome: 7,
+  emberwood_wand: 8,
+  emberwood_staff: 16,
+  emberwood_tome: 8,
 };
 
 // Mastery XP = (bars the recipe originally requires) × this constant —
@@ -328,52 +340,19 @@ export function materialMasteryBonusChance(masteryPercent: number): number {
   return 0.2 * (masteryPercent / 100);
 }
 
-// How pronounced the mastery skew is at full tilt (0% or 100%) — the
-// lowest-weighted value in a range is never less than
-// (1 - MASTERY_SKEW_STRENGTH) / (1 + MASTERY_SKEW_STRENGTH) as likely as
-// the highest-weighted one, so even a maxed-Mastery crafter can still roll
-// the bottom of the range (never guarantees a perfect roll, per the
-// requirement) while a 0%-Mastery crafter can still roll the top (perfect
-// rolls must be possible at 0% Mastery, also per the requirement).
-const MASTERY_SKEW_STRENGTH = 0.8;
-
-// Range-agnostic, continuously mastery-interpolated weighted roll: favors
-// the low end of [min,max] at 0% Mastery, the high end at 100%, flat/
-// uniform at 50% — generalizes to ANY integer range with no per-material or
-// per-item table (the specific weighting curve is the one tunable; the
-// shape itself never changes), per the "do not hardcode this table
-// separately for Copper/Bronze/etc" requirement.
-export function rollMasteryWeightedValue(min: number, max: number, masteryPercent: number): number {
-  if (max <= min) return min;
-  const skew = (Math.min(100, Math.max(0, masteryPercent)) / 100 - 0.5) * 2; // -1..+1
-  const weights: number[] = [];
-  for (let v = min; v <= max; v++) {
-    const t = (v - min) / (max - min); // 0..1
-    weights.push(1 + MASTERY_SKEW_STRENGTH * skew * (2 * t - 1));
-  }
-  const total = weights.reduce((a, b) => a + b, 0);
-  let roll = Math.random() * total;
-  for (let i = 0; i < weights.length; i++) {
-    roll -= weights[i];
-    if (roll <= 0) return min + i;
-  }
-  return max;
-}
-
 export interface ArmorRollResult {
   rolls: Partial<Record<BaseStat, number>>;
 }
 
-// Picks 2 distinct stats uniformly from the 4-stat pool (each of the 6
-// possible combinations equally likely — pick the first of 4 uniformly,
-// then the second of the remaining 3 uniformly; every unordered pair then
-// has exactly 2/12 = 1/6 probability), then rolls each one's value via
-// rollMasteryWeightedValue using baseItemId's configured range. Mastery
-// affects ONLY the numerical quality of the two rolled values, never which
-// stats get chosen — the stat pick is independent of masteryPercent.
-export function rollArmorStats(baseItemId: string, masteryPercent: number): ArmorRollResult {
-  const range = ARMOR_STAT_RANGES[baseItemId];
-  if (!range) return { rolls: {} };
+// Picks 2 distinct stats uniformly from the 5-stat pool (each of the 10
+// possible combinations equally likely — pick the first of 5 uniformly,
+// then the second of the remaining 4 uniformly; every unordered pair then
+// has exactly 2/20 = 1/10 probability) and assigns each one baseItemId's
+// fixed ARMOR_STAT_VALUES amount. Only WHICH stats get picked is random —
+// see this file's top-of-module comment for why the magnitude isn't.
+export function rollArmorStats(baseItemId: string): ArmorRollResult {
+  const value = ARMOR_STAT_VALUES[baseItemId];
+  if (value === undefined) return { rolls: {} };
 
   const shuffled = [...ARMOR_STATS];
   for (let i = shuffled.length - 1; i > 0; i--) {
@@ -384,8 +363,8 @@ export function rollArmorStats(baseItemId: string, masteryPercent: number): Armo
 
   return {
     rolls: {
-      [statA]: rollMasteryWeightedValue(range.min, range.max, masteryPercent),
-      [statB]: rollMasteryWeightedValue(range.min, range.max, masteryPercent),
+      [statA]: value,
+      [statB]: value,
     },
   };
 }
