@@ -114,7 +114,7 @@ const STATIC_ITEMS: Record<string, ItemDef> = {
 
   // ── Leatherworking equipment (zones 1-6) — 42 items, 7 pieces × 6 tiers,
   // mirroring Blacksmithing's own armor-set structure exactly (same
-  // material-cost-per-piece shape, same per-tier ARMOR_STAT_RANGES/roll
+  // material-cost-per-piece shape, same per-tier ARMOR_STAT_VALUES/roll
   // system via equipmentRolls.ts — statBonuses here are the pre-roll
   // fallback, same role as Blacksmithing's own armor statBonuses).
   // Helmet/Chestplate/Gloves/Legplates/Boots/Shoulders are 'leather'
@@ -4394,7 +4394,7 @@ const STATIC_ITEMS: Record<string, ItemDef> = {
   // parity fix: Blacksmithing previously had every other plate slot
   // (including Bracers) but no Shoulders at all. Stat budgets mirror each
   // tier's own Gauntlets 1:1 (same "Shoulders mirrors Gauntlets'" rule
-  // ARMOR_STAT_RANGES already uses for Leatherworking/Tailoring's
+  // ARMOR_STAT_VALUES already uses for Leatherworking/Tailoring's
   // Shoulders), so this doesn't change Blacksmithing's existing power
   // curve, only fills the missing slot at every tier.
   copper_shoulders: {
@@ -4468,8 +4468,8 @@ const STATIC_ITEMS: Record<string, ItemDef> = {
   // One gray (1 weak stat) + one white (2 weak stats) item per zone,
   // deliberately modest — primarily useful for early progression/selling,
   // never meant to compete with the zone's own crafted green gear (see
-  // each zone's green chest-slot minimum in equipmentRolls.ts's
-  // ARMOR_STAT_RANGES for the comparison: every value below sits well
+  // each zone's green chest-slot value in equipmentRolls.ts's
+  // ARMOR_STAT_VALUES for the comparison: every value below sits well
   // under it). necklace/belt chosen because neither ever has an armorType
   // (gameData/types.ts), so these drop usable by any class with zero
   // itemization-restriction edge cases.

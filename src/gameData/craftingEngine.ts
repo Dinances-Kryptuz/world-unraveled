@@ -141,12 +141,12 @@ export interface CraftingOfflineResult {
   finalMaterialMasteryXp?: number;
   // One entry per batch-loop iteration that produced items, recording how
   // many (including the fractional Mastery bonus-output share) were crafted
-  // at that iteration's STARTING material-Mastery percent — needed so stat
-  // rolls for items crafted early in a long offline window use that
-  // lower mastery quality instead of the window's final percent (see
-  // firebase/character.ts's applyCraftingProfessionResult, which rolls one
-  // batch entry at a time rather than rolling `itemsCrafted` all at the
-  // final percent).
+  // during that iteration. `masteryPercentAtCraft` is no longer read for
+  // item-stat quality (Stat Budget Redesign — rollArmorStats' 2 rolled stats
+  // are a fixed amount now, not Mastery-improvable, see equipmentRolls.ts's
+  // module comment); this batching is kept only so firebase/character.ts's
+  // applyCraftingProfessionResult can still floor the fractional bonus-
+  // output share correctly across iterations rather than all at once.
   materialMasteryBatches?: { quantity: number; masteryPercentAtCraft: number }[];
   // Only populated when resolveCraftingOffline is called with
   // `alchemyZoneMastery` (a Recipe.alchemyZoneId-tagged recipe) — same role

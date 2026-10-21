@@ -5,7 +5,7 @@
 // dungeon items authored directly in items.ts (see dungeonLoot.ts);
 // nothing here computes stats.
 import type { ItemDef, ItemRarity } from './types';
-import { ARMOR_STAT_RANGES } from './equipmentRolls';
+import { ARMOR_STAT_VALUES } from './equipmentRolls';
 
 export const RARITY_LABELS: Record<ItemRarity, string> = {
   gray: 'Poor',
@@ -43,7 +43,7 @@ export const RARITY_COLORS: Record<ItemRarity, string> = {
 export function inferItemRarity(item: ItemDef): ItemRarity | null {
   if (item.rarity) return item.rarity;
   if (item.type !== 'equipment' || !item.equipSlot) return null;
-  if (item.id in ARMOR_STAT_RANGES) return 'green';
+  if (item.id in ARMOR_STAT_VALUES) return 'green';
   return 'white';
 }
 

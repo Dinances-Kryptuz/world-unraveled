@@ -2,7 +2,7 @@ import { PRIMARY_STAT, type BaseStat, type ClassId, type EquipRole, type SpecId 
 import type { EquipmentSlot, EquippedItemRef, ItemDef, ToolType } from './types';
 import { ITEMS } from './items';
 import { ENCHANTS } from './enchanting';
-import { ARMOR_STAT_RANGES } from './equipmentRolls';
+import { ARMOR_STAT_VALUES } from './equipmentRolls';
 
 // The bare item id out of an equipped slot's value — nearly every caller
 // that just needs "what item is in this slot" (class/offhand rules, tool-
@@ -262,17 +262,20 @@ const SLOT_LABELS: Record<EquipmentSlot, string> = {
 // A one-line summary of what a piece of equipment actually does — slot,
 // armor type, and its stat bonuses — for a hover tooltip on a crafting
 // recipe (or anywhere else that shows an item by name without its stats).
-// A recipe whose result actually rolls 2 random stats at craft time
-// (equipmentRolls.ts's ARMOR_STAT_RANGES) never guarantees item.statBonuses
+// A recipe whose result rolls 2 random stats at craft time
+// (equipmentRolls.ts's ARMOR_STAT_VALUES) never guarantees item.statBonuses
 // — same stale-pre-Mastery-overhaul-data trap ItemSlot.tsx's own tooltip
-// already guards against (see its isRandomRollPreview) — so this shows the
-// same "Random Stat 1, Random Stat 2" placeholder instead of real numbers.
+// already guards against (see its isRandomRollPreview) — but the Stat
+// Budget Redesign means the MAGNITUDE is now fixed and known upfront (only
+// which 2 stats get picked is still random), so this can show the real
+// number instead of a placeholder.
 export function describeItemStats(item: ItemDef): string {
   if (item.type !== 'equipment' || !item.equipSlot) return item.description;
   const parts: string[] = [SLOT_LABELS[item.equipSlot]];
   if (item.armorType) parts.push(item.armorType);
-  if (ARMOR_STAT_RANGES[item.id]) {
-    parts.push('Random Stat 1, Random Stat 2');
+  const randomRollValue = ARMOR_STAT_VALUES[item.id];
+  if (randomRollValue !== undefined) {
+    parts.push(`+${randomRollValue} to 2 random stats`);
   } else {
     const bonuses = Object.entries(item.statBonuses ?? {})
       .filter(([, value]) => value)

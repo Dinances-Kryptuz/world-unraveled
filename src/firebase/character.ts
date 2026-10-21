@@ -1064,12 +1064,13 @@ export async function applyCraftingProfessionResult(
   }
 
   if (result.materialMastery) {
-    // Roll one instance per batch entry at THAT batch's own mastery%, not
-    // the final mastery% — see CraftingOfflineResult.materialMasteryBatches'
-    // doc comment for why. Fractional quantity (the Mastery bonus-output
-    // share) carries across batches the same way itemsCrafted already
-    // accumulates as a float elsewhere, floored only once instances are
-    // actually rolled.
+    // One instance per batch entry — the per-batch split itself is no longer
+    // for stat-roll quality (Stat Budget Redesign — rollArmorStats' 2 stats
+    // are now a fixed amount, not Mastery-improvable, see equipmentRolls.ts's
+    // module comment), just the pre-existing fractional-quantity carry (the
+    // Mastery bonus-output share) across batches, the same way itemsCrafted
+    // already accumulates as a float elsewhere, floored only once instances
+    // are actually rolled.
     const grantsByInstance = new Map<string, { rolls: ReturnType<typeof rollArmorStats>['rolls']; quantity: number }>();
     let carry = 0;
     for (const batch of result.materialMastery.batches) {
@@ -1077,7 +1078,7 @@ export async function applyCraftingProfessionResult(
       const whole = Math.floor(carry);
       carry -= whole;
       for (let i = 0; i < whole; i++) {
-        const { rolls } = rollArmorStats(result.resultItemId, batch.masteryPercentAtCraft);
+        const { rolls } = rollArmorStats(result.resultItemId);
         const instanceId = canonicalInstanceId(result.resultItemId, rolls);
         const existing = grantsByInstance.get(instanceId);
         if (existing) existing.quantity++;
