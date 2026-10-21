@@ -1637,8 +1637,10 @@ const STATIC_ITEMS: Record<string, ItemDef> = {
 
   // ── Alchemy overhaul — the 30 live recipes' potions, replacing the old
   // Alchemy line below (kept, frozen, never deleted — see recipes.ts).
-  // Resource potions (healPctMax/manaPctMax, no charges, single-use, same
-  // cooldown-per-item-id model as every consumable before them). Offensive/
+  // Resource potions (flat healAmount/manaAmount, no charges, single-use,
+  // same cooldown-per-item-id model as every consumable before them — a
+  // flat number rather than a %-of-max heal so healers stay load-bearing
+  // at every level instead of potions trivially outhealing them). Offensive/
   // defensive potions omit `buff.charges` deliberately — their actual
   // charge count is rolled at CRAFT time from the crafter's current Alchemy
   // zone Mastery (1/2/3/4 at 0/25/60/90%) and lives on the inventory
@@ -1647,13 +1649,13 @@ const STATIC_ITEMS: Record<string, ItemDef> = {
   // which event consumes a charge.
   minor_healing_potion: {
     id: 'minor_healing_potion', name: 'Minor Healing Potion', type: 'consumable',
-    description: 'Restores 15% of max health.', stackable: true, sellValue: 2,
-    consumableEffect: { healPctMax: 15, cooldownSeconds: 20 },
+    description: 'Restores 50 health.', stackable: true, sellValue: 2,
+    consumableEffect: { healAmount: 50, cooldownSeconds: 20 },
   },
   minor_mana_potion: {
     id: 'minor_mana_potion', name: 'Minor Mana Potion', type: 'consumable',
-    description: 'Restores 15% of max mana. Only usable in combat.', stackable: true, sellValue: 2,
-    consumableEffect: { manaPctMax: 15, cooldownSeconds: 20 },
+    description: 'Restores 50 mana. Only usable in combat.', stackable: true, sellValue: 2,
+    consumableEffect: { manaAmount: 50, cooldownSeconds: 20 },
   },
   elixir_of_lions_strength: {
     id: 'elixir_of_lions_strength', name: "Elixir of Lion's Strength", type: 'consumable',
@@ -1672,13 +1674,13 @@ const STATIC_ITEMS: Record<string, ItemDef> = {
   },
   lesser_healing_potion: {
     id: 'lesser_healing_potion', name: 'Lesser Healing Potion', type: 'consumable',
-    description: 'Restores 25% of max health.', stackable: true, sellValue: 6,
-    consumableEffect: { healPctMax: 25, cooldownSeconds: 24 },
+    description: 'Restores 90 health.', stackable: true, sellValue: 6,
+    consumableEffect: { healAmount: 90, cooldownSeconds: 24 },
   },
   lesser_mana_potion: {
     id: 'lesser_mana_potion', name: 'Lesser Mana Potion', type: 'consumable',
-    description: 'Restores 25% of max mana. Only usable in combat.', stackable: true, sellValue: 6,
-    consumableEffect: { manaPctMax: 25, cooldownSeconds: 24 },
+    description: 'Restores 90 mana. Only usable in combat.', stackable: true, sellValue: 6,
+    consumableEffect: { manaAmount: 90, cooldownSeconds: 24 },
   },
   swiftness_potion: {
     id: 'swiftness_potion', name: 'Swiftness Potion', type: 'consumable',
@@ -1687,8 +1689,8 @@ const STATIC_ITEMS: Record<string, ItemDef> = {
   },
   healing_potion: {
     id: 'healing_potion', name: 'Healing Potion', type: 'consumable',
-    description: 'Restores 35% of max health.', stackable: true, sellValue: 9,
-    consumableEffect: { healPctMax: 35, cooldownSeconds: 28 },
+    description: 'Restores 120 health.', stackable: true, sellValue: 9,
+    consumableEffect: { healAmount: 120, cooldownSeconds: 28 },
   },
   elixir_of_lesser_agility: {
     id: 'elixir_of_lesser_agility', name: 'Elixir of Lesser Agility', type: 'consumable',
@@ -1697,13 +1699,13 @@ const STATIC_ITEMS: Record<string, ItemDef> = {
   },
   greater_healing_potion: {
     id: 'greater_healing_potion', name: 'Greater Healing Potion', type: 'consumable',
-    description: 'Restores 45% of max health.', stackable: true, sellValue: 13,
-    consumableEffect: { healPctMax: 45, cooldownSeconds: 32 },
+    description: 'Restores 160 health.', stackable: true, sellValue: 13,
+    consumableEffect: { healAmount: 160, cooldownSeconds: 32 },
   },
   greater_mana_potion: {
     id: 'greater_mana_potion', name: 'Greater Mana Potion', type: 'consumable',
-    description: 'Restores 45% of max mana. Only usable in combat.', stackable: true, sellValue: 13,
-    consumableEffect: { manaPctMax: 45, cooldownSeconds: 32 },
+    description: 'Restores 160 mana. Only usable in combat.', stackable: true, sellValue: 13,
+    consumableEffect: { manaAmount: 160, cooldownSeconds: 32 },
   },
   shadow_protection_potion: {
     id: 'shadow_protection_potion', name: 'Shadow Protection Potion', type: 'consumable',
@@ -1722,13 +1724,13 @@ const STATIC_ITEMS: Record<string, ItemDef> = {
   },
   superior_healing_potion: {
     id: 'superior_healing_potion', name: 'Superior Healing Potion', type: 'consumable',
-    description: 'Restores 55% of max health.', stackable: true, sellValue: 20,
-    consumableEffect: { healPctMax: 55, cooldownSeconds: 36 },
+    description: 'Restores 200 health.', stackable: true, sellValue: 20,
+    consumableEffect: { healAmount: 200, cooldownSeconds: 36 },
   },
   superior_mana_potion: {
     id: 'superior_mana_potion', name: 'Superior Mana Potion', type: 'consumable',
-    description: 'Restores 55% of max mana. Only usable in combat.', stackable: true, sellValue: 20,
-    consumableEffect: { manaPctMax: 55, cooldownSeconds: 36 },
+    description: 'Restores 200 mana. Only usable in combat.', stackable: true, sellValue: 20,
+    consumableEffect: { manaAmount: 200, cooldownSeconds: 36 },
   },
   elixir_of_firepower: {
     id: 'elixir_of_firepower', name: 'Elixir of Firepower', type: 'consumable',
@@ -1747,13 +1749,13 @@ const STATIC_ITEMS: Record<string, ItemDef> = {
   },
   major_healing_potion: {
     id: 'major_healing_potion', name: 'Major Healing Potion', type: 'consumable',
-    description: 'Restores 65% of max health.', stackable: true, sellValue: 28,
-    consumableEffect: { healPctMax: 65, cooldownSeconds: 40 },
+    description: 'Restores 250 health.', stackable: true, sellValue: 28,
+    consumableEffect: { healAmount: 250, cooldownSeconds: 40 },
   },
   major_mana_potion: {
     id: 'major_mana_potion', name: 'Major Mana Potion', type: 'consumable',
-    description: 'Restores 65% of max mana. Only usable in combat.', stackable: true, sellValue: 28,
-    consumableEffect: { manaPctMax: 65, cooldownSeconds: 40 },
+    description: 'Restores 250 mana. Only usable in combat.', stackable: true, sellValue: 28,
+    consumableEffect: { manaAmount: 250, cooldownSeconds: 40 },
   },
   elixir_of_giants: {
     id: 'elixir_of_giants', name: 'Elixir of Giants', type: 'consumable',
@@ -1772,13 +1774,13 @@ const STATIC_ITEMS: Record<string, ItemDef> = {
   },
   supreme_healing_potion: {
     id: 'supreme_healing_potion', name: 'Supreme Healing Potion', type: 'consumable',
-    description: 'Restores 75% of max health.', stackable: true, sellValue: 38,
-    consumableEffect: { healPctMax: 75, cooldownSeconds: 44 },
+    description: 'Restores 300 health.', stackable: true, sellValue: 38,
+    consumableEffect: { healAmount: 300, cooldownSeconds: 44 },
   },
   supreme_mana_potion: {
     id: 'supreme_mana_potion', name: 'Supreme Mana Potion', type: 'consumable',
-    description: 'Restores 75% of max mana. Only usable in combat.', stackable: true, sellValue: 38,
-    consumableEffect: { manaPctMax: 75, cooldownSeconds: 44 },
+    description: 'Restores 300 mana. Only usable in combat.', stackable: true, sellValue: 38,
+    consumableEffect: { manaAmount: 300, cooldownSeconds: 44 },
   },
   elixir_of_the_mongoose: {
     id: 'elixir_of_the_mongoose', name: 'Elixir of the Mongoose', type: 'consumable',
@@ -2359,94 +2361,94 @@ const STATIC_ITEMS: Record<string, ItemDef> = {
   rusty_mining_pick: {
     id: 'rusty_mining_pick', name: 'Rusty Mining Pick', type: 'equipment',
     description: 'A basic mining pick, nicked and pitted but serviceable.',
-    stackable: true, equipSlot: 'tool', toolType: 'mining_pick', gatherBonusPct: 0, sellValue: 2,
+    stackable: true, equipSlot: 'tool_mining', toolType: 'mining_pick', gatherBonusPct: 0, sellValue: 2,
   },
   sturdy_mining_pick: {
     id: 'sturdy_mining_pick', name: 'Sturdy Mining Pick', type: 'equipment',
     description: 'A well-balanced pick that bites deeper with less effort.',
-    stackable: true, equipSlot: 'tool', toolType: 'mining_pick', gatherBonusPct: 2, sellValue: 8,
+    stackable: true, equipSlot: 'tool_mining', toolType: 'mining_pick', gatherBonusPct: 2, sellValue: 8,
   },
   embertempered_pick: {
     id: 'embertempered_pick', name: 'Ember-Tempered Pick', type: 'equipment',
     description: 'Quenched in Emberfall’s heat, its head barely dulls.',
-    stackable: true, equipSlot: 'tool', toolType: 'mining_pick', gatherBonusPct: 4, sellValue: 18,
+    stackable: true, equipSlot: 'tool_mining', toolType: 'mining_pick', gatherBonusPct: 4, sellValue: 18,
   },
   dwarven_mining_pick: {
     id: 'dwarven_mining_pick', name: 'Dwarven Mining Pick', type: 'equipment',
     description: 'Dwarven-forged and perfectly weighted, recovered from Cinderfall’s ruined forges.',
-    stackable: true, equipSlot: 'tool', toolType: 'mining_pick', gatherBonusPct: 6, sellValue: 35,
+    stackable: true, equipSlot: 'tool_mining', toolType: 'mining_pick', gatherBonusPct: 6, sellValue: 35,
   },
   brimstone_pick: {
     id: 'brimstone_pick', name: 'Brimstone Pick', type: 'equipment',
     description: 'Its head is cast from cooled brimstone, hard enough to crack any seam in the Scar.',
-    stackable: true, equipSlot: 'tool', toolType: 'mining_pick', gatherBonusPct: 8, sellValue: 60,
+    stackable: true, equipSlot: 'tool_mining', toolType: 'mining_pick', gatherBonusPct: 8, sellValue: 60,
   },
   emberforged_pick: {
     id: 'emberforged_pick', name: 'Emberforged Pick', type: 'equipment',
     description: 'Forged at the world’s molten heart — the finest mining pick there is.',
-    stackable: true, equipSlot: 'tool', toolType: 'mining_pick', gatherBonusPct: 10, sellValue: 95,
+    stackable: true, equipSlot: 'tool_mining', toolType: 'mining_pick', gatherBonusPct: 10, sellValue: 95,
   },
 
   worn_skinning_knife: {
     id: 'worn_skinning_knife', name: 'Worn Skinning Knife', type: 'equipment',
     description: 'A basic skinning knife with a dull but functional edge.',
-    stackable: true, equipSlot: 'tool', toolType: 'skinning_knife', gatherBonusPct: 0, sellValue: 2,
+    stackable: true, equipSlot: 'tool_skinning', toolType: 'skinning_knife', gatherBonusPct: 0, sellValue: 2,
   },
   honed_skinning_knife: {
     id: 'honed_skinning_knife', name: 'Honed Skinning Knife', type: 'equipment',
     description: 'Freshly honed, it parts hide cleanly from flesh.',
-    stackable: true, equipSlot: 'tool', toolType: 'skinning_knife', gatherBonusPct: 2, sellValue: 8,
+    stackable: true, equipSlot: 'tool_skinning', toolType: 'skinning_knife', gatherBonusPct: 2, sellValue: 8,
   },
   embertempered_skinning_knife: {
     id: 'embertempered_skinning_knife', name: 'Ember-Tempered Skinning Knife', type: 'equipment',
     description: 'Tempered in Emberfall’s forges, it holds an edge far longer.',
-    stackable: true, equipSlot: 'tool', toolType: 'skinning_knife', gatherBonusPct: 4, sellValue: 18,
+    stackable: true, equipSlot: 'tool_skinning', toolType: 'skinning_knife', gatherBonusPct: 4, sellValue: 18,
   },
   dwarven_skinning_knife: {
     id: 'dwarven_skinning_knife', name: 'Dwarven Skinning Knife', type: 'equipment',
     description: 'A dwarven blade recovered from Cinderfall, still razor-true.',
-    stackable: true, equipSlot: 'tool', toolType: 'skinning_knife', gatherBonusPct: 6, sellValue: 35,
+    stackable: true, equipSlot: 'tool_skinning', toolType: 'skinning_knife', gatherBonusPct: 6, sellValue: 35,
   },
   brimstone_skinning_knife: {
     id: 'brimstone_skinning_knife', name: 'Brimstone Skinning Knife', type: 'equipment',
     description: 'Its blade is quenched brimstone-black and never seems to dull.',
-    stackable: true, equipSlot: 'tool', toolType: 'skinning_knife', gatherBonusPct: 8, sellValue: 60,
+    stackable: true, equipSlot: 'tool_skinning', toolType: 'skinning_knife', gatherBonusPct: 8, sellValue: 60,
   },
   emberforged_skinning_knife: {
     id: 'emberforged_skinning_knife', name: 'Emberforged Skinning Knife', type: 'equipment',
     description: 'Forged at the world’s molten heart — the finest skinning knife there is.',
-    stackable: true, equipSlot: 'tool', toolType: 'skinning_knife', gatherBonusPct: 10, sellValue: 95,
+    stackable: true, equipSlot: 'tool_skinning', toolType: 'skinning_knife', gatherBonusPct: 10, sellValue: 95,
   },
 
   simple_fishing_rod: {
     id: 'simple_fishing_rod', name: 'Simple Fishing Rod', type: 'equipment',
     description: 'A plain rod cut from a sapling branch — good enough to start.',
-    stackable: true, equipSlot: 'tool', toolType: 'fishing_rod', gatherBonusPct: 0, sellValue: 2,
+    stackable: true, equipSlot: 'tool_fishing', toolType: 'fishing_rod', gatherBonusPct: 0, sellValue: 2,
   },
   reinforced_fishing_rod: {
     id: 'reinforced_fishing_rod', name: 'Reinforced Fishing Rod', type: 'equipment',
     description: 'Reinforced with wire-wrapped joints for a sturdier cast.',
-    stackable: true, equipSlot: 'tool', toolType: 'fishing_rod', gatherBonusPct: 2, sellValue: 8,
+    stackable: true, equipSlot: 'tool_fishing', toolType: 'fishing_rod', gatherBonusPct: 2, sellValue: 8,
   },
   embercured_fishing_rod: {
     id: 'embercured_fishing_rod', name: 'Ember-Cured Fishing Rod', type: 'equipment',
     description: 'Cured over Emberfall’s fissures until the wood turned iron-hard.',
-    stackable: true, equipSlot: 'tool', toolType: 'fishing_rod', gatherBonusPct: 4, sellValue: 18,
+    stackable: true, equipSlot: 'tool_fishing', toolType: 'fishing_rod', gatherBonusPct: 4, sellValue: 18,
   },
   dwarven_fishing_rod: {
     id: 'dwarven_fishing_rod', name: 'Dwarven Fishing Rod', type: 'equipment',
     description: 'A dwarven angler’s rod, recovered intact from Cinderfall’s flooded lower halls.',
-    stackable: true, equipSlot: 'tool', toolType: 'fishing_rod', gatherBonusPct: 6, sellValue: 35,
+    stackable: true, equipSlot: 'tool_fishing', toolType: 'fishing_rod', gatherBonusPct: 6, sellValue: 35,
   },
   brimstone_fishing_rod: {
     id: 'brimstone_fishing_rod', name: 'Brimstone Fishing Rod', type: 'equipment',
     description: 'Its line is woven from heat-cured brimstone fiber, strong enough for anything the Scar’s pools hold.',
-    stackable: true, equipSlot: 'tool', toolType: 'fishing_rod', gatherBonusPct: 8, sellValue: 60,
+    stackable: true, equipSlot: 'tool_fishing', toolType: 'fishing_rod', gatherBonusPct: 8, sellValue: 60,
   },
   emberforged_fishing_rod: {
     id: 'emberforged_fishing_rod', name: 'Emberforged Fishing Rod', type: 'equipment',
     description: 'Forged at the world’s molten heart — the finest fishing rod there is.',
-    stackable: true, equipSlot: 'tool', toolType: 'fishing_rod', gatherBonusPct: 10, sellValue: 95,
+    stackable: true, equipSlot: 'tool_fishing', toolType: 'fishing_rod', gatherBonusPct: 10, sellValue: 95,
   },
 
   // ── Fish (legacy) — Fishing's original single-fish-per-zone yield, frozen

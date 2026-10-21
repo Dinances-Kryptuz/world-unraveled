@@ -7,6 +7,7 @@ import { subscribeToInventory } from '../firebase/inventory';
 import { ENCHANTS } from '../gameData/enchanting';
 import { statAtLevel } from '../gameData/classStats';
 import { getEquipmentStatBonuses, baseStatTooltip } from '../gameData/equipmentStats';
+import { consumableOwnedQuantities } from '../gameData/consumableClassification';
 import { EquipmentPaperDoll, SLOT_LABEL } from './EquipmentPaperDoll';
 import { ConsumablesBar } from './ConsumablesBar';
 import type { Inventory } from '../types/character';
@@ -104,6 +105,7 @@ export function EquipmentScreen() {
         enchantments={character.enchantments}
         enchantmentCharges={character.enchantmentCharges}
         getEnchantInfo={(enchantId) => ENCHANTS[enchantId]}
+        consumables={{ equipped: character.equippedConsumables, onEquip: handleEquipConsumable }}
         centerPanel={
           <div className="equipment-stats-panel">
             <h3>Character Stats</h3>
@@ -126,7 +128,7 @@ export function EquipmentScreen() {
       <h3>Quick-use</h3>
       <ConsumablesBar
         character={character}
-        inventoryItems={inventory.items}
+        inventoryItems={consumableOwnedQuantities(inventory)}
         allowMana={false}
         allowRecoveryFood={true}
         onUse={handleUseConsumable}

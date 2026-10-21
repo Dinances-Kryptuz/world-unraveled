@@ -15,6 +15,7 @@ import { type BaseStat } from '../gameData/classStats';
 import { consumeEnchantCharges } from '../firebase/enchanting';
 import { DUNGEONS } from '../gameData/dungeons';
 import { MONSTERS } from '../gameData/monsters';
+import { consumableOwnedQuantities } from '../gameData/consumableClassification';
 import { notify } from '../utils/notifications';
 import { ITEMS } from '../gameData/items';
 import { inferItemRarity, RARITY_COLORS } from '../gameData/itemRarity';
@@ -762,7 +763,7 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
           <AbilityBar player={player} onUse={handleManualUse} />
           <ConsumablesBar
             character={character}
-            inventoryItems={inventory?.items ?? {}}
+            inventoryItems={inventory ? consumableOwnedQuantities(inventory) : {}}
             allowMana={true}
             allowRecoveryFood={false}
             onUse={handleUseConsumable}

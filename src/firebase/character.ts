@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp, Timestamp, increment, arrayUnion } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp, Timestamp, increment, arrayUnion, deleteField } from 'firebase/firestore';
 import { db } from './config';
 import type { Character, CombatPreset, MaterialMasteryState, ZoneMasteryState, InventorySortPrefs } from '../types/character';
 import type { ProfessionId, EquipmentSlot, EquippedItemRef } from '../gameData/types';
@@ -345,7 +345,9 @@ function starterEquipment(cls: ClassId): Record<EquipmentSlot, EquippedItemRef |
     ring2: null,
     necklace: null,
     offhand: null,
-    tool: null,
+    tool_mining: null,
+    tool_skinning: null,
+    tool_fishing: null,
     shoulders: null,
     cape: null,
     shirt: null,
@@ -354,6 +356,22 @@ function starterEquipment(cls: ClassId): Record<EquipmentSlot, EquippedItemRef |
     belt: null,
     ammo: null,
   };
+}
+
+// Toolbox split — the single generic 'tool' slot (mining pick/skinning
+// knife/fishing rod all competing for one spot) became 3 type-locked slots
+// (tool_mining/tool_skinning/tool_fishing — see EquipmentSlot's doc
+// comment). A character saved before this split has whatever it had
+// equipped sitting in a now-unrecognized `tool` field in raw Firestore
+// data; this routes it into the ONE new slot that actually matches via
+// the item's own toolType, same "patch the return value, let the next real
+// write catch up" in-memory-only posture as the rest of normalizeEquipment.
+function legacyToolSlot(itemId: string): EquipmentSlot | null {
+  const toolType = ITEMS[itemId]?.toolType;
+  if (toolType === 'mining_pick') return 'tool_mining';
+  if (toolType === 'skinning_knife') return 'tool_skinning';
+  if (toolType === 'fishing_rod') return 'tool_fishing';
+  return null;
 }
 
 // Wraps every still-bare-string equipment slot value (the shape every save
@@ -365,7 +383,13 @@ function starterEquipment(cls: ClassId): Record<EquipmentSlot, EquippedItemRef |
 export function normalizeEquipment(raw: Record<string, unknown> | undefined): Record<EquipmentSlot, EquippedItemRef | null> {
   const result = {} as Record<EquipmentSlot, EquippedItemRef | null>;
   for (const [slot, value] of Object.entries(raw ?? {})) {
-    result[slot as EquipmentSlot] = typeof value === 'string' ? { itemId: value } : (value as EquippedItemRef | null) ?? null;
+    const ref: EquippedItemRef | null = typeof value === 'string' ? { itemId: value } : (value as EquippedItemRef | null) ?? null;
+    if (slot === 'tool' && ref) {
+      const newSlot = legacyToolSlot(ref.itemId);
+      if (newSlot) result[newSlot] = ref;
+      continue;
+    }
+    result[slot as EquipmentSlot] = ref;
   }
   return result;
 }
@@ -1201,6 +1225,16 @@ export async function equipItem(uid: string, slot: EquipmentSlot, itemId: string
 
   const characterUpdates: Record<string, unknown> = {
     [`equipment.${slot}`]: newRef,
+    // Toolbox split cleanup — every character created before the
+    // tool_mining/tool_skinning/tool_fishing split (see EquipmentSlot's
+    // doc comment) still has a legacy `equipment.tool` field sitting in
+    // its stored document (starterEquipment used to set it at creation).
+    // firestore.rules' isValidEquipment no longer allows that key at all,
+    // so the FIRST equip/unequip call after this change must clear it or
+    // every later one would fail validation. Deleting an already-absent
+    // field is a harmless no-op, so this is safe to send unconditionally
+    // on every call, not just once.
+    'equipment.tool': deleteField(),
   };
 
   // Equipping a two-handed weapon can't coexist with an offhand — auto-
@@ -1225,6 +1259,10 @@ export async function unequipItem(uid: string, slot: EquipmentSlot): Promise<voi
   await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), equipmentRefInventoryDelta(currentlyEquipped, 1));
   await updateDoc(doc(db, 'characters', uid), {
     [`equipment.${slot}`]: null,
+    // See equipItem's matching comment — clears the legacy pre-split
+    // `equipment.tool` field so it never trips isValidEquipment's hasOnly
+    // check on this or a later write.
+    'equipment.tool': deleteField(),
   });
 }
 

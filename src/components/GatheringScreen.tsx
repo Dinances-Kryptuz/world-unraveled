@@ -21,7 +21,7 @@ import {
 } from '../gameData/gatheringEngine';
 import { getProfessionState, maxSkillForUnlockedTier, PROFESSION_LABELS } from '../gameData/professionTiers';
 import { ITEMS } from '../gameData/items';
-import { equippedItemId } from '../gameData/equipmentStats';
+import { equippedItemId, toolTypeToEquipSlot } from '../gameData/equipmentStats';
 import { shirtBonusForItemId, shirtBonusPct } from '../gameData/shirts';
 import { herbZoneOf } from '../gameData/herbs';
 import { ZONES } from '../gameData/zones';
@@ -149,7 +149,9 @@ export function GatheringScreen({ node }: { node: GatherNode }) {
     const prof = getProfessionState(currentCharacter.professions, node.profession);
     const masteryState = prof.mastery?.[node.id] ?? { level: 0, xp: 0 };
     const cap = maxSkillForUnlockedTier(node.profession, prof.unlockedTier);
-    const equippedToolId = equippedItemId(currentCharacter.equipment.tool);
+    const equippedToolId = node.requiredToolType
+      ? equippedItemId(currentCharacter.equipment[toolTypeToEquipSlot(node.requiredToolType)])
+      : null;
     const equippedTool = equippedToolId ? ITEMS[equippedToolId] : null;
     const toolBonusPct =
       (equippedTool && node.requiredToolType && equippedTool.toolType === node.requiredToolType
@@ -347,7 +349,9 @@ export function GatheringScreen({ node }: { node: GatherNode }) {
   // separate 1s setInterval that drives the real 20s autosave cadence —
   // see TickBar.tsx's doc comment for why mixing in an independent JS timer
   // would drift against the bar's visual completion.
-  const previewEquippedToolId = equippedItemId(character.equipment.tool);
+  const previewEquippedToolId = node.requiredToolType
+    ? equippedItemId(character.equipment[toolTypeToEquipSlot(node.requiredToolType)])
+    : null;
   const previewEquippedTool = previewEquippedToolId ? ITEMS[previewEquippedToolId] : null;
   const previewToolBonusPct =
     (previewEquippedTool && node.requiredToolType && previewEquippedTool.toolType === node.requiredToolType

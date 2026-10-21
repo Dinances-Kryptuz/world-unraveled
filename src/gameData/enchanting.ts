@@ -901,8 +901,10 @@ function statTotal(item: ItemDef): number {
   return Object.values(item.statBonuses ?? {}).reduce((sum, v) => sum + (v ?? 0), 0);
 }
 
+const NON_DISENCHANTABLE_SLOTS = new Set(['tool_mining', 'tool_skinning', 'tool_fishing']);
+
 export function isDisenchantable(item: ItemDef): boolean {
-  return item.type === 'equipment' && item.equipSlot !== undefined && item.equipSlot !== 'tool';
+  return item.type === 'equipment' && item.equipSlot !== undefined && !NON_DISENCHANTABLE_SLOTS.has(item.equipSlot);
 }
 
 // Result item id -> Recipe.rarity, for every Recipe.materialId-tagged

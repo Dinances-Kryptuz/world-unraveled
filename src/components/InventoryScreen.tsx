@@ -5,6 +5,7 @@ import { subscribeToInventory, isLocked, setItemLocked } from '../firebase/inven
 import { useConsumableOutOfCombat, setEquippedConsumable, equipStatFood } from '../firebase/consumables';
 import { setInventorySortPrefs } from '../firebase/character';
 import { ITEMS } from '../gameData/items';
+import { consumableOwnedQuantities } from '../gameData/consumableClassification';
 import { equipmentSuffixFor } from '../gameData/equipmentSuffixes';
 import { materialIdForItem } from '../gameData/itemMetadata';
 import { getMaterial } from '../gameData/materials';
@@ -189,6 +190,13 @@ export function InventoryScreen() {
   const entries = sortInventoryEntries(filteredEntries, prefs.sortBy, prefs.sortStat) as (InventoryEntry & {
     remainingCharges?: number;
   })[];
+  // The grid's "every bag slot gets a cell, filled or empty" padding below
+  // is only a valid picture of the WHOLE bag when nothing is filtered out
+  // — otherwise `bagSlots - entries.length` counts filtered-out items as
+  // if they were free space, showing far more empty boxes than the player
+  // actually has (e.g. "30/33 used" in the header above, but 8 empty boxes
+  // in a filtered grid that's only showing 25 of those 30 items).
+  const isFiltered = filteredEntries.length !== rawEntries.length;
 
   return (
     <div className="inventory-screen">
@@ -200,7 +208,7 @@ export function InventoryScreen() {
       </p>
       <ConsumablesBar
         character={character}
-        inventoryItems={inventory.items}
+        inventoryItems={consumableOwnedQuantities(inventory)}
         allowMana={false}
         allowRecoveryFood={true}
         onUse={handleUseConsumable}
@@ -283,6 +291,13 @@ export function InventoryScreen() {
         </label>
       </div>
 
+      {isFiltered && entries.length > 0 && (
+        <p>
+          <small>
+            Showing {entries.length} of {rawEntries.length} items — filters are hiding the rest.
+          </small>
+        </p>
+      )}
       {entries.length === 0 ? (
         <p>{rawEntries.length === 0 ? 'Empty so far — go fight or gather something.' : 'No items match the current filters.'}</p>
       ) : (
@@ -321,7 +336,7 @@ export function InventoryScreen() {
               />
             );
           })}
-          {Array.from({ length: Math.max(0, character.bagSlots - entries.length) }).map((_, i) => (
+          {Array.from({ length: isFiltered ? 0 : Math.max(0, character.bagSlots - entries.length) }).map((_, i) => (
             <div key={`empty-${i}`} className="item-slot item-slot-empty" />
           ))}
         </div>

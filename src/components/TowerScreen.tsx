@@ -23,6 +23,7 @@ import {
 import { towerHpMultiplier, towerDamageMultiplier, ATTACK_INTERVAL_SECONDS } from '../gameData/combatFormulas';
 import { TOWER_MILESTONE_FLOORS } from '../gameData/towerLoot';
 import { ITEMS } from '../gameData/items';
+import { consumableOwnedQuantities } from '../gameData/consumableClassification';
 import { inferItemRarity, RARITY_COLORS } from '../gameData/itemRarity';
 import { resolveSpecDef, getExtraDamageTakenPct } from '../gameData/combatProfileWithTalents';
 import { resolveCombatProfile } from '../gameData/resolveCombatProfile';
@@ -547,7 +548,7 @@ export function TowerScreen() {
       <AbilityBar player={player} onUse={handleManualUse} />
       <ConsumablesBar
         character={character}
-        inventoryItems={inventory?.items ?? {}}
+        inventoryItems={inventory ? consumableOwnedQuantities(inventory) : {}}
         allowMana={true}
         allowRecoveryFood={false}
         onUse={handleUseConsumable}
