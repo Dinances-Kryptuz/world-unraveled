@@ -1,5 +1,5 @@
 import { PRIMARY_STAT, type BaseStat, type ClassId, type EquipRole, type SpecId } from './classStats';
-import type { EquipmentSlot, EquippedItemRef, ItemDef } from './types';
+import type { EquipmentSlot, EquippedItemRef, ItemDef, ToolType } from './types';
 import { ITEMS } from './items';
 import { ENCHANTS } from './enchanting';
 import { ARMOR_STAT_RANGES } from './equipmentRolls';
@@ -11,6 +11,20 @@ import { ARMOR_STAT_RANGES } from './equipmentRolls';
 // object instead of a bare string.
 export function equippedItemId(ref: EquippedItemRef | null | undefined): string | null {
   return ref?.itemId ?? null;
+}
+
+// Mining picks/skinning knives/fishing rods each live in their own
+// type-locked slot (see EquipmentSlot's doc comment) — gathering screens
+// that only know a node's/profession's `ToolType` use this to find which
+// slot to read instead of hardcoding the mapping themselves.
+const TOOL_TYPE_TO_EQUIP_SLOT: Record<ToolType, EquipmentSlot> = {
+  mining_pick: 'tool_mining',
+  skinning_knife: 'tool_skinning',
+  fishing_rod: 'tool_fishing',
+};
+
+export function toolTypeToEquipSlot(toolType: ToolType): EquipmentSlot {
+  return TOOL_TYPE_TO_EQUIP_SLOT[toolType];
 }
 
 // Every staff in the game — Enchanting's 6-tier Wand/Staff/Book line plus
@@ -233,7 +247,9 @@ const SLOT_LABELS: Record<EquipmentSlot, string> = {
   ring: 'Ring',
   ring2: 'Ring',
   necklace: 'Necklace',
-  tool: 'Tool',
+  tool_mining: 'Mining Pick',
+  tool_skinning: 'Skinning Knife',
+  tool_fishing: 'Fishing Rod',
   shoulders: 'Shoulders',
   cape: 'Cape',
   shirt: 'Shirt',

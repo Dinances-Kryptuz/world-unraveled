@@ -13,6 +13,7 @@ import {
 import { consumeEnchantCharges } from '../firebase/enchanting';
 import { MONSTERS } from '../gameData/monsters';
 import { ITEMS } from '../gameData/items';
+import { consumableOwnedQuantities } from '../gameData/consumableClassification';
 import { resolveSpecDef, getExtraDamageTakenPct } from '../gameData/combatProfileWithTalents';
 import { resolveCombatProfile } from '../gameData/resolveCombatProfile';
 import {
@@ -567,7 +568,7 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
           <AbilityBar player={player} onUse={handleManualUse} />
           <ConsumablesBar
             character={character}
-            inventoryItems={inventory?.items ?? {}}
+            inventoryItems={inventory ? consumableOwnedQuantities(inventory) : {}}
             allowMana={true}
             allowRecoveryFood={true}
             onUse={handleUseConsumable}

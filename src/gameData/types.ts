@@ -48,6 +48,14 @@ export type ActivityType = 'combat' | 'gathering' | 'crafting' | 'fishing' | 'di
 // character's equipment record carries them as null until something
 // actually fills them, same "absence is the zero state" posture as every
 // other not-yet-itemized slot before it.
+// 'tool' was a single generic slot shared by mining picks, skinning knives,
+// and fishing rods, which meant equipping one unequipped whichever of the
+// other two was already on. Split into three dedicated, type-locked slots
+// — a mining pick only ever fits tool_mining, etc. (see items.ts's tool
+// items' own equipSlot) — so a character can carry all three gathering
+// tools at once. Player-equipment-only: companions never gather, so
+// CompanionState.equipment (types/character.ts) never gets these three
+// (EquipmentPaperDoll's showTool prop is false for the companion screen).
 export type EquipmentSlot =
   | 'weapon'
   | 'offhand'
@@ -59,7 +67,9 @@ export type EquipmentSlot =
   | 'ring'
   | 'ring2'
   | 'necklace'
-  | 'tool'
+  | 'tool_mining'
+  | 'tool_skinning'
+  | 'tool_fishing'
   | 'shoulders'
   | 'cape'
   | 'shirt'

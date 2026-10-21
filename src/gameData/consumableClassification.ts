@@ -1,4 +1,5 @@
 import type { ItemDef } from './types';
+import type { Inventory } from '../types/character';
 
 // A consumable is "food" if it's explicitly flagged as such, is a Well Fed
 // buff, or is Recovery Food — see ConsumableEffect's isFood doc comment.
@@ -27,4 +28,20 @@ export function isPotionItem(item: ItemDef): boolean {
   const effect = item.consumableEffect;
   if (!effect || isFoodItem(item)) return false;
   return !!effect.buff || effect.healAmount !== undefined || effect.manaAmount !== undefined;
+}
+
+// Offensive/defensive potions (charge-based — see Inventory.chargedConsumables'
+// doc comment) never land in `items`, only in their own charge-bucketed
+// bucket, keyed by instanceId rather than itemId. ConsumablesBar's "do I own
+// this?" checks need a plain itemId->quantity map that covers BOTH stores —
+// without this, a charge-based potion can never appear as ownable there at
+// all (not pinnable to a quick-use slot, not listed under "All consumables"),
+// even while craftable/owned, matching this exact "potions aren't showing up"
+// bug report.
+export function consumableOwnedQuantities(inventory: Inventory): Record<string, number> {
+  const counts: Record<string, number> = { ...inventory.items };
+  for (const bucket of Object.values(inventory.chargedConsumables ?? {})) {
+    counts[bucket.itemId] = (counts[bucket.itemId] ?? 0) + bucket.quantity;
+  }
+  return counts;
 }

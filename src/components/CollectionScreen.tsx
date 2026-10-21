@@ -27,7 +27,7 @@ function isRetiredLegacyItem(itemId: string): boolean {
 // 'ring'), so grouping by it below would only ever find zero items.
 const SLOT_ORDER: EquipmentSlot[] = [
   'weapon', 'offhand', 'chest', 'helmet', 'shoulders', 'cape', 'shirt', 'tabard', 'bracers',
-  'gloves', 'belt', 'legs', 'boots', 'necklace', 'ring', 'tool', 'ammo',
+  'gloves', 'belt', 'legs', 'boots', 'necklace', 'ring', 'tool_mining', 'tool_skinning', 'tool_fishing', 'ammo',
 ];
 const SLOT_LABELS: Record<EquipmentSlot, string> = {
   weapon: 'Weapons',
@@ -40,7 +40,9 @@ const SLOT_LABELS: Record<EquipmentSlot, string> = {
   necklace: 'Necklaces',
   ring: 'Rings',
   ring2: 'Rings',
-  tool: 'Tools',
+  tool_mining: 'Mining Picks',
+  tool_skinning: 'Skinning Knives',
+  tool_fishing: 'Fishing Rods',
   shoulders: 'Shoulders',
   cape: 'Capes',
   shirt: 'Shirts',

@@ -21,12 +21,9 @@ export function getItemIcon(item: ItemDef): string {
       return '⚔️';
     }
     if (item.equipSlot === 'ring') return '💍';
-    if (item.equipSlot === 'tool') {
-      if (/pick/.test(id)) return '⛏️';
-      if (/knife/.test(id)) return '🔪';
-      if (/rod/.test(id)) return '🎣';
-      return '🛠️';
-    }
+    if (item.equipSlot === 'tool_mining') return '⛏️';
+    if (item.equipSlot === 'tool_skinning') return '🔪';
+    if (item.equipSlot === 'tool_fishing') return '🎣';
     if (item.equipSlot === 'helmet') {
       return item.armorType === 'plate' ? '🪖' : item.armorType === 'mail' ? '⛑️' : '🧢';
     }

@@ -118,7 +118,7 @@ export function FishingScreen({ hole }: { hole: FishingHole }) {
     const now = new Date();
     const prof = getProfessionState(currentCharacter.professions, 'fishing');
     const cap = maxSkillForUnlockedTier('fishing', prof.unlockedTier);
-    const equippedToolId = equippedItemId(currentCharacter.equipment.tool);
+    const equippedToolId = equippedItemId(currentCharacter.equipment.tool_fishing);
     const equippedTool = equippedToolId ? ITEMS[equippedToolId] : null;
     const toolBonusPct =
       (equippedTool?.toolType === 'fishing_rod' ? equippedTool.gatherBonusPct ?? 0 : 0) + guildBonusesRef.current.gatheringTimePct;
@@ -288,7 +288,7 @@ export function FishingScreen({ hole }: { hole: FishingHole }) {
   // separate 1s setInterval that drives the real 20s autosave cadence —
   // see TickBar.tsx's doc comment for why an independent JS timer would
   // drift against the bar's visual completion.
-  const previewEquippedToolId = equippedItemId(character.equipment.tool);
+  const previewEquippedToolId = equippedItemId(character.equipment.tool_fishing);
   const previewEquippedTool = previewEquippedToolId ? ITEMS[previewEquippedToolId] : null;
   const previewToolBonusPct =
     (previewEquippedTool?.toolType === 'fishing_rod' ? previewEquippedTool.gatherBonusPct ?? 0 : 0) + guildBonuses.gatheringTimePct;

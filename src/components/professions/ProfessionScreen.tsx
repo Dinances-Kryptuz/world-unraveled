@@ -12,7 +12,7 @@ import { useEnchantScroll, removeEnchant } from '../../firebase/enchanting';
 import { subscribeToInventory, isLocked } from '../../firebase/inventory';
 import { ENCHANTS, describeEnchantEffect, isDisenchantable, disenchantRequiredSkill, disenchantYieldRange, type EnchantCategory } from '../../gameData/enchanting';
 import { ITEMS } from '../../gameData/items';
-import { equippedItemId } from '../../gameData/equipmentStats';
+import { equippedItemId, toolTypeToEquipSlot } from '../../gameData/equipmentStats';
 import { describeItemStats } from '../../gameData/equipmentStats';
 import { MATERIALS, LEATHER_MATERIALS, CLOTH_MATERIALS, WOOD_MATERIALS, getMaterial, type MaterialDef } from '../../gameData/materials';
 import { getItemDisplayName, equipmentSuffixFor } from '../../gameData/equipmentSuffixes';
@@ -925,7 +925,9 @@ export function ProfessionScreen({
               }
               const meetsLevel = professionLevel >= node.requiredLevel;
               const tier = !meetsLevel ? 'red' : gatheringColorTier(professionLevel, node.requiredLevel);
-              const equippedToolId = equippedItemId(character.equipment.tool);
+              const equippedToolId = node.requiredToolType
+                ? equippedItemId(character.equipment[toolTypeToEquipSlot(node.requiredToolType)])
+                : null;
               const equippedTool = equippedToolId ? ITEMS[equippedToolId] : null;
               const hasRequiredTool = !node.requiredToolType || equippedTool?.toolType === node.requiredToolType;
               const canGather = meetsLevel && hasRequiredTool;
@@ -992,7 +994,7 @@ export function ProfessionScreen({
               }
               const meetsLevel = professionLevel >= hole.requiredLevel;
               const tier = !meetsLevel ? 'red' : gatheringColorTier(professionLevel, hole.requiredLevel);
-              const equippedToolId = equippedItemId(character.equipment.tool);
+              const equippedToolId = equippedItemId(character.equipment.tool_fishing);
               const equippedTool = equippedToolId ? ITEMS[equippedToolId] : null;
               const hasRod = equippedTool?.toolType === 'fishing_rod';
               const canFish = meetsLevel && hasRod;

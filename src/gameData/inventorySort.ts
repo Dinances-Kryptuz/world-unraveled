@@ -33,7 +33,7 @@ export interface InventoryFilter {
 export const EQUIPMENT_SLOT_SORT_ORDER: EquipmentSlot[] = [
   'helmet', 'necklace', 'shoulders', 'cape', 'chest', 'shirt', 'tabard', 'bracers',
   'gloves', 'belt', 'legs', 'boots', 'ring', 'ring2',
-  'weapon', 'offhand', 'ammo', 'tool',
+  'weapon', 'offhand', 'ammo', 'tool_mining', 'tool_skinning', 'tool_fishing',
 ];
 
 function slotRank(itemId: string): number {
