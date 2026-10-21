@@ -318,12 +318,12 @@ export interface CasterProfile {
 }
 
 // EnchantProcKind values map 1:1 onto the design brief's Zone 5/6 proc
-// enchants — fiery_weapon/lifestealing/crusader are real mechanics (see
-// computeEffectDamage); icy_chill is defined/craftable/appliable but its
-// slow effect is a deliberate no-op (per this session's earlier-approved
-// "skip Icy Chill's slow proc" resolution — no attack-speed-debuff concept
-// exists on the DEFENDER side of this engine, only the player's own
-// hastePct lever).
+// enchants — all five are real mechanics now (see computeEffectDamage).
+// icy_chill reuses the existing ActiveBuff/actionSpeedPct mechanism
+// (already applied to the player's own attacker side via Crusader/Battle
+// Cry and to monsters via the rogue companion's Crippling Poison) just
+// applied to a weapon-proc's DEFENDER instead — a flat -10% action-speed
+// debuff, not the player's own hastePct lever.
 export type EnchantProcKind = 'fiery_weapon' | 'lifestealing' | 'icy_chill' | 'crusader' | 'chain_lightning';
 
 export interface EnchantWeaponProc {

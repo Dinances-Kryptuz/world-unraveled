@@ -500,7 +500,7 @@ export const ENCHANTS: Record<string, EnchantDef> = {
     id: 'enchant_icy_chill_z5', name: 'Enchant Weapon: Icy Chill',
     description: 'Use on an equipped weapon item to apply the Icy Chill enchant.', slot: 'weapon', category: 'offensive',
     statBonuses: {}, scrollItemId: 'scroll_icy_chill_z5',
-    proc: { kind: 'icy_chill', chancePct: 20, power: 0 },
+    proc: { kind: 'icy_chill', chancePct: 10, power: 0 },
   },
   enchant_lifestealing_z5: {
     id: 'enchant_lifestealing_z5', name: 'Enchant Weapon: Lifestealing',
@@ -601,7 +601,7 @@ export const ENCHANTS: Record<string, EnchantDef> = {
     id: 'enchant_ember_icy_chill', name: 'Enchant Weapon: Ember Icy Chill',
     description: 'Use on an equipped weapon item to apply the Ember Icy Chill enchant.', slot: 'weapon', category: 'offensive',
     statBonuses: {}, scrollItemId: 'scroll_ember_icy_chill',
-    proc: { kind: 'icy_chill', chancePct: 25, power: 0 },
+    proc: { kind: 'icy_chill', chancePct: 10, power: 0 },
   },
   enchant_ember_lifestealing: {
     id: 'enchant_ember_lifestealing', name: 'Enchant Weapon: Ember Lifestealing',
@@ -760,11 +760,11 @@ export function describeEnchantEffect(enchant: EnchantDef): string {
     else if (kind === 'lifestealing') parts.push(`${chancePct}% chance on hit to heal yourself for ${power}% of the damage dealt`);
     else if (kind === 'crusader') parts.push(`${chancePct}% chance on hit to gain +10% damage dealt and heal 5% of your max HP`);
     else if (kind === 'chain_lightning') parts.push(`${chancePct}% chance on hit to chain ${power}% bonus damage to up to 2 other enemies`);
-    // icy_chill is deliberately left undescribed here — defined/craftable/
-    // appliable (see combatEngine/types.ts's EnchantProcKind doc comment)
-    // but no combat-engine code branch actually resolves it yet, so stating
-    // a chill/slow effect would be a real lie rather than a documentation
-    // gap. Flagged as a known content gap rather than silently invented.
+    // Magnitude/duration are mirrored by hand from combatEngine/engine.ts's
+    // ICY_CHILL_SLOW_PCT/ICY_CHILL_DEBUFF_DURATION_SECONDS — gameData/ stays
+    // independent of combatEngine/ (see this file's own module comment
+    // precedent), so this is a small duplicated constant, not an import.
+    else if (kind === 'icy_chill') parts.push(`${chancePct}% chance on hit to slow the target's actions by 10% for 15s`);
   }
   return parts.length > 0 ? `${enchant.description} (${parts.join(', ')})` : enchant.description;
 }
