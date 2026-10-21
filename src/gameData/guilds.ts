@@ -12,6 +12,7 @@ export interface GuildMemberRow {
   class: string;
   spec: string | null;
   level: number;
+  title: string | null;
   role: GuildRole;
   joinedAt: Date | null;
 }

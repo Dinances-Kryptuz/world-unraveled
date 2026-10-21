@@ -258,19 +258,26 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
     // block below; a failed write must leave this matching the restored
     // anchor so a retry can't re-fire the same toast.
     notifiedWholeRef.current = wholeCrafted;
-    if (currentCharacter.skillXpNotificationsEnabled && earnsProfessionXp && result.professionXpGained > 0) {
-      notify(`${label} XP gained`, [`+${result.professionXpGained} XP`]);
+    // Floored before display/gating — see FishingScreen's matching comment:
+    // the batch-resolver's fractional partial-action math can leave float
+    // noise (e.g. a near-zero leftover like 0.0000001) on these deltas that
+    // shouldn't be shown, or gated on, as-is.
+    const craftXpGained = Math.floor(result.professionXpGained);
+    if (currentCharacter.skillXpNotificationsEnabled && earnsProfessionXp && craftXpGained > 0) {
+      notify(`${label} XP gained`, [`+${craftXpGained} XP`]);
     }
     if (currentCharacter.masteryXpNotificationsEnabled && earnsProfessionXp) {
-      const masteryXpGained = materialMasteryInput
-        ? result.materialMasteryXpGained ?? 0
-        : alchemyZoneMasteryInput
-          ? result.alchemyZoneMasteryXpGained ?? 0
-          : enchantingZoneMasteryInput
-            ? result.enchantingZoneMasteryXpGained ?? 0
-            : cookingZoneMasteryInput
-              ? result.cookingZoneMasteryXpGained ?? 0
-              : result.masteryXpGained;
+      const masteryXpGained = Math.floor(
+        materialMasteryInput
+          ? result.materialMasteryXpGained ?? 0
+          : alchemyZoneMasteryInput
+            ? result.alchemyZoneMasteryXpGained ?? 0
+            : enchantingZoneMasteryInput
+              ? result.enchantingZoneMasteryXpGained ?? 0
+              : cookingZoneMasteryInput
+                ? result.cookingZoneMasteryXpGained ?? 0
+                : result.masteryXpGained
+      );
       if (masteryXpGained > 0) {
         const masteryLabel =
           material?.name ??

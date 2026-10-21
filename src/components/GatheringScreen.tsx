@@ -197,13 +197,20 @@ export function GatheringScreen({ node }: { node: GatherNode }) {
     // reset to 0) until the write below actually succeeds, so a failed
     // autosave's rollback of anchorRef can't cause a retry to re-notify.
     notifiedWholeRef.current = wholeQuantity;
-    if (currentCharacter.skillXpNotificationsEnabled && result.professionXpGained > 0) {
-      notify(`${PROFESSION_LABELS[node.profession]} XP gained`, [`+${result.professionXpGained} XP`]);
+    // Floored before display/gating — see FishingScreen's matching comment:
+    // actionsThisBatch is a genuinely fractional partial-action count by
+    // design, so the raw XP delta can carry float noise (e.g. a near-zero
+    // leftover like 0.0000001) that shouldn't be shown, or gated on, as-is.
+    const gatherXpGained = Math.floor(result.professionXpGained);
+    if (currentCharacter.skillXpNotificationsEnabled && gatherXpGained > 0) {
+      notify(`${PROFESSION_LABELS[node.profession]} XP gained`, [`+${gatherXpGained} XP`]);
     }
-    if (currentCharacter.masteryXpNotificationsEnabled && herbZoneId && (result.herbalismZoneMasteryXpGained ?? 0) > 0) {
-      notify('Mastery XP gained', [`+${result.herbalismZoneMasteryXpGained} ${ZONES[herbZoneId]?.name ?? herbZoneId} Mastery XP`]);
-    } else if (currentCharacter.masteryXpNotificationsEnabled && !herbZoneId && result.masteryXpGained > 0) {
-      notify('Mastery XP gained', [`+${result.masteryXpGained} ${ITEMS[node.itemId]?.name ?? node.itemId} Mastery XP`]);
+    const herbalismMasteryXpGained = Math.floor(result.herbalismZoneMasteryXpGained ?? 0);
+    const nodeMasteryXpGained = Math.floor(result.masteryXpGained);
+    if (currentCharacter.masteryXpNotificationsEnabled && herbZoneId && herbalismMasteryXpGained > 0) {
+      notify('Mastery XP gained', [`+${herbalismMasteryXpGained} ${ZONES[herbZoneId]?.name ?? herbZoneId} Mastery XP`]);
+    } else if (currentCharacter.masteryXpNotificationsEnabled && !herbZoneId && nodeMasteryXpGained > 0) {
+      notify('Mastery XP gained', [`+${nodeMasteryXpGained} ${ITEMS[node.itemId]?.name ?? node.itemId} Mastery XP`]);
     }
 
     // A rough speculative estimate, superseded moments later by the

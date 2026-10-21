@@ -10,7 +10,7 @@ import { craftingColorTier, CRAFTING_COLOR_XP_PCT } from '../../gameData/craftin
 import { canUseRecipe } from '../../firebase/professions';
 import { useEnchantScroll, removeEnchant } from '../../firebase/enchanting';
 import { subscribeToInventory, isLocked } from '../../firebase/inventory';
-import { ENCHANTS, isDisenchantable, disenchantRequiredSkill, disenchantYieldRange, type EnchantCategory } from '../../gameData/enchanting';
+import { ENCHANTS, describeEnchantEffect, isDisenchantable, disenchantRequiredSkill, disenchantYieldRange, type EnchantCategory } from '../../gameData/enchanting';
 import { ITEMS } from '../../gameData/items';
 import { equippedItemId } from '../../gameData/equipmentStats';
 import { describeItemStats } from '../../gameData/equipmentStats';
@@ -225,6 +225,11 @@ export function ProfessionScreen({
     suffix: '',
   });
   const [enchantingTab, setEnchantingTab] = useState<EnchantingTab>('equipment');
+  // Using a scroll previously gave zero feedback either way — handleUseScroll
+  // never even looked at useEnchantScroll's own success/reason, so it just
+  // silently refetched regardless, which reads as "nothing happened" even
+  // on success. Same local message-state shape as autoEatError above.
+  const [scrollMessage, setScrollMessage] = useState<string | null>(null);
 
   // Cooking overhaul Tier 1 — Auto Eat's own tiny bit of local state, same
   // shape as MountTrainerScreen's training/error pair.
@@ -285,7 +290,14 @@ export function ProfessionScreen({
 
   async function handleUseScroll(scrollItemId: string) {
     if (!user) return;
-    await useEnchantScroll(user.uid, scrollItemId);
+    setScrollMessage(null);
+    const result = await useEnchantScroll(user.uid, scrollItemId);
+    if (!result.success) {
+      setScrollMessage(result.reason ?? 'Could not use that scroll.');
+      return;
+    }
+    const enchant = ITEMS[scrollItemId]?.scrollEnchantId ? ENCHANTS[ITEMS[scrollItemId].scrollEnchantId!] : undefined;
+    setScrollMessage(enchant ? `Applied ${enchant.name} to your ${enchant.slot}.` : 'Enchant applied.');
     await refetch();
   }
 
@@ -640,6 +652,7 @@ export function ProfessionScreen({
             ))}
 
             <h3>Use Scroll</h3>
+            {scrollMessage && <p>{scrollMessage}</p>}
             {scrollEntries.length === 0 ? (
               <p>No scrolls in your inventory — craft one above.</p>
             ) : (
@@ -660,7 +673,7 @@ export function ProfessionScreen({
                           <div className="item-row-main">
                             <ItemSlot item={scroll} quantity={quantity} />
                             <span>
-                              {scroll.name} ({enchant.description}) —{' '}
+                              {scroll.name} ({describeEnchantEffect(enchant)}) —{' '}
                               {equippedItem ? `applies to your equipped ${equippedItem.name}` : `no ${enchant.slot} equipped`}
                             </span>
                           </div>
@@ -688,7 +701,7 @@ export function ProfessionScreen({
                 const charges = char.enchantmentCharges?.[slot];
                 return (
                   <li key={slot}>
-                    {slot} ({equippedItem ? equippedItem.name : 'empty'}): <em>{enchant.name}</em> ({enchant.description})
+                    {slot} ({equippedItem ? equippedItem.name : 'empty'}): <em>{enchant.name}</em> ({describeEnchantEffect(enchant)})
                     {charges !== undefined ? ` — ${charges} charges left` : ''}
                     <button onClick={() => handleRemoveEnchant(slot)}>Remove Enchant</button>
                   </li>

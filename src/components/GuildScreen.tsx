@@ -21,6 +21,7 @@ import { MAX_GUILD_MEMBERS, MAX_OFFICERS, roleLabel, type GuildDetails, type Gui
 import { CLASS_LABELS, SPEC_LABELS, type ClassId, type SpecId } from '../gameData/classStats';
 import { COMPANIONS } from '../gameData/companions';
 import { PROFESSION_LABELS } from '../gameData/professionTiers';
+import { getTitle } from '../gameData/titles';
 import type { CompanionState } from '../types/character';
 import { ClassColoredName } from './ClassColoredName';
 import {
@@ -645,6 +646,7 @@ function GuildOverview({
               <span className="guild-roster-meta">
                 Lv {m.level} {CLASS_LABELS[m.class as ClassId] ?? m.class}
                 {m.spec ? ` (${SPEC_LABELS[m.spec as SpecId] ?? m.spec})` : ''}
+                {m.title && getTitle(m.title) ? ` «${getTitle(m.title)!.name}»` : ''}
               </span>
               <span className="guild-roster-role">{roleLabel(m.role)}</span>
               {canManage && m.uid !== myUid && m.role !== 'master' && (

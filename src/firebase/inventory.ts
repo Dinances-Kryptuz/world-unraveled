@@ -33,6 +33,19 @@ function notifyDroppedForFullBag(dropped: { itemId: string; quantity: number }[]
   );
 }
 
+// grantEquipmentInstances' OTHER cap — MAX_VARIANTS_PER_BASE_ITEM distinct
+// rolled stat combinations of the same base item — used to be reported
+// under this same "Inventory full" toast, which is actively misleading: a
+// player crafting the same armor piece repeatedly for a better roll can hit
+// this cap with their bag nowhere near full, and "Inventory full" sends
+// them looking for bag space that was never the problem.
+function notifyDroppedForVariantCap(itemId: string, quantity: number): void {
+  if (quantity <= 0) return;
+  notify('Too many variants', [
+    `${quantity}x ${ITEMS[itemId]?.name ?? itemId} — not added, you already have ${MAX_VARIANTS_PER_BASE_ITEM} different rolls of this item`,
+  ]);
+}
+
 export async function getInventory(uid: string): Promise<Inventory> {
   const snap = await getDoc(doc(db, 'characters', uid, 'inventory', 'main'));
   if (!snap.exists()) return { items: {} };
@@ -107,10 +120,20 @@ export async function grantInventoryItems(
 
   const accepted = await runTransaction(db, async (tx) => {
     const [invSnap, charSnap] = await Promise.all([tx.get(invRef), tx.get(charRef)]);
-    const items: Record<string, number> = invSnap.exists() ? ((invSnap.data() as Inventory).items ?? {}) : {};
+    const inventory = (invSnap.exists() ? (invSnap.data() as Inventory) : { items: {} }) as Inventory;
+    const items = inventory.items ?? {};
     const bagSlots: number = charSnap.exists() ? ((charSnap.data().bagSlots as number) ?? 0) : 0;
 
-    let distinctCount = Object.values(items).filter((q) => q > 0).length;
+    // Must include equipmentInstances/chargedConsumables-only base items
+    // (countDistinctBaseItems — same helper grantEquipmentInstances/
+    // grantChargedConsumables below already use), not just `items` — a
+    // player holding several items ONLY as rolled-gear or charged-potion
+    // buckets (never as a plain `items` stack) would otherwise have those
+    // slots invisible to this count, letting a combat/gathering/quest/
+    // vendor grant through this function accept new items past the bag's
+    // real occupancy. Same root cause as the "22/24" miscount this
+    // project has already hit once elsewhere, reproduced here.
+    let distinctCount = Object.values(items).filter((q) => q > 0).length + countDistinctBaseItems(inventory);
     const seenNew = new Set<string>();
     const acceptedInner: { itemId: string; quantity: number }[] = [];
     dropped = [];
@@ -179,7 +202,8 @@ export async function grantEquipmentInstances(
   const invRef = doc(db, 'characters', uid, 'inventory', 'main');
   const charRef = doc(db, 'characters', uid);
   // Same atomicity fix as grantInventoryItems above — see its doc comment.
-  let droppedTotal = 0;
+  let droppedForBagFull = 0;
+  let droppedForVariantCap = 0;
 
   const accepted = await runTransaction(db, async (tx) => {
     const [invSnap, charSnap] = await Promise.all([tx.get(invRef), tx.get(charRef)]);
@@ -192,17 +216,24 @@ export async function grantEquipmentInstances(
     let distinctCount = Object.values(inventory.items).filter((q) => q > 0).length + countDistinctBaseItems(inventory);
 
     const acceptedInner: { instanceId: string; quantity: number }[] = [];
-    droppedTotal = 0;
+    droppedForBagFull = 0;
+    droppedForVariantCap = 0;
     for (const [instanceId, quantity] of requestedQuantities) {
       const isNewVariant = !existingVariantIds.has(instanceId);
       if (isNewVariant) {
+        // Two independent caps, each dropped loot for a DIFFERENT reason —
+        // conflating them under one "Inventory full" toast (as this used
+        // to) is misleading when the bag has plenty of free slots left but
+        // this one base item has simply rolled too many distinct stat
+        // combinations already (easy to hit crafting the same armor piece
+        // repeatedly hoping for a better roll).
         if (existingVariantIds.size >= MAX_VARIANTS_PER_BASE_ITEM) {
-          droppedTotal += quantity; // variant cap — this roll is dropped
+          droppedForVariantCap += quantity;
           continue;
         }
         if (!baseItemSlotSpent) {
           if (distinctCount >= bagSlots) {
-            droppedTotal += quantity; // bag full — this item id is dropped entirely
+            droppedForBagFull += quantity; // bag full — this item id is dropped entirely
             continue;
           }
           distinctCount++;
@@ -238,7 +269,8 @@ export async function grantEquipmentInstances(
     return acceptedInner;
   });
 
-  notifyDroppedForFullBag(droppedTotal > 0 ? [{ itemId, quantity: droppedTotal }] : []);
+  notifyDroppedForFullBag(droppedForBagFull > 0 ? [{ itemId, quantity: droppedForBagFull }] : []);
+  notifyDroppedForVariantCap(itemId, droppedForVariantCap);
   return accepted;
 }
 

@@ -21,6 +21,7 @@ interface RosterEntry {
   class: string;
   spec: string | null;
   level: number;
+  title: string | null;
   role: string;
   joinedAt: FirebaseFirestore.Timestamp | null;
 }
@@ -45,6 +46,7 @@ export const onGuildMemberWritten = onDocumentWritten('guildMembers/{memberId}',
         class: afterData.class,
         spec: afterData.spec ?? null,
         level: afterData.level,
+        title: afterData.title ?? null,
         role: afterData.role,
         joinedAt: afterData.joinedAt ?? null,
       });
@@ -88,6 +90,7 @@ export const backfillGuildRoster = onCall(async (request) => {
       class: m.class,
       spec: m.spec ?? null,
       level: m.level,
+      title: m.title ?? null,
       role: m.role,
       joinedAt: m.joinedAt ?? null,
     };

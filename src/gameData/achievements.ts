@@ -7,7 +7,7 @@ import { DUNGEONS } from './dungeons';
 import { MAX_CHARACTER_SLOTS } from './characterSlots';
 import { MATERIALS, LEATHER_MATERIALS, CLOTH_MATERIALS, WOOD_MATERIALS } from './materials';
 import { MATERIAL_MASTERY_XP_THRESHOLDS } from './equipmentRolls';
-import { ZONES } from './zones';
+import { ZONES, CONTENT_ZONE_IDS } from './zones';
 import { HERBALISM_ZONE_MASTERY_THRESHOLD, FISHING_ZONE_MASTERY_THRESHOLD } from './gatheringEngine';
 import { ALCHEMY_ZONE_MASTERY_THRESHOLD } from './alchemyMastery';
 import { ENCHANTING_ZONE_MASTERY_THRESHOLD } from './enchantingMastery';
@@ -163,12 +163,18 @@ export function isCookingZoneMastered(character: Character, zoneId: string): boo
   return xp >= COOKING_ZONE_MASTERY_THRESHOLD;
 }
 
-// One "Master Forager of {zone.name}" achievement per gameData/zones.ts
-// ZONE — same fully data-driven, zero-per-zone-hardcoding pattern as
+// One "Master Forager of {zone.name}" achievement per CONTENT_ZONE_IDS
+// zone — same fully data-driven, zero-per-zone-hardcoding pattern as
 // generateMasteryAchievements above, reading the real ZONES registry
-// instead of MATERIALS.
+// instead of MATERIALS. Iterates CONTENT_ZONE_IDS, not every zone in
+// ZONES/Object.values(ZONES) — Ashenfall (the capital hub) has no herb
+// nodes of its own, so a "Master Forager of Ashenfall" entry generated
+// from the full ZONES registry would be permanently unearnable; same
+// reasoning for the Angler/Alchemist/Enchanter/Chef generators and their
+// "every zone" Grandmaster checks below. See CONTENT_ZONE_IDS's doc
+// comment in zones.ts.
 function generateForagerAchievements(): AchievementDef[] {
-  return Object.values(ZONES).map((zone) => ({
+  return CONTENT_ZONE_IDS.map((zoneId) => ZONES[zoneId]).map((zone) => ({
     id: `forager_${zone.id}`,
     name: `Master Forager of ${zone.name}`,
     description: `Reach 100% Herbalism Mastery in ${zone.name}.`,
@@ -180,14 +186,14 @@ const GRANDMASTER_FORAGER_ACHIEVEMENT: AchievementDef = {
   id: 'grandmaster_forager',
   name: 'Grandmaster Forager',
   description: 'Reach 100% Herbalism Mastery in every zone.',
-  check: (c) => Object.values(ZONES).every((z) => isHerbalismZoneMastered(c, z.id)),
+  check: (c) => CONTENT_ZONE_IDS.every((zoneId) => isHerbalismZoneMastered(c, zoneId)),
 };
 
-// One "Master Angler of {zone.name}" achievement per gameData/zones.ts
-// ZONE — same fully data-driven pattern as generateForagerAchievements,
-// over the Fishing overhaul's own zone-Mastery axis.
+// One "Master Angler of {zone.name}" achievement per CONTENT_ZONE_IDS zone
+// — same fully data-driven pattern as generateForagerAchievements, over
+// the Fishing overhaul's own zone-Mastery axis.
 function generateAnglerAchievements(): AchievementDef[] {
-  return Object.values(ZONES).map((zone) => ({
+  return CONTENT_ZONE_IDS.map((zoneId) => ZONES[zoneId]).map((zone) => ({
     id: `angler_${zone.id}`,
     name: `Master Angler of ${zone.name}`,
     description: `Reach 100% Fishing Mastery in ${zone.name}.`,
@@ -199,11 +205,11 @@ const GRANDMASTER_ANGLER_ACHIEVEMENT: AchievementDef = {
   id: 'grandmaster_angler',
   name: 'Grandmaster Angler',
   description: 'Reach 100% Fishing Mastery in every zone.',
-  check: (c) => Object.values(ZONES).every((z) => isFishingZoneMastered(c, z.id)),
+  check: (c) => CONTENT_ZONE_IDS.every((zoneId) => isFishingZoneMastered(c, zoneId)),
 };
 
 function generateAlchemistAchievements(): AchievementDef[] {
-  return Object.values(ZONES).map((zone) => ({
+  return CONTENT_ZONE_IDS.map((zoneId) => ZONES[zoneId]).map((zone) => ({
     id: `alchemist_${zone.id}`,
     name: `Master Alchemist of ${zone.name}`,
     description: `Reach 100% Alchemy Mastery in ${zone.name}.`,
@@ -215,14 +221,14 @@ const GRANDMASTER_ALCHEMIST_ACHIEVEMENT: AchievementDef = {
   id: 'grandmaster_alchemist',
   name: 'Grandmaster Alchemist',
   description: 'Reach 100% Alchemy Mastery in every zone.',
-  check: (c) => Object.values(ZONES).every((z) => isAlchemyZoneMastered(c, z.id)),
+  check: (c) => CONTENT_ZONE_IDS.every((zoneId) => isAlchemyZoneMastered(c, zoneId)),
 };
 
 // Enchanting overhaul's Phase E7 scroll-crafting zone-Mastery — "Enchanter"
 // (not "Alchemist"/"Blacksmith") to read distinctly from the equipment-side
 // MASTER_ENCHANTER_EQUIPMENT_ACHIEVEMENT ("Master of Armaments") above.
 function generateEnchanterAchievements(): AchievementDef[] {
-  return Object.values(ZONES).map((zone) => ({
+  return CONTENT_ZONE_IDS.map((zoneId) => ZONES[zoneId]).map((zone) => ({
     id: `enchanter_${zone.id}`,
     name: `Master Enchanter of ${zone.name}`,
     description: `Reach 100% scroll-crafting Mastery in ${zone.name}.`,
@@ -231,9 +237,9 @@ function generateEnchanterAchievements(): AchievementDef[] {
 }
 
 // Cooking overhaul — "Chef" (not "Alchemist"/"Enchanter"/"Blacksmith"),
-// one "Master Chef of {zone.name}" achievement per gameData/zones.ts ZONE.
+// one "Master Chef of {zone.name}" achievement per CONTENT_ZONE_IDS zone.
 function generateChefAchievements(): AchievementDef[] {
-  return Object.values(ZONES).map((zone) => ({
+  return CONTENT_ZONE_IDS.map((zoneId) => ZONES[zoneId]).map((zone) => ({
     id: `chef_${zone.id}`,
     name: `Master Chef of ${zone.name}`,
     description: `Reach 100% Cooking Mastery in ${zone.name}.`,
@@ -245,14 +251,14 @@ const GRANDMASTER_CHEF_ACHIEVEMENT: AchievementDef = {
   id: 'grandmaster_chef',
   name: 'Grandmaster Chef',
   description: 'Reach 100% Cooking Mastery in every zone.',
-  check: (c) => Object.values(ZONES).every((z) => isCookingZoneMastered(c, z.id)),
+  check: (c) => CONTENT_ZONE_IDS.every((zoneId) => isCookingZoneMastered(c, zoneId)),
 };
 
 const GRANDMASTER_ENCHANTER_ACHIEVEMENT: AchievementDef = {
   id: 'grandmaster_enchanter',
   name: 'Grandmaster Enchanter',
   description: 'Reach 100% scroll-crafting Mastery in every zone.',
-  check: (c) => Object.values(ZONES).every((z) => isEnchantingZoneMastered(c, z.id)),
+  check: (c) => CONTENT_ZONE_IDS.every((zoneId) => isEnchantingZoneMastered(c, zoneId)),
 };
 
 // One "Floor N Conqueror" achievement per gameData/towerLoot.ts milestone

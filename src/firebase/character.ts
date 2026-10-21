@@ -12,7 +12,7 @@ import {
 } from '../gameData/gatheringEngine';
 import type { ProfessionState } from '../types/character';
 import { BASE_BANK_SLOTS } from '../gameData/bank';
-import { DEFAULT_ZONE_ID, ZONES, isZoneUnlocked } from '../gameData/zones';
+import { DEFAULT_ZONE_ID, ZONES, CONTENT_ZONE_IDS, isZoneUnlocked } from '../gameData/zones';
 import { abilityTrainingCost, abilityTrainingZoneId } from '../gameData/abilityTraining';
 import type { TravelState } from '../gameData/travel';
 import { maxHp } from '../gameData/combatFormulas';
@@ -746,7 +746,7 @@ export async function applyGatheringProfessionResult(
       }
       if (
         !character.unlockedAchievementIds.includes('grandmaster_forager') &&
-        Object.keys(ZONES).every((z) => (hypotheticalZoneMastery[z]?.xp ?? 0) >= HERBALISM_ZONE_MASTERY_THRESHOLD)
+        CONTENT_ZONE_IDS.every((z) => (hypotheticalZoneMastery[z]?.xp ?? 0) >= HERBALISM_ZONE_MASTERY_THRESHOLD)
       ) {
         newlyUnlockedIds.push('grandmaster_forager');
       }
@@ -778,20 +778,27 @@ export async function applyGatheringProfessionResult(
 // necessarily yet persisted) — shared by the eager in-crafting check below
 // and gameData/achievements.ts's MASTER_BLACKSMITH_ACHIEVEMENT so the two
 // can never disagree.
+//
+// All three "every zone mastered" checks below iterate CONTENT_ZONE_IDS,
+// not Object.keys(ZONES)/every zone in ZONES — Ashenfall (the capital hub)
+// has no herb/alchemy/enchanting/cooking zone-Mastery content of its own,
+// so including it would make the achievement permanently unreachable (its
+// own entry can never reach any non-zero threshold). See CONTENT_ZONE_IDS's
+// doc comment in gameData/zones.ts.
 function allAlchemyZonesMastered(mastery: ZoneMasteryState | undefined): boolean {
-  return Object.keys(ZONES).every((zoneId) => (mastery?.[zoneId]?.xp ?? 0) >= ALCHEMY_ZONE_MASTERY_THRESHOLD);
+  return CONTENT_ZONE_IDS.every((zoneId) => (mastery?.[zoneId]?.xp ?? 0) >= ALCHEMY_ZONE_MASTERY_THRESHOLD);
 }
 
 // Same role as allAlchemyZonesMastered, for Enchanting's own separate
 // scroll-crafting zone-Mastery axis (Phase E7).
 function allEnchantingZonesMastered(mastery: ZoneMasteryState | undefined): boolean {
-  return Object.keys(ZONES).every((zoneId) => (mastery?.[zoneId]?.xp ?? 0) >= ENCHANTING_ZONE_MASTERY_THRESHOLD);
+  return CONTENT_ZONE_IDS.every((zoneId) => (mastery?.[zoneId]?.xp ?? 0) >= ENCHANTING_ZONE_MASTERY_THRESHOLD);
 }
 
 // Same role as allEnchantingZonesMastered above, for Cooking's own
 // zone-Mastery axis.
 function allCookingZonesMastered(mastery: ZoneMasteryState | undefined): boolean {
-  return Object.keys(ZONES).every((zoneId) => (mastery?.[zoneId]?.xp ?? 0) >= COOKING_ZONE_MASTERY_THRESHOLD);
+  return CONTENT_ZONE_IDS.every((zoneId) => (mastery?.[zoneId]?.xp ?? 0) >= COOKING_ZONE_MASTERY_THRESHOLD);
 }
 
 function allMaterialsMastered(mastery: MaterialMasteryState | undefined, registry: MaterialDef[] = MATERIALS): boolean {

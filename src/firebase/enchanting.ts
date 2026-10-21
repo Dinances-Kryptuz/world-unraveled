@@ -174,8 +174,14 @@ export async function applyDisenchantQueueResult(
   perItem: { itemId: string; instanceId?: string; itemsDisenchanted: number; yieldItemId: string; yieldQuantity: number }[],
   newSkillLevel: number,
   newSkillXp: number
-): Promise<void> {
-  if (perItem.length === 0) return;
+  // Returns only the rare-upgrade half of each item's yield (itemId: upgraded
+  // quantity granted) — splitDisenchantUpgradeYield rolls randomly, so this
+  // is the only place the caller can learn whether the upgrade actually
+  // fired this batch; the UI uses it to call out an essence drop by name
+  // instead of silently folding it into the ordinary "...-> Strange Dust"
+  // notification built from the pre-split expected yield.
+): Promise<{ itemId: string; quantity: number }[]> {
+  if (perItem.length === 0) return [];
 
   await updateDoc(doc(db, 'characters', uid), {
     'professions.enchanting.level': newSkillLevel,
@@ -200,6 +206,7 @@ export async function applyDisenchantQueueResult(
   // e.g. two different items both rolling a bit of Lesser Magic Essence
   // still land in the same grant line.
   const yieldsByItemId = new Map<string, number>();
+  const upgradedByItemId = new Map<string, number>();
   for (const entry of perItem) {
     if (entry.yieldQuantity <= 0) continue;
     const item = ITEMS[entry.itemId];
@@ -209,6 +216,7 @@ export async function applyDisenchantQueueResult(
     yieldsByItemId.set(entry.yieldItemId, (yieldsByItemId.get(entry.yieldItemId) ?? 0) + split.baseQuantity);
     if (split.upgradedItemId && split.upgradedQuantity > 0) {
       yieldsByItemId.set(split.upgradedItemId, (yieldsByItemId.get(split.upgradedItemId) ?? 0) + split.upgradedQuantity);
+      upgradedByItemId.set(split.upgradedItemId, (upgradedByItemId.get(split.upgradedItemId) ?? 0) + split.upgradedQuantity);
     }
   }
   if (yieldsByItemId.size > 0) {
@@ -217,4 +225,5 @@ export async function applyDisenchantQueueResult(
       Array.from(yieldsByItemId, ([itemId, quantity]) => ({ itemId, quantity })).filter((g) => g.quantity > 0)
     );
   }
+  return Array.from(upgradedByItemId, ([itemId, quantity]) => ({ itemId, quantity }));
 }
