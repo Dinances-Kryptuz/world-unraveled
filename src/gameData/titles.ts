@@ -1,5 +1,5 @@
 import { MATERIALS, LEATHER_MATERIALS, CLOTH_MATERIALS, WOOD_MATERIALS } from './materials';
-import { ZONES } from './zones';
+import { ZONES, CONTENT_ZONE_IDS } from './zones';
 import { TOWER_MILESTONE_FLOORS } from './towerLoot';
 
 // A player-selectable cosmetic title — purely display, no stat/combat/
@@ -51,19 +51,22 @@ function generateWoodMaterialTitles(): TitleDef[] {
 }
 
 // Same pattern, mirroring achievements.ts's generateForagerAchievements/
-// generateAlchemistAchievements (same ids, same names) over the real ZONES
-// registry — a future zone only needs registering in gameData/zones.ts to
-// get its own Forager/Alchemist title automatically.
+// generateAlchemistAchievements (same ids, same names) over CONTENT_ZONE_IDS
+// — a future content zone only needs registering there to get its own
+// Forager/Alchemist title automatically. Iterates CONTENT_ZONE_IDS, not
+// every zone in ZONES — Ashenfall (the capital hub) has no matching
+// achievement generated for it (see achievements.ts), so a title entry for
+// it here would be permanently unearnable dead data.
 function generateForagerTitles(): TitleDef[] {
-  return Object.values(ZONES).map((zone) => ({ id: `forager_${zone.id}`, name: `Master Forager of ${zone.name}` }));
+  return CONTENT_ZONE_IDS.map((zoneId) => ZONES[zoneId]).map((zone) => ({ id: `forager_${zone.id}`, name: `Master Forager of ${zone.name}` }));
 }
 
 function generateAnglerTitles(): TitleDef[] {
-  return Object.values(ZONES).map((zone) => ({ id: `angler_${zone.id}`, name: `Master Angler of ${zone.name}` }));
+  return CONTENT_ZONE_IDS.map((zoneId) => ZONES[zoneId]).map((zone) => ({ id: `angler_${zone.id}`, name: `Master Angler of ${zone.name}` }));
 }
 
 function generateAlchemistTitles(): TitleDef[] {
-  return Object.values(ZONES).map((zone) => ({ id: `alchemist_${zone.id}`, name: `Master Alchemist of ${zone.name}` }));
+  return CONTENT_ZONE_IDS.map((zoneId) => ZONES[zoneId]).map((zone) => ({ id: `alchemist_${zone.id}`, name: `Master Alchemist of ${zone.name}` }));
 }
 
 // Enchanting overhaul's Phase E7 scroll-crafting zone-Mastery — mirrors
@@ -71,13 +74,13 @@ function generateAlchemistTitles(): TitleDef[] {
 // names), distinct from 'master_enchanter_armaments' above (the combined
 // Wand/Staff/Book equipment track).
 function generateEnchanterTitles(): TitleDef[] {
-  return Object.values(ZONES).map((zone) => ({ id: `enchanter_${zone.id}`, name: `Master Enchanter of ${zone.name}` }));
+  return CONTENT_ZONE_IDS.map((zoneId) => ZONES[zoneId]).map((zone) => ({ id: `enchanter_${zone.id}`, name: `Master Enchanter of ${zone.name}` }));
 }
 
 // Cooking overhaul — mirrors achievements.ts's generateChefAchievements
 // exactly (same ids, same names).
 function generateChefTitles(): TitleDef[] {
-  return Object.values(ZONES).map((zone) => ({ id: `chef_${zone.id}`, name: `Master Chef of ${zone.name}` }));
+  return CONTENT_ZONE_IDS.map((zoneId) => ZONES[zoneId]).map((zone) => ({ id: `chef_${zone.id}`, name: `Master Chef of ${zone.name}` }));
 }
 
 // Mirrors achievements.ts's generateTowerAchievements exactly (same ids,

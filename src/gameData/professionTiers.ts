@@ -164,7 +164,15 @@ export function checkRankUp(
 ): RankUpCheck {
   const next = nextTier(profession, currentUnlockedTier);
   if (!next) {
-    const topRank = PROFESSION_CATEGORY[profession] === 'production' ? 'Artisan' : 'Master';
+    // nextTier returning null means currentUnlockedTier is already the LAST
+    // entry of tiersFor(profession) — read the actual top rank's name off
+    // that, rather than guessing from profession category. Every profession
+    // shares the same 5-tier table now (apprentice..master — see this
+    // file's module comment), but a production profession used to cap at
+    // Artisan on an older 4-tier table; this ternary was never updated for
+    // that consolidation, so every production profession's trainer screen
+    // reported "Already Artisan" once a character actually reached Master.
+    const topRank = currentUnlockedTier[0].toUpperCase() + currentUnlockedTier.slice(1);
     return { ok: false, reason: `Already ${topRank} — no further rank to train.`, goldCost: 0, requiredCharacterLevel: 0 };
   }
 

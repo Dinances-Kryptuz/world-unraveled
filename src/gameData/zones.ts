@@ -764,6 +764,19 @@ export const ZONES: Record<string, Zone> = {
   },
 };
 
+// Every zone that actually carries gather nodes, fishing holes, or a
+// herbalism/alchemy/enchanting/cooking zone-Mastery pool of its own —
+// Ashenfall is a pure hub (monsterIds/gatherNodeIds/fishingHoleIds all
+// empty, see its own Zone entry above) and can never accumulate ANY zone-
+// Mastery XP for any profession. Any "has every zone been mastered"
+// achievement check (grandmaster_forager, grandmaster_angler,
+// master_alchemist, grandmaster_enchanter, grandmaster_chef, ...) MUST
+// iterate this instead of Object.keys(ZONES)/Object.values(ZONES) directly
+// — including Ashenfall in that check makes the achievement permanently
+// unreachable, since its own zone-Mastery entry can never reach any
+// non-zero threshold.
+export const CONTENT_ZONE_IDS = Object.keys(ZONES).filter((id) => id !== 'ashenfall');
+
 // Display-only ordering for anywhere zones are listed to the player (the
 // top bar's zone tabs) — Ashenfall first, since it's the capital and the
 // hub everything else routes through, then every other zone in ZONES'

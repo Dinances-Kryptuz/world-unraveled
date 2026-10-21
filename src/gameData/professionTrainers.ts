@@ -8,10 +8,13 @@ import type { ProfessionTierName } from './types';
 // a trainer (see vendors.ts and professionQuests.ts). All 10 professions now
 // share the same 1-100/5-rank table (professionTiers.ts's PROFESSION_TIERS)
 // and so all reach Master. Used both to server-validate learnProfession/
-// advanceProfessionRank (firebase/professions.ts — a player must actually be
-// standing in the right zone to train) and to display it on the Professions
-// Trainer screen regardless of current zone (ProfessionTrainerList.tsx,
-// same "see the whole roadmap" shape as MountTrainerScreen).
+// advanceProfessionRank (firebase/professions.ts — only requires the
+// trainer's zone to have been UNLOCKED, not that the character is
+// currently standing in it; professions are trained from Ashenfall's
+// Artisan Quarter regardless of currentZoneId) and to display it on the
+// Professions Trainer screen regardless of current zone
+// (ProfessionTrainerList.tsx, same "see the whole roadmap" shape as
+// MountTrainerScreen).
 export const TRAINER_ZONE_BY_RANK: Record<ProfessionTierName, string> = {
   apprentice: 'greenhollow_fields',
   journeyman: 'stonecrag_foothills',

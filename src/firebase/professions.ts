@@ -6,7 +6,7 @@ import { ITEMS } from '../gameData/items';
 import { RECIPES } from '../gameData/recipes';
 import { checkLearnProfession, checkRankUp, nextTier } from '../gameData/professionTiers';
 import { TRAINER_ZONE_BY_RANK } from '../gameData/professionTrainers';
-import { ZONES, isZoneUnlocked } from '../gameData/zones';
+import { ZONES, CONTENT_ZONE_IDS, isZoneUnlocked } from '../gameData/zones';
 import { FISHING_ZONE_MASTERY_THRESHOLD } from '../gameData/gatheringEngine';
 import type { ProfessionId } from '../gameData/types';
 import type { Character, ZoneMasteryState } from '../types/character';
@@ -183,8 +183,11 @@ export async function applyFishingResult(
       newlyUnlockedIds.push(anglerId);
     }
     if (
+      // CONTENT_ZONE_IDS, not every zone in ZONES — Ashenfall has no
+      // fishing holes of its own, so it can never reach this threshold;
+      // see that constant's doc comment in gameData/zones.ts.
       !character.unlockedAchievementIds.includes('grandmaster_angler') &&
-      Object.keys(ZONES).every((z) => (hypotheticalZoneMastery[z]?.xp ?? 0) >= FISHING_ZONE_MASTERY_THRESHOLD)
+      CONTENT_ZONE_IDS.every((z) => (hypotheticalZoneMastery[z]?.xp ?? 0) >= FISHING_ZONE_MASTERY_THRESHOLD)
     ) {
       newlyUnlockedIds.push('grandmaster_angler');
     }
