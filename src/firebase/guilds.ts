@@ -9,6 +9,7 @@ interface RawRosterEntry {
   class: string;
   spec: string | null;
   level: number;
+  title?: string | null;
   role: GuildRole;
   joinedAt?: { toDate?: () => Date } | null;
 }
@@ -178,6 +179,7 @@ export async function getGuild(guildId: string): Promise<GuildDetails | null> {
           class: m.class,
           spec: m.spec ?? null,
           level: m.level,
+          title: m.title ?? null,
           role: m.role,
           joinedAt: m.joinedAt?.toDate?.() ?? null,
         }))
@@ -196,6 +198,7 @@ export async function listGuildMembers(guildId: string): Promise<GuildMemberRow[
       class: data.class,
       spec: data.spec ?? null,
       level: data.level,
+      title: data.title ?? null,
       role: data.role as GuildRole,
       joinedAt: data.joinedAt?.toDate?.() ?? null,
     };

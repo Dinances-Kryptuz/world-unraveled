@@ -4,6 +4,7 @@ import { getItemDisplayName } from '../gameData/equipmentSuffixes';
 import { compareEquipmentStats } from '../gameData/equipmentComparison';
 import { inferItemRarity, RARITY_COLORS, RARITY_LABELS } from '../gameData/itemRarity';
 import { ARMOR_STAT_RANGES } from '../gameData/equipmentRolls';
+import { ENCHANTS, describeEnchantEffect } from '../gameData/enchanting';
 import type { BaseStat } from '../gameData/classStats';
 import type { ItemDef } from '../gameData/types';
 
@@ -105,6 +106,16 @@ function buildTooltip(
         <div className="item-tooltip-stats">
           {remainingCharges} charge{remainingCharges === 1 ? '' : 's'} remaining
         </div>
+      ) : null}
+      {/* Enchant scrolls' own item.description is a generic "use this to
+          apply the enchant" line — it never states the actual mechanical
+          effect, which only lives on the matching ENCHANTS entry (and only
+          surfaces today inside the Enchanting profession screen's own
+          "Use Scroll" list). Showing that enchant's description here too
+          means every scroll's effect is visible from wherever it's looked
+          at (inventory, bank, vendor, loot), not just that one screen. */}
+      {item.scrollEnchantId && ENCHANTS[item.scrollEnchantId] ? (
+        <div className="item-tooltip-stats">{describeEnchantEffect(ENCHANTS[item.scrollEnchantId])}</div>
       ) : null}
       <div className="item-tooltip-desc">{item.description}</div>
       <div className="item-tooltip-sell">Sells for {item.sellValue} gold</div>

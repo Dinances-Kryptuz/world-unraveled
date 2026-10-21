@@ -92,6 +92,7 @@ export const createGuild = onCall(async (request) => {
     class: char.class,
     spec: char.spec ?? null,
     level: char.level,
+    title: char.equippedTitleId ?? null,
     role: 'master',
     joinedAt: now,
   });
@@ -130,6 +131,7 @@ function performJoinWrites(
     class: char.class,
     spec: char.spec ?? null,
     level: char.level,
+    title: char.equippedTitleId ?? null,
     role: 'member',
     joinedAt: now,
   });
@@ -555,9 +557,10 @@ export const refreshGuildMemberProfile = onCall(async (request) => {
   if (!memberSnap.exists) return { updated: false };
   const m = memberSnap.data()!;
   const spec = char.spec ?? null;
-  if (m.name === char.name && m.class === char.class && m.spec === spec && m.level === char.level) {
+  const title = char.equippedTitleId ?? null;
+  if (m.name === char.name && m.class === char.class && m.spec === spec && m.level === char.level && m.title === title) {
     return { updated: false };
   }
-  await memberRef.update({ name: char.name, class: char.class, spec, level: char.level });
+  await memberRef.update({ name: char.name, class: char.class, spec, level: char.level, title });
   return { updated: true };
 });

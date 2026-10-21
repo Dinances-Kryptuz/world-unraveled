@@ -242,8 +242,13 @@ export function DisenchantingScreen({ itemId, instanceId }: { itemId: string; in
       if (lines.length > 0) notify('Disenchanted', lines);
     }
     if (currentEntry) notifiedWholeRef.current = currentEntry.itemsDisenchanted;
-    if (currentCharacter.skillXpNotificationsEnabled && result.professionXpGained > 0) {
-      notify('Enchanting XP gained', [`+${result.professionXpGained} XP`]);
+    // Floored before display/gating — see FishingScreen's matching comment:
+    // the batch-resolver's fractional partial-action math can leave float
+    // noise (e.g. a near-zero leftover like 0.0000001) on this delta that
+    // shouldn't be shown, or gated on, as-is.
+    const disenchantXpGained = Math.floor(result.professionXpGained);
+    if (currentCharacter.skillXpNotificationsEnabled && disenchantXpGained > 0) {
+      notify('Enchanting XP gained', [`+${disenchantXpGained} XP`]);
     }
 
     // Did the item this component was rendered for (itemId/instanceId)
@@ -257,7 +262,21 @@ export function DisenchantingScreen({ itemId, instanceId }: { itemId: string; in
       const fresh = await getCharacter(currentUser.uid);
       if (!fresh) throw new Error('Character not found during autosave');
 
-      await applyDisenchantQueueResult(currentUser.uid, result.perItem, result.finalSkill, result.finalSkillXp);
+      const upgradedGrants = await applyDisenchantQueueResult(currentUser.uid, result.perItem, result.finalSkill, result.finalSkillXp);
+      // The "Disenchanted" toast above is built from each item's pre-split
+      // expected yield (e.g. "-> Strange Dust") since applyDisenchantQueueResult
+      // rolls its small rare upgrade chance (splitDisenchantUpgradeYield)
+      // independently, inside the write itself — this is the only point
+      // that knows whether an upgrade (Lesser Magic Essence, etc.) actually
+      // landed this batch, so it gets its own separate, accurate callout
+      // rather than being silently folded into (or missed from) the toast
+      // above.
+      if (currentCharacter.notificationsEnabled && upgradedGrants.length > 0) {
+        notify(
+          'Rare find!',
+          upgradedGrants.map((g) => `${g.quantity}x ${ITEMS[g.itemId]?.name ?? g.itemId}`)
+        );
+      }
 
       // The whole queue (current item included) just finished — same
       // "freeze locally, let the player review before Stop/Continue"

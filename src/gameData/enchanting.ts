@@ -149,7 +149,7 @@ export const ENCHANTS: Record<string, EnchantDef> = {
   },
   enchant_minor_striking: {
     id: 'enchant_minor_striking', name: 'Enchant Weapon: Minor Striking',
-    description: 'Use on an equipped weapon item to apply the Minor Striking enchant: +1 damage on every hit.', slot: 'weapon', category: 'offensive',
+    description: 'Use on an equipped weapon item to apply the Minor Striking enchant.', slot: 'weapon', category: 'offensive',
     statBonuses: {}, scrollItemId: 'scroll_minor_striking',
     flatDamageBonus: 1,
   },
@@ -726,6 +726,47 @@ export const CITADEL_EMBER_EYE_SCROLL_IDS = [
 
 export function enchantsForSlot(slot: EquipmentSlot): EnchantDef[] {
   return Object.values(ENCHANTS).filter((e) => e.slot === slot);
+}
+
+// Nearly every one of the ~106 hand-authored EnchantDef.description strings
+// only says "use this to apply the X enchant" without ever stating the
+// actual mechanical effect (flatDamageBonus, statBonuses, proc, etc.) —
+// enchant_minor_striking is the lone exception that happens to spell its
+// +1 damage out in prose. Generating the effect sentence straight from the
+// EnchantDef's own numeric fields (same "one source of truth, not
+// duplicated hand text" precedent as this file's achievement/title
+// generators) means every enchant's real effect is correct and visible
+// everywhere it's shown, instead of only for the one entry someone
+// remembered to spell out by hand.
+export function describeEnchantEffect(enchant: EnchantDef): string {
+  const parts: string[] = [];
+  for (const [stat, value] of Object.entries(enchant.statBonuses)) {
+    if (value) parts.push(`+${value} ${stat}`);
+  }
+  if (enchant.flatHpBonus) parts.push(`+${enchant.flatHpBonus} max HP`);
+  if (enchant.flatManaBonus) parts.push(`+${enchant.flatManaBonus} max mana`);
+  if (enchant.flatArmorBonus) parts.push(`+${enchant.flatArmorBonus} armor`);
+  if (enchant.hastePct) parts.push(`+${enchant.hastePct}% haste`);
+  if (enchant.flatDamageBonus) parts.push(`+${enchant.flatDamageBonus} damage on every hit`);
+  if (enchant.healingPowerFlatBonus) parts.push(`+${enchant.healingPowerFlatBonus} healing power`);
+  if (enchant.flatDamageReduction) parts.push(`-${enchant.flatDamageReduction} damage taken per hit`);
+  if (enchant.fireResistancePct) parts.push(`+${enchant.fireResistancePct}% fire resistance`);
+  if (enchant.shadowResistancePct) parts.push(`+${enchant.shadowResistancePct}% shadow resistance`);
+  if (enchant.beastDamageBonusPct) parts.push(`+${enchant.beastDamageBonusPct}% damage to Beasts`);
+  if (enchant.demonDamageBonusPct) parts.push(`+${enchant.demonDamageBonusPct}% damage to Demons`);
+  if (enchant.proc) {
+    const { kind, chancePct, power } = enchant.proc;
+    if (kind === 'fiery_weapon') parts.push(`${chancePct}% chance on hit to burn for ${power}% bonus fire damage`);
+    else if (kind === 'lifestealing') parts.push(`${chancePct}% chance on hit to heal yourself for ${power}% of the damage dealt`);
+    else if (kind === 'crusader') parts.push(`${chancePct}% chance on hit to gain +10% damage dealt and heal 5% of your max HP`);
+    else if (kind === 'chain_lightning') parts.push(`${chancePct}% chance on hit to chain ${power}% bonus damage to up to 2 other enemies`);
+    // icy_chill is deliberately left undescribed here — defined/craftable/
+    // appliable (see combatEngine/types.ts's EnchantProcKind doc comment)
+    // but no combat-engine code branch actually resolves it yet, so stating
+    // a chill/slow effect would be a real lie rather than a documentation
+    // gap. Flagged as a known content gap rather than silently invented.
+  }
+  return parts.length > 0 ? `${enchant.description} (${parts.join(', ')})` : enchant.description;
 }
 
 // Everything buildActiveEnchantTotals sums, for the combat engine's

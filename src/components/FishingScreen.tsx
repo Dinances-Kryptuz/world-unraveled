@@ -167,11 +167,21 @@ export function FishingScreen({ hole }: { hole: FishingHole }) {
     // See CraftingScreen's matching comment: left at wholeQuantity (not
     // reset to 0) until the write below actually succeeds.
     notifiedWholeRef.current = wholeQuantity;
-    if (currentCharacter.skillXpNotificationsEnabled && result.professionXpGained > 0) {
-      notify('Fishing XP gained', [`+${result.professionXpGained} XP`]);
+    // Floored before display/gating — actionsThisBatch (gatheringEngine.ts)
+    // is a genuinely fractional partial-action count by design (smooth
+    // progress within a batch), so the raw XP delta can carry binary
+    // floating-point noise (e.g. 7.000000000000001, or a near-zero leftover
+    // like 0.0000001 at a batch boundary). A toast showing that noise
+    // verbatim is the bug being fixed here — floor it the same way the
+    // profession panel's cumulative total already floors prof.xp, and skip
+    // the toast entirely when there's nothing left to show after flooring.
+    const fishingXpGained = Math.floor(result.professionXpGained);
+    if (currentCharacter.skillXpNotificationsEnabled && fishingXpGained > 0) {
+      notify('Fishing XP gained', [`+${fishingXpGained} XP`]);
     }
-    if (currentCharacter.masteryXpNotificationsEnabled && (result.fishingZoneMasteryXpGained ?? 0) > 0) {
-      notify('Mastery XP gained', [`+${result.fishingZoneMasteryXpGained} ${ZONES[hole.zoneId]?.name ?? hole.zoneId} Mastery XP`]);
+    const fishingMasteryXpGained = Math.floor(result.fishingZoneMasteryXpGained ?? 0);
+    if (currentCharacter.masteryXpNotificationsEnabled && fishingMasteryXpGained > 0) {
+      notify('Mastery XP gained', [`+${fishingMasteryXpGained} ${ZONES[hole.zoneId]?.name ?? hole.zoneId} Mastery XP`]);
     }
 
     // A rough speculative estimate, superseded moments later by the
