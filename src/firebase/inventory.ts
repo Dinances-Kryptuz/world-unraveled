@@ -120,10 +120,20 @@ export async function grantInventoryItems(
 
   const accepted = await runTransaction(db, async (tx) => {
     const [invSnap, charSnap] = await Promise.all([tx.get(invRef), tx.get(charRef)]);
-    const items: Record<string, number> = invSnap.exists() ? ((invSnap.data() as Inventory).items ?? {}) : {};
+    const inventory = (invSnap.exists() ? (invSnap.data() as Inventory) : { items: {} }) as Inventory;
+    const items = inventory.items ?? {};
     const bagSlots: number = charSnap.exists() ? ((charSnap.data().bagSlots as number) ?? 0) : 0;
 
-    let distinctCount = Object.values(items).filter((q) => q > 0).length;
+    // Must include equipmentInstances/chargedConsumables-only base items
+    // (countDistinctBaseItems — same helper grantEquipmentInstances/
+    // grantChargedConsumables below already use), not just `items` — a
+    // player holding several items ONLY as rolled-gear or charged-potion
+    // buckets (never as a plain `items` stack) would otherwise have those
+    // slots invisible to this count, letting a combat/gathering/quest/
+    // vendor grant through this function accept new items past the bag's
+    // real occupancy. Same root cause as the "22/24" miscount this
+    // project has already hit once elsewhere, reproduced here.
+    let distinctCount = Object.values(items).filter((q) => q > 0).length + countDistinctBaseItems(inventory);
     const seenNew = new Set<string>();
     const acceptedInner: { itemId: string; quantity: number }[] = [];
     dropped = [];

@@ -1,9 +1,10 @@
-import { doc, updateDoc, increment } from 'firebase/firestore';
+import { doc, updateDoc, increment, runTransaction } from 'firebase/firestore';
 import { db } from './config';
 import { getCharacter } from './character';
-import { getInventory, isLocked, grantInventoryItems } from './inventory';
+import { isLocked, grantInventoryItems } from './inventory';
 import { ITEMS } from '../gameData/items';
 import { shopkeeperMaxBagSlots, nextShopkeeperSlotCost } from '../gameData/bagSlotShop';
+import type { Inventory } from '../types/character';
 
 export interface BuyBagSlotResult {
   success: boolean;
@@ -40,22 +41,34 @@ export async function buyBagSlot(uid: string): Promise<BuyBagSlotResult> {
   return { success: true };
 }
 
+// All three sell functions below used to read the inventory once (getInventory),
+// decide locked/quantity from that snapshot, then fire two unconditional
+// increment() writes with no re-check at write time and no quantity-held
+// validation at all. Two rapid sell clicks (or a stale client retry) could
+// each pass the same stale "not locked, presumably enough" read and both
+// proceed — overselling the same stack past zero into the negative while
+// being paid gold for each call, a real duplication/gold-dupe exploit, not
+// just a cosmetic gap. Wrapped in a transaction that re-reads the inventory
+// and clamps to whatever is ACTUALLY held at write time (mirroring
+// firebase/bank.ts's depositItem/withdrawItem, which already validate this,
+// and firebase/inventory.ts's grant functions, which already use a
+// transaction for the same "atomic relative to a concurrent write" reason)
+// closes both the oversell and the lock-TOCTOU gap in one fix.
 export async function sellItem(uid: string, itemId: string, quantity: number): Promise<void> {
   const item = ITEMS[itemId];
   if (!item || quantity <= 0) return;
-  // Equipment Locking overhaul — a locked item (identified by its plain
-  // itemId here, since sellItem only ever touches the `items` stack, never
-  // equipmentInstances — see this function's own module comment history)
-  // can never be sold, full stop.
-  const inventory = await getInventory(uid);
-  if (isLocked(inventory, itemId)) return;
-  const goldGained = item.sellValue * quantity;
+  const invRef = doc(db, 'characters', uid, 'inventory', 'main');
+  const charRef = doc(db, 'characters', uid);
 
-  await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), {
-    [`items.${itemId}`]: increment(-quantity),
-  });
-  await updateDoc(doc(db, 'characters', uid), {
-    gold: increment(goldGained),
+  await runTransaction(db, async (tx) => {
+    const invSnap = await tx.get(invRef);
+    const inventory = (invSnap.exists() ? (invSnap.data() as Inventory) : { items: {} }) as Inventory;
+    if (isLocked(inventory, itemId)) return;
+    const sellQty = Math.min(quantity, inventory.items?.[itemId] ?? 0);
+    if (sellQty <= 0) return;
+
+    tx.update(invRef, { [`items.${itemId}`]: increment(-sellQty) });
+    tx.update(charRef, { gold: increment(item.sellValue * sellQty) });
   });
 }
 
@@ -66,20 +79,24 @@ export async function sellItem(uid: string, itemId: string, quantity: number): P
 // bucket, not `items`, since the Equipment Rarity overhaul). Sell value is
 // still the base item's flat sellValue — rolled stats don't change what a
 // vendor pays, same as they don't change a disenchant's material yield.
+// Same transaction/clamp fix as sellItem above, same reason.
 export async function sellEquipmentInstance(uid: string, instanceId: string, quantity: number): Promise<void> {
   if (quantity <= 0) return;
-  const inventory = await getInventory(uid);
-  if (isLocked(inventory, instanceId)) return;
-  const instance = inventory.equipmentInstances?.[instanceId];
-  const item = instance ? ITEMS[instance.itemId] : null;
-  if (!instance || !item) return;
-  const goldGained = item.sellValue * quantity;
+  const invRef = doc(db, 'characters', uid, 'inventory', 'main');
+  const charRef = doc(db, 'characters', uid);
 
-  await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), {
-    [`equipmentInstances.${instanceId}.quantity`]: increment(-quantity),
-  });
-  await updateDoc(doc(db, 'characters', uid), {
-    gold: increment(goldGained),
+  await runTransaction(db, async (tx) => {
+    const invSnap = await tx.get(invRef);
+    const inventory = (invSnap.exists() ? (invSnap.data() as Inventory) : { items: {} }) as Inventory;
+    if (isLocked(inventory, instanceId)) return;
+    const instance = inventory.equipmentInstances?.[instanceId];
+    const item = instance ? ITEMS[instance.itemId] : null;
+    if (!instance || !item) return;
+    const sellQty = Math.min(quantity, instance.quantity);
+    if (sellQty <= 0) return;
+
+    tx.update(invRef, { [`equipmentInstances.${instanceId}.quantity`]: increment(-sellQty) });
+    tx.update(charRef, { gold: increment(item.sellValue * sellQty) });
   });
 }
 
@@ -88,20 +105,24 @@ export async function sellEquipmentInstance(uid: string, instanceId: string, qua
 // consumableCharges.ts) never lands in `items` either, so it was also
 // unsellable. Sell value is the base item's flat sellValue regardless of
 // how many charges remain, matching sellEquipmentInstance's own posture.
+// Same transaction/clamp fix as sellItem above, same reason.
 export async function sellChargedConsumable(uid: string, instanceId: string, quantity: number): Promise<void> {
   if (quantity <= 0) return;
-  const inventory = await getInventory(uid);
-  if (isLocked(inventory, instanceId)) return;
-  const bucket = inventory.chargedConsumables?.[instanceId];
-  const item = bucket ? ITEMS[bucket.itemId] : null;
-  if (!bucket || !item) return;
-  const goldGained = item.sellValue * quantity;
+  const invRef = doc(db, 'characters', uid, 'inventory', 'main');
+  const charRef = doc(db, 'characters', uid);
 
-  await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), {
-    [`chargedConsumables.${instanceId}.quantity`]: increment(-quantity),
-  });
-  await updateDoc(doc(db, 'characters', uid), {
-    gold: increment(goldGained),
+  await runTransaction(db, async (tx) => {
+    const invSnap = await tx.get(invRef);
+    const inventory = (invSnap.exists() ? (invSnap.data() as Inventory) : { items: {} }) as Inventory;
+    if (isLocked(inventory, instanceId)) return;
+    const bucket = inventory.chargedConsumables?.[instanceId];
+    const item = bucket ? ITEMS[bucket.itemId] : null;
+    if (!bucket || !item) return;
+    const sellQty = Math.min(quantity, bucket.quantity);
+    if (sellQty <= 0) return;
+
+    tx.update(invRef, { [`chargedConsumables.${instanceId}.quantity`]: increment(-sellQty) });
+    tx.update(charRef, { gold: increment(item.sellValue * sellQty) });
   });
 }
 
