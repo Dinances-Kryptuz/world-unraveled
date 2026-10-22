@@ -1,7 +1,7 @@
 import { MATERIALS, LEATHER_MATERIALS, CLOTH_MATERIALS, WOOD_MATERIALS } from './materials';
 import { ZONES, CONTENT_ZONE_IDS } from './zones';
 import { TOWER_MILESTONE_FLOORS } from './towerLoot';
-import { ALL_PROFESSION_IDS, PROFESSION_LABELS } from './professionTiers';
+import { ALL_PROFESSION_IDS, PROFESSION_LABELS, PROFESSION_MILESTONE_LEVELS } from './professionTiers';
 
 // A player-selectable cosmetic title — purely display, no stat/combat/
 // crafting effect (see types/character.ts's equippedTitleId doc comment).
@@ -93,8 +93,6 @@ function generateTowerTitles(): TitleDef[] {
 // Mirrors achievements.ts's generateProfessionLevelAchievements exactly
 // (same ids, same names) — one title per profession per 25/50/75/100
 // milestone on the shared 1-100 level scale.
-const PROFESSION_MILESTONE_LEVELS = [25, 50, 75, 100] as const;
-
 function generateProfessionLevelTitles(): TitleDef[] {
   return ALL_PROFESSION_IDS.flatMap((professionId) =>
     PROFESSION_MILESTONE_LEVELS.map((level) => ({

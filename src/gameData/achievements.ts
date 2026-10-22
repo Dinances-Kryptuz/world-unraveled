@@ -1,7 +1,7 @@
 import type { Character } from '../types/character';
 import type { AccountState } from './characterSlots';
 import { MAX_CHARACTER_LEVEL } from './xpTables';
-import { ALL_PROFESSION_IDS, PROFESSION_LABELS } from './professionTiers';
+import { ALL_PROFESSION_IDS, PROFESSION_LABELS, PROFESSION_MILESTONE_LEVELS } from './professionTiers';
 import { COMPANIONS } from './companions';
 import { DUNGEONS } from './dungeons';
 import { MAX_CHARACTER_SLOTS } from './characterSlots';
@@ -45,8 +45,6 @@ function totalDungeonClears(character: Character): number {
 // having mastered every zone's materials, and vice versa; replaces the
 // old 1-300-scale skilled_hands/grandmaster achievements, which could
 // never be earned again once the profession curve was rescaled to 1-100.
-const PROFESSION_MILESTONE_LEVELS = [25, 50, 75, 100] as const;
-
 function generateProfessionLevelAchievements(): AchievementDef[] {
   return ALL_PROFESSION_IDS.flatMap((professionId) =>
     PROFESSION_MILESTONE_LEVELS.map((level) => ({

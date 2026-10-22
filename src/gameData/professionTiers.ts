@@ -38,6 +38,13 @@ export function isPrimaryProfession(id: ProfessionId): boolean {
   return PRIMARY_PROFESSIONS.includes(id);
 }
 
+// Milestone 4 (Profession Progression overhaul) — the 25/50/75/100
+// achievement/title checkpoints on the shared 1-100 level scale, one set
+// per profession. Shared here (rather than duplicated) so achievements.ts,
+// titles.ts, and ProfessionScreen.tsx's "next milestone" progress line all
+// read the exact same checkpoints.
+export const PROFESSION_MILESTONE_LEVELS = [25, 50, 75, 100] as const;
+
 // 'smithing' is the long-standing internal id for Blacksmithing — see the
 // doc comment on ProfessionId in types.ts for why it isn't renamed.
 export const PROFESSION_LABELS: Record<ProfessionId, string> = {
