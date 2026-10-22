@@ -85,6 +85,11 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
 
   const characterRef = useRef<Character | null>(character);
   const userRef = useRef<User | null>(user);
+  // Autosave re-entrancy guard — see GatheringScreen's matching comment: a
+  // second call (interval tick vs. handleStop's own await) just awaits
+  // whichever is already in flight instead of resolving the same anchor
+  // window twice.
+  const autosaveInFlightRef = useRef<Promise<void> | null>(null);
   // Guild Milestones (level 15/25) — read through a ref for the same
   // reason characterRef exists: autosave() runs from a setInterval
   // callback whose effect only depends on [recipe.id], so closing over the
@@ -165,6 +170,20 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
   }
 
   async function autosave() {
+    if (autosaveInFlightRef.current) {
+      await autosaveInFlightRef.current;
+      return;
+    }
+    const promise = runAutosave();
+    autosaveInFlightRef.current = promise;
+    try {
+      await promise;
+    } finally {
+      autosaveInFlightRef.current = null;
+    }
+  }
+
+  async function runAutosave() {
     const currentUser = userRef.current;
     const currentCharacter = characterRef.current;
     const anchor = anchorRef.current;

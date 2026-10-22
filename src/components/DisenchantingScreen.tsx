@@ -87,6 +87,11 @@ export function DisenchantingScreen({ itemId, instanceId }: { itemId: string; in
 
   const characterRef = useRef<Character | null>(character);
   const userRef = useRef<User | null>(user);
+  // Autosave re-entrancy guard — see GatheringScreen's matching comment: a
+  // second call (interval tick vs. handleStop's own await) just awaits
+  // whichever is already in flight instead of resolving the same anchor
+  // window twice.
+  const autosaveInFlightRef = useRef<Promise<void> | null>(null);
   useEffect(() => {
     characterRef.current = character;
   }, [character]);
@@ -142,6 +147,20 @@ export function DisenchantingScreen({ itemId, instanceId }: { itemId: string; in
   }, [itemId]);
 
   async function autosave() {
+    if (autosaveInFlightRef.current) {
+      await autosaveInFlightRef.current;
+      return;
+    }
+    const promise = runAutosave();
+    autosaveInFlightRef.current = promise;
+    try {
+      await promise;
+    } finally {
+      autosaveInFlightRef.current = null;
+    }
+  }
+
+  async function runAutosave() {
     const currentUser = userRef.current;
     const currentCharacter = characterRef.current;
     const anchor = anchorRef.current;
