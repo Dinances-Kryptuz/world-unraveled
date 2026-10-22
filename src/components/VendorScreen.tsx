@@ -3,6 +3,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useCharacter } from '../hooks/useCharacter';
 import { sellItem, sellEquipmentInstance, sellChargedConsumable, buyItem, buyBagSlot } from '../firebase/vendor';
 import { subscribeToInventory, isLocked } from '../firebase/inventory';
+import { notify } from '../utils/notifications';
 import { ITEMS } from '../gameData/items';
 import { VENDOR_STOCK, type VendorStockEntry } from '../gameData/vendors';
 import { shopkeeperMaxBagSlots, nextShopkeeperSlotCost } from '../gameData/bagSlotShop';
@@ -153,6 +154,10 @@ export function VendorScreen({
         // deduction above rather than leaving the displayed balance wrong
         // until the next refetch.
         applyOptimisticUpdate((c) => ({ ...c, [currency]: c[currency] + price * quantity }));
+        // buyItem's own reason already distinguishes "not enough gold"
+        // from "bag was full, purchase refunded" — surface whichever one
+        // it gives so a refused/refunded purchase isn't silent.
+        if (result.reason) notify('Purchase failed', [result.reason]);
       }
       await refetch();
       setSelectedBuyItemId(null);
