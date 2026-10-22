@@ -24,6 +24,7 @@ import {
 import { getProfessionState, maxSkillForUnlockedTier, PROFESSION_CATEGORY, PROFESSION_LABELS } from '../gameData/professionTiers';
 import { ITEMS } from '../gameData/items';
 import { getMaterial } from '../gameData/materials';
+import { buildCraftingMasteryInputs, buildCraftingProfessionResultOptions } from '../gameData/craftingMasteryInputs';
 import { materialMasteryPercent, materialMasterySpeedMultiplier, materialMasteryBonusChance } from '../gameData/equipmentRolls';
 import { herbZoneOf } from '../gameData/herbs';
 import { alchemyZoneMasteryPercent, alchemyMasteryMilestone } from '../gameData/alchemyMastery';
@@ -84,6 +85,11 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
 
   const characterRef = useRef<Character | null>(character);
   const userRef = useRef<User | null>(user);
+  // Autosave re-entrancy guard — see GatheringScreen's matching comment: a
+  // second call (interval tick vs. handleStop's own await) just awaits
+  // whichever is already in flight instead of resolving the same anchor
+  // window twice.
+  const autosaveInFlightRef = useRef<Promise<void> | null>(null);
   // Guild Milestones (level 15/25) — read through a ref for the same
   // reason characterRef exists: autosave() runs from a setInterval
   // callback whose effect only depends on [recipe.id], so closing over the
@@ -145,7 +151,9 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
       // Guild Milestone (level 25) stacks onto the same channel Shirt of
       // Mastery already uses — see gameData/guildMilestones.ts.
       masteryXpPct: shirtBonusPct(shirtBonus, 'mastery_xp') + guildBonusesRef.current.craftingMasteryPct,
-      materialPreservePct: shirtBonusPct(shirtBonus, 'material_preserve'),
+      // Guild Headquarters' Workshop room stacks onto this same channel —
+      // see gameData/guildMilestones.ts's comment on materialPreservePct.
+      materialPreservePct: shirtBonusPct(shirtBonus, 'material_preserve') + guildBonusesRef.current.materialPreservePct,
     };
   }
 
@@ -162,6 +170,20 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
   }
 
   async function autosave() {
+    if (autosaveInFlightRef.current) {
+      await autosaveInFlightRef.current;
+      return;
+    }
+    const promise = runAutosave();
+    autosaveInFlightRef.current = promise;
+    try {
+      await promise;
+    } finally {
+      autosaveInFlightRef.current = null;
+    }
+  }
+
+  async function runAutosave() {
     const currentUser = userRef.current;
     const currentCharacter = characterRef.current;
     const anchor = anchorRef.current;
@@ -172,30 +194,14 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
     const masteryState = prof.mastery?.[recipe.id] ?? { level: 0, xp: 0 };
     const cap = maxSkillForUnlockedTier(recipe.profession, prof.unlockedTier);
 
-    const material = recipe.materialId ? getMaterial(recipe.materialId) : undefined;
-    const materialMasteryInput: MaterialMasteryInput | undefined = material
-      ? {
-          materialId: material.id,
-          startingXp: currentCharacter.materialMastery?.[material.id]?.xp ?? 0,
-          barsPerCraft: recipe.materials.find((m) => m.itemId === material.barItemId)?.quantity ?? 0,
-        }
-      : undefined;
-    const alchemyZoneMasteryInput: AlchemyZoneMasteryInput | undefined = recipe.alchemyZoneId
-      ? {
-          startingXp: currentCharacter.alchemyZoneMastery?.[recipe.alchemyZoneId]?.xp ?? 0,
-          unitsInOwnZonePerCraft: recipe.materials
-            .filter((m) => herbZoneOf(m.itemId) === recipe.alchemyZoneId)
-            .reduce((sum, m) => sum + m.quantity, 0),
-        }
-      : undefined;
-    const enchantingZoneMasteryInput: EnchantingZoneMasteryInput | undefined = recipe.enchantingZoneId
-      ? { startingXp: currentCharacter.enchantingZoneMastery?.[recipe.enchantingZoneId]?.xp ?? 0 }
-      : undefined;
-    const cookingZoneMasteryInput: CookingZoneMasteryInput | undefined = recipe.cookingZoneId
-      ? { startingXp: currentCharacter.cookingZoneMastery?.[recipe.cookingZoneId]?.xp ?? 0, cookingTier: recipe.cookingTier ?? 1 }
-      : undefined;
-    const anyZoneOrMaterialMastery =
-      materialMasteryInput || alchemyZoneMasteryInput || enchantingZoneMasteryInput || cookingZoneMasteryInput;
+    const {
+      material,
+      materialMasteryInput,
+      alchemyZoneMasteryInput,
+      enchantingZoneMasteryInput,
+      cookingZoneMasteryInput,
+      anyZoneOrMaterialMastery,
+    } = buildCraftingMasteryInputs(currentCharacter, recipe);
 
     const result = resolveCraftingOffline(
       anchor,
@@ -344,46 +350,19 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
       const fresh = await getCharacter(currentUser.uid);
       if (!fresh) throw new Error('Character not found during autosave');
 
-      await applyCraftingProfessionResult(currentUser.uid, recipe.profession, recipe.id, fresh, {
-        resultItemId: recipe.resultItemId,
-        resultQuantity: recipe.resultQuantity * wholeCrafted,
-        materialsConsumed: result.materialsConsumed,
-        goldSpent: result.goldSpent,
-        newSkillLevel: result.finalSkill,
-        newSkillXp: result.finalSkillXp,
-        newMasteryLevel: result.finalMasteryLevel,
-        newMasteryXp: result.finalMasteryXp,
-        earnsProfessionXp,
-        ...(material
-          ? {
-              materialMastery: {
-                materialId: material.id,
-                newMaterialMasteryXp: result.finalMaterialMasteryXp ?? 0,
-                batches: result.materialMasteryBatches ?? [],
-              },
-            }
-          : {}),
-        ...(recipe.alchemyZoneId
-          ? { alchemyZoneMastery: { batches: result.alchemyZoneMasteryBatches ?? [] } }
-          : {}),
-        ...(recipe.enchantingZoneId
-          ? {
-              enchantingZoneMastery: {
-                zoneId: recipe.enchantingZoneId,
-                newEnchantingZoneMasteryXp: result.finalEnchantingZoneMasteryXp ?? 0,
-              },
-            }
-          : {}),
-        ...(recipe.cookingZoneId
-          ? {
-              cookingZoneMastery: {
-                zoneId: recipe.cookingZoneId,
-                newCookingZoneMasteryXp: result.finalCookingZoneMasteryXp ?? 0,
-                batches: result.cookingZoneMasteryBatches,
-              },
-            }
-          : {}),
-      });
+      await applyCraftingProfessionResult(
+        currentUser.uid,
+        recipe.profession,
+        recipe.id,
+        fresh,
+        buildCraftingProfessionResultOptions(
+          recipe,
+          result,
+          { material, materialMasteryInput, alchemyZoneMasteryInput, enchantingZoneMasteryInput, cookingZoneMasteryInput, anyZoneOrMaterialMastery },
+          wholeCrafted,
+          earnsProfessionXp
+        )
+      );
 
       await advanceQuests(currentUser.uid, fresh, [{ type: 'craft', itemId: recipe.resultItemId, count: wholeCrafted }]);
 

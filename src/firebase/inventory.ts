@@ -289,6 +289,25 @@ function countDistinctBaseItems(inventory: Inventory): number {
   return baseIds.size;
 }
 
+// Read-only mirror of grantInventoryItems' own distinctCount check — same
+// "occupied item slots" definition (items.* plus any base item only held as
+// an equipmentInstances/chargedConsumables bucket), exported so a UI
+// warning (e.g. "you won't receive loot from this" before starting a
+// gather/craft) can ask the same question without a Firestore round trip.
+export function distinctItemSlotCount(inventory: Inventory): number {
+  return Object.values(inventory.items ?? {}).filter((q) => q > 0).length + countDistinctBaseItems(inventory);
+}
+
+// Whether granting one more unit of itemId would actually cost a NEW slot —
+// false whenever it's already held in any of the 3 buckets (stacking is
+// always free, see grantInventoryItems' own doc comment).
+export function isItemAlreadyHeld(inventory: Inventory, itemId: string): boolean {
+  if ((inventory.items[itemId] ?? 0) > 0) return true;
+  if (Object.values(inventory.equipmentInstances ?? {}).some((inst) => inst.itemId === itemId)) return true;
+  if (Object.values(inventory.chargedConsumables ?? {}).some((inst) => inst.itemId === itemId)) return true;
+  return false;
+}
+
 // The charge-count-distinguished counterpart to grantEquipmentInstances
 // above — grants freshly-crafted offensive/defensive potions (always at
 // FULL charge, since crafting never produces a partially-used potion) of

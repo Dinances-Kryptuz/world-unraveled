@@ -164,6 +164,11 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
 
   const characterRef = useRef<Character | null>(character);
   const userRef = useRef<User | null>(user);
+  // Autosave re-entrancy guard — see GatheringScreen's matching comment: a
+  // second call (interval tick, the playerDied tick, or handleStop/
+  // handleRetreat's own await) just awaits whichever is already in flight
+  // instead of resolving the same pending-kills/combat-state batch twice.
+  const autosaveInFlightRef = useRef<Promise<void> | null>(null);
   useEffect(() => {
     characterRef.current = character;
   }, [character]);
@@ -446,6 +451,20 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
   }, [dungeonId]);
 
   async function autosave() {
+    if (autosaveInFlightRef.current) {
+      await autosaveInFlightRef.current;
+      return;
+    }
+    const promise = runAutosave();
+    autosaveInFlightRef.current = promise;
+    try {
+      await promise;
+    } finally {
+      autosaveInFlightRef.current = null;
+    }
+  }
+
+  async function runAutosave() {
     const currentUser = userRef.current;
     const state = combatStateRef.current;
     const player = state?.party.find((p) => p.isPlayer);
@@ -480,7 +499,7 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
         completedEncounters: kills.length,
       });
     }
-    if (hasConsumableUsage && currentCharacterForBuffs.consumableAutomation) {
+    if (hasConsumableUsage && currentCharacterForBuffs.equippedConsumables.potion) {
       const usage = {
         offensiveChargesConsumed: consumableState.offensiveChargesConsumed,
         defensiveChargesConsumed: consumableState.defensiveChargesConsumed,
@@ -491,7 +510,7 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
       consumableState.defensiveChargesConsumed = 0;
       consumableState.healingUsed = 0;
       consumableState.manaUsed = 0;
-      void applyConsumableAutomationUsage(currentUser.uid, currentCharacterForBuffs.consumableAutomation, usage);
+      void applyConsumableAutomationUsage(currentUser.uid, currentCharacterForBuffs.equippedConsumables.potion, usage);
     }
 
     const xpGained = Math.round(kills.reduce((sum, k) => sum + k.xpGained, 0));

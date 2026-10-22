@@ -311,19 +311,11 @@ export interface Character {
   // never been used and is always off cooldown. See
   // firebase/consumables.ts's remainingCooldownSeconds().
   itemCooldowns: Record<string, Date>;
-  // Herbalism/Alchemy overhaul's Part 8 automation settings — one selected
-  // item id + enable flag per category, plus a %-of-max threshold for the
-  // two resource categories. Absent entirely (every character before this
-  // field existed, or one who's never opened the automation settings)
-  // means every category is off — same "absence is the zero state"
-  // convention as everywhere else, and matches today's fully-manual
-  // behavior exactly, so nothing changes for a character who never touches
-  // this.
-  consumableAutomation?: ConsumableAutomationSettings;
   // Inventory sort/filter overhaul — the player's preferred Inventory
   // screen configuration, same "field directly on the character doc, one
-  // setter, absence is default" convention as consumableAutomation above.
-  // Presentation-only: never read by anything outside InventoryScreen.tsx.
+  // setter, absence is default" convention most optional fields on this
+  // type follow. Presentation-only: never read by anything outside
+  // InventoryScreen.tsx.
   inventorySortPrefs?: InventorySortPrefs;
   // Quest progress — see QuestState above.
   quests: QuestState;
@@ -564,15 +556,3 @@ export interface InventorySortPrefs {
   filterLocked?: 'locked' | 'unlocked' | null;
 }
 
-export interface ConsumableAutomationSettings {
-  offensiveItemId: string | null;
-  defensiveItemId: string | null;
-  healingItemId: string | null;
-  manaItemId: string | null;
-  healingThresholdPct: number;
-  manaThresholdPct: number;
-  autoOffensiveEnabled: boolean;
-  autoDefensiveEnabled: boolean;
-  autoHealingEnabled: boolean;
-  autoManaEnabled: boolean;
-}

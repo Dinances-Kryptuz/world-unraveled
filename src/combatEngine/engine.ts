@@ -1008,17 +1008,18 @@ export interface TickContext {
   // doc comment. Same "read at spawn/respawn time" posture as
   // monsterHpMultiplier above.
   monsterDamageMultiplier?: number;
-  // Herbalism/Alchemy overhaul's Part 8 automation — built once per
-  // encounter setup (gameData/consumableAutomation.ts's
-  // buildConsumableAutomationState) and mutated in place by advanceCombat as
-  // the fight actually happens (per-hit charge consumption, per-tick auto-
-  // heal/mana), exactly like ctx.monster itself is mutated by the dungeon
-  // stage-advance step — this is what lets online (a fresh ctx rebuilt every
-  // tick, but pointed at the SAME persistent state object) and offline (one
-  // ctx reused for the whole simulateOfflineCombat loop) resolve charges at
-  // identical per-hit/per-tick granularity instead of two drifting
-  // approximations. Absent for every encounter before this field existed,
-  // and for any character with no consumableAutomation configured yet.
+  // Potion-slot automation — built once per encounter setup (gameData/
+  // consumableAutomation.ts's buildConsumableAutomationState, derived from
+  // whatever's pinned to Character.equippedConsumables.potion) and mutated
+  // in place by advanceCombat as the fight actually happens (per-hit charge
+  // consumption, per-tick auto-heal/mana), exactly like ctx.monster itself
+  // is mutated by the dungeon stage-advance step — this is what lets online
+  // (a fresh ctx rebuilt every tick, but pointed at the SAME persistent
+  // state object) and offline (one ctx reused for the whole
+  // simulateOfflineCombat loop) resolve charges at identical per-hit/per-
+  // tick granularity instead of two drifting approximations. Absent for
+  // every encounter before this field existed, and for any character with
+  // nothing pinned to the Potion slot.
   consumableState?: ConsumableAutomationRuntimeState;
   // Tailoring overhaul's Shirt of Fortune — a flat % bonus to gold gained
   // per kill, read from CurrentActivity.equippedShirtItemId (or, for a

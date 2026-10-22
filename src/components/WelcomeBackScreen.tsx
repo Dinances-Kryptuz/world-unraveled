@@ -4,11 +4,14 @@ import { useCharacter } from '../hooks/useCharacter';
 import { LIVE_SESSION_THRESHOLD_SECONDS } from '../gameData/activityEngine';
 import {
   resolveCraftingOffline,
-  resolveDisenchantOffline,
+  resolveDisenchantQueueOffline,
   type CraftingRecipeLike,
   type CraftingShirtBonuses,
+  type DisenchantQueueItemInput,
 } from '../gameData/craftingEngine';
+import { buildCraftingMasteryInputs, buildCraftingProfessionResultOptions } from '../gameData/craftingMasteryInputs';
 import { resolveGatheringOffline, type GatheringResourceLike, type GatheringShirtBonuses } from '../gameData/gatheringEngine';
+import { herbZoneOf } from '../gameData/herbs';
 import { MONSTERS } from '../gameData/monsters';
 import { GATHER_NODES, FISHING_HOLES } from '../gameData/zones';
 import { RECIPES } from '../gameData/recipes';
@@ -23,14 +26,23 @@ import { resolveActiveAltSetups } from '../firebase/characterSlots';
 import { isShieldEquipped, getInnateWeaponProc } from '../gameData/equipmentStats';
 import { type BaseStat } from '../gameData/classStats';
 import { getProfessionState, maxSkillForUnlockedTier, PROFESSION_CATEGORY } from '../gameData/professionTiers';
-import { getInventory } from '../firebase/inventory';
-import { applyCombatResult, setCharacterLevel } from '../firebase/character';
+import { getInventory, isLocked } from '../firebase/inventory';
+import {
+  applyCombatResult,
+  setCharacterLevel,
+  applyGatheringProfessionResult,
+  applyCraftingProfessionResult,
+  advanceQuests,
+  touchActivityStartedAt,
+} from '../firebase/character';
+import { applyFishingResult } from '../firebase/professions';
 import { applyConsumableAutomationUsage } from '../firebase/consumables';
-import { consumeEnchantCharges } from '../firebase/enchanting';
+import { consumeEnchantCharges, applyDisenchantQueueResult } from '../firebase/enchanting';
 import { checkAndUnlockNextSlot } from '../firebase/characterSlots';
 import { MAX_CHARACTER_LEVEL } from '../gameData/xpTables';
 import { buildConsumableAutomationState } from '../gameData/consumableAutomation';
 import { shirtBonusForItemId, shirtBonusPct } from '../gameData/shirts';
+import { useGuildMilestoneBonuses } from '../hooks/useGuildMilestones';
 import type { Character, CurrentActivity } from '../types/character';
 
 export function isLongAbsence(activity: CurrentActivity): boolean {
@@ -49,25 +61,28 @@ export function WelcomeBackScreen({
   const { user } = useAuth();
   const { refetch } = useCharacter();
   const [summary, setSummary] = useState<string | null>(null);
+  const guildBonuses = useGuildMilestoneBonuses();
 
-  // Previews only (see each branch's own comment) — built from the same
-  // CurrentActivity.equippedShirtItemId snapshot the real screens use, so
-  // this estimate matches what the real autosave will actually persist.
+  // Built from the same CurrentActivity.equippedShirtItemId snapshot the
+  // real screens use, and folding in the same guild-bonus channels
+  // (level milestones + Headquarters Storehouse/Workshop rooms, see
+  // gameData/guildMilestones.ts) those screens' own closures do, so this
+  // now matches exactly what the actual persisted write below computes.
   function gatheringShirtBonuses(shirtItemId: string | null | undefined): GatheringShirtBonuses {
     const shirtBonus = shirtBonusForItemId(shirtItemId);
     return {
-      gatheringSpeedPct: shirtBonusPct(shirtBonus, 'gathering_speed'),
+      gatheringSpeedPct: shirtBonusPct(shirtBonus, 'gathering_speed') + guildBonuses.gatheringTimePct,
       professionXpPct: shirtBonusPct(shirtBonus, 'profession_xp'),
-      masteryXpPct: shirtBonusPct(shirtBonus, 'mastery_xp'),
+      masteryXpPct: shirtBonusPct(shirtBonus, 'mastery_xp') + guildBonuses.gatheringMasteryPct,
     };
   }
   function craftingShirtBonuses(shirtItemId: string | null | undefined): CraftingShirtBonuses {
     const shirtBonus = shirtBonusForItemId(shirtItemId);
     return {
-      craftingSpeedPct: shirtBonusPct(shirtBonus, 'crafting_speed'),
+      craftingSpeedPct: shirtBonusPct(shirtBonus, 'crafting_speed') + guildBonuses.craftingTimePct,
       professionXpPct: shirtBonusPct(shirtBonus, 'profession_xp'),
-      masteryXpPct: shirtBonusPct(shirtBonus, 'mastery_xp'),
-      materialPreservePct: shirtBonusPct(shirtBonus, 'material_preserve'),
+      masteryXpPct: shirtBonusPct(shirtBonus, 'mastery_xp') + guildBonuses.craftingMasteryPct,
+      materialPreservePct: shirtBonusPct(shirtBonus, 'material_preserve') + guildBonuses.materialPreservePct,
     };
   }
 
@@ -155,7 +170,7 @@ export function WelcomeBackScreen({
               usage.manaUsed > 0 ||
               autoEat
             ) {
-              await applyConsumableAutomationUsage(user.uid, character.consumableAutomation, usage, autoEat);
+              await applyConsumableAutomationUsage(user.uid, character.equippedConsumables.potion, usage, autoEat);
             }
           }
           const { offensiveAction, damageTaken } = result.enchantTriggerCounts;
@@ -271,7 +286,7 @@ export function WelcomeBackScreen({
               manaUsed: fcs.manaUsed,
             };
             if (usage.offensiveChargesConsumed > 0 || usage.defensiveChargesConsumed > 0 || usage.healingUsed > 0 || usage.manaUsed > 0) {
-              await applyConsumableAutomationUsage(user.uid, character.consumableAutomation, usage);
+              await applyConsumableAutomationUsage(user.uid, character.equippedConsumables.potion, usage);
             }
           }
           const { offensiveAction, damageTaken } = result.enchantTriggerCounts;
@@ -303,13 +318,14 @@ export function WelcomeBackScreen({
       } else if (activity.type === 'gathering') {
         // All 4 gathering professions (Mining/Herbalism/Skinning/Fishing's
         // own branch below) now share gatheringEngine.ts's 1-100 XP+Mastery
-        // engine — no more branching on usesMasteryEngine here. Purely a
-        // preview: nothing is persisted until the gathering screen itself
-        // mounts and runs its own first autosave from this same anchor.
+        // engine — no more branching on usesMasteryEngine here. Persists
+        // through the same writer GatheringScreen's own autosave uses, so
+        // the catch-up is actually banked instead of just previewed.
         const node = GATHER_NODES[activity.targetId];
         const itemName = ITEMS[node.itemId]?.name ?? node.itemId;
         const prof = getProfessionState(character.professions, node.profession);
         const masteryState = prof.mastery?.[node.id] ?? { level: 0, xp: 0 };
+        const herbZoneId = node.profession === 'herbalism' ? herbZoneOf(node.itemId) : undefined;
         const nodeLike: GatheringResourceLike = {
           itemId: node.itemId,
           baseXp: node.baseXp,
@@ -327,21 +343,40 @@ export function WelcomeBackScreen({
           masteryState.xp,
           maxSkillForUnlockedTier(node.profession, prof.unlockedTier),
           0,
-          undefined,
+          herbZoneId ? { zoneMasteryStartingXp: character.herbalismZoneMastery?.[herbZoneId]?.xp ?? 0 } : undefined,
           gatheringShirtBonuses(activity.equippedShirtItemId)
         );
         const levelUpNote = result.finalSkill !== prof.level ? ` Your ${node.profession} level reached ${result.finalSkill}!` : '';
-        setSummary(
-          `While you were away, you gathered ${Math.floor(result.quantityGained)} ${itemName}.${levelUpNote}`
-        );
+        const wholeQuantity = Math.floor(result.quantityGained);
+        const wholeBonus = Math.floor(result.rareBonusQuantity);
+        if (user && (wholeQuantity > 0 || wholeBonus > 0 || result.professionXpGained > 0)) {
+          await applyGatheringProfessionResult(user.uid, node.profession, node.id, character, {
+            itemId: node.itemId,
+            quantity: wholeQuantity,
+            rareBonusItemId: node.rareBonus?.itemId,
+            rareBonusQuantity: wholeBonus,
+            newSkillLevel: result.finalSkill,
+            newSkillXp: result.finalSkillXp,
+            newMasteryLevel: result.finalMasteryLevel,
+            newMasteryXp: result.finalMasteryXp,
+            ...(herbZoneId
+              ? { herbalismZoneMastery: { zoneId: herbZoneId, xpGained: result.herbalismZoneMasteryXpGained ?? 0 } }
+              : {}),
+          });
+          const events = [{ type: 'gather' as const, itemId: node.itemId, count: wholeQuantity }];
+          if (node.rareBonus && wholeBonus > 0) events.push({ type: 'gather' as const, itemId: node.rareBonus.itemId, count: wholeBonus });
+          await advanceQuests(user.uid, character, events);
+          await touchActivityStartedAt(user.uid);
+        }
+        setSummary(`While you were away, you gathered ${wholeQuantity} ${itemName}.${levelUpNote}`);
       } else if (activity.type === 'crafting') {
         // All 6 crafting professions now share craftingEngine.ts's 1-100
         // XP+Mastery engine — Mining's Smelting recipes land here too
         // (tagged to a gathering-category profession) but never earn
         // Mining XP/Mastery of their own, per the same earnsProfessionXp
-        // split CraftingScreen uses. Purely a preview: nothing is persisted
-        // until the crafting screen itself mounts and runs its own first
-        // autosave from this same anchor.
+        // split CraftingScreen uses. Uses the same craftingMasteryInputs.ts
+        // helpers CraftingScreen's own autosave uses, so both call sites
+        // share identical mastery-axis logic.
         const recipe = RECIPES[activity.targetId];
         const inventory = user ? await getInventory(user.uid) : { items: {} };
         const prof = getProfessionState(character.professions, recipe.profession);
@@ -355,32 +390,51 @@ export function WelcomeBackScreen({
           materials: recipe.materials,
           goldCost: recipe.goldCost,
         };
+        const { materialMasteryInput, alchemyZoneMasteryInput, enchantingZoneMasteryInput, cookingZoneMasteryInput, anyZoneOrMaterialMastery, material } =
+          buildCraftingMasteryInputs(character, recipe);
         const result = resolveCraftingOffline(
           activity.startedAt,
           now,
           recipeLike,
           prof.level,
           prof.xp,
-          masteryState.level,
-          masteryState.xp,
+          anyZoneOrMaterialMastery ? 0 : masteryState.level,
+          anyZoneOrMaterialMastery ? 0 : masteryState.xp,
           maxSkillForUnlockedTier(recipe.profession, prof.unlockedTier),
           inventory.items,
           character.gold,
-          undefined,
-          undefined,
-          craftingShirtBonuses(activity.equippedShirtItemId)
+          materialMasteryInput,
+          alchemyZoneMasteryInput,
+          craftingShirtBonuses(activity.equippedShirtItemId),
+          enchantingZoneMasteryInput,
+          cookingZoneMasteryInput
         );
         const earnsProfessionXp = PROFESSION_CATEGORY[recipe.profession] === 'production';
         const levelUpNote =
           earnsProfessionXp && result.finalSkill !== prof.level
             ? ` Your ${recipe.profession} level reached ${result.finalSkill}!`
             : '';
-        setSummary(
-          `While you were away, you crafted ${Math.floor(result.itemsCrafted)} ${recipe.name}.${levelUpNote}`
-        );
+        const wholeCrafted = Math.floor(result.itemsCrafted);
+        if (user && (wholeCrafted > 0 || result.professionXpGained > 0)) {
+          await applyCraftingProfessionResult(
+            user.uid,
+            recipe.profession,
+            recipe.id,
+            character,
+            buildCraftingProfessionResultOptions(
+              recipe,
+              result,
+              { materialMasteryInput, alchemyZoneMasteryInput, enchantingZoneMasteryInput, cookingZoneMasteryInput, anyZoneOrMaterialMastery, material },
+              wholeCrafted,
+              earnsProfessionXp
+            )
+          );
+          await touchActivityStartedAt(user.uid);
+        }
+        setSummary(`While you were away, you crafted ${wholeCrafted} ${recipe.name}.${levelUpNote}`);
       } else if (activity.type === 'fishing') {
         // Fishing shares gatheringEngine.ts's engine with Mining/Herbalism/
-        // Skinning — see the gathering branch above for the same preview
+        // Skinning — see the gathering branch above for the same persisting
         // pattern, with the hole's catchChance baked into the resolver.
         const hole = FISHING_HOLES[activity.targetId];
         const itemName = ITEMS[hole.itemId]?.name ?? hole.itemId;
@@ -408,42 +462,94 @@ export function WelcomeBackScreen({
           { zoneMasteryStartingXp: character.fishingZoneMastery?.[hole.zoneId]?.xp ?? 0 }
         );
         const levelUpNote = result.finalSkill !== prof.level ? ` Your Fishing level reached ${result.finalSkill}!` : '';
+        const wholeQuantity = Math.floor(result.quantityGained);
+        const wholeBonus = Math.floor(result.rareBonusQuantity);
+        if (user && (wholeQuantity > 0 || wholeBonus > 0 || result.professionXpGained > 0)) {
+          await applyFishingResult(user.uid, character, {
+            itemId: hole.itemId,
+            quantity: wholeQuantity,
+            rareBonusItemId: hole.rareBonus?.itemId,
+            rareBonusQuantity: wholeBonus,
+            newSkillLevel: result.finalSkill,
+            newSkillXp: result.finalSkillXp,
+            fishingZoneMastery: { zoneId: hole.zoneId, xpGained: result.fishingZoneMasteryXpGained ?? 0 },
+          });
+          const events = [{ type: 'gather' as const, itemId: hole.itemId, count: wholeQuantity }];
+          if (hole.rareBonus && wholeBonus > 0) events.push({ type: 'gather' as const, itemId: hole.rareBonus.itemId, count: wholeBonus });
+          await advanceQuests(user.uid, character, events);
+          await touchActivityStartedAt(user.uid);
+        }
         setSummary(
-          result.quantityGained >= 1
-            ? `While you were away, you caught ${Math.floor(result.quantityGained)} ${itemName}.${levelUpNote}`
+          wholeQuantity >= 1
+            ? `While you were away, you caught ${wholeQuantity} ${itemName}.${levelUpNote}`
             : 'While you were away, the fish weren’t biting.'
         );
       } else if (activity.type === 'disenchanting') {
-        // Purely a preview, same as gathering/crafting above — nothing is
-        // persisted until DisenchantingScreen itself mounts and runs its own
-        // first autosave from this same anchor.
+        // Rewritten to match DisenchantingScreen's own autosave exactly:
+        // the REAL live resolver is queue-aware (resolveDisenchantQueueOffline),
+        // processing the "current" item (targetId/disenchantInstanceId/
+        // disenchantQuantity) PLUS everything still queued
+        // (currentActivity.disenchantQueue) in one pass — not just the
+        // single current item the old preview-only branch here looked at.
         const item = ITEMS[activity.targetId];
-        const inventory = user ? await getInventory(user.uid) : { items: {} };
-        const owned = inventory.items[activity.targetId] ?? 0;
-        const requested = activity.disenchantQuantity ?? 1;
         if (!item) {
           setSummary('Welcome back!');
         } else {
-          const prof = getProfessionState(character.professions, 'enchanting');
+          const inventory = user ? await getInventory(user.uid) : { items: {} };
+          const owned = inventory.items[activity.targetId] ?? 0;
+          const requested = activity.disenchantQuantity ?? 1;
           const yieldRange = disenchantYieldRange(item);
-          const result = resolveDisenchantOffline(
+          const current: DisenchantQueueItemInput = {
+            itemId: activity.targetId,
+            instanceId: activity.disenchantInstanceId,
+            requiredSkill: disenchantRequiredSkill(item),
+            baseXp: disenchantXpAward(item),
+            yieldItemId: yieldRange.itemId,
+            yieldMin: yieldRange.min,
+            yieldMax: yieldRange.max,
+            maxQuantity: Math.min(requested, owned),
+          };
+          const queueItems: DisenchantQueueItemInput[] = (activity.disenchantQueue ?? [])
+            .map((q): DisenchantQueueItemInput | null => {
+              const queuedItem = ITEMS[q.itemId];
+              if (!queuedItem) return null;
+              const queuedYieldRange = disenchantYieldRange(queuedItem);
+              return {
+                itemId: q.itemId,
+                instanceId: q.instanceId,
+                requiredSkill: disenchantRequiredSkill(queuedItem),
+                baseXp: disenchantXpAward(queuedItem),
+                yieldItemId: queuedYieldRange.itemId,
+                yieldMin: queuedYieldRange.min,
+                yieldMax: queuedYieldRange.max,
+                maxQuantity: q.quantity,
+              };
+            })
+            .filter((q): q is DisenchantQueueItemInput => q !== null);
+          const freshInventory = user ? await getInventory(user.uid) : inventory;
+          const eligible = [current, ...queueItems].filter((entry) => !isLocked(freshInventory, entry.instanceId ?? entry.itemId));
+
+          const prof = getProfessionState(character.professions, 'enchanting');
+          const salvageBonusPct = shirtBonusPct(shirtBonusForItemId(activity.equippedShirtItemId), 'salvage_bonus');
+          const result = resolveDisenchantQueueOffline(
+            eligible,
             activity.startedAt,
             now,
-            disenchantRequiredSkill(item),
-            disenchantXpAward(item),
-            yieldRange.min,
-            yieldRange.max,
-            Math.min(requested, owned),
             prof.level,
             prof.xp,
             maxSkillForUnlockedTier('enchanting', prof.unlockedTier),
-            shirtBonusPct(shirtBonusForItemId(activity.equippedShirtItemId), 'salvage_bonus')
+            salvageBonusPct
           );
+          const totalDisenchanted = result.perItem.reduce((sum, entry) => sum + entry.itemsDisenchanted, 0);
           const levelUpNote =
             result.finalSkill !== prof.level ? ` Your Enchanting level reached ${result.finalSkill}!` : '';
+          if (user && result.perItem.length > 0) {
+            await applyDisenchantQueueResult(user.uid, result.perItem, result.finalSkill, result.finalSkillXp);
+            await touchActivityStartedAt(user.uid);
+          }
           setSummary(
-            result.itemsDisenchanted > 0
-              ? `While you were away, you disenchanted ${result.itemsDisenchanted} ${item.name}.${levelUpNote}`
+            totalDisenchanted > 0
+              ? `While you were away, you disenchanted ${totalDisenchanted} item${totalDisenchanted === 1 ? '' : 's'}.${levelUpNote}`
               : 'While you were away, you had nothing left to disenchant.'
           );
         }

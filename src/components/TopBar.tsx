@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { signOut } from '../firebase/auth';
 import { CLASS_LABELS, SPEC_LABELS } from '../gameData/classStats';
 import { getTitle } from '../gameData/titles';
@@ -35,6 +36,12 @@ export function TopBar({
   onSelectZone: (zoneId: string) => void;
 }) {
   const traveling = !!character.travel;
+  // Clicking a zone tab no longer starts the flight immediately — a
+  // misclick here used to lock you into a travel timer with no way back
+  // out. First click swaps that one tab into a Confirm/Cancel pair instead;
+  // only the Confirm click actually calls onSelectZone. Clicking a
+  // different zone tab while one is pending just moves the prompt there.
+  const [confirmingZoneId, setConfirmingZoneId] = useState<string | null>(null);
   const guildBonuses = useGuildMilestoneBonuses();
   // Guild Milestone (level 5) stacks additively with the character's own
   // mount bonus — Master Mount (80%) + this (20%) reaches the 100% that
@@ -98,11 +105,30 @@ export function TopBar({
           } else if (!isCurrent) {
             title = `${minutes} minute flight`;
           }
+          if (clickable && confirmingZoneId === z.id) {
+            return (
+              <span key={z.id} className="zone-tab-confirm">
+                <button
+                  className="zone-tab"
+                  onClick={() => {
+                    setConfirmingZoneId(null);
+                    onSelectZone(z.id);
+                  }}
+                  title={`Confirm travel to ${z.name}`}
+                >
+                  Confirm {z.name}?
+                </button>
+                <button className="zone-tab" onClick={() => setConfirmingZoneId(null)}>
+                  Cancel
+                </button>
+              </span>
+            );
+          }
           return (
             <button
               key={z.id}
               className="zone-tab"
-              onClick={() => clickable && onSelectZone(z.id)}
+              onClick={() => clickable && setConfirmingZoneId(z.id)}
               disabled={!clickable}
               title={title}
               style={isCurrent ? { background: 'var(--class-accent)', color: 'var(--class-accent-text)' } : undefined}

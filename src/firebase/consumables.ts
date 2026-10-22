@@ -5,7 +5,7 @@ import { getInventory } from './inventory';
 import { ITEMS } from '../gameData/items';
 import { resolveCombatProfile } from '../gameData/resolveCombatProfile';
 import { isFoodItem, isPotionItem } from '../gameData/consumableClassification';
-import type { Character, ConsumableAutomationSettings } from '../types/character';
+import type { Character } from '../types/character';
 import type { ItemDef, BuffCategory } from '../gameData/types';
 import { BUFF_CATEGORY_TRIGGER } from '../gameData/buffs';
 import { applyChargeConsumption, chargedInstanceId } from '../gameData/consumableCharges';
@@ -247,7 +247,7 @@ async function consumeChargedConsumable(uid: string, itemId: string, totalCharge
   await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), updates);
 }
 
-// Persists one batch's worth of Part 8 automation usage — the engine
+// Persists one batch's worth of potion-slot automation usage — the engine
 // (combatEngine/engine.ts, both online and offline) only ever mutates an
 // in-memory ConsumableAutomationRuntimeState; this is the single place that
 // turns its accumulated tallies into real inventory/cooldown writes, called
@@ -255,35 +255,36 @@ async function consumeChargedConsumable(uid: string, itemId: string, totalCharge
 // claim (WelcomeBackScreen) — never per tick/hit.
 export async function applyConsumableAutomationUsage(
   uid: string,
-  // Optional — Auto Eat (below) has its own rank-driven trigger, entirely
-  // independent of the player-configured Part 8 settings object, so a
-  // character who's never touched that settings screen (automation
-  // undefined) can still have autoEat usage to persist here.
-  automation: ConsumableAutomationSettings | undefined,
+  // Whatever's pinned to equippedConsumables.potion when this batch's
+  // ConsumableAutomationRuntimeState was built — only one of offensive/
+  // defensive/healing/mana ever has nonzero usage in a batch now, since a
+  // single slot can only ever be one of those shapes at a time (see
+  // gameData/consumableAutomation.ts's buildConsumableAutomationState).
+  potionItemId: string | null | undefined,
   usage: { offensiveChargesConsumed: number; defensiveChargesConsumed: number; healingUsed: number; manaUsed: number },
   // Cooking overhaul Tier 1 — Auto Eat's own usage tally + the item it
   // actually ate (whatever was pinned to equippedConsumables.food when the
   // engine built this batch's ConsumableAutomationRuntimeState — see
-  // buildAutoEatState), separate from `automation`/`usage` above since Auto
-  // Eat isn't part of the player-configured ConsumableAutomationSettings.
+  // buildAutoEatState), separate from the potion slot since food and
+  // potion are independent slots.
   autoEat?: { used: number; itemId: string }
 ): Promise<void> {
-  if (usage.offensiveChargesConsumed > 0 && automation?.offensiveItemId) {
-    await consumeChargedConsumable(uid, automation.offensiveItemId, usage.offensiveChargesConsumed);
+  if (usage.offensiveChargesConsumed > 0 && potionItemId) {
+    await consumeChargedConsumable(uid, potionItemId, usage.offensiveChargesConsumed);
   }
-  if (usage.defensiveChargesConsumed > 0 && automation?.defensiveItemId) {
-    await consumeChargedConsumable(uid, automation.defensiveItemId, usage.defensiveChargesConsumed);
+  if (usage.defensiveChargesConsumed > 0 && potionItemId) {
+    await consumeChargedConsumable(uid, potionItemId, usage.defensiveChargesConsumed);
   }
 
   const characterUpdate: Record<string, unknown> = {};
   const inventoryUpdate: Record<string, unknown> = {};
-  if (usage.healingUsed > 0 && automation?.healingItemId) {
-    inventoryUpdate[`items.${automation.healingItemId}`] = increment(-usage.healingUsed);
-    characterUpdate[`itemCooldowns.${automation.healingItemId}`] = serverTimestamp();
+  if (usage.healingUsed > 0 && potionItemId) {
+    inventoryUpdate[`items.${potionItemId}`] = increment(-usage.healingUsed);
+    characterUpdate[`itemCooldowns.${potionItemId}`] = serverTimestamp();
   }
-  if (usage.manaUsed > 0 && automation?.manaItemId) {
-    inventoryUpdate[`items.${automation.manaItemId}`] = increment(-usage.manaUsed);
-    characterUpdate[`itemCooldowns.${automation.manaItemId}`] = serverTimestamp();
+  if (usage.manaUsed > 0 && potionItemId) {
+    inventoryUpdate[`items.${potionItemId}`] = increment(-usage.manaUsed);
+    characterUpdate[`itemCooldowns.${potionItemId}`] = serverTimestamp();
   }
   if (autoEat && autoEat.used > 0) {
     inventoryUpdate[`items.${autoEat.itemId}`] = increment(-autoEat.used);
@@ -295,12 +296,4 @@ export async function applyConsumableAutomationUsage(
   if (Object.keys(inventoryUpdate).length > 0) {
     await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), inventoryUpdate);
   }
-}
-
-// Sets (or clears, with null/0) the Part 8 automation settings — one write,
-// validated just enough to keep the shape sane; the actual item-selection
-// UI (SettingsScreen) is responsible for only ever offering a real
-// offensive/defensive/healing/mana consumable id.
-export async function setConsumableAutomation(uid: string, automation: ConsumableAutomationSettings): Promise<void> {
-  await updateDoc(doc(db, 'characters', uid), { consumableAutomation: automation });
 }

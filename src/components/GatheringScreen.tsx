@@ -63,6 +63,13 @@ export function GatheringScreen({ node }: { node: GatherNode }) {
 
   const characterRef = useRef<Character | null>(character);
   const userRef = useRef<User | null>(user);
+  // Autosave re-entrancy guard — the setInterval tick and handleStop's own
+  // "await autosave() before stopping" can otherwise both be mid-flight at
+  // once (a slow write outlasting the next 20s tick, or a Stop click
+  // landing while one is in-flight), each resolving the SAME anchor window
+  // and double-granting it. A second call just awaits whichever is already
+  // running instead of starting a redundant one.
+  const autosaveInFlightRef = useRef<Promise<void> | null>(null);
   useEffect(() => {
     characterRef.current = character;
   }, [character]);
@@ -140,6 +147,20 @@ export function GatheringScreen({ node }: { node: GatherNode }) {
   const herbZoneId = node.profession === 'herbalism' ? herbZoneOf(node.itemId) : undefined;
 
   async function autosave() {
+    if (autosaveInFlightRef.current) {
+      await autosaveInFlightRef.current;
+      return;
+    }
+    const promise = runAutosave();
+    autosaveInFlightRef.current = promise;
+    try {
+      await promise;
+    } finally {
+      autosaveInFlightRef.current = null;
+    }
+  }
+
+  async function runAutosave() {
     const currentUser = userRef.current;
     const currentCharacter = characterRef.current;
     const anchor = anchorRef.current;

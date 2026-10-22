@@ -79,6 +79,9 @@ function DistrictContent({ districtId, zoneId, characterLevel }: { districtId: D
 export function CapitalScreen({ onRequestTravel }: { onRequestTravel: (zoneId: string) => void }) {
   const { character } = useCharacter();
   const [selectedDistrict, setSelectedDistrict] = useState<DistrictId | null>(null);
+  // Same misclick guard as TopBar's zone tabs (see its own comment) — this
+  // is the other call site that reaches onRequestTravel.
+  const [confirmingTravel, setConfirmingTravel] = useState(false);
 
   if (!character) return null;
 
@@ -87,7 +90,21 @@ export function CapitalScreen({ onRequestTravel }: { onRequestTravel: (zoneId: s
       <div className="capital-screen">
         <h2>Ashenfall — The Last Capital</h2>
         <p>You'll need to travel to Ashenfall to visit the capital.</p>
-        <button onClick={() => onRequestTravel('ashenfall')}>Travel to Ashenfall</button>
+        {confirmingTravel ? (
+          <>
+            <button
+              onClick={() => {
+                setConfirmingTravel(false);
+                onRequestTravel('ashenfall');
+              }}
+            >
+              Confirm travel?
+            </button>
+            <button onClick={() => setConfirmingTravel(false)}>Cancel</button>
+          </>
+        ) : (
+          <button onClick={() => setConfirmingTravel(true)}>Travel to Ashenfall</button>
+        )}
       </div>
     );
   }

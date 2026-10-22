@@ -122,6 +122,11 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
 
   const characterRef = useRef<Character | null>(character);
   const userRef = useRef<User | null>(user);
+  // Autosave re-entrancy guard — see GatheringScreen's matching comment: a
+  // second call (interval tick, the playerDied tick, or handleStop/
+  // handleRetreat's own await) just awaits whichever is already in flight
+  // instead of resolving the same pending-kills/combat-state batch twice.
+  const autosaveInFlightRef = useRef<Promise<void> | null>(null);
   useEffect(() => {
     characterRef.current = character;
   }, [character]);
@@ -277,6 +282,20 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
   }, [monsterId]);
 
   async function autosave() {
+    if (autosaveInFlightRef.current) {
+      await autosaveInFlightRef.current;
+      return;
+    }
+    const promise = runAutosave();
+    autosaveInFlightRef.current = promise;
+    try {
+      await promise;
+    } finally {
+      autosaveInFlightRef.current = null;
+    }
+  }
+
+  async function runAutosave() {
     const currentUser = userRef.current;
     const state = combatStateRef.current;
     const player = state?.party.find((p) => p.isPlayer);
@@ -326,7 +345,7 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
       consumableState.autoEatUsed = 0;
       void applyConsumableAutomationUsage(
         currentUser.uid,
-        currentCharacterForBuffs.consumableAutomation,
+        currentCharacterForBuffs.equippedConsumables.potion,
         usage,
         autoEatUsed > 0 && autoEatItemId ? { used: autoEatUsed, itemId: autoEatItemId } : undefined
       );

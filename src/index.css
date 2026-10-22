@@ -1851,6 +1851,11 @@ button.storybook-spec-button:hover:not(:disabled) {
   background: var(--bg-elevated);
 }
 
+.zone-tab-confirm {
+  display: inline-flex;
+  gap: 4px;
+}
+
 .zone-banner {
   position: relative;
   overflow: hidden;
