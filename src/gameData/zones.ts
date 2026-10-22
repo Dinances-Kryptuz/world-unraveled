@@ -38,27 +38,27 @@ export function isZoneUnlocked(zone: Zone, characterLevel: number): boolean {
 const LEGACY_FISHING_HOLES: Record<string, FishingHole> = {
   greenhollow_fishing_hole: {
     id: 'greenhollow_fishing_hole', name: 'Greenhollow Stream', zoneId: 'greenhollow_fields',
-    requiredLevel: 1, itemId: 'brook_trout', baseXp: 10, secondsPerAction: 9, catchChance: 0.78,
+    requiredLevel: 4, itemId: 'brook_trout', baseXp: 10, secondsPerAction: 9, catchChance: 0.78,
   },
   stonecrag_fishing_hole: {
     id: 'stonecrag_fishing_hole', name: 'Stonecrag Tarn', zoneId: 'stonecrag_foothills',
-    requiredLevel: 15, itemId: 'mountain_char', baseXp: 16, secondsPerAction: 10, catchChance: 0.78,
+    requiredLevel: 18, itemId: 'mountain_char', baseXp: 16, secondsPerAction: 10, catchChance: 0.78,
   },
   emberfall_fishing_hole: {
     id: 'emberfall_fishing_hole', name: 'Emberfall Hot Spring', zoneId: 'emberfall_ridge',
-    requiredLevel: 30, itemId: 'ember_eel', baseXp: 26, secondsPerAction: 11, catchChance: 0.78,
+    requiredLevel: 31, itemId: 'ember_eel', baseXp: 26, secondsPerAction: 11, catchChance: 0.78,
   },
   cinderfall_fishing_hole: {
     id: 'cinderfall_fishing_hole', name: 'Cinderfall Flooded Hall', zoneId: 'cinderfall_depths',
-    requiredLevel: 48, itemId: 'ashfin_carp', baseXp: 43, secondsPerAction: 13, catchChance: 0.78,
+    requiredLevel: 46, itemId: 'ashfin_carp', baseXp: 43, secondsPerAction: 13, catchChance: 0.78,
   },
   molten_scar_fishing_hole: {
     id: 'molten_scar_fishing_hole', name: 'Molten Scar Cooling Pool', zoneId: 'molten_scar',
-    requiredLevel: 68, itemId: 'magma_darter', baseXp: 70, secondsPerAction: 15, catchChance: 0.78,
+    requiredLevel: 61, itemId: 'magma_darter', baseXp: 70, secondsPerAction: 15, catchChance: 0.78,
   },
   cinderheart_fishing_hole: {
     id: 'cinderheart_fishing_hole', name: 'Cinderheart Ember Pool', zoneId: 'cinderheart_crater',
-    requiredLevel: 90, itemId: 'emberheart_koi', baseXp: 114, secondsPerAction: 17, catchChance: 0.78,
+    requiredLevel: 81, itemId: 'emberheart_koi', baseXp: 114, secondsPerAction: 17, catchChance: 0.78,
   },
 };
 
@@ -78,23 +78,23 @@ const TARGETED_FISHING_HOLES: Record<string, FishingHole> = {
   },
   longjaw_mud_snapper_hole: {
     id: 'longjaw_mud_snapper_hole', name: 'Longjaw Mud Snapper Hole', zoneId: 'greenhollow_fields',
-    requiredLevel: 7, itemId: 'longjaw_mud_snapper', baseXp: 13, secondsPerAction: 9.4, catchChance: 0.78,
+    requiredLevel: 8, itemId: 'longjaw_mud_snapper', baseXp: 13, secondsPerAction: 9.4, catchChance: 0.78,
     rareBonus: { itemId: 'freshwater_pearl', chance: 0.03 },
   },
   slitherskin_mackerel_hole: {
     id: 'slitherskin_mackerel_hole', name: 'Slitherskin Mackerel Hole', zoneId: 'greenhollow_fields',
-    requiredLevel: 14, itemId: 'slitherskin_mackerel', baseXp: 16, secondsPerAction: 9.9, catchChance: 0.78,
+    requiredLevel: 11, itemId: 'slitherskin_mackerel', baseXp: 16, secondsPerAction: 9.9, catchChance: 0.78,
     rareBonus: { itemId: 'freshwater_pearl', chance: 0.03 },
   },
   // Stonecrag Foothills
   bristle_whisker_catfish_hole: {
     id: 'bristle_whisker_catfish_hole', name: 'Bristle Whisker Catfish Hole', zoneId: 'stonecrag_foothills',
-    requiredLevel: 15, itemId: 'bristle_whisker_catfish', baseXp: 16, secondsPerAction: 10.0, catchChance: 0.78,
+    requiredLevel: 16, itemId: 'bristle_whisker_catfish', baseXp: 16, secondsPerAction: 10.0, catchChance: 0.78,
     rareBonus: { itemId: 'river_pearl', chance: 0.03 },
   },
   rainbow_fin_albacore_hole: {
     id: 'rainbow_fin_albacore_hole', name: 'Rainbow Fin Albacore Hole', zoneId: 'stonecrag_foothills',
-    requiredLevel: 20, itemId: 'rainbow_fin_albacore', baseXp: 19, secondsPerAction: 10.3, catchChance: 0.78,
+    requiredLevel: 21, itemId: 'rainbow_fin_albacore', baseXp: 19, secondsPerAction: 10.3, catchChance: 0.78,
     rareBonus: { itemId: 'river_pearl', chance: 0.03 },
   },
   sagefish_hole: {
@@ -104,13 +104,13 @@ const TARGETED_FISHING_HOLES: Record<string, FishingHole> = {
   },
   oily_blackmouth_hole: {
     id: 'oily_blackmouth_hole', name: 'Oily Blackmouth Hole', zoneId: 'stonecrag_foothills',
-    requiredLevel: 29, itemId: 'oily_blackmouth', baseXp: 25, secondsPerAction: 10.9, catchChance: 0.78,
+    requiredLevel: 27, itemId: 'oily_blackmouth', baseXp: 25, secondsPerAction: 10.9, catchChance: 0.78,
     rareBonus: { itemId: 'river_pearl', chance: 0.03 },
   },
   // Emberfall Ridge
   mithril_head_trout_hole: {
     id: 'mithril_head_trout_hole', name: 'Mithril Head Trout Hole', zoneId: 'emberfall_ridge',
-    requiredLevel: 30, itemId: 'mithril_head_trout', baseXp: 26, secondsPerAction: 11.0, catchChance: 0.78,
+    requiredLevel: 33, itemId: 'mithril_head_trout', baseXp: 26, secondsPerAction: 11.0, catchChance: 0.78,
     rareBonus: { itemId: 'deepwater_pearl', chance: 0.03 },
   },
   rockscale_cod_hole: {
@@ -120,12 +120,12 @@ const TARGETED_FISHING_HOLES: Record<string, FishingHole> = {
   },
   greater_sagefish_hole: {
     id: 'greater_sagefish_hole', name: 'Greater Sagefish Hole', zoneId: 'emberfall_ridge',
-    requiredLevel: 41, itemId: 'greater_sagefish', baseXp: 36, secondsPerAction: 12.2, catchChance: 0.78,
+    requiredLevel: 39, itemId: 'greater_sagefish', baseXp: 36, secondsPerAction: 12.2, catchChance: 0.78,
     rareBonus: { itemId: 'deepwater_pearl', chance: 0.03 },
   },
   firefin_snapper_hole: {
     id: 'firefin_snapper_hole', name: 'Firefin Snapper Hole', zoneId: 'emberfall_ridge',
-    requiredLevel: 47, itemId: 'firefin_snapper', baseXp: 42, secondsPerAction: 12.9, catchChance: 0.78,
+    requiredLevel: 42, itemId: 'firefin_snapper', baseXp: 42, secondsPerAction: 12.9, catchChance: 0.78,
     rareBonus: { itemId: 'deepwater_pearl', chance: 0.03 },
   },
   // Cinderfall Depths
@@ -136,59 +136,59 @@ const TARGETED_FISHING_HOLES: Record<string, FishingHole> = {
   },
   nightfin_snapper_hole: {
     id: 'nightfin_snapper_hole', name: 'Nightfin Snapper Hole', zoneId: 'cinderfall_depths',
-    requiredLevel: 54, itemId: 'nightfin_snapper', baseXp: 51, secondsPerAction: 13.6, catchChance: 0.78,
+    requiredLevel: 51, itemId: 'nightfin_snapper', baseXp: 51, secondsPerAction: 13.6, catchChance: 0.78,
     rareBonus: { itemId: 'moonlit_pearl', chance: 0.03 },
   },
   sunscale_salmon_hole: {
     id: 'sunscale_salmon_hole', name: 'Sunscale Salmon Hole', zoneId: 'cinderfall_depths',
-    requiredLevel: 61, itemId: 'sunscale_salmon', baseXp: 61, secondsPerAction: 14.3, catchChance: 0.78,
+    requiredLevel: 54, itemId: 'sunscale_salmon', baseXp: 61, secondsPerAction: 14.3, catchChance: 0.78,
     rareBonus: { itemId: 'moonlit_pearl', chance: 0.03 },
   },
   spotted_yellowtail_hole: {
     id: 'spotted_yellowtail_hole', name: 'Spotted Yellowtail Hole', zoneId: 'cinderfall_depths',
-    requiredLevel: 67, itemId: 'spotted_yellowtail', baseXp: 69, secondsPerAction: 14.9, catchChance: 0.78,
+    requiredLevel: 57, itemId: 'spotted_yellowtail', baseXp: 69, secondsPerAction: 14.9, catchChance: 0.78,
     rareBonus: { itemId: 'moonlit_pearl', chance: 0.03 },
   },
   // The Molten Scar
   stonescale_eel_hole: {
     id: 'stonescale_eel_hole', name: 'Stonescale Eel Hole', zoneId: 'molten_scar',
-    requiredLevel: 68, itemId: 'stonescale_eel', baseXp: 70, secondsPerAction: 15.0, catchChance: 0.78,
+    requiredLevel: 64, itemId: 'stonescale_eel', baseXp: 70, secondsPerAction: 15.0, catchChance: 0.78,
     rareBonus: { itemId: 'prismatic_pearl', chance: 0.03 },
   },
   glossy_mightfish_hole: {
     id: 'glossy_mightfish_hole', name: 'Glossy Mightfish Hole', zoneId: 'molten_scar',
-    requiredLevel: 75, itemId: 'glossy_mightfish', baseXp: 84, secondsPerAction: 15.6, catchChance: 0.78,
+    requiredLevel: 68, itemId: 'glossy_mightfish', baseXp: 84, secondsPerAction: 15.6, catchChance: 0.78,
     rareBonus: { itemId: 'prismatic_pearl', chance: 0.03 },
   },
   whitescale_salmon_hole: {
     id: 'whitescale_salmon_hole', name: 'Whitescale Salmon Hole', zoneId: 'molten_scar',
-    requiredLevel: 82, itemId: 'whitescale_salmon', baseXp: 98, secondsPerAction: 16.3, catchChance: 0.78,
+    requiredLevel: 72, itemId: 'whitescale_salmon', baseXp: 98, secondsPerAction: 16.3, catchChance: 0.78,
     rareBonus: { itemId: 'prismatic_pearl', chance: 0.03 },
   },
   darkclaw_lobster_hole: {
     id: 'darkclaw_lobster_hole', name: 'Darkclaw Lobster Hole', zoneId: 'molten_scar',
-    requiredLevel: 89, itemId: 'darkclaw_lobster', baseXp: 112, secondsPerAction: 16.9, catchChance: 0.78,
+    requiredLevel: 76, itemId: 'darkclaw_lobster', baseXp: 112, secondsPerAction: 16.9, catchChance: 0.78,
     rareBonus: { itemId: 'prismatic_pearl', chance: 0.03 },
   },
   // Cinderheart Crater
   emberfin_snapper_hole: {
     id: 'emberfin_snapper_hole', name: 'Emberfin Snapper Hole', zoneId: 'cinderheart_crater',
-    requiredLevel: 90, itemId: 'emberfin_snapper', baseXp: 114, secondsPerAction: 17.0, catchChance: 0.78,
+    requiredLevel: 84, itemId: 'emberfin_snapper', baseXp: 114, secondsPerAction: 17.0, catchChance: 0.78,
     rareBonus: { itemId: 'ember_pearl', chance: 0.03 },
   },
   magmascale_eel_hole: {
     id: 'magmascale_eel_hole', name: 'Magmascale Eel Hole', zoneId: 'cinderheart_crater',
-    requiredLevel: 93, itemId: 'magmascale_eel', baseXp: 120, secondsPerAction: 17.3, catchChance: 0.78,
+    requiredLevel: 88, itemId: 'magmascale_eel', baseXp: 120, secondsPerAction: 17.3, catchChance: 0.78,
     rareBonus: { itemId: 'ember_pearl', chance: 0.03 },
   },
   ashen_salmon_hole: {
     id: 'ashen_salmon_hole', name: 'Ashen Salmon Hole', zoneId: 'cinderheart_crater',
-    requiredLevel: 97, itemId: 'ashen_salmon', baseXp: 128, secondsPerAction: 17.6, catchChance: 0.78,
+    requiredLevel: 92, itemId: 'ashen_salmon', baseXp: 128, secondsPerAction: 17.6, catchChance: 0.78,
     rareBonus: { itemId: 'ember_pearl', chance: 0.03 },
   },
   molten_lobster_hole: {
     id: 'molten_lobster_hole', name: 'Molten Lobster Hole', zoneId: 'cinderheart_crater',
-    requiredLevel: 100, itemId: 'molten_lobster', baseXp: 134, secondsPerAction: 17.9, catchChance: 0.78,
+    requiredLevel: 96, itemId: 'molten_lobster', baseXp: 134, secondsPerAction: 17.9, catchChance: 0.78,
     rareBonus: { itemId: 'ember_pearl', chance: 0.03 },
   },
 };
@@ -242,7 +242,7 @@ export const GATHER_NODES: Record<string, GatherNode> = {
   },
   greenhollow_earthroot_patch: {
     id: 'greenhollow_earthroot_patch', name: 'Earthroot Patch', profession: 'herbalism', zoneId: 'greenhollow_fields',
-    requiredLevel: 15, itemId: 'earthroot', baseXp: 10, secondsPerAction: 8,
+    requiredLevel: 11, itemId: 'earthroot', baseXp: 10, secondsPerAction: 8,
   },
   greenhollow_hunting_grounds: {
     id: 'greenhollow_hunting_grounds',
@@ -261,7 +261,7 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     name: 'Tin Vein',
     profession: 'mining',
     zoneId: 'stonecrag_foothills',
-    requiredLevel: 10,
+    requiredLevel: 16,
     itemId: 'tin_ore',
     baseXp: 13,
     secondsPerAction: 9,
@@ -275,7 +275,7 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     name: 'Silver Vein',
     profession: 'mining',
     zoneId: 'stonecrag_foothills',
-    requiredLevel: 20,
+    requiredLevel: 23,
     itemId: 'silver_ore',
     baseXp: 17,
     secondsPerAction: 10,
@@ -286,7 +286,7 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     name: 'Mountain Sage Patch',
     profession: 'herbalism',
     zoneId: 'stonecrag_foothills',
-    requiredLevel: 10,
+    requiredLevel: 16,
     itemId: 'mountain_sage',
     baseXp: 12,
     secondsPerAction: 8,
@@ -296,7 +296,7 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     name: 'Foothill Game',
     profession: 'skinning',
     zoneId: 'stonecrag_foothills',
-    requiredLevel: 10,
+    requiredLevel: 16,
     itemId: 'coarse_hide',
     baseXp: 12,
     secondsPerAction: 8,
@@ -308,7 +308,7 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     name: 'Iron Vein',
     profession: 'mining',
     zoneId: 'emberfall_ridge',
-    requiredLevel: 30,
+    requiredLevel: 31,
     itemId: 'iron_ore',
     baseXp: 23,
     secondsPerAction: 10,
@@ -320,7 +320,7 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     name: 'Sunpetal Patch',
     profession: 'herbalism',
     zoneId: 'emberfall_ridge',
-    requiredLevel: 25,
+    requiredLevel: 31,
     itemId: 'sunpetal',
     baseXp: 18,
     secondsPerAction: 9,
@@ -330,7 +330,7 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     name: 'Ashfang Den',
     profession: 'skinning',
     zoneId: 'emberfall_ridge',
-    requiredLevel: 25,
+    requiredLevel: 31,
     itemId: 'scaled_hide',
     baseXp: 18,
     secondsPerAction: 9,
@@ -342,7 +342,7 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     name: 'Mithril Vein',
     profession: 'mining',
     zoneId: 'cinderfall_depths',
-    requiredLevel: 50,
+    requiredLevel: 53,
     itemId: 'mithril_ore',
     baseXp: 40,
     secondsPerAction: 12,
@@ -356,7 +356,7 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     name: 'Gold Vein',
     profession: 'mining',
     zoneId: 'cinderfall_depths',
-    requiredLevel: 40,
+    requiredLevel: 46,
     itemId: 'gold_ore',
     baseXp: 30,
     secondsPerAction: 11,
@@ -367,7 +367,7 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     name: 'Emberpetal Patch',
     profession: 'herbalism',
     zoneId: 'cinderfall_depths',
-    requiredLevel: 40,
+    requiredLevel: 46,
     itemId: 'emberpetal',
     baseXp: 28,
     secondsPerAction: 10,
@@ -377,7 +377,7 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     name: 'Ash Burrow',
     profession: 'skinning',
     zoneId: 'cinderfall_depths',
-    requiredLevel: 40,
+    requiredLevel: 46,
     itemId: 'ashhide',
     baseXp: 28,
     secondsPerAction: 10,
@@ -389,7 +389,7 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     name: 'Thorium Vein',
     profession: 'mining',
     zoneId: 'molten_scar',
-    requiredLevel: 60,
+    requiredLevel: 61,
     itemId: 'thorium_ore',
     baseXp: 53,
     secondsPerAction: 13,
@@ -401,7 +401,7 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     name: 'Cinderbloom Patch',
     profession: 'herbalism',
     zoneId: 'molten_scar',
-    requiredLevel: 60,
+    requiredLevel: 61,
     itemId: 'cinderbloom',
     baseXp: 43,
     secondsPerAction: 12,
@@ -411,7 +411,7 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     name: 'Scaleback Den',
     profession: 'skinning',
     zoneId: 'molten_scar',
-    requiredLevel: 60,
+    requiredLevel: 61,
     itemId: 'scaleback_hide',
     baseXp: 43,
     secondsPerAction: 12,
@@ -437,7 +437,7 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     name: 'Platinum Vein',
     profession: 'mining',
     zoneId: 'cinderheart_crater',
-    requiredLevel: 80,
+    requiredLevel: 81,
     itemId: 'platinum_ore',
     baseXp: 70,
     secondsPerAction: 15,
@@ -448,7 +448,7 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     name: 'Emberheart Patch',
     profession: 'herbalism',
     zoneId: 'cinderheart_crater',
-    requiredLevel: 85,
+    requiredLevel: 81,
     itemId: 'emberheart_bloom',
     baseXp: 65,
     secondsPerAction: 13,
@@ -458,7 +458,7 @@ export const GATHER_NODES: Record<string, GatherNode> = {
     name: 'Emberscale Grounds',
     profession: 'skinning',
     zoneId: 'cinderheart_crater',
-    requiredLevel: 85,
+    requiredLevel: 81,
     itemId: 'emberscale_hide',
     baseXp: 65,
     secondsPerAction: 13,
@@ -472,7 +472,7 @@ export const GATHER_NODES: Record<string, GatherNode> = {
   // gathered). Skinning's 2nd-tier nodes are unaffected by this overhaul.
   stonecrag_mageroyal_patch: {
     id: 'stonecrag_mageroyal_patch', name: 'Mageroyal Patch', profession: 'herbalism', zoneId: 'stonecrag_foothills',
-    requiredLevel: 18, itemId: 'mageroyal', baseXp: 18, secondsPerAction: 10,
+    requiredLevel: 21, itemId: 'mageroyal', baseXp: 18, secondsPerAction: 10,
     rareBonus: { itemId: 'swiftthistle', chance: 0.12 },
   },
   stonecrag_briarthorn_patch: {
@@ -482,66 +482,66 @@ export const GATHER_NODES: Record<string, GatherNode> = {
   },
   stonecrag_bruiseweed_patch: {
     id: 'stonecrag_bruiseweed_patch', name: 'Bruiseweed Patch', profession: 'herbalism', zoneId: 'stonecrag_foothills',
-    requiredLevel: 30, itemId: 'bruiseweed', baseXp: 18, secondsPerAction: 10,
+    requiredLevel: 27, itemId: 'bruiseweed', baseXp: 18, secondsPerAction: 10,
     rareBonus: { itemId: 'grave_moss', chance: 0.08 },
   },
   emberfall_kingsblood_patch: {
     id: 'emberfall_kingsblood_patch', name: 'Kingsblood Patch', profession: 'herbalism', zoneId: 'emberfall_ridge',
-    requiredLevel: 35, itemId: 'kingsblood', baseXp: 30, secondsPerAction: 12,
+    requiredLevel: 36, itemId: 'kingsblood', baseXp: 30, secondsPerAction: 12,
     rareBonus: { itemId: 'grave_moss', chance: 0.08 },
   },
   emberfall_liferoot_patch: {
     id: 'emberfall_liferoot_patch', name: 'Liferoot Patch', profession: 'herbalism', zoneId: 'emberfall_ridge',
-    requiredLevel: 41, itemId: 'liferoot', baseXp: 30, secondsPerAction: 12,
+    requiredLevel: 39, itemId: 'liferoot', baseXp: 30, secondsPerAction: 12,
     rareBonus: { itemId: 'stranglekelp', chance: 0.10 },
   },
   emberfall_goldthorn_patch: {
     id: 'emberfall_goldthorn_patch', name: 'Goldthorn Patch', profession: 'herbalism', zoneId: 'emberfall_ridge',
-    requiredLevel: 47, itemId: 'goldthorn', baseXp: 30, secondsPerAction: 12,
+    requiredLevel: 42, itemId: 'goldthorn', baseXp: 30, secondsPerAction: 12,
     rareBonus: { itemId: 'fadeleaf', chance: 0.08 },
   },
   cinderfall_khadgars_whisker_patch: {
     id: 'cinderfall_khadgars_whisker_patch', name: "Khadgar's Whisker Patch", profession: 'herbalism', zoneId: 'cinderfall_depths',
-    requiredLevel: 52, itemId: 'khadgars_whisker', baseXp: 48, secondsPerAction: 14,
+    requiredLevel: 51, itemId: 'khadgars_whisker', baseXp: 48, secondsPerAction: 14,
     rareBonus: { itemId: 'fadeleaf', chance: 0.08 },
   },
   cinderfall_firebloom_patch: {
     id: 'cinderfall_firebloom_patch', name: 'Firebloom Patch', profession: 'herbalism', zoneId: 'cinderfall_depths',
-    requiredLevel: 58, itemId: 'firebloom', baseXp: 48, secondsPerAction: 14,
+    requiredLevel: 54, itemId: 'firebloom', baseXp: 48, secondsPerAction: 14,
   },
   cinderfall_sungrass_patch: {
     id: 'cinderfall_sungrass_patch', name: 'Sungrass Patch', profession: 'herbalism', zoneId: 'cinderfall_depths',
-    requiredLevel: 64, itemId: 'sungrass', baseXp: 48, secondsPerAction: 14,
+    requiredLevel: 57, itemId: 'sungrass', baseXp: 48, secondsPerAction: 14,
     rareBonus: { itemId: 'purple_lotus', chance: 0.07 },
   },
   molten_scar_blindweed_patch: {
     id: 'molten_scar_blindweed_patch', name: 'Blindweed Patch', profession: 'herbalism', zoneId: 'molten_scar',
-    requiredLevel: 69, itemId: 'blindweed', baseXp: 75, secondsPerAction: 16,
+    requiredLevel: 68, itemId: 'blindweed', baseXp: 75, secondsPerAction: 16,
     rareBonus: { itemId: 'purple_lotus', chance: 0.07 },
   },
   molten_scar_ghost_mushroom_patch: {
     id: 'molten_scar_ghost_mushroom_patch', name: 'Ghost Mushroom Patch', profession: 'herbalism', zoneId: 'molten_scar',
-    requiredLevel: 75, itemId: 'ghost_mushroom', baseXp: 75, secondsPerAction: 16,
+    requiredLevel: 72, itemId: 'ghost_mushroom', baseXp: 75, secondsPerAction: 16,
     rareBonus: { itemId: 'arthas_tears', chance: 0.06 },
   },
   molten_scar_gromsblood_patch: {
     id: 'molten_scar_gromsblood_patch', name: 'Gromsblood Patch', profession: 'herbalism', zoneId: 'molten_scar',
-    requiredLevel: 81, itemId: 'gromsblood', baseXp: 75, secondsPerAction: 16,
+    requiredLevel: 76, itemId: 'gromsblood', baseXp: 75, secondsPerAction: 16,
     rareBonus: { itemId: 'arthas_tears', chance: 0.06 },
   },
   cinderheart_dreamfoil_patch: {
     id: 'cinderheart_dreamfoil_patch', name: 'Dreamfoil Patch', profession: 'herbalism', zoneId: 'cinderheart_crater',
-    requiredLevel: 86, itemId: 'dreamfoil', baseXp: 110, secondsPerAction: 18,
+    requiredLevel: 84, itemId: 'dreamfoil', baseXp: 110, secondsPerAction: 18,
     rareBonus: { itemId: 'plaguebloom', chance: 0.05 },
   },
   cinderheart_mountain_silversage_patch: {
     id: 'cinderheart_mountain_silversage_patch', name: 'Mountain Silversage Patch', profession: 'herbalism', zoneId: 'cinderheart_crater',
-    requiredLevel: 92, itemId: 'mountain_silversage', baseXp: 110, secondsPerAction: 18,
+    requiredLevel: 88, itemId: 'mountain_silversage', baseXp: 110, secondsPerAction: 18,
     rareBonus: { itemId: 'plaguebloom', chance: 0.05 },
   },
   cinderheart_black_lotus_patch: {
     id: 'cinderheart_black_lotus_patch', name: 'Black Lotus Patch', profession: 'herbalism', zoneId: 'cinderheart_crater',
-    requiredLevel: 98, itemId: 'black_lotus', baseXp: 110, secondsPerAction: 18,
+    requiredLevel: 96, itemId: 'black_lotus', baseXp: 110, secondsPerAction: 18,
   },
 
   // ── Retired herb nodes (frozen, no longer listed in any
@@ -555,47 +555,47 @@ export const GATHER_NODES: Record<string, GatherNode> = {
   },
   greenhollow_rabbit_warren: {
     id: 'greenhollow_rabbit_warren', name: 'Rabbit Warren', profession: 'skinning', zoneId: 'greenhollow_fields',
-    requiredLevel: 4, itemId: 'rabbit_pelt', baseXp: 10, secondsPerAction: 7, requiredToolType: 'skinning_knife',
+    requiredLevel: 10, itemId: 'rabbit_pelt', baseXp: 10, secondsPerAction: 7, requiredToolType: 'skinning_knife',
   },
   stonecrag_frostcap_patch: {
     id: 'stonecrag_frostcap_patch', name: 'Frostcap Patch', profession: 'herbalism', zoneId: 'stonecrag_foothills',
-    requiredLevel: 14, itemId: 'frostcap', baseXp: 15, secondsPerAction: 8,
+    requiredLevel: 18, itemId: 'frostcap', baseXp: 15, secondsPerAction: 8,
   },
   stonecrag_jackal_den: {
     id: 'stonecrag_jackal_den', name: 'Jackal Den', profession: 'skinning', zoneId: 'stonecrag_foothills',
-    requiredLevel: 14, itemId: 'jackal_fur', baseXp: 15, secondsPerAction: 8, requiredToolType: 'skinning_knife',
+    requiredLevel: 25, itemId: 'jackal_fur', baseXp: 15, secondsPerAction: 8, requiredToolType: 'skinning_knife',
   },
   emberfall_emberleaf_patch: {
     id: 'emberfall_emberleaf_patch', name: 'Emberleaf Patch', profession: 'herbalism', zoneId: 'emberfall_ridge',
-    requiredLevel: 30, itemId: 'emberleaf', baseXp: 23, secondsPerAction: 10,
+    requiredLevel: 33, itemId: 'emberleaf', baseXp: 23, secondsPerAction: 10,
   },
   emberfall_wolfrun_thicket: {
     id: 'emberfall_wolfrun_thicket', name: 'Wolfrun Thicket', profession: 'skinning', zoneId: 'emberfall_ridge',
-    requiredLevel: 30, itemId: 'cinderwolf_pelt', baseXp: 23, secondsPerAction: 10, requiredToolType: 'skinning_knife',
+    requiredLevel: 40, itemId: 'cinderwolf_pelt', baseXp: 23, secondsPerAction: 10, requiredToolType: 'skinning_knife',
   },
   cinderfall_ashroot_patch: {
     id: 'cinderfall_ashroot_patch', name: 'Ashroot Patch', profession: 'herbalism', zoneId: 'cinderfall_depths',
-    requiredLevel: 46, itemId: 'ashroot', baseXp: 35, secondsPerAction: 11,
+    requiredLevel: 48, itemId: 'ashroot', baseXp: 35, secondsPerAction: 11,
   },
   cinderfall_scavenger_den: {
     id: 'cinderfall_scavenger_den', name: 'Scavenger Den', profession: 'skinning', zoneId: 'cinderfall_depths',
-    requiredLevel: 46, itemId: 'scavenger_hide', baseXp: 35, secondsPerAction: 11, requiredToolType: 'skinning_knife',
+    requiredLevel: 50, itemId: 'scavenger_hide', baseXp: 35, secondsPerAction: 11, requiredToolType: 'skinning_knife',
   },
   molten_scar_scorchweed_patch: {
     id: 'molten_scar_scorchweed_patch', name: 'Scorchweed Patch', profession: 'herbalism', zoneId: 'molten_scar',
-    requiredLevel: 68, itemId: 'scorchweed', baseXp: 52, secondsPerAction: 12,
+    requiredLevel: 64, itemId: 'scorchweed', baseXp: 52, secondsPerAction: 12,
   },
   molten_scar_scaleback_nest: {
     id: 'molten_scar_scaleback_nest', name: 'Scaleback Nest', profession: 'skinning', zoneId: 'molten_scar',
-    requiredLevel: 68, itemId: 'scaleback_scale', baseXp: 52, secondsPerAction: 12, requiredToolType: 'skinning_knife',
+    requiredLevel: 73, itemId: 'scaleback_scale', baseXp: 52, secondsPerAction: 12, requiredToolType: 'skinning_knife',
   },
   cinderheart_heartbloom_patch: {
     id: 'cinderheart_heartbloom_patch', name: 'Heartbloom Patch', profession: 'herbalism', zoneId: 'cinderheart_crater',
-    requiredLevel: 95, itemId: 'heartbloom', baseXp: 80, secondsPerAction: 14,
+    requiredLevel: 92, itemId: 'heartbloom', baseXp: 80, secondsPerAction: 14,
   },
   cinderheart_emberscale_nest: {
     id: 'cinderheart_emberscale_nest', name: 'Emberscale Nest', profession: 'skinning', zoneId: 'cinderheart_crater',
-    requiredLevel: 95, itemId: 'emberscale_claw', baseXp: 80, secondsPerAction: 14, requiredToolType: 'skinning_knife',
+    requiredLevel: 93, itemId: 'emberscale_claw', baseXp: 80, secondsPerAction: 14, requiredToolType: 'skinning_knife',
   },
 
   // ── The new 6-tier Skinning roster — one node per zone, mirroring
@@ -606,32 +606,32 @@ export const GATHER_NODES: Record<string, GatherNode> = {
   // every other retired-content block in this file).
   greenhollow_skinning_grounds: {
     id: 'greenhollow_skinning_grounds', name: 'Skinning Grounds', profession: 'skinning', zoneId: 'greenhollow_fields',
-    requiredLevel: 1, itemId: 'skinned_light_leather', baseXp: 10, secondsPerAction: 8,
+    requiredLevel: 5, itemId: 'skinned_light_leather', baseXp: 10, secondsPerAction: 8,
     requiredToolType: 'skinning_knife', rareBonus: { itemId: 'light_hide', chance: 0.1 },
   },
   stonecrag_skinning_grounds: {
     id: 'stonecrag_skinning_grounds', name: 'Skinning Grounds', profession: 'skinning', zoneId: 'stonecrag_foothills',
-    requiredLevel: 10, itemId: 'medium_leather', baseXp: 13, secondsPerAction: 9,
+    requiredLevel: 20, itemId: 'medium_leather', baseXp: 13, secondsPerAction: 9,
     requiredToolType: 'skinning_knife', rareBonus: { itemId: 'medium_hide', chance: 0.1 },
   },
   emberfall_skinning_grounds: {
     id: 'emberfall_skinning_grounds', name: 'Skinning Grounds', profession: 'skinning', zoneId: 'emberfall_ridge',
-    requiredLevel: 30, itemId: 'heavy_leather', baseXp: 23, secondsPerAction: 10,
+    requiredLevel: 35, itemId: 'heavy_leather', baseXp: 23, secondsPerAction: 10,
     requiredToolType: 'skinning_knife', rareBonus: { itemId: 'heavy_hide', chance: 0.1 },
   },
   cinderfall_skinning_grounds: {
     id: 'cinderfall_skinning_grounds', name: 'Skinning Grounds', profession: 'skinning', zoneId: 'cinderfall_depths',
-    requiredLevel: 50, itemId: 'thick_leather', baseXp: 40, secondsPerAction: 12,
+    requiredLevel: 55, itemId: 'thick_leather', baseXp: 40, secondsPerAction: 12,
     requiredToolType: 'skinning_knife', rareBonus: { itemId: 'skinned_thick_hide', chance: 0.1 },
   },
   molten_scar_skinning_grounds: {
     id: 'molten_scar_skinning_grounds', name: 'Skinning Grounds', profession: 'skinning', zoneId: 'molten_scar',
-    requiredLevel: 60, itemId: 'rugged_leather', baseXp: 53, secondsPerAction: 13,
+    requiredLevel: 67, itemId: 'rugged_leather', baseXp: 53, secondsPerAction: 13,
     requiredToolType: 'skinning_knife', rareBonus: { itemId: 'rugged_hide', chance: 0.1 },
   },
   cinderheart_skinning_grounds: {
     id: 'cinderheart_skinning_grounds', name: 'Skinning Grounds', profession: 'skinning', zoneId: 'cinderheart_crater',
-    requiredLevel: 90, itemId: 'emberscar_leather', baseXp: 92, secondsPerAction: 16,
+    requiredLevel: 87, itemId: 'emberscar_leather', baseXp: 92, secondsPerAction: 16,
     requiredToolType: 'skinning_knife', rareBonus: { itemId: 'emberscar_hide', chance: 0.1 },
   },
 };

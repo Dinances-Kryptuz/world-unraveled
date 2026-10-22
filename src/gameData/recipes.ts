@@ -25,7 +25,7 @@ export const RECIPES: Record<string, Recipe> = {
   // crafting materials... reasonable selection" requirement. Belt recipes
   // produce a universal (no armorType) item — see items.ts's module note.
   handstitched_leather_helm: {
-    id: 'handstitched_leather_helm', name: 'Handstitched Leather Helm', profession: 'leatherworking', requiredSkill: 1,
+    id: 'handstitched_leather_helm', name: 'Handstitched Leather Helm', profession: 'leatherworking', requiredSkill: 9,
     resultItemId: 'handstitched_leather_helm', resultQuantity: 1,
     materials: [{ itemId: 'skinned_light_leather', quantity: 3 }, { itemId: 'light_hide', quantity: 2 }],
     craftSeconds: 8, xpAward: 10,
@@ -33,7 +33,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   handstitched_leather_chest: {
-    id: 'handstitched_leather_chest', name: 'Handstitched Leather Chestplate', profession: 'leatherworking', requiredSkill: 1,
+    id: 'handstitched_leather_chest', name: 'Handstitched Leather Chestplate', profession: 'leatherworking', requiredSkill: 13,
     resultItemId: 'handstitched_leather_chest', resultQuantity: 1,
     materials: [{ itemId: 'skinned_light_leather', quantity: 5 }, { itemId: 'light_hide', quantity: 2 }],
     craftSeconds: 8, xpAward: 10,
@@ -41,7 +41,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   handstitched_leather_gloves: {
-    id: 'handstitched_leather_gloves', name: 'Handstitched Leather Gloves', profession: 'leatherworking', requiredSkill: 1,
+    id: 'handstitched_leather_gloves', name: 'Handstitched Leather Gloves', profession: 'leatherworking', requiredSkill: 6,
     resultItemId: 'handstitched_leather_gloves', resultQuantity: 1,
     materials: [{ itemId: 'skinned_light_leather', quantity: 3 }],
     craftSeconds: 8, xpAward: 10,
@@ -49,7 +49,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   handstitched_leather_legs: {
-    id: 'handstitched_leather_legs', name: 'Handstitched Leather Legplates', profession: 'leatherworking', requiredSkill: 1,
+    id: 'handstitched_leather_legs', name: 'Handstitched Leather Legplates', profession: 'leatherworking', requiredSkill: 11,
     resultItemId: 'handstitched_leather_legs', resultQuantity: 1,
     materials: [{ itemId: 'skinned_light_leather', quantity: 4 }],
     craftSeconds: 8, xpAward: 10,
@@ -57,7 +57,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   handstitched_leather_boots: {
-    id: 'handstitched_leather_boots', name: 'Handstitched Leather Boots', profession: 'leatherworking', requiredSkill: 1,
+    id: 'handstitched_leather_boots', name: 'Handstitched Leather Boots', profession: 'leatherworking', requiredSkill: 2,
     resultItemId: 'handstitched_leather_boots', resultQuantity: 1,
     materials: [{ itemId: 'skinned_light_leather', quantity: 3 }],
     craftSeconds: 8, xpAward: 10,
@@ -65,7 +65,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   handstitched_leather_shoulders: {
-    id: 'handstitched_leather_shoulders', name: 'Handstitched Leather Shoulders', profession: 'leatherworking', requiredSkill: 1,
+    id: 'handstitched_leather_shoulders', name: 'Handstitched Leather Shoulders', profession: 'leatherworking', requiredSkill: 8,
     resultItemId: 'handstitched_leather_shoulders', resultQuantity: 1,
     materials: [{ itemId: 'skinned_light_leather', quantity: 3 }],
     craftSeconds: 8, xpAward: 10,
@@ -76,7 +76,7 @@ export const RECIPES: Record<string, Recipe> = {
   // (see items.ts's matching comment); mirrors this tier's own Gloves
   // recipe exactly.
   handstitched_leather_bracers: {
-    id: 'handstitched_leather_bracers', name: 'Handstitched Leather Bracers', profession: 'leatherworking', requiredSkill: 1,
+    id: 'handstitched_leather_bracers', name: 'Handstitched Leather Bracers', profession: 'leatherworking', requiredSkill: 4,
     resultItemId: 'handstitched_leather_bracers', resultQuantity: 1,
     materials: [{ itemId: 'skinned_light_leather', quantity: 3 }],
     craftSeconds: 8, xpAward: 10,
@@ -92,7 +92,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   fine_leather_helm: {
-    id: 'fine_leather_helm', name: 'Fine Leather Helm', profession: 'leatherworking', requiredSkill: 18,
+    id: 'fine_leather_helm', name: 'Fine Leather Helm', profession: 'leatherworking', requiredSkill: 24,
     resultItemId: 'fine_leather_helm', resultQuantity: 1,
     materials: [{ itemId: 'medium_leather', quantity: 3 }, { itemId: 'medium_hide', quantity: 2 }],
     craftSeconds: 8.5, xpAward: 13,
@@ -100,7 +100,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   fine_leather_chest: {
-    id: 'fine_leather_chest', name: 'Fine Leather Chestplate', profession: 'leatherworking', requiredSkill: 18,
+    id: 'fine_leather_chest', name: 'Fine Leather Chestplate', profession: 'leatherworking', requiredSkill: 26,
     resultItemId: 'fine_leather_chest', resultQuantity: 1,
     materials: [{ itemId: 'medium_leather', quantity: 5 }, { itemId: 'medium_hide', quantity: 2 }],
     craftSeconds: 8.5, xpAward: 13,
@@ -108,7 +108,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   fine_leather_gloves: {
-    id: 'fine_leather_gloves', name: 'Fine Leather Gloves', profession: 'leatherworking', requiredSkill: 18,
+    id: 'fine_leather_gloves', name: 'Fine Leather Gloves', profession: 'leatherworking', requiredSkill: 21,
     resultItemId: 'fine_leather_gloves', resultQuantity: 1,
     materials: [{ itemId: 'medium_leather', quantity: 3 }],
     craftSeconds: 8.5, xpAward: 13,
@@ -116,7 +116,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   fine_leather_legs: {
-    id: 'fine_leather_legs', name: 'Fine Leather Legplates', profession: 'leatherworking', requiredSkill: 18,
+    id: 'fine_leather_legs', name: 'Fine Leather Legplates', profession: 'leatherworking', requiredSkill: 28,
     resultItemId: 'fine_leather_legs', resultQuantity: 1,
     materials: [{ itemId: 'medium_leather', quantity: 4 }],
     craftSeconds: 8.5, xpAward: 13,
@@ -124,7 +124,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   fine_leather_boots: {
-    id: 'fine_leather_boots', name: 'Fine Leather Boots', profession: 'leatherworking', requiredSkill: 18,
+    id: 'fine_leather_boots', name: 'Fine Leather Boots', profession: 'leatherworking', requiredSkill: 17,
     resultItemId: 'fine_leather_boots', resultQuantity: 1,
     materials: [{ itemId: 'medium_leather', quantity: 3 }],
     craftSeconds: 8.5, xpAward: 13,
@@ -132,7 +132,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   fine_leather_shoulders: {
-    id: 'fine_leather_shoulders', name: 'Fine Leather Shoulders', profession: 'leatherworking', requiredSkill: 18,
+    id: 'fine_leather_shoulders', name: 'Fine Leather Shoulders', profession: 'leatherworking', requiredSkill: 23,
     resultItemId: 'fine_leather_shoulders', resultQuantity: 1,
     materials: [{ itemId: 'medium_leather', quantity: 3 }],
     craftSeconds: 8.5, xpAward: 13,
@@ -140,7 +140,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   fine_leather_bracers: {
-    id: 'fine_leather_bracers', name: 'Fine Leather Bracers', profession: 'leatherworking', requiredSkill: 18,
+    id: 'fine_leather_bracers', name: 'Fine Leather Bracers', profession: 'leatherworking', requiredSkill: 19,
     resultItemId: 'fine_leather_bracers', resultQuantity: 1,
     materials: [{ itemId: 'medium_leather', quantity: 3 }],
     craftSeconds: 8.5, xpAward: 13,
@@ -148,7 +148,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   fine_leather_belt: {
-    id: 'fine_leather_belt', name: 'Fine Leather Belt', profession: 'leatherworking', requiredSkill: 18,
+    id: 'fine_leather_belt', name: 'Fine Leather Belt', profession: 'leatherworking', requiredSkill: 16,
     resultItemId: 'fine_leather_belt', resultQuantity: 1,
     materials: [{ itemId: 'medium_leather', quantity: 2 }],
     craftSeconds: 8.5, xpAward: 13,
@@ -156,7 +156,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   barbaric_leather_helm: {
-    id: 'barbaric_leather_helm', name: 'Barbaric Leather Helm', profession: 'leatherworking', requiredSkill: 35,
+    id: 'barbaric_leather_helm', name: 'Barbaric Leather Helm', profession: 'leatherworking', requiredSkill: 39,
     resultItemId: 'barbaric_leather_helm', resultQuantity: 1,
     materials: [{ itemId: 'heavy_leather', quantity: 3 }, { itemId: 'heavy_hide', quantity: 2 }],
     craftSeconds: 9.6, xpAward: 23,
@@ -164,7 +164,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   barbaric_leather_chest: {
-    id: 'barbaric_leather_chest', name: 'Barbaric Leather Chestplate', profession: 'leatherworking', requiredSkill: 35,
+    id: 'barbaric_leather_chest', name: 'Barbaric Leather Chestplate', profession: 'leatherworking', requiredSkill: 43,
     resultItemId: 'barbaric_leather_chest', resultQuantity: 1,
     materials: [{ itemId: 'heavy_leather', quantity: 5 }, { itemId: 'heavy_hide', quantity: 2 }],
     craftSeconds: 9.6, xpAward: 23,
@@ -172,7 +172,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   barbaric_leather_gloves: {
-    id: 'barbaric_leather_gloves', name: 'Barbaric Leather Gloves', profession: 'leatherworking', requiredSkill: 35,
+    id: 'barbaric_leather_gloves', name: 'Barbaric Leather Gloves', profession: 'leatherworking', requiredSkill: 34,
     resultItemId: 'barbaric_leather_gloves', resultQuantity: 1,
     materials: [{ itemId: 'heavy_leather', quantity: 3 }],
     craftSeconds: 9.6, xpAward: 23,
@@ -180,7 +180,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   barbaric_leather_legs: {
-    id: 'barbaric_leather_legs', name: 'Barbaric Leather Legplates', profession: 'leatherworking', requiredSkill: 35,
+    id: 'barbaric_leather_legs', name: 'Barbaric Leather Legplates', profession: 'leatherworking', requiredSkill: 41,
     resultItemId: 'barbaric_leather_legs', resultQuantity: 1,
     materials: [{ itemId: 'heavy_leather', quantity: 4 }],
     craftSeconds: 9.6, xpAward: 23,
@@ -188,7 +188,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   barbaric_leather_boots: {
-    id: 'barbaric_leather_boots', name: 'Barbaric Leather Boots', profession: 'leatherworking', requiredSkill: 35,
+    id: 'barbaric_leather_boots', name: 'Barbaric Leather Boots', profession: 'leatherworking', requiredSkill: 38,
     resultItemId: 'barbaric_leather_boots', resultQuantity: 1,
     materials: [{ itemId: 'heavy_leather', quantity: 3 }],
     craftSeconds: 9.6, xpAward: 23,
@@ -196,7 +196,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   barbaric_leather_shoulders: {
-    id: 'barbaric_leather_shoulders', name: 'Barbaric Leather Shoulders', profession: 'leatherworking', requiredSkill: 35,
+    id: 'barbaric_leather_shoulders', name: 'Barbaric Leather Shoulders', profession: 'leatherworking', requiredSkill: 36,
     resultItemId: 'barbaric_leather_shoulders', resultQuantity: 1,
     materials: [{ itemId: 'heavy_leather', quantity: 3 }],
     craftSeconds: 9.6, xpAward: 23,
@@ -204,7 +204,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   barbaric_leather_bracers: {
-    id: 'barbaric_leather_bracers', name: 'Barbaric Leather Bracers', profession: 'leatherworking', requiredSkill: 35,
+    id: 'barbaric_leather_bracers', name: 'Barbaric Leather Bracers', profession: 'leatherworking', requiredSkill: 32,
     resultItemId: 'barbaric_leather_bracers', resultQuantity: 1,
     materials: [{ itemId: 'heavy_leather', quantity: 3 }],
     craftSeconds: 9.6, xpAward: 23,
@@ -212,7 +212,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   barbaric_leather_belt: {
-    id: 'barbaric_leather_belt', name: 'Barbaric Leather Belt', profession: 'leatherworking', requiredSkill: 35,
+    id: 'barbaric_leather_belt', name: 'Barbaric Leather Belt', profession: 'leatherworking', requiredSkill: 31,
     resultItemId: 'barbaric_leather_belt', resultQuantity: 1,
     materials: [{ itemId: 'heavy_leather', quantity: 2 }],
     craftSeconds: 9.6, xpAward: 23,
@@ -220,7 +220,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   nightscape_leather_helm: {
-    id: 'nightscape_leather_helm', name: 'Nightscape Leather Helm', profession: 'leatherworking', requiredSkill: 52,
+    id: 'nightscape_leather_helm', name: 'Nightscape Leather Helm', profession: 'leatherworking', requiredSkill: 54,
     resultItemId: 'nightscape_leather_helm', resultQuantity: 1,
     materials: [{ itemId: 'thick_leather', quantity: 3 }, { itemId: 'skinned_thick_hide', quantity: 2 }],
     craftSeconds: 9.8, xpAward: 40,
@@ -228,7 +228,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   nightscape_leather_chest: {
-    id: 'nightscape_leather_chest', name: 'Nightscape Leather Chestplate', profession: 'leatherworking', requiredSkill: 52,
+    id: 'nightscape_leather_chest', name: 'Nightscape Leather Chestplate', profession: 'leatherworking', requiredSkill: 58,
     resultItemId: 'nightscape_leather_chest', resultQuantity: 1,
     materials: [{ itemId: 'thick_leather', quantity: 5 }, { itemId: 'skinned_thick_hide', quantity: 2 }],
     craftSeconds: 9.8, xpAward: 40,
@@ -236,7 +236,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   nightscape_leather_gloves: {
-    id: 'nightscape_leather_gloves', name: 'Nightscape Leather Gloves', profession: 'leatherworking', requiredSkill: 52,
+    id: 'nightscape_leather_gloves', name: 'Nightscape Leather Gloves', profession: 'leatherworking', requiredSkill: 51,
     resultItemId: 'nightscape_leather_gloves', resultQuantity: 1,
     materials: [{ itemId: 'thick_leather', quantity: 3 }],
     craftSeconds: 9.8, xpAward: 40,
@@ -244,7 +244,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   nightscape_leather_legs: {
-    id: 'nightscape_leather_legs', name: 'Nightscape Leather Legplates', profession: 'leatherworking', requiredSkill: 52,
+    id: 'nightscape_leather_legs', name: 'Nightscape Leather Legplates', profession: 'leatherworking', requiredSkill: 56,
     resultItemId: 'nightscape_leather_legs', resultQuantity: 1,
     materials: [{ itemId: 'thick_leather', quantity: 4 }],
     craftSeconds: 9.8, xpAward: 40,
@@ -252,7 +252,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   nightscape_leather_boots: {
-    id: 'nightscape_leather_boots', name: 'Nightscape Leather Boots', profession: 'leatherworking', requiredSkill: 52,
+    id: 'nightscape_leather_boots', name: 'Nightscape Leather Boots', profession: 'leatherworking', requiredSkill: 47,
     resultItemId: 'nightscape_leather_boots', resultQuantity: 1,
     materials: [{ itemId: 'thick_leather', quantity: 3 }],
     craftSeconds: 9.8, xpAward: 40,
@@ -260,7 +260,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   nightscape_leather_shoulders: {
-    id: 'nightscape_leather_shoulders', name: 'Nightscape Leather Shoulders', profession: 'leatherworking', requiredSkill: 52,
+    id: 'nightscape_leather_shoulders', name: 'Nightscape Leather Shoulders', profession: 'leatherworking', requiredSkill: 53,
     resultItemId: 'nightscape_leather_shoulders', resultQuantity: 1,
     materials: [{ itemId: 'thick_leather', quantity: 3 }],
     craftSeconds: 9.8, xpAward: 40,
@@ -268,7 +268,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   nightscape_leather_bracers: {
-    id: 'nightscape_leather_bracers', name: 'Nightscape Leather Bracers', profession: 'leatherworking', requiredSkill: 52,
+    id: 'nightscape_leather_bracers', name: 'Nightscape Leather Bracers', profession: 'leatherworking', requiredSkill: 49,
     resultItemId: 'nightscape_leather_bracers', resultQuantity: 1,
     materials: [{ itemId: 'thick_leather', quantity: 3 }],
     craftSeconds: 9.8, xpAward: 40,
@@ -276,7 +276,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   nightscape_leather_belt: {
-    id: 'nightscape_leather_belt', name: 'Nightscape Leather Belt', profession: 'leatherworking', requiredSkill: 52,
+    id: 'nightscape_leather_belt', name: 'Nightscape Leather Belt', profession: 'leatherworking', requiredSkill: 46,
     resultItemId: 'nightscape_leather_belt', resultQuantity: 1,
     materials: [{ itemId: 'thick_leather', quantity: 2 }],
     craftSeconds: 9.8, xpAward: 40,
@@ -284,7 +284,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   wicked_leather_helm: {
-    id: 'wicked_leather_helm', name: 'Wicked Leather Helm', profession: 'leatherworking', requiredSkill: 69,
+    id: 'wicked_leather_helm', name: 'Wicked Leather Helm', profession: 'leatherworking', requiredSkill: 72,
     resultItemId: 'wicked_leather_helm', resultQuantity: 1,
     materials: [{ itemId: 'rugged_leather', quantity: 3 }, { itemId: 'rugged_hide', quantity: 2 }],
     craftSeconds: 10, xpAward: 53,
@@ -292,7 +292,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   wicked_leather_chest: {
-    id: 'wicked_leather_chest', name: 'Wicked Leather Chestplate', profession: 'leatherworking', requiredSkill: 69,
+    id: 'wicked_leather_chest', name: 'Wicked Leather Chestplate', profession: 'leatherworking', requiredSkill: 77,
     resultItemId: 'wicked_leather_chest', resultQuantity: 1,
     materials: [{ itemId: 'rugged_leather', quantity: 5 }, { itemId: 'rugged_hide', quantity: 2 }],
     craftSeconds: 10, xpAward: 53,
@@ -300,7 +300,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   wicked_leather_gloves: {
-    id: 'wicked_leather_gloves', name: 'Wicked Leather Gloves', profession: 'leatherworking', requiredSkill: 69,
+    id: 'wicked_leather_gloves', name: 'Wicked Leather Gloves', profession: 'leatherworking', requiredSkill: 68,
     resultItemId: 'wicked_leather_gloves', resultQuantity: 1,
     materials: [{ itemId: 'rugged_leather', quantity: 3 }],
     craftSeconds: 10, xpAward: 53,
@@ -308,7 +308,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   wicked_leather_legs: {
-    id: 'wicked_leather_legs', name: 'Wicked Leather Legplates', profession: 'leatherworking', requiredSkill: 69,
+    id: 'wicked_leather_legs', name: 'Wicked Leather Legplates', profession: 'leatherworking', requiredSkill: 75,
     resultItemId: 'wicked_leather_legs', resultQuantity: 1,
     materials: [{ itemId: 'rugged_leather', quantity: 4 }],
     craftSeconds: 10, xpAward: 53,
@@ -316,7 +316,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   wicked_leather_boots: {
-    id: 'wicked_leather_boots', name: 'Wicked Leather Boots', profession: 'leatherworking', requiredSkill: 69,
+    id: 'wicked_leather_boots', name: 'Wicked Leather Boots', profession: 'leatherworking', requiredSkill: 63,
     resultItemId: 'wicked_leather_boots', resultQuantity: 1,
     materials: [{ itemId: 'rugged_leather', quantity: 3 }],
     craftSeconds: 10, xpAward: 53,
@@ -324,7 +324,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   wicked_leather_shoulders: {
-    id: 'wicked_leather_shoulders', name: 'Wicked Leather Shoulders', profession: 'leatherworking', requiredSkill: 69,
+    id: 'wicked_leather_shoulders', name: 'Wicked Leather Shoulders', profession: 'leatherworking', requiredSkill: 70,
     resultItemId: 'wicked_leather_shoulders', resultQuantity: 1,
     materials: [{ itemId: 'rugged_leather', quantity: 3 }],
     craftSeconds: 10, xpAward: 53,
@@ -332,7 +332,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   wicked_leather_bracers: {
-    id: 'wicked_leather_bracers', name: 'Wicked Leather Bracers', profession: 'leatherworking', requiredSkill: 69,
+    id: 'wicked_leather_bracers', name: 'Wicked Leather Bracers', profession: 'leatherworking', requiredSkill: 65,
     resultItemId: 'wicked_leather_bracers', resultQuantity: 1,
     materials: [{ itemId: 'rugged_leather', quantity: 3 }],
     craftSeconds: 10, xpAward: 53,
@@ -340,7 +340,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   wicked_leather_belt: {
-    id: 'wicked_leather_belt', name: 'Wicked Leather Belt', profession: 'leatherworking', requiredSkill: 69,
+    id: 'wicked_leather_belt', name: 'Wicked Leather Belt', profession: 'leatherworking', requiredSkill: 61,
     resultItemId: 'wicked_leather_belt', resultQuantity: 1,
     materials: [{ itemId: 'rugged_leather', quantity: 2 }],
     craftSeconds: 10, xpAward: 53,
@@ -348,7 +348,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   emberscar_leather_helm: {
-    id: 'emberscar_leather_helm', name: 'Emberscar Leather Helm', profession: 'leatherworking', requiredSkill: 86,
+    id: 'emberscar_leather_helm', name: 'Emberscar Leather Helm', profession: 'leatherworking', requiredSkill: 92,
     resultItemId: 'emberscar_leather_helm', resultQuantity: 1,
     materials: [{ itemId: 'emberscar_leather', quantity: 3 }, { itemId: 'emberscar_hide', quantity: 2 }],
     craftSeconds: 10.7, xpAward: 92,
@@ -356,7 +356,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'monster_drop', rarity: 'uncommon', learnedAutomatically: false,
   },
   emberscar_leather_chest: {
-    id: 'emberscar_leather_chest', name: 'Emberscar Leather Chestplate', profession: 'leatherworking', requiredSkill: 86,
+    id: 'emberscar_leather_chest', name: 'Emberscar Leather Chestplate', profession: 'leatherworking', requiredSkill: 97,
     resultItemId: 'emberscar_leather_chest', resultQuantity: 1,
     materials: [{ itemId: 'emberscar_leather', quantity: 5 }, { itemId: 'emberscar_hide', quantity: 2 }],
     craftSeconds: 10.7, xpAward: 92,
@@ -364,7 +364,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   emberscar_leather_gloves: {
-    id: 'emberscar_leather_gloves', name: 'Emberscar Leather Gloves', profession: 'leatherworking', requiredSkill: 86,
+    id: 'emberscar_leather_gloves', name: 'Emberscar Leather Gloves', profession: 'leatherworking', requiredSkill: 85,
     resultItemId: 'emberscar_leather_gloves', resultQuantity: 1,
     materials: [{ itemId: 'emberscar_leather', quantity: 3 }],
     craftSeconds: 10.7, xpAward: 92,
@@ -372,7 +372,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   emberscar_leather_legs: {
-    id: 'emberscar_leather_legs', name: 'Emberscar Leather Legplates', profession: 'leatherworking', requiredSkill: 86,
+    id: 'emberscar_leather_legs', name: 'Emberscar Leather Legplates', profession: 'leatherworking', requiredSkill: 95,
     resultItemId: 'emberscar_leather_legs', resultQuantity: 1,
     materials: [{ itemId: 'emberscar_leather', quantity: 4 }],
     craftSeconds: 10.7, xpAward: 92,
@@ -380,7 +380,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'monster_drop', rarity: 'uncommon', learnedAutomatically: false,
   },
   emberscar_leather_boots: {
-    id: 'emberscar_leather_boots', name: 'Emberscar Leather Boots', profession: 'leatherworking', requiredSkill: 86,
+    id: 'emberscar_leather_boots', name: 'Emberscar Leather Boots', profession: 'leatherworking', requiredSkill: 90,
     resultItemId: 'emberscar_leather_boots', resultQuantity: 1,
     materials: [{ itemId: 'emberscar_leather', quantity: 3 }],
     craftSeconds: 10.7, xpAward: 92,
@@ -388,7 +388,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   emberscar_leather_shoulders: {
-    id: 'emberscar_leather_shoulders', name: 'Emberscar Leather Shoulders', profession: 'leatherworking', requiredSkill: 86,
+    id: 'emberscar_leather_shoulders', name: 'Emberscar Leather Shoulders', profession: 'leatherworking', requiredSkill: 88,
     resultItemId: 'emberscar_leather_shoulders', resultQuantity: 1,
     materials: [{ itemId: 'emberscar_leather', quantity: 3 }],
     craftSeconds: 10.7, xpAward: 92,
@@ -396,7 +396,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   emberscar_leather_bracers: {
-    id: 'emberscar_leather_bracers', name: 'Emberscar Leather Bracers', profession: 'leatherworking', requiredSkill: 86,
+    id: 'emberscar_leather_bracers', name: 'Emberscar Leather Bracers', profession: 'leatherworking', requiredSkill: 83,
     resultItemId: 'emberscar_leather_bracers', resultQuantity: 1,
     materials: [{ itemId: 'emberscar_leather', quantity: 3 }],
     craftSeconds: 10.7, xpAward: 92,
@@ -404,7 +404,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   emberscar_leather_belt: {
-    id: 'emberscar_leather_belt', name: 'Emberscar Leather Belt', profession: 'leatherworking', requiredSkill: 86,
+    id: 'emberscar_leather_belt', name: 'Emberscar Leather Belt', profession: 'leatherworking', requiredSkill: 81,
     resultItemId: 'emberscar_leather_belt', resultQuantity: 1,
     materials: [{ itemId: 'emberscar_leather', quantity: 2 }],
     craftSeconds: 10.7, xpAward: 92,
@@ -428,7 +428,7 @@ export const RECIPES: Record<string, Recipe> = {
   // per the design brief's explicit ask — zone1-2 recipes are left alone
   // (the brief only asks for zone3+).
   tailored_linen_helm: {
-    id: 'tailored_linen_helm', name: 'Linen Hood', profession: 'tailoring', requiredSkill: 1,
+    id: 'tailored_linen_helm', name: 'Linen Hood', profession: 'tailoring', requiredSkill: 9,
     resultItemId: 'tailored_linen_helm', resultQuantity: 1,
     materials: [{ itemId: 'linen_cloth', quantity: 3 }, { itemId: 'coarse_thread', quantity: 2 }],
     craftSeconds: 8, xpAward: 10,
@@ -436,7 +436,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   tailored_linen_robe: {
-    id: 'tailored_linen_robe', name: 'Linen Robe', profession: 'tailoring', requiredSkill: 1,
+    id: 'tailored_linen_robe', name: 'Linen Robe', profession: 'tailoring', requiredSkill: 13,
     resultItemId: 'tailored_linen_robe', resultQuantity: 1,
     materials: [{ itemId: 'linen_cloth', quantity: 5 }, { itemId: 'coarse_thread', quantity: 3 }],
     craftSeconds: 8, xpAward: 10,
@@ -444,7 +444,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   tailored_linen_gloves: {
-    id: 'tailored_linen_gloves', name: 'Linen Gloves', profession: 'tailoring', requiredSkill: 1,
+    id: 'tailored_linen_gloves', name: 'Linen Gloves', profession: 'tailoring', requiredSkill: 5,
     resultItemId: 'tailored_linen_gloves', resultQuantity: 1,
     materials: [{ itemId: 'linen_cloth', quantity: 3 }, { itemId: 'coarse_thread', quantity: 2 }],
     craftSeconds: 8, xpAward: 10,
@@ -452,7 +452,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   tailored_linen_leggings: {
-    id: 'tailored_linen_leggings', name: 'Linen Leggings', profession: 'tailoring', requiredSkill: 1,
+    id: 'tailored_linen_leggings', name: 'Linen Leggings', profession: 'tailoring', requiredSkill: 11,
     resultItemId: 'tailored_linen_leggings', resultQuantity: 1,
     materials: [{ itemId: 'linen_cloth', quantity: 4 }, { itemId: 'coarse_thread', quantity: 2 }],
     craftSeconds: 8, xpAward: 10,
@@ -468,7 +468,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   tailored_linen_shoulders: {
-    id: 'tailored_linen_shoulders', name: 'Linen Shoulders', profession: 'tailoring', requiredSkill: 1,
+    id: 'tailored_linen_shoulders', name: 'Linen Shoulders', profession: 'tailoring', requiredSkill: 7,
     resultItemId: 'tailored_linen_shoulders', resultQuantity: 1,
     materials: [{ itemId: 'linen_cloth', quantity: 3 }, { itemId: 'coarse_thread', quantity: 2 }],
     craftSeconds: 8, xpAward: 10,
@@ -479,7 +479,7 @@ export const RECIPES: Record<string, Recipe> = {
   // items.ts's matching comment); mirrors this tier's own Gloves recipe
   // exactly.
   tailored_linen_bracers: {
-    id: 'tailored_linen_bracers', name: 'Linen Bracers', profession: 'tailoring', requiredSkill: 1,
+    id: 'tailored_linen_bracers', name: 'Linen Bracers', profession: 'tailoring', requiredSkill: 3,
     resultItemId: 'tailored_linen_bracers', resultQuantity: 1,
     materials: [{ itemId: 'linen_cloth', quantity: 3 }, { itemId: 'coarse_thread', quantity: 2 }],
     craftSeconds: 8, xpAward: 10,
@@ -487,7 +487,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   wool_robe_helm: {
-    id: 'wool_robe_helm', name: 'Wool Hood', profession: 'tailoring', requiredSkill: 18,
+    id: 'wool_robe_helm', name: 'Wool Hood', profession: 'tailoring', requiredSkill: 20,
     resultItemId: 'wool_robe_helm', resultQuantity: 1,
     materials: [{ itemId: 'wool_cloth', quantity: 3 }, { itemId: 'fine_thread', quantity: 2 }],
     craftSeconds: 8.5, xpAward: 13,
@@ -495,7 +495,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   wool_robe: {
-    id: 'wool_robe', name: 'Wool Robe', profession: 'tailoring', requiredSkill: 18,
+    id: 'wool_robe', name: 'Wool Robe', profession: 'tailoring', requiredSkill: 22,
     resultItemId: 'wool_robe', resultQuantity: 1,
     materials: [{ itemId: 'wool_cloth', quantity: 5 }, { itemId: 'fine_thread', quantity: 3 }],
     craftSeconds: 8.5, xpAward: 13,
@@ -511,7 +511,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   wool_leggings: {
-    id: 'wool_leggings', name: 'Wool Leggings', profession: 'tailoring', requiredSkill: 18,
+    id: 'wool_leggings', name: 'Wool Leggings', profession: 'tailoring', requiredSkill: 21,
     resultItemId: 'wool_leggings', resultQuantity: 1,
     materials: [{ itemId: 'wool_cloth', quantity: 4 }, { itemId: 'fine_thread', quantity: 2 }],
     craftSeconds: 8.5, xpAward: 13,
@@ -519,7 +519,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   wool_boots: {
-    id: 'wool_boots', name: 'Wool Boots', profession: 'tailoring', requiredSkill: 18,
+    id: 'wool_boots', name: 'Wool Boots', profession: 'tailoring', requiredSkill: 16,
     resultItemId: 'wool_boots', resultQuantity: 1,
     materials: [{ itemId: 'wool_cloth', quantity: 3 }, { itemId: 'fine_thread', quantity: 2 }],
     craftSeconds: 8.5, xpAward: 13,
@@ -527,7 +527,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   wool_shoulders: {
-    id: 'wool_shoulders', name: 'Wool Shoulders', profession: 'tailoring', requiredSkill: 18,
+    id: 'wool_shoulders', name: 'Wool Shoulders', profession: 'tailoring', requiredSkill: 19,
     resultItemId: 'wool_shoulders', resultQuantity: 1,
     materials: [{ itemId: 'wool_cloth', quantity: 3 }, { itemId: 'fine_thread', quantity: 2 }],
     craftSeconds: 8.5, xpAward: 13,
@@ -535,7 +535,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   wool_bracers: {
-    id: 'wool_bracers', name: 'Wool Bracers', profession: 'tailoring', requiredSkill: 18,
+    id: 'wool_bracers', name: 'Wool Bracers', profession: 'tailoring', requiredSkill: 17,
     resultItemId: 'wool_bracers', resultQuantity: 1,
     materials: [{ itemId: 'wool_cloth', quantity: 3 }, { itemId: 'fine_thread', quantity: 2 }],
     craftSeconds: 8.5, xpAward: 13,
@@ -551,7 +551,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   silk_robe: {
-    id: 'silk_robe', name: 'Silk Robe', profession: 'tailoring', requiredSkill: 35,
+    id: 'silk_robe', name: 'Silk Robe', profession: 'tailoring', requiredSkill: 37,
     resultItemId: 'silk_robe', resultQuantity: 1,
     materials: [{ itemId: 'silk_cloth', quantity: 5 }, { itemId: 'silken_thread', quantity: 3 }, { itemId: 'vision_dust', quantity: 1 }],
     craftSeconds: 9.6, xpAward: 23,
@@ -559,7 +559,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   silk_gloves: {
-    id: 'silk_gloves', name: 'Silk Gloves', profession: 'tailoring', requiredSkill: 35,
+    id: 'silk_gloves', name: 'Silk Gloves', profession: 'tailoring', requiredSkill: 32,
     resultItemId: 'silk_gloves', resultQuantity: 1,
     materials: [{ itemId: 'silk_cloth', quantity: 3 }, { itemId: 'silken_thread', quantity: 2 }],
     craftSeconds: 9.6, xpAward: 23,
@@ -567,7 +567,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   silk_leggings: {
-    id: 'silk_leggings', name: 'Silk Leggings', profession: 'tailoring', requiredSkill: 35,
+    id: 'silk_leggings', name: 'Silk Leggings', profession: 'tailoring', requiredSkill: 36,
     resultItemId: 'silk_leggings', resultQuantity: 1,
     materials: [{ itemId: 'silk_cloth', quantity: 4 }, { itemId: 'silken_thread', quantity: 2 }],
     craftSeconds: 9.6, xpAward: 23,
@@ -575,7 +575,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   silk_boots: {
-    id: 'silk_boots', name: 'Silk Boots', profession: 'tailoring', requiredSkill: 35,
+    id: 'silk_boots', name: 'Silk Boots', profession: 'tailoring', requiredSkill: 34,
     resultItemId: 'silk_boots', resultQuantity: 1,
     materials: [{ itemId: 'silk_cloth', quantity: 3 }, { itemId: 'silken_thread', quantity: 2 }],
     craftSeconds: 9.6, xpAward: 23,
@@ -583,7 +583,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   silk_shoulders: {
-    id: 'silk_shoulders', name: 'Silk Shoulders', profession: 'tailoring', requiredSkill: 35,
+    id: 'silk_shoulders', name: 'Silk Shoulders', profession: 'tailoring', requiredSkill: 33,
     resultItemId: 'silk_shoulders', resultQuantity: 1,
     materials: [{ itemId: 'silk_cloth', quantity: 3 }, { itemId: 'silken_thread', quantity: 2 }],
     craftSeconds: 9.6, xpAward: 23,
@@ -591,7 +591,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   silk_bracers: {
-    id: 'silk_bracers', name: 'Silk Bracers', profession: 'tailoring', requiredSkill: 35,
+    id: 'silk_bracers', name: 'Silk Bracers', profession: 'tailoring', requiredSkill: 31,
     resultItemId: 'silk_bracers', resultQuantity: 1,
     materials: [{ itemId: 'silk_cloth', quantity: 3 }, { itemId: 'silken_thread', quantity: 2 }],
     craftSeconds: 9.6, xpAward: 23,
@@ -599,7 +599,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   mageweave_robe_helm: {
-    id: 'mageweave_robe_helm', name: 'Mageweave Hood', profession: 'tailoring', requiredSkill: 52,
+    id: 'mageweave_robe_helm', name: 'Mageweave Hood', profession: 'tailoring', requiredSkill: 50,
     resultItemId: 'mageweave_robe_helm', resultQuantity: 1,
     materials: [{ itemId: 'mageweave_cloth', quantity: 3 }, { itemId: 'heavy_silken_thread', quantity: 2 }],
     craftSeconds: 9.8, xpAward: 40,
@@ -615,7 +615,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   mageweave_gloves: {
-    id: 'mageweave_gloves', name: 'Mageweave Gloves', profession: 'tailoring', requiredSkill: 52,
+    id: 'mageweave_gloves', name: 'Mageweave Gloves', profession: 'tailoring', requiredSkill: 48,
     resultItemId: 'mageweave_gloves', resultQuantity: 1,
     materials: [{ itemId: 'mageweave_cloth', quantity: 3 }, { itemId: 'heavy_silken_thread', quantity: 2 }],
     craftSeconds: 9.8, xpAward: 40,
@@ -623,7 +623,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   mageweave_leggings: {
-    id: 'mageweave_leggings', name: 'Mageweave Leggings', profession: 'tailoring', requiredSkill: 52,
+    id: 'mageweave_leggings', name: 'Mageweave Leggings', profession: 'tailoring', requiredSkill: 51,
     resultItemId: 'mageweave_leggings', resultQuantity: 1,
     materials: [{ itemId: 'mageweave_cloth', quantity: 4 }, { itemId: 'heavy_silken_thread', quantity: 2 }],
     craftSeconds: 9.8, xpAward: 40,
@@ -631,7 +631,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   mageweave_boots: {
-    id: 'mageweave_boots', name: 'Mageweave Boots', profession: 'tailoring', requiredSkill: 52,
+    id: 'mageweave_boots', name: 'Mageweave Boots', profession: 'tailoring', requiredSkill: 46,
     resultItemId: 'mageweave_boots', resultQuantity: 1,
     materials: [{ itemId: 'mageweave_cloth', quantity: 3 }, { itemId: 'heavy_silken_thread', quantity: 2 }],
     craftSeconds: 9.8, xpAward: 40,
@@ -639,7 +639,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   mageweave_shoulders: {
-    id: 'mageweave_shoulders', name: 'Mageweave Shoulders', profession: 'tailoring', requiredSkill: 52,
+    id: 'mageweave_shoulders', name: 'Mageweave Shoulders', profession: 'tailoring', requiredSkill: 49,
     resultItemId: 'mageweave_shoulders', resultQuantity: 1,
     materials: [{ itemId: 'mageweave_cloth', quantity: 3 }, { itemId: 'heavy_silken_thread', quantity: 2 }],
     craftSeconds: 9.8, xpAward: 40,
@@ -647,7 +647,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   mageweave_bracers: {
-    id: 'mageweave_bracers', name: 'Mageweave Bracers', profession: 'tailoring', requiredSkill: 52,
+    id: 'mageweave_bracers', name: 'Mageweave Bracers', profession: 'tailoring', requiredSkill: 47,
     resultItemId: 'mageweave_bracers', resultQuantity: 1,
     materials: [{ itemId: 'mageweave_cloth', quantity: 3 }, { itemId: 'heavy_silken_thread', quantity: 2 }],
     craftSeconds: 9.8, xpAward: 40,
@@ -655,7 +655,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   runecloth_robe_helm: {
-    id: 'runecloth_robe_helm', name: 'Runecloth Hood', profession: 'tailoring', requiredSkill: 69,
+    id: 'runecloth_robe_helm', name: 'Runecloth Hood', profession: 'tailoring', requiredSkill: 66,
     resultItemId: 'runecloth_robe_helm', resultQuantity: 1,
     materials: [{ itemId: 'runecloth', quantity: 3 }, { itemId: 'rune_thread', quantity: 2 }, { itemId: 'lesser_eternal_essence', quantity: 1 }],
     craftSeconds: 10, xpAward: 53,
@@ -671,7 +671,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   runecloth_gloves: {
-    id: 'runecloth_gloves', name: 'Runecloth Gloves', profession: 'tailoring', requiredSkill: 69,
+    id: 'runecloth_gloves', name: 'Runecloth Gloves', profession: 'tailoring', requiredSkill: 63,
     resultItemId: 'runecloth_gloves', resultQuantity: 1,
     materials: [{ itemId: 'runecloth', quantity: 3 }, { itemId: 'rune_thread', quantity: 2 }],
     craftSeconds: 10, xpAward: 53,
@@ -679,7 +679,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   runecloth_leggings: {
-    id: 'runecloth_leggings', name: 'Runecloth Leggings', profession: 'tailoring', requiredSkill: 69,
+    id: 'runecloth_leggings', name: 'Runecloth Leggings', profession: 'tailoring', requiredSkill: 67,
     resultItemId: 'runecloth_leggings', resultQuantity: 1,
     materials: [{ itemId: 'runecloth', quantity: 4 }, { itemId: 'rune_thread', quantity: 2 }],
     craftSeconds: 10, xpAward: 53,
@@ -687,7 +687,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   runecloth_boots: {
-    id: 'runecloth_boots', name: 'Runecloth Boots', profession: 'tailoring', requiredSkill: 69,
+    id: 'runecloth_boots', name: 'Runecloth Boots', profession: 'tailoring', requiredSkill: 61,
     resultItemId: 'runecloth_boots', resultQuantity: 1,
     materials: [{ itemId: 'runecloth', quantity: 3 }, { itemId: 'rune_thread', quantity: 2 }],
     craftSeconds: 10, xpAward: 53,
@@ -695,7 +695,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   runecloth_shoulders: {
-    id: 'runecloth_shoulders', name: 'Runecloth Shoulders', profession: 'tailoring', requiredSkill: 69,
+    id: 'runecloth_shoulders', name: 'Runecloth Shoulders', profession: 'tailoring', requiredSkill: 65,
     resultItemId: 'runecloth_shoulders', resultQuantity: 1,
     materials: [{ itemId: 'runecloth', quantity: 3 }, { itemId: 'rune_thread', quantity: 2 }],
     craftSeconds: 10, xpAward: 53,
@@ -703,7 +703,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   runecloth_bracers: {
-    id: 'runecloth_bracers', name: 'Runecloth Bracers', profession: 'tailoring', requiredSkill: 69,
+    id: 'runecloth_bracers', name: 'Runecloth Bracers', profession: 'tailoring', requiredSkill: 62,
     resultItemId: 'runecloth_bracers', resultQuantity: 1,
     materials: [{ itemId: 'runecloth', quantity: 3 }, { itemId: 'rune_thread', quantity: 2 }],
     craftSeconds: 10, xpAward: 53,
@@ -719,7 +719,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   ember_robe: {
-    id: 'ember_robe', name: 'Ember Robe', profession: 'tailoring', requiredSkill: 86,
+    id: 'ember_robe', name: 'Ember Robe', profession: 'tailoring', requiredSkill: 89,
     resultItemId: 'ember_robe', resultQuantity: 1,
     materials: [{ itemId: 'ember_cloth', quantity: 5 }, { itemId: 'ember_thread', quantity: 3 }, { itemId: 'ember_essence', quantity: 1 }],
     craftSeconds: 10.7, xpAward: 92,
@@ -727,7 +727,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   ember_gloves: {
-    id: 'ember_gloves', name: 'Ember Gloves', profession: 'tailoring', requiredSkill: 86,
+    id: 'ember_gloves', name: 'Ember Gloves', profession: 'tailoring', requiredSkill: 82,
     resultItemId: 'ember_gloves', resultQuantity: 1,
     materials: [{ itemId: 'ember_cloth', quantity: 3 }, { itemId: 'ember_thread', quantity: 2 }],
     craftSeconds: 10.7, xpAward: 92,
@@ -735,7 +735,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   ember_leggings: {
-    id: 'ember_leggings', name: 'Ember Leggings', profession: 'tailoring', requiredSkill: 86,
+    id: 'ember_leggings', name: 'Ember Leggings', profession: 'tailoring', requiredSkill: 87,
     resultItemId: 'ember_leggings', resultQuantity: 1,
     materials: [{ itemId: 'ember_cloth', quantity: 4 }, { itemId: 'ember_thread', quantity: 2 }],
     craftSeconds: 10.7, xpAward: 92,
@@ -743,7 +743,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   ember_boots: {
-    id: 'ember_boots', name: 'Ember Boots', profession: 'tailoring', requiredSkill: 86,
+    id: 'ember_boots', name: 'Ember Boots', profession: 'tailoring', requiredSkill: 85,
     resultItemId: 'ember_boots', resultQuantity: 1,
     materials: [{ itemId: 'ember_cloth', quantity: 3 }, { itemId: 'ember_thread', quantity: 2 }],
     craftSeconds: 10.7, xpAward: 92,
@@ -751,7 +751,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   ember_shoulders: {
-    id: 'ember_shoulders', name: 'Ember Shoulders', profession: 'tailoring', requiredSkill: 86,
+    id: 'ember_shoulders', name: 'Ember Shoulders', profession: 'tailoring', requiredSkill: 83,
     resultItemId: 'ember_shoulders', resultQuantity: 1,
     materials: [{ itemId: 'ember_cloth', quantity: 3 }, { itemId: 'ember_thread', quantity: 2 }],
     craftSeconds: 10.7, xpAward: 92,
@@ -759,7 +759,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   ember_bracers: {
-    id: 'ember_bracers', name: 'Ember Bracers', profession: 'tailoring', requiredSkill: 86,
+    id: 'ember_bracers', name: 'Ember Bracers', profession: 'tailoring', requiredSkill: 81,
     resultItemId: 'ember_bracers', resultQuantity: 1,
     materials: [{ itemId: 'ember_cloth', quantity: 3 }, { itemId: 'ember_thread', quantity: 2 }],
     craftSeconds: 10.7, xpAward: 92,
@@ -775,7 +775,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   cape_of_wool: {
-    id: 'cape_of_wool', name: 'Cape of Wool', profession: 'tailoring', requiredSkill: 18,
+    id: 'cape_of_wool', name: 'Cape of Wool', profession: 'tailoring', requiredSkill: 16,
     resultItemId: 'cape_of_wool', resultQuantity: 1,
     materials: [{ itemId: 'wool_cloth', quantity: 3 }, { itemId: 'fine_thread', quantity: 2 }],
     craftSeconds: 8.5, xpAward: 13,
@@ -783,7 +783,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   cape_of_silk: {
-    id: 'cape_of_silk', name: 'Cape of Silk', profession: 'tailoring', requiredSkill: 35,
+    id: 'cape_of_silk', name: 'Cape of Silk', profession: 'tailoring', requiredSkill: 31,
     resultItemId: 'cape_of_silk', resultQuantity: 1,
     materials: [{ itemId: 'silk_cloth', quantity: 3 }, { itemId: 'silken_thread', quantity: 2 }, { itemId: 'vision_dust', quantity: 1 }],
     craftSeconds: 9.6, xpAward: 23,
@@ -791,7 +791,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   cape_of_mageweave: {
-    id: 'cape_of_mageweave', name: 'Cape of Mageweave', profession: 'tailoring', requiredSkill: 52,
+    id: 'cape_of_mageweave', name: 'Cape of Mageweave', profession: 'tailoring', requiredSkill: 46,
     resultItemId: 'cape_of_mageweave', resultQuantity: 1,
     materials: [{ itemId: 'mageweave_cloth', quantity: 3 }, { itemId: 'heavy_silken_thread', quantity: 2 }, { itemId: 'dream_dust', quantity: 1 }],
     craftSeconds: 9.8, xpAward: 40,
@@ -799,7 +799,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   cape_of_runecloth: {
-    id: 'cape_of_runecloth', name: 'Cape of Runecloth', profession: 'tailoring', requiredSkill: 69,
+    id: 'cape_of_runecloth', name: 'Cape of Runecloth', profession: 'tailoring', requiredSkill: 61,
     resultItemId: 'cape_of_runecloth', resultQuantity: 1,
     materials: [{ itemId: 'runecloth', quantity: 3 }, { itemId: 'rune_thread', quantity: 2 }, { itemId: 'lesser_eternal_essence', quantity: 1 }],
     craftSeconds: 10, xpAward: 53,
@@ -807,7 +807,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   cape_of_ember: {
-    id: 'cape_of_ember', name: 'Cape of Ember', profession: 'tailoring', requiredSkill: 86,
+    id: 'cape_of_ember', name: 'Cape of Ember', profession: 'tailoring', requiredSkill: 81,
     resultItemId: 'cape_of_ember', resultQuantity: 1,
     materials: [{ itemId: 'ember_cloth', quantity: 3 }, { itemId: 'ember_thread', quantity: 2 }, { itemId: 'ember_essence', quantity: 1 }],
     craftSeconds: 10.7, xpAward: 92,
@@ -871,7 +871,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'dungeon_drop', rarity: 'uncommon', learnedAutomatically: false,
   },
   wool_shirt_of_mastery: {
-    id: 'wool_shirt_of_mastery', name: 'Wool Shirt of Mastery', profession: 'tailoring', requiredSkill: 18,
+    id: 'wool_shirt_of_mastery', name: 'Wool Shirt of Mastery', profession: 'tailoring', requiredSkill: 25,
     resultItemId: 'wool_shirt_of_mastery', resultQuantity: 1,
     materials: [{ itemId: 'wool_cloth', quantity: 3 }, { itemId: 'fine_thread', quantity: 2 }],
     craftSeconds: 8.5, xpAward: 13,
@@ -879,7 +879,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'dungeon_drop', rarity: 'uncommon', learnedAutomatically: false,
   },
   wool_shirt_of_the_gatherer: {
-    id: 'wool_shirt_of_the_gatherer', name: 'Wool Shirt of the Gatherer', profession: 'tailoring', requiredSkill: 18,
+    id: 'wool_shirt_of_the_gatherer', name: 'Wool Shirt of the Gatherer', profession: 'tailoring', requiredSkill: 29,
     resultItemId: 'wool_shirt_of_the_gatherer', resultQuantity: 1,
     materials: [{ itemId: 'wool_cloth', quantity: 3 }, { itemId: 'fine_thread', quantity: 2 }],
     craftSeconds: 8.5, xpAward: 13,
@@ -887,7 +887,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'dungeon_drop', rarity: 'uncommon', learnedAutomatically: false,
   },
   wool_shirt_of_the_artisan: {
-    id: 'wool_shirt_of_the_artisan', name: 'Wool Shirt of the Artisan', profession: 'tailoring', requiredSkill: 18,
+    id: 'wool_shirt_of_the_artisan', name: 'Wool Shirt of the Artisan', profession: 'tailoring', requiredSkill: 28,
     resultItemId: 'wool_shirt_of_the_artisan', resultQuantity: 1,
     materials: [{ itemId: 'wool_cloth', quantity: 3 }, { itemId: 'fine_thread', quantity: 2 }],
     craftSeconds: 8.5, xpAward: 13,
@@ -895,7 +895,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'dungeon_drop', rarity: 'uncommon', learnedAutomatically: false,
   },
   wool_shirt_of_learning: {
-    id: 'wool_shirt_of_learning', name: 'Wool Shirt of Learning', profession: 'tailoring', requiredSkill: 18,
+    id: 'wool_shirt_of_learning', name: 'Wool Shirt of Learning', profession: 'tailoring', requiredSkill: 24,
     resultItemId: 'wool_shirt_of_learning', resultQuantity: 1,
     materials: [{ itemId: 'wool_cloth', quantity: 3 }, { itemId: 'fine_thread', quantity: 2 }],
     craftSeconds: 8.5, xpAward: 13,
@@ -903,7 +903,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'dungeon_drop', rarity: 'uncommon', learnedAutomatically: false,
   },
   wool_shirt_of_fortune: {
-    id: 'wool_shirt_of_fortune', name: 'Wool Shirt of Fortune', profession: 'tailoring', requiredSkill: 18,
+    id: 'wool_shirt_of_fortune', name: 'Wool Shirt of Fortune', profession: 'tailoring', requiredSkill: 23,
     resultItemId: 'wool_shirt_of_fortune', resultQuantity: 1,
     materials: [{ itemId: 'wool_cloth', quantity: 3 }, { itemId: 'fine_thread', quantity: 2 }],
     craftSeconds: 8.5, xpAward: 13,
@@ -911,7 +911,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'dungeon_drop', rarity: 'uncommon', learnedAutomatically: false,
   },
   wool_shirt_of_salvaging: {
-    id: 'wool_shirt_of_salvaging', name: 'Wool Shirt of Salvaging', profession: 'tailoring', requiredSkill: 18,
+    id: 'wool_shirt_of_salvaging', name: 'Wool Shirt of Salvaging', profession: 'tailoring', requiredSkill: 27,
     resultItemId: 'wool_shirt_of_salvaging', resultQuantity: 1,
     materials: [{ itemId: 'wool_cloth', quantity: 3 }, { itemId: 'fine_thread', quantity: 2 }],
     craftSeconds: 8.5, xpAward: 13,
@@ -919,7 +919,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'dungeon_drop', rarity: 'uncommon', learnedAutomatically: false,
   },
   wool_shirt_of_preservation: {
-    id: 'wool_shirt_of_preservation', name: 'Wool Shirt of Preservation', profession: 'tailoring', requiredSkill: 18,
+    id: 'wool_shirt_of_preservation', name: 'Wool Shirt of Preservation', profession: 'tailoring', requiredSkill: 26,
     resultItemId: 'wool_shirt_of_preservation', resultQuantity: 1,
     materials: [{ itemId: 'wool_cloth', quantity: 3 }, { itemId: 'fine_thread', quantity: 2 }],
     craftSeconds: 8.5, xpAward: 13,
@@ -927,7 +927,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'dungeon_drop', rarity: 'uncommon', learnedAutomatically: false,
   },
   silk_shirt_of_mastery: {
-    id: 'silk_shirt_of_mastery', name: 'Silk Shirt of Mastery', profession: 'tailoring', requiredSkill: 35,
+    id: 'silk_shirt_of_mastery', name: 'Silk Shirt of Mastery', profession: 'tailoring', requiredSkill: 40,
     resultItemId: 'silk_shirt_of_mastery', resultQuantity: 1,
     materials: [{ itemId: 'silk_cloth', quantity: 3 }, { itemId: 'silken_thread', quantity: 2 }],
     craftSeconds: 9.6, xpAward: 23,
@@ -935,7 +935,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'dungeon_drop', rarity: 'uncommon', learnedAutomatically: false,
   },
   silk_shirt_of_the_gatherer: {
-    id: 'silk_shirt_of_the_gatherer', name: 'Silk Shirt of the Gatherer', profession: 'tailoring', requiredSkill: 35,
+    id: 'silk_shirt_of_the_gatherer', name: 'Silk Shirt of the Gatherer', profession: 'tailoring', requiredSkill: 44,
     resultItemId: 'silk_shirt_of_the_gatherer', resultQuantity: 1,
     materials: [{ itemId: 'silk_cloth', quantity: 3 }, { itemId: 'silken_thread', quantity: 2 }],
     craftSeconds: 9.6, xpAward: 23,
@@ -943,7 +943,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'dungeon_drop', rarity: 'uncommon', learnedAutomatically: false,
   },
   silk_shirt_of_the_artisan: {
-    id: 'silk_shirt_of_the_artisan', name: 'Silk Shirt of the Artisan', profession: 'tailoring', requiredSkill: 35,
+    id: 'silk_shirt_of_the_artisan', name: 'Silk Shirt of the Artisan', profession: 'tailoring', requiredSkill: 43,
     resultItemId: 'silk_shirt_of_the_artisan', resultQuantity: 1,
     materials: [{ itemId: 'silk_cloth', quantity: 3 }, { itemId: 'silken_thread', quantity: 2 }],
     craftSeconds: 9.6, xpAward: 23,
@@ -951,7 +951,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'dungeon_drop', rarity: 'uncommon', learnedAutomatically: false,
   },
   silk_shirt_of_learning: {
-    id: 'silk_shirt_of_learning', name: 'Silk Shirt of Learning', profession: 'tailoring', requiredSkill: 35,
+    id: 'silk_shirt_of_learning', name: 'Silk Shirt of Learning', profession: 'tailoring', requiredSkill: 39,
     resultItemId: 'silk_shirt_of_learning', resultQuantity: 1,
     materials: [{ itemId: 'silk_cloth', quantity: 3 }, { itemId: 'silken_thread', quantity: 2 }],
     craftSeconds: 9.6, xpAward: 23,
@@ -959,7 +959,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'dungeon_drop', rarity: 'uncommon', learnedAutomatically: false,
   },
   silk_shirt_of_fortune: {
-    id: 'silk_shirt_of_fortune', name: 'Silk Shirt of Fortune', profession: 'tailoring', requiredSkill: 35,
+    id: 'silk_shirt_of_fortune', name: 'Silk Shirt of Fortune', profession: 'tailoring', requiredSkill: 38,
     resultItemId: 'silk_shirt_of_fortune', resultQuantity: 1,
     materials: [{ itemId: 'silk_cloth', quantity: 3 }, { itemId: 'silken_thread', quantity: 2 }],
     craftSeconds: 9.6, xpAward: 23,
@@ -967,7 +967,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'dungeon_drop', rarity: 'uncommon', learnedAutomatically: false,
   },
   silk_shirt_of_salvaging: {
-    id: 'silk_shirt_of_salvaging', name: 'Silk Shirt of Salvaging', profession: 'tailoring', requiredSkill: 35,
+    id: 'silk_shirt_of_salvaging', name: 'Silk Shirt of Salvaging', profession: 'tailoring', requiredSkill: 42,
     resultItemId: 'silk_shirt_of_salvaging', resultQuantity: 1,
     materials: [{ itemId: 'silk_cloth', quantity: 3 }, { itemId: 'silken_thread', quantity: 2 }],
     craftSeconds: 9.6, xpAward: 23,
@@ -975,7 +975,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'dungeon_drop', rarity: 'uncommon', learnedAutomatically: false,
   },
   silk_shirt_of_preservation: {
-    id: 'silk_shirt_of_preservation', name: 'Silk Shirt of Preservation', profession: 'tailoring', requiredSkill: 35,
+    id: 'silk_shirt_of_preservation', name: 'Silk Shirt of Preservation', profession: 'tailoring', requiredSkill: 41,
     resultItemId: 'silk_shirt_of_preservation', resultQuantity: 1,
     materials: [{ itemId: 'silk_cloth', quantity: 3 }, { itemId: 'silken_thread', quantity: 2 }],
     craftSeconds: 9.6, xpAward: 23,
@@ -983,7 +983,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'dungeon_drop', rarity: 'uncommon', learnedAutomatically: false,
   },
   mageweave_shirt_of_mastery: {
-    id: 'mageweave_shirt_of_mastery', name: 'Mageweave Shirt of Mastery', profession: 'tailoring', requiredSkill: 52,
+    id: 'mageweave_shirt_of_mastery', name: 'Mageweave Shirt of Mastery', profession: 'tailoring', requiredSkill: 55,
     resultItemId: 'mageweave_shirt_of_mastery', resultQuantity: 1,
     materials: [{ itemId: 'mageweave_cloth', quantity: 3 }, { itemId: 'heavy_silken_thread', quantity: 2 }],
     craftSeconds: 9.8, xpAward: 40,
@@ -991,7 +991,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'dungeon_drop', rarity: 'uncommon', learnedAutomatically: false,
   },
   mageweave_shirt_of_the_gatherer: {
-    id: 'mageweave_shirt_of_the_gatherer', name: 'Mageweave Shirt of the Gatherer', profession: 'tailoring', requiredSkill: 52,
+    id: 'mageweave_shirt_of_the_gatherer', name: 'Mageweave Shirt of the Gatherer', profession: 'tailoring', requiredSkill: 59,
     resultItemId: 'mageweave_shirt_of_the_gatherer', resultQuantity: 1,
     materials: [{ itemId: 'mageweave_cloth', quantity: 3 }, { itemId: 'heavy_silken_thread', quantity: 2 }],
     craftSeconds: 9.8, xpAward: 40,
@@ -999,7 +999,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'dungeon_drop', rarity: 'uncommon', learnedAutomatically: false,
   },
   mageweave_shirt_of_the_artisan: {
-    id: 'mageweave_shirt_of_the_artisan', name: 'Mageweave Shirt of the Artisan', profession: 'tailoring', requiredSkill: 52,
+    id: 'mageweave_shirt_of_the_artisan', name: 'Mageweave Shirt of the Artisan', profession: 'tailoring', requiredSkill: 58,
     resultItemId: 'mageweave_shirt_of_the_artisan', resultQuantity: 1,
     materials: [{ itemId: 'mageweave_cloth', quantity: 3 }, { itemId: 'heavy_silken_thread', quantity: 2 }],
     craftSeconds: 9.8, xpAward: 40,
@@ -1007,7 +1007,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'dungeon_drop', rarity: 'uncommon', learnedAutomatically: false,
   },
   mageweave_shirt_of_learning: {
-    id: 'mageweave_shirt_of_learning', name: 'Mageweave Shirt of Learning', profession: 'tailoring', requiredSkill: 52,
+    id: 'mageweave_shirt_of_learning', name: 'Mageweave Shirt of Learning', profession: 'tailoring', requiredSkill: 54,
     resultItemId: 'mageweave_shirt_of_learning', resultQuantity: 1,
     materials: [{ itemId: 'mageweave_cloth', quantity: 3 }, { itemId: 'heavy_silken_thread', quantity: 2 }],
     craftSeconds: 9.8, xpAward: 40,
@@ -1015,7 +1015,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'dungeon_drop', rarity: 'uncommon', learnedAutomatically: false,
   },
   mageweave_shirt_of_fortune: {
-    id: 'mageweave_shirt_of_fortune', name: 'Mageweave Shirt of Fortune', profession: 'tailoring', requiredSkill: 52,
+    id: 'mageweave_shirt_of_fortune', name: 'Mageweave Shirt of Fortune', profession: 'tailoring', requiredSkill: 53,
     resultItemId: 'mageweave_shirt_of_fortune', resultQuantity: 1,
     materials: [{ itemId: 'mageweave_cloth', quantity: 3 }, { itemId: 'heavy_silken_thread', quantity: 2 }],
     craftSeconds: 9.8, xpAward: 40,
@@ -1023,7 +1023,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'dungeon_drop', rarity: 'uncommon', learnedAutomatically: false,
   },
   mageweave_shirt_of_salvaging: {
-    id: 'mageweave_shirt_of_salvaging', name: 'Mageweave Shirt of Salvaging', profession: 'tailoring', requiredSkill: 52,
+    id: 'mageweave_shirt_of_salvaging', name: 'Mageweave Shirt of Salvaging', profession: 'tailoring', requiredSkill: 57,
     resultItemId: 'mageweave_shirt_of_salvaging', resultQuantity: 1,
     materials: [{ itemId: 'mageweave_cloth', quantity: 3 }, { itemId: 'heavy_silken_thread', quantity: 2 }],
     craftSeconds: 9.8, xpAward: 40,
@@ -1031,7 +1031,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'dungeon_drop', rarity: 'uncommon', learnedAutomatically: false,
   },
   mageweave_shirt_of_preservation: {
-    id: 'mageweave_shirt_of_preservation', name: 'Mageweave Shirt of Preservation', profession: 'tailoring', requiredSkill: 52,
+    id: 'mageweave_shirt_of_preservation', name: 'Mageweave Shirt of Preservation', profession: 'tailoring', requiredSkill: 56,
     resultItemId: 'mageweave_shirt_of_preservation', resultQuantity: 1,
     materials: [{ itemId: 'mageweave_cloth', quantity: 3 }, { itemId: 'heavy_silken_thread', quantity: 2 }],
     craftSeconds: 9.8, xpAward: 40,
@@ -1039,7 +1039,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'dungeon_drop', rarity: 'uncommon', learnedAutomatically: false,
   },
   runecloth_shirt_of_mastery: {
-    id: 'runecloth_shirt_of_mastery', name: 'Runecloth Shirt of Mastery', profession: 'tailoring', requiredSkill: 69,
+    id: 'runecloth_shirt_of_mastery', name: 'Runecloth Shirt of Mastery', profession: 'tailoring', requiredSkill: 73,
     resultItemId: 'runecloth_shirt_of_mastery', resultQuantity: 1,
     materials: [{ itemId: 'runecloth', quantity: 3 }, { itemId: 'rune_thread', quantity: 2 }],
     craftSeconds: 10, xpAward: 53,
@@ -1047,7 +1047,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'dungeon_drop', rarity: 'uncommon', learnedAutomatically: false,
   },
   runecloth_shirt_of_the_gatherer: {
-    id: 'runecloth_shirt_of_the_gatherer', name: 'Runecloth Shirt of the Gatherer', profession: 'tailoring', requiredSkill: 69,
+    id: 'runecloth_shirt_of_the_gatherer', name: 'Runecloth Shirt of the Gatherer', profession: 'tailoring', requiredSkill: 78,
     resultItemId: 'runecloth_shirt_of_the_gatherer', resultQuantity: 1,
     materials: [{ itemId: 'runecloth', quantity: 3 }, { itemId: 'rune_thread', quantity: 2 }],
     craftSeconds: 10, xpAward: 53,
@@ -1055,7 +1055,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'dungeon_drop', rarity: 'uncommon', learnedAutomatically: false,
   },
   runecloth_shirt_of_the_artisan: {
-    id: 'runecloth_shirt_of_the_artisan', name: 'Runecloth Shirt of the Artisan', profession: 'tailoring', requiredSkill: 69,
+    id: 'runecloth_shirt_of_the_artisan', name: 'Runecloth Shirt of the Artisan', profession: 'tailoring', requiredSkill: 77,
     resultItemId: 'runecloth_shirt_of_the_artisan', resultQuantity: 1,
     materials: [{ itemId: 'runecloth', quantity: 3 }, { itemId: 'rune_thread', quantity: 2 }],
     craftSeconds: 10, xpAward: 53,
@@ -1063,7 +1063,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'dungeon_drop', rarity: 'uncommon', learnedAutomatically: false,
   },
   runecloth_shirt_of_learning: {
-    id: 'runecloth_shirt_of_learning', name: 'Runecloth Shirt of Learning', profession: 'tailoring', requiredSkill: 69,
+    id: 'runecloth_shirt_of_learning', name: 'Runecloth Shirt of Learning', profession: 'tailoring', requiredSkill: 71,
     resultItemId: 'runecloth_shirt_of_learning', resultQuantity: 1,
     materials: [{ itemId: 'runecloth', quantity: 3 }, { itemId: 'rune_thread', quantity: 2 }],
     craftSeconds: 10, xpAward: 53,
@@ -1071,7 +1071,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'dungeon_drop', rarity: 'uncommon', learnedAutomatically: false,
   },
   runecloth_shirt_of_fortune: {
-    id: 'runecloth_shirt_of_fortune', name: 'Runecloth Shirt of Fortune', profession: 'tailoring', requiredSkill: 69,
+    id: 'runecloth_shirt_of_fortune', name: 'Runecloth Shirt of Fortune', profession: 'tailoring', requiredSkill: 70,
     resultItemId: 'runecloth_shirt_of_fortune', resultQuantity: 1,
     materials: [{ itemId: 'runecloth', quantity: 3 }, { itemId: 'rune_thread', quantity: 2 }],
     craftSeconds: 10, xpAward: 53,
@@ -1079,7 +1079,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'dungeon_drop', rarity: 'uncommon', learnedAutomatically: false,
   },
   runecloth_shirt_of_salvaging: {
-    id: 'runecloth_shirt_of_salvaging', name: 'Runecloth Shirt of Salvaging', profession: 'tailoring', requiredSkill: 69,
+    id: 'runecloth_shirt_of_salvaging', name: 'Runecloth Shirt of Salvaging', profession: 'tailoring', requiredSkill: 75,
     resultItemId: 'runecloth_shirt_of_salvaging', resultQuantity: 1,
     materials: [{ itemId: 'runecloth', quantity: 3 }, { itemId: 'rune_thread', quantity: 2 }],
     craftSeconds: 10, xpAward: 53,
@@ -1087,7 +1087,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'dungeon_drop', rarity: 'uncommon', learnedAutomatically: false,
   },
   runecloth_shirt_of_preservation: {
-    id: 'runecloth_shirt_of_preservation', name: 'Runecloth Shirt of Preservation', profession: 'tailoring', requiredSkill: 69,
+    id: 'runecloth_shirt_of_preservation', name: 'Runecloth Shirt of Preservation', profession: 'tailoring', requiredSkill: 74,
     resultItemId: 'runecloth_shirt_of_preservation', resultQuantity: 1,
     materials: [{ itemId: 'runecloth', quantity: 3 }, { itemId: 'rune_thread', quantity: 2 }],
     craftSeconds: 10, xpAward: 53,
@@ -1095,7 +1095,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'dungeon_drop', rarity: 'uncommon', learnedAutomatically: false,
   },
   ember_shirt_of_mastery: {
-    id: 'ember_shirt_of_mastery', name: 'Ember Shirt of Mastery', profession: 'tailoring', requiredSkill: 86,
+    id: 'ember_shirt_of_mastery', name: 'Ember Shirt of Mastery', profession: 'tailoring', requiredSkill: 93,
     resultItemId: 'ember_shirt_of_mastery', resultQuantity: 1,
     materials: [{ itemId: 'ember_cloth', quantity: 3 }, { itemId: 'ember_thread', quantity: 2 }],
     craftSeconds: 10.7, xpAward: 92,
@@ -1103,7 +1103,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'dungeon_drop', rarity: 'uncommon', learnedAutomatically: false,
   },
   ember_shirt_of_the_gatherer: {
-    id: 'ember_shirt_of_the_gatherer', name: 'Ember Shirt of the Gatherer', profession: 'tailoring', requiredSkill: 86,
+    id: 'ember_shirt_of_the_gatherer', name: 'Ember Shirt of the Gatherer', profession: 'tailoring', requiredSkill: 98,
     resultItemId: 'ember_shirt_of_the_gatherer', resultQuantity: 1,
     materials: [{ itemId: 'ember_cloth', quantity: 3 }, { itemId: 'ember_thread', quantity: 2 }],
     craftSeconds: 10.7, xpAward: 92,
@@ -1111,7 +1111,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'dungeon_drop', rarity: 'uncommon', learnedAutomatically: false,
   },
   ember_shirt_of_the_artisan: {
-    id: 'ember_shirt_of_the_artisan', name: 'Ember Shirt of the Artisan', profession: 'tailoring', requiredSkill: 86,
+    id: 'ember_shirt_of_the_artisan', name: 'Ember Shirt of the Artisan', profession: 'tailoring', requiredSkill: 97,
     resultItemId: 'ember_shirt_of_the_artisan', resultQuantity: 1,
     materials: [{ itemId: 'ember_cloth', quantity: 3 }, { itemId: 'ember_thread', quantity: 2 }],
     craftSeconds: 10.7, xpAward: 92,
@@ -1119,7 +1119,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'dungeon_drop', rarity: 'uncommon', learnedAutomatically: false,
   },
   ember_shirt_of_learning: {
-    id: 'ember_shirt_of_learning', name: 'Ember Shirt of Learning', profession: 'tailoring', requiredSkill: 86,
+    id: 'ember_shirt_of_learning', name: 'Ember Shirt of Learning', profession: 'tailoring', requiredSkill: 91,
     resultItemId: 'ember_shirt_of_learning', resultQuantity: 1,
     materials: [{ itemId: 'ember_cloth', quantity: 3 }, { itemId: 'ember_thread', quantity: 2 }],
     craftSeconds: 10.7, xpAward: 92,
@@ -1127,7 +1127,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'dungeon_drop', rarity: 'uncommon', learnedAutomatically: false,
   },
   ember_shirt_of_fortune: {
-    id: 'ember_shirt_of_fortune', name: 'Ember Shirt of Fortune', profession: 'tailoring', requiredSkill: 86,
+    id: 'ember_shirt_of_fortune', name: 'Ember Shirt of Fortune', profession: 'tailoring', requiredSkill: 90,
     resultItemId: 'ember_shirt_of_fortune', resultQuantity: 1,
     materials: [{ itemId: 'ember_cloth', quantity: 3 }, { itemId: 'ember_thread', quantity: 2 }],
     craftSeconds: 10.7, xpAward: 92,
@@ -1135,7 +1135,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'dungeon_drop', rarity: 'uncommon', learnedAutomatically: false,
   },
   ember_shirt_of_salvaging: {
-    id: 'ember_shirt_of_salvaging', name: 'Ember Shirt of Salvaging', profession: 'tailoring', requiredSkill: 86,
+    id: 'ember_shirt_of_salvaging', name: 'Ember Shirt of Salvaging', profession: 'tailoring', requiredSkill: 95,
     resultItemId: 'ember_shirt_of_salvaging', resultQuantity: 1,
     materials: [{ itemId: 'ember_cloth', quantity: 3 }, { itemId: 'ember_thread', quantity: 2 }],
     craftSeconds: 10.7, xpAward: 92,
@@ -1143,7 +1143,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'dungeon_drop', rarity: 'uncommon', learnedAutomatically: false,
   },
   ember_shirt_of_preservation: {
-    id: 'ember_shirt_of_preservation', name: 'Ember Shirt of Preservation', profession: 'tailoring', requiredSkill: 86,
+    id: 'ember_shirt_of_preservation', name: 'Ember Shirt of Preservation', profession: 'tailoring', requiredSkill: 94,
     resultItemId: 'ember_shirt_of_preservation', resultQuantity: 1,
     materials: [{ itemId: 'ember_cloth', quantity: 3 }, { itemId: 'ember_thread', quantity: 2 }],
     craftSeconds: 10.7, xpAward: 92,
@@ -1581,7 +1581,7 @@ export const RECIPES: Record<string, Recipe> = {
   // serving" question is answered at craft time by that zone's Cooking
   // Mastery, not by this field.
   greenhollow_hunters_stew: {
-    id: 'greenhollow_hunters_stew', name: 'Greenhollow Hunter’s Stew', profession: 'cooking', requiredSkill: 1,
+    id: 'greenhollow_hunters_stew', name: 'Greenhollow Hunter’s Stew', profession: 'cooking', requiredSkill: 5,
     resultItemId: 'greenhollow_hunters_stew', resultQuantity: 1,
     materials: [{ itemId: 'brilliant_smallfish', quantity: 5 }, { itemId: 'boar_meat', quantity: 4 }],
     cookingZoneId: 'greenhollow_fields', cookingTier: 2,
@@ -1589,7 +1589,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'uncommon', learnedAutomatically: true,
   },
   stonecrag_highland_fare: {
-    id: 'stonecrag_highland_fare', name: 'Stonecrag Highland Fare', profession: 'cooking', requiredSkill: 16,
+    id: 'stonecrag_highland_fare', name: 'Stonecrag Highland Fare', profession: 'cooking', requiredSkill: 20,
     resultItemId: 'stonecrag_highland_fare', resultQuantity: 1,
     materials: [{ itemId: 'bristle_whisker_catfish', quantity: 5 }, { itemId: 'raw_meat', quantity: 4 }],
     cookingZoneId: 'stonecrag_foothills', cookingTier: 2,
@@ -1597,7 +1597,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'uncommon', learnedAutomatically: true,
   },
   emberfall_ridge_platter: {
-    id: 'emberfall_ridge_platter', name: 'Emberfall Ridge Platter', profession: 'cooking', requiredSkill: 31,
+    id: 'emberfall_ridge_platter', name: 'Emberfall Ridge Platter', profession: 'cooking', requiredSkill: 35,
     resultItemId: 'emberfall_ridge_platter', resultQuantity: 1,
     materials: [{ itemId: 'mithril_head_trout', quantity: 6 }, { itemId: 'common_seasoning', quantity: 2 }],
     cookingZoneId: 'emberfall_ridge', cookingTier: 2,
@@ -1605,7 +1605,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'uncommon', learnedAutomatically: true,
   },
   cinderfall_depths_banquet: {
-    id: 'cinderfall_depths_banquet', name: 'Cinderfall Depths Banquet', profession: 'cooking', requiredSkill: 46,
+    id: 'cinderfall_depths_banquet', name: 'Cinderfall Depths Banquet', profession: 'cooking', requiredSkill: 50,
     resultItemId: 'cinderfall_depths_banquet', resultQuantity: 1,
     materials: [{ itemId: 'redgill', quantity: 5 }, { itemId: 'scavenger_meat', quantity: 4 }],
     cookingZoneId: 'cinderfall_depths', cookingTier: 2,
@@ -1613,7 +1613,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'rare', learnedAutomatically: true,
   },
   molten_scar_feast_platter: {
-    id: 'molten_scar_feast_platter', name: 'Molten Scar Feast Platter', profession: 'cooking', requiredSkill: 61,
+    id: 'molten_scar_feast_platter', name: 'Molten Scar Feast Platter', profession: 'cooking', requiredSkill: 67,
     resultItemId: 'molten_scar_feast_platter', resultQuantity: 1,
     materials: [{ itemId: 'stonescale_eel', quantity: 5 }, { itemId: 'hound_meat', quantity: 4 }],
     cookingZoneId: 'molten_scar', cookingTier: 2,
@@ -1621,7 +1621,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'rare', learnedAutomatically: true,
   },
   cinderheart_molten_banquet: {
-    id: 'cinderheart_molten_banquet', name: 'Cinderheart Molten Banquet', profession: 'cooking', requiredSkill: 81,
+    id: 'cinderheart_molten_banquet', name: 'Cinderheart Molten Banquet', profession: 'cooking', requiredSkill: 87,
     resultItemId: 'cinderheart_molten_banquet', resultQuantity: 1,
     materials: [{ itemId: 'emberfin_snapper', quantity: 5 }, { itemId: 'behemoth_flank', quantity: 4 }],
     cookingZoneId: 'cinderheart_crater', cookingTier: 2,
@@ -1637,7 +1637,7 @@ export const RECIPES: Record<string, Recipe> = {
   // cookingMastery.ts); resultQuantity stays 1 (no automatic quantity
   // multiplier from Mastery, per the design brief).
   greenhollow_guardians_feast: {
-    id: 'greenhollow_guardians_feast', name: 'Greenhollow Guardian’s Feast', profession: 'cooking', requiredSkill: 1,
+    id: 'greenhollow_guardians_feast', name: 'Greenhollow Guardian’s Feast', profession: 'cooking', requiredSkill: 10,
     resultItemId: 'greenhollow_guardians_feast', resultQuantity: 1,
     materials: [{ itemId: 'brilliant_smallfish', quantity: 6 }, { itemId: 'boar_meat', quantity: 4 }, { itemId: 'common_seasoning', quantity: 1 }],
     cookingZoneId: 'greenhollow_fields', cookingTier: 3,
@@ -1645,7 +1645,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'rare', learnedAutomatically: true,
   },
   stonecrag_conquerors_feast: {
-    id: 'stonecrag_conquerors_feast', name: 'Stonecrag Conqueror’s Feast', profession: 'cooking', requiredSkill: 16,
+    id: 'stonecrag_conquerors_feast', name: 'Stonecrag Conqueror’s Feast', profession: 'cooking', requiredSkill: 25,
     resultItemId: 'stonecrag_conquerors_feast', resultQuantity: 1,
     materials: [{ itemId: 'bristle_whisker_catfish', quantity: 6 }, { itemId: 'raw_meat', quantity: 4 }, { itemId: 'common_seasoning', quantity: 1 }],
     cookingZoneId: 'stonecrag_foothills', cookingTier: 3,
@@ -1653,7 +1653,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'rare', learnedAutomatically: true,
   },
   emberfall_sages_feast: {
-    id: 'emberfall_sages_feast', name: 'Emberfall Sage’s Feast', profession: 'cooking', requiredSkill: 31,
+    id: 'emberfall_sages_feast', name: 'Emberfall Sage’s Feast', profession: 'cooking', requiredSkill: 40,
     resultItemId: 'emberfall_sages_feast', resultQuantity: 1,
     materials: [{ itemId: 'mithril_head_trout', quantity: 7 }, { itemId: 'common_seasoning', quantity: 2 }],
     cookingZoneId: 'emberfall_ridge', cookingTier: 3,
@@ -1661,7 +1661,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'rare', learnedAutomatically: true,
   },
   cinderfall_balanced_banquet: {
-    id: 'cinderfall_balanced_banquet', name: 'Cinderfall Balanced Banquet', profession: 'cooking', requiredSkill: 46,
+    id: 'cinderfall_balanced_banquet', name: 'Cinderfall Balanced Banquet', profession: 'cooking', requiredSkill: 55,
     resultItemId: 'cinderfall_balanced_banquet', resultQuantity: 1,
     materials: [{ itemId: 'redgill', quantity: 6 }, { itemId: 'scavenger_meat', quantity: 4 }, { itemId: 'moonlit_pearl', quantity: 1 }],
     cookingZoneId: 'cinderfall_depths', cookingTier: 3,
@@ -1669,7 +1669,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'rare', learnedAutomatically: true,
   },
   molten_scar_war_feast: {
-    id: 'molten_scar_war_feast', name: 'Molten Scar War Feast', profession: 'cooking', requiredSkill: 61,
+    id: 'molten_scar_war_feast', name: 'Molten Scar War Feast', profession: 'cooking', requiredSkill: 73,
     resultItemId: 'molten_scar_war_feast', resultQuantity: 1,
     materials: [{ itemId: 'stonescale_eel', quantity: 6 }, { itemId: 'hound_meat', quantity: 4 }, { itemId: 'rare_seasoning', quantity: 2 }],
     cookingZoneId: 'molten_scar', cookingTier: 3,
@@ -1677,7 +1677,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'rare', learnedAutomatically: true,
   },
   cinderheart_emberheart_feast: {
-    id: 'cinderheart_emberheart_feast', name: 'Cinderheart Emberheart Feast', profession: 'cooking', requiredSkill: 81,
+    id: 'cinderheart_emberheart_feast', name: 'Cinderheart Emberheart Feast', profession: 'cooking', requiredSkill: 93,
     resultItemId: 'cinderheart_emberheart_feast', resultQuantity: 1,
     materials: [{ itemId: 'emberfin_snapper', quantity: 6 }, { itemId: 'behemoth_flank', quantity: 4 }, { itemId: 'ember_pearl', quantity: 1 }],
     cookingZoneId: 'cinderheart_crater', cookingTier: 3,
@@ -1752,7 +1752,7 @@ export const RECIPES: Record<string, Recipe> = {
   // See items.ts's matching section's doc comment — same generated-content
   // posture, 124 recipes mirroring the 124 new items 1:1 by id.
   copper_helm: {
-    id: 'copper_helm', name: 'Copper Helm', profession: 'smithing', requiredSkill: 1,
+    id: 'copper_helm', name: 'Copper Helm', profession: 'smithing', requiredSkill: 6,
     resultItemId: 'copper_helm', resultQuantity: 1,
     materials: [{ itemId: 'copper_bar', quantity: 3 }],
     craftSeconds: 8, xpAward: 1,
@@ -1760,7 +1760,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   copper_chestplate: {
-    id: 'copper_chestplate', name: 'Copper Chestplate', profession: 'smithing', requiredSkill: 1,
+    id: 'copper_chestplate', name: 'Copper Chestplate', profession: 'smithing', requiredSkill: 10,
     resultItemId: 'copper_chestplate', resultQuantity: 1,
     materials: [{ itemId: 'copper_bar', quantity: 5 }],
     craftSeconds: 8, xpAward: 1,
@@ -1768,7 +1768,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   copper_gauntlets: {
-    id: 'copper_gauntlets', name: 'Copper Gauntlets', profession: 'smithing', requiredSkill: 1,
+    id: 'copper_gauntlets', name: 'Copper Gauntlets', profession: 'smithing', requiredSkill: 2,
     resultItemId: 'copper_gauntlets', resultQuantity: 1,
     materials: [{ itemId: 'copper_bar', quantity: 3 }],
     craftSeconds: 8, xpAward: 1,
@@ -1787,7 +1787,7 @@ export const RECIPES: Record<string, Recipe> = {
   // (see items.ts's matching comment); mirrors this tier's own Gauntlets
   // recipe exactly.
   copper_shoulders: {
-    id: 'copper_shoulders', name: 'Copper Shoulders', profession: 'smithing', requiredSkill: 1,
+    id: 'copper_shoulders', name: 'Copper Shoulders', profession: 'smithing', requiredSkill: 5,
     resultItemId: 'copper_shoulders', resultQuantity: 1,
     materials: [{ itemId: 'copper_bar', quantity: 3 }],
     craftSeconds: 8, xpAward: 1,
@@ -1795,7 +1795,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   copper_legplates: {
-    id: 'copper_legplates', name: 'Copper Legplates', profession: 'smithing', requiredSkill: 1,
+    id: 'copper_legplates', name: 'Copper Legplates', profession: 'smithing', requiredSkill: 8,
     resultItemId: 'copper_legplates', resultQuantity: 1,
     materials: [{ itemId: 'copper_bar', quantity: 4 }],
     craftSeconds: 8, xpAward: 1,
@@ -1803,7 +1803,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   copper_greaves: {
-    id: 'copper_greaves', name: 'Copper Greaves', profession: 'smithing', requiredSkill: 1,
+    id: 'copper_greaves', name: 'Copper Greaves', profession: 'smithing', requiredSkill: 3,
     resultItemId: 'copper_greaves', resultQuantity: 1,
     materials: [{ itemId: 'copper_bar', quantity: 3 }],
     craftSeconds: 8, xpAward: 1,
@@ -1811,7 +1811,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   copper_shield: {
-    id: 'copper_shield', name: 'Copper Shield', profession: 'smithing', requiredSkill: 1,
+    id: 'copper_shield', name: 'Copper Shield', profession: 'smithing', requiredSkill: 9,
     resultItemId: 'copper_shield', resultQuantity: 1,
     materials: [{ itemId: 'copper_bar', quantity: 4 }],
     craftSeconds: 8, xpAward: 1,
@@ -1819,7 +1819,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   copper_sword: {
-    id: 'copper_sword', name: 'Copper Sword', profession: 'smithing', requiredSkill: 1,
+    id: 'copper_sword', name: 'Copper Sword', profession: 'smithing', requiredSkill: 13,
     resultItemId: 'copper_sword', resultQuantity: 1,
     materials: [{ itemId: 'copper_bar', quantity: 4 }],
     craftSeconds: 8, xpAward: 1,
@@ -1833,7 +1833,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   copper_battleaxe: {
-    id: 'copper_battleaxe', name: 'Copper Battleaxe', profession: 'smithing', requiredSkill: 1,
+    id: 'copper_battleaxe', name: 'Copper Battleaxe', profession: 'smithing', requiredSkill: 12,
     resultItemId: 'copper_battleaxe', resultQuantity: 1,
     materials: [{ itemId: 'copper_bar', quantity: 6 }],
     craftSeconds: 8, xpAward: 1,
@@ -1847,7 +1847,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   bronze_helm: {
-    id: 'bronze_helm', name: 'Bronze Helm', profession: 'smithing', requiredSkill: 4,
+    id: 'bronze_helm', name: 'Bronze Helm', profession: 'smithing', requiredSkill: 21,
     resultItemId: 'bronze_helm', resultQuantity: 1,
     materials: [{ itemId: 'bronze_bar', quantity: 3 }],
     craftSeconds: 8.5, xpAward: 6,
@@ -1855,7 +1855,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   bronze_chestplate: {
-    id: 'bronze_chestplate', name: 'Bronze Chestplate', profession: 'smithing', requiredSkill: 4,
+    id: 'bronze_chestplate', name: 'Bronze Chestplate', profession: 'smithing', requiredSkill: 23,
     resultItemId: 'bronze_chestplate', resultQuantity: 1,
     materials: [{ itemId: 'bronze_bar', quantity: 5 }],
     craftSeconds: 8.5, xpAward: 6,
@@ -1863,7 +1863,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   bronze_gauntlets: {
-    id: 'bronze_gauntlets', name: 'Bronze Gauntlets', profession: 'smithing', requiredSkill: 4,
+    id: 'bronze_gauntlets', name: 'Bronze Gauntlets', profession: 'smithing', requiredSkill: 17,
     resultItemId: 'bronze_gauntlets', resultQuantity: 1,
     materials: [{ itemId: 'bronze_bar', quantity: 3 }],
     craftSeconds: 8.5, xpAward: 6,
@@ -1871,7 +1871,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   bronze_bracers: {
-    id: 'bronze_bracers', name: 'Bronze Bracers', profession: 'smithing', requiredSkill: 4,
+    id: 'bronze_bracers', name: 'Bronze Bracers', profession: 'smithing', requiredSkill: 16,
     resultItemId: 'bronze_bracers', resultQuantity: 1,
     materials: [{ itemId: 'bronze_bar', quantity: 3 }],
     craftSeconds: 8.5, xpAward: 6,
@@ -1879,7 +1879,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   bronze_shoulders: {
-    id: 'bronze_shoulders', name: 'Bronze Shoulders', profession: 'smithing', requiredSkill: 4,
+    id: 'bronze_shoulders', name: 'Bronze Shoulders', profession: 'smithing', requiredSkill: 20,
     resultItemId: 'bronze_shoulders', resultQuantity: 1,
     materials: [{ itemId: 'bronze_bar', quantity: 3 }],
     craftSeconds: 8.5, xpAward: 6,
@@ -1887,7 +1887,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   bronze_legplates: {
-    id: 'bronze_legplates', name: 'Bronze Legplates', profession: 'smithing', requiredSkill: 4,
+    id: 'bronze_legplates', name: 'Bronze Legplates', profession: 'smithing', requiredSkill: 24,
     resultItemId: 'bronze_legplates', resultQuantity: 1,
     materials: [{ itemId: 'bronze_bar', quantity: 4 }],
     craftSeconds: 8.5, xpAward: 6,
@@ -1895,7 +1895,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   bronze_greaves: {
-    id: 'bronze_greaves', name: 'Bronze Greaves', profession: 'smithing', requiredSkill: 4,
+    id: 'bronze_greaves', name: 'Bronze Greaves', profession: 'smithing', requiredSkill: 18,
     resultItemId: 'bronze_greaves', resultQuantity: 1,
     materials: [{ itemId: 'bronze_bar', quantity: 3 }],
     craftSeconds: 8.5, xpAward: 6,
@@ -1903,7 +1903,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   bronze_shield: {
-    id: 'bronze_shield', name: 'Bronze Shield', profession: 'smithing', requiredSkill: 4,
+    id: 'bronze_shield', name: 'Bronze Shield', profession: 'smithing', requiredSkill: 25,
     resultItemId: 'bronze_shield', resultQuantity: 1,
     materials: [{ itemId: 'bronze_bar', quantity: 4 }],
     craftSeconds: 8.5, xpAward: 6,
@@ -1911,7 +1911,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   bronze_sword: {
-    id: 'bronze_sword', name: 'Bronze Sword', profession: 'smithing', requiredSkill: 4,
+    id: 'bronze_sword', name: 'Bronze Sword', profession: 'smithing', requiredSkill: 28,
     resultItemId: 'bronze_sword', resultQuantity: 1,
     materials: [{ itemId: 'bronze_bar', quantity: 4 }],
     craftSeconds: 8.5, xpAward: 6,
@@ -1925,7 +1925,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   bronze_battleaxe: {
-    id: 'bronze_battleaxe', name: 'Bronze Battleaxe', profession: 'smithing', requiredSkill: 4,
+    id: 'bronze_battleaxe', name: 'Bronze Battleaxe', profession: 'smithing', requiredSkill: 27,
     resultItemId: 'bronze_battleaxe', resultQuantity: 1,
     materials: [{ itemId: 'bronze_bar', quantity: 6 }],
     craftSeconds: 8.5, xpAward: 6,
@@ -1939,7 +1939,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   iron_helm: {
-    id: 'iron_helm', name: 'Iron Helm', profession: 'smithing', requiredSkill: 10,
+    id: 'iron_helm', name: 'Iron Helm', profession: 'smithing', requiredSkill: 36,
     resultItemId: 'iron_helm', resultQuantity: 1,
     materials: [{ itemId: 'iron_bar', quantity: 3 }],
     craftSeconds: 9.6, xpAward: 16,
@@ -1947,7 +1947,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   iron_chestplate: {
-    id: 'iron_chestplate', name: 'Iron Chestplate', profession: 'smithing', requiredSkill: 10,
+    id: 'iron_chestplate', name: 'Iron Chestplate', profession: 'smithing', requiredSkill: 40,
     resultItemId: 'iron_chestplate', resultQuantity: 1,
     materials: [{ itemId: 'iron_bar', quantity: 5 }],
     craftSeconds: 9.6, xpAward: 16,
@@ -1955,7 +1955,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   iron_gauntlets: {
-    id: 'iron_gauntlets', name: 'Iron Gauntlets', profession: 'smithing', requiredSkill: 10,
+    id: 'iron_gauntlets', name: 'Iron Gauntlets', profession: 'smithing', requiredSkill: 32,
     resultItemId: 'iron_gauntlets', resultQuantity: 1,
     materials: [{ itemId: 'iron_bar', quantity: 3 }],
     craftSeconds: 9.6, xpAward: 16,
@@ -1963,7 +1963,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   iron_bracers: {
-    id: 'iron_bracers', name: 'Iron Bracers', profession: 'smithing', requiredSkill: 10,
+    id: 'iron_bracers', name: 'Iron Bracers', profession: 'smithing', requiredSkill: 31,
     resultItemId: 'iron_bracers', resultQuantity: 1,
     materials: [{ itemId: 'iron_bar', quantity: 3 }],
     craftSeconds: 9.6, xpAward: 16,
@@ -1971,7 +1971,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   iron_shoulders: {
-    id: 'iron_shoulders', name: 'Iron Shoulders', profession: 'smithing', requiredSkill: 10,
+    id: 'iron_shoulders', name: 'Iron Shoulders', profession: 'smithing', requiredSkill: 33,
     resultItemId: 'iron_shoulders', resultQuantity: 1,
     materials: [{ itemId: 'iron_bar', quantity: 3 }],
     craftSeconds: 9.6, xpAward: 16,
@@ -1979,7 +1979,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   iron_legplates: {
-    id: 'iron_legplates', name: 'Iron Legplates', profession: 'smithing', requiredSkill: 10,
+    id: 'iron_legplates', name: 'Iron Legplates', profession: 'smithing', requiredSkill: 38,
     resultItemId: 'iron_legplates', resultQuantity: 1,
     materials: [{ itemId: 'iron_bar', quantity: 4 }],
     craftSeconds: 9.6, xpAward: 16,
@@ -1987,7 +1987,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   iron_greaves: {
-    id: 'iron_greaves', name: 'Iron Greaves', profession: 'smithing', requiredSkill: 10,
+    id: 'iron_greaves', name: 'Iron Greaves', profession: 'smithing', requiredSkill: 35,
     resultItemId: 'iron_greaves', resultQuantity: 1,
     materials: [{ itemId: 'iron_bar', quantity: 3 }],
     craftSeconds: 9.6, xpAward: 16,
@@ -1995,7 +1995,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   iron_shield: {
-    id: 'iron_shield', name: 'Iron Shield', profession: 'smithing', requiredSkill: 10,
+    id: 'iron_shield', name: 'Iron Shield', profession: 'smithing', requiredSkill: 39,
     resultItemId: 'iron_shield', resultQuantity: 1,
     materials: [{ itemId: 'iron_bar', quantity: 4 }],
     craftSeconds: 9.6, xpAward: 16,
@@ -2003,7 +2003,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   iron_sword: {
-    id: 'iron_sword', name: 'Iron Sword', profession: 'smithing', requiredSkill: 10,
+    id: 'iron_sword', name: 'Iron Sword', profession: 'smithing', requiredSkill: 43,
     resultItemId: 'iron_sword', resultQuantity: 1,
     materials: [{ itemId: 'iron_bar', quantity: 4 }],
     craftSeconds: 9.6, xpAward: 16,
@@ -2017,7 +2017,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   iron_battleaxe: {
-    id: 'iron_battleaxe', name: 'Iron Battleaxe', profession: 'smithing', requiredSkill: 10,
+    id: 'iron_battleaxe', name: 'Iron Battleaxe', profession: 'smithing', requiredSkill: 42,
     resultItemId: 'iron_battleaxe', resultQuantity: 1,
     materials: [{ itemId: 'iron_bar', quantity: 6 }],
     craftSeconds: 9.6, xpAward: 16,
@@ -2031,7 +2031,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   steel_helm: {
-    id: 'steel_helm', name: 'Steel Helm', profession: 'smithing', requiredSkill: 11,
+    id: 'steel_helm', name: 'Steel Helm', profession: 'smithing', requiredSkill: 36,
     resultItemId: 'steel_helm', resultQuantity: 1,
     materials: [{ itemId: 'steel_bar', quantity: 3 }],
     craftSeconds: 9.8, xpAward: 18,
@@ -2039,7 +2039,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   steel_chestplate: {
-    id: 'steel_chestplate', name: 'Steel Chestplate', profession: 'smithing', requiredSkill: 11,
+    id: 'steel_chestplate', name: 'Steel Chestplate', profession: 'smithing', requiredSkill: 40,
     resultItemId: 'steel_chestplate', resultQuantity: 1,
     materials: [{ itemId: 'steel_bar', quantity: 5 }],
     craftSeconds: 9.8, xpAward: 18,
@@ -2047,7 +2047,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   steel_gauntlets: {
-    id: 'steel_gauntlets', name: 'Steel Gauntlets', profession: 'smithing', requiredSkill: 11,
+    id: 'steel_gauntlets', name: 'Steel Gauntlets', profession: 'smithing', requiredSkill: 32,
     resultItemId: 'steel_gauntlets', resultQuantity: 1,
     materials: [{ itemId: 'steel_bar', quantity: 3 }],
     craftSeconds: 9.8, xpAward: 18,
@@ -2055,7 +2055,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   steel_bracers: {
-    id: 'steel_bracers', name: 'Steel Bracers', profession: 'smithing', requiredSkill: 11,
+    id: 'steel_bracers', name: 'Steel Bracers', profession: 'smithing', requiredSkill: 31,
     resultItemId: 'steel_bracers', resultQuantity: 1,
     materials: [{ itemId: 'steel_bar', quantity: 3 }],
     craftSeconds: 9.8, xpAward: 18,
@@ -2063,7 +2063,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   steel_shoulders: {
-    id: 'steel_shoulders', name: 'Steel Shoulders', profession: 'smithing', requiredSkill: 11,
+    id: 'steel_shoulders', name: 'Steel Shoulders', profession: 'smithing', requiredSkill: 35,
     resultItemId: 'steel_shoulders', resultQuantity: 1,
     materials: [{ itemId: 'steel_bar', quantity: 3 }],
     craftSeconds: 9.8, xpAward: 18,
@@ -2071,7 +2071,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   steel_legplates: {
-    id: 'steel_legplates', name: 'Steel Legplates', profession: 'smithing', requiredSkill: 11,
+    id: 'steel_legplates', name: 'Steel Legplates', profession: 'smithing', requiredSkill: 39,
     resultItemId: 'steel_legplates', resultQuantity: 1,
     materials: [{ itemId: 'steel_bar', quantity: 4 }],
     craftSeconds: 9.8, xpAward: 18,
@@ -2079,7 +2079,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   steel_greaves: {
-    id: 'steel_greaves', name: 'Steel Greaves', profession: 'smithing', requiredSkill: 11,
+    id: 'steel_greaves', name: 'Steel Greaves', profession: 'smithing', requiredSkill: 33,
     resultItemId: 'steel_greaves', resultQuantity: 1,
     materials: [{ itemId: 'steel_bar', quantity: 3 }],
     craftSeconds: 9.8, xpAward: 18,
@@ -2087,7 +2087,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   steel_shield: {
-    id: 'steel_shield', name: 'Steel Shield', profession: 'smithing', requiredSkill: 11,
+    id: 'steel_shield', name: 'Steel Shield', profession: 'smithing', requiredSkill: 38,
     resultItemId: 'steel_shield', resultQuantity: 1,
     materials: [{ itemId: 'steel_bar', quantity: 4 }],
     craftSeconds: 9.8, xpAward: 18,
@@ -2095,7 +2095,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   steel_sword: {
-    id: 'steel_sword', name: 'Steel Sword', profession: 'smithing', requiredSkill: 11,
+    id: 'steel_sword', name: 'Steel Sword', profession: 'smithing', requiredSkill: 43,
     resultItemId: 'steel_sword', resultQuantity: 1,
     materials: [{ itemId: 'steel_bar', quantity: 4 }],
     craftSeconds: 9.8, xpAward: 18,
@@ -2109,7 +2109,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   steel_battleaxe: {
-    id: 'steel_battleaxe', name: 'Steel Battleaxe', profession: 'smithing', requiredSkill: 11,
+    id: 'steel_battleaxe', name: 'Steel Battleaxe', profession: 'smithing', requiredSkill: 42,
     resultItemId: 'steel_battleaxe', resultQuantity: 1,
     materials: [{ itemId: 'steel_bar', quantity: 6 }],
     craftSeconds: 9.8, xpAward: 18,
@@ -2123,7 +2123,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   mithril_helm: {
-    id: 'mithril_helm', name: 'Mithril Helm', profession: 'smithing', requiredSkill: 12,
+    id: 'mithril_helm', name: 'Mithril Helm', profession: 'smithing', requiredSkill: 51,
     resultItemId: 'mithril_helm', resultQuantity: 1,
     materials: [{ itemId: 'mithril_bar', quantity: 3 }],
     craftSeconds: 10, xpAward: 20,
@@ -2131,7 +2131,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   mithril_chestplate: {
-    id: 'mithril_chestplate', name: 'Mithril Chestplate', profession: 'smithing', requiredSkill: 12,
+    id: 'mithril_chestplate', name: 'Mithril Chestplate', profession: 'smithing', requiredSkill: 55,
     resultItemId: 'mithril_chestplate', resultQuantity: 1,
     materials: [{ itemId: 'mithril_bar', quantity: 5 }],
     craftSeconds: 10, xpAward: 20,
@@ -2139,7 +2139,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   mithril_gauntlets: {
-    id: 'mithril_gauntlets', name: 'Mithril Gauntlets', profession: 'smithing', requiredSkill: 12,
+    id: 'mithril_gauntlets', name: 'Mithril Gauntlets', profession: 'smithing', requiredSkill: 47,
     resultItemId: 'mithril_gauntlets', resultQuantity: 1,
     materials: [{ itemId: 'mithril_bar', quantity: 3 }],
     craftSeconds: 10, xpAward: 20,
@@ -2147,7 +2147,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   mithril_bracers: {
-    id: 'mithril_bracers', name: 'Mithril Bracers', profession: 'smithing', requiredSkill: 12,
+    id: 'mithril_bracers', name: 'Mithril Bracers', profession: 'smithing', requiredSkill: 46,
     resultItemId: 'mithril_bracers', resultQuantity: 1,
     materials: [{ itemId: 'mithril_bar', quantity: 3 }],
     craftSeconds: 10, xpAward: 20,
@@ -2155,7 +2155,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   mithril_shoulders: {
-    id: 'mithril_shoulders', name: 'Mithril Shoulders', profession: 'smithing', requiredSkill: 12,
+    id: 'mithril_shoulders', name: 'Mithril Shoulders', profession: 'smithing', requiredSkill: 50,
     resultItemId: 'mithril_shoulders', resultQuantity: 1,
     materials: [{ itemId: 'mithril_bar', quantity: 3 }],
     craftSeconds: 10, xpAward: 20,
@@ -2163,7 +2163,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   mithril_legplates: {
-    id: 'mithril_legplates', name: 'Mithril Legplates', profession: 'smithing', requiredSkill: 12,
+    id: 'mithril_legplates', name: 'Mithril Legplates', profession: 'smithing', requiredSkill: 54,
     resultItemId: 'mithril_legplates', resultQuantity: 1,
     materials: [{ itemId: 'mithril_bar', quantity: 4 }],
     craftSeconds: 10, xpAward: 20,
@@ -2171,7 +2171,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   mithril_greaves: {
-    id: 'mithril_greaves', name: 'Mithril Greaves', profession: 'smithing', requiredSkill: 12,
+    id: 'mithril_greaves', name: 'Mithril Greaves', profession: 'smithing', requiredSkill: 48,
     resultItemId: 'mithril_greaves', resultQuantity: 1,
     materials: [{ itemId: 'mithril_bar', quantity: 3 }],
     craftSeconds: 10, xpAward: 20,
@@ -2179,7 +2179,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   mithril_shield: {
-    id: 'mithril_shield', name: 'Mithril Shield', profession: 'smithing', requiredSkill: 12,
+    id: 'mithril_shield', name: 'Mithril Shield', profession: 'smithing', requiredSkill: 53,
     resultItemId: 'mithril_shield', resultQuantity: 1,
     materials: [{ itemId: 'mithril_bar', quantity: 4 }],
     craftSeconds: 10, xpAward: 20,
@@ -2187,7 +2187,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   mithril_sword: {
-    id: 'mithril_sword', name: 'Mithril Sword', profession: 'smithing', requiredSkill: 12,
+    id: 'mithril_sword', name: 'Mithril Sword', profession: 'smithing', requiredSkill: 58,
     resultItemId: 'mithril_sword', resultQuantity: 1,
     materials: [{ itemId: 'mithril_bar', quantity: 4 }],
     craftSeconds: 10, xpAward: 20,
@@ -2201,7 +2201,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   mithril_battleaxe: {
-    id: 'mithril_battleaxe', name: 'Mithril Battleaxe', profession: 'smithing', requiredSkill: 12,
+    id: 'mithril_battleaxe', name: 'Mithril Battleaxe', profession: 'smithing', requiredSkill: 57,
     resultItemId: 'mithril_battleaxe', resultQuantity: 1,
     materials: [{ itemId: 'mithril_bar', quantity: 6 }],
     craftSeconds: 10, xpAward: 20,
@@ -2215,7 +2215,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   thorium_helm: {
-    id: 'thorium_helm', name: 'Thorium Helm', profession: 'smithing', requiredSkill: 16,
+    id: 'thorium_helm', name: 'Thorium Helm', profession: 'smithing', requiredSkill: 68,
     resultItemId: 'thorium_helm', resultQuantity: 1,
     materials: [{ itemId: 'thorium_bar', quantity: 3 }],
     craftSeconds: 10.7, xpAward: 27,
@@ -2223,7 +2223,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   thorium_chestplate: {
-    id: 'thorium_chestplate', name: 'Thorium Chestplate', profession: 'smithing', requiredSkill: 16,
+    id: 'thorium_chestplate', name: 'Thorium Chestplate', profession: 'smithing', requiredSkill: 74,
     resultItemId: 'thorium_chestplate', resultQuantity: 1,
     materials: [{ itemId: 'thorium_bar', quantity: 5 }],
     craftSeconds: 10.7, xpAward: 27,
@@ -2231,7 +2231,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   thorium_gauntlets: {
-    id: 'thorium_gauntlets', name: 'Thorium Gauntlets', profession: 'smithing', requiredSkill: 16,
+    id: 'thorium_gauntlets', name: 'Thorium Gauntlets', profession: 'smithing', requiredSkill: 62,
     resultItemId: 'thorium_gauntlets', resultQuantity: 1,
     materials: [{ itemId: 'thorium_bar', quantity: 3 }],
     craftSeconds: 10.7, xpAward: 27,
@@ -2239,7 +2239,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   thorium_bracers: {
-    id: 'thorium_bracers', name: 'Thorium Bracers', profession: 'smithing', requiredSkill: 16,
+    id: 'thorium_bracers', name: 'Thorium Bracers', profession: 'smithing', requiredSkill: 61,
     resultItemId: 'thorium_bracers', resultQuantity: 1,
     materials: [{ itemId: 'thorium_bar', quantity: 3 }],
     craftSeconds: 10.7, xpAward: 27,
@@ -2247,7 +2247,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   thorium_shoulders: {
-    id: 'thorium_shoulders', name: 'Thorium Shoulders', profession: 'smithing', requiredSkill: 16,
+    id: 'thorium_shoulders', name: 'Thorium Shoulders', profession: 'smithing', requiredSkill: 64,
     resultItemId: 'thorium_shoulders', resultQuantity: 1,
     materials: [{ itemId: 'thorium_bar', quantity: 3 }],
     craftSeconds: 10.7, xpAward: 27,
@@ -2255,7 +2255,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   thorium_legplates: {
-    id: 'thorium_legplates', name: 'Thorium Legplates', profession: 'smithing', requiredSkill: 16,
+    id: 'thorium_legplates', name: 'Thorium Legplates', profession: 'smithing', requiredSkill: 72,
     resultItemId: 'thorium_legplates', resultQuantity: 1,
     materials: [{ itemId: 'thorium_bar', quantity: 4 }],
     craftSeconds: 10.7, xpAward: 27,
@@ -2263,7 +2263,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   thorium_greaves: {
-    id: 'thorium_greaves', name: 'Thorium Greaves', profession: 'smithing', requiredSkill: 16,
+    id: 'thorium_greaves', name: 'Thorium Greaves', profession: 'smithing', requiredSkill: 66,
     resultItemId: 'thorium_greaves', resultQuantity: 1,
     materials: [{ itemId: 'thorium_bar', quantity: 3 }],
     craftSeconds: 10.7, xpAward: 27,
@@ -2271,7 +2271,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   thorium_shield: {
-    id: 'thorium_shield', name: 'Thorium Shield', profession: 'smithing', requiredSkill: 16,
+    id: 'thorium_shield', name: 'Thorium Shield', profession: 'smithing', requiredSkill: 70,
     resultItemId: 'thorium_shield', resultQuantity: 1,
     materials: [{ itemId: 'thorium_bar', quantity: 4 }],
     craftSeconds: 10.7, xpAward: 27,
@@ -2279,7 +2279,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   thorium_sword: {
-    id: 'thorium_sword', name: 'Thorium Sword', profession: 'smithing', requiredSkill: 16,
+    id: 'thorium_sword', name: 'Thorium Sword', profession: 'smithing', requiredSkill: 78,
     resultItemId: 'thorium_sword', resultQuantity: 1,
     materials: [{ itemId: 'thorium_bar', quantity: 4 }],
     craftSeconds: 10.7, xpAward: 27,
@@ -2293,7 +2293,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   thorium_battleaxe: {
-    id: 'thorium_battleaxe', name: 'Thorium Battleaxe', profession: 'smithing', requiredSkill: 16,
+    id: 'thorium_battleaxe', name: 'Thorium Battleaxe', profession: 'smithing', requiredSkill: 76,
     resultItemId: 'thorium_battleaxe', resultQuantity: 1,
     materials: [{ itemId: 'thorium_bar', quantity: 6 }],
     craftSeconds: 10.7, xpAward: 27,
@@ -2307,7 +2307,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   obsidian_helm: {
-    id: 'obsidian_helm', name: 'Obsidian Helm', profession: 'smithing', requiredSkill: 19,
+    id: 'obsidian_helm', name: 'Obsidian Helm', profession: 'smithing', requiredSkill: 88,
     resultItemId: 'obsidian_helm', resultQuantity: 1,
     materials: [{ itemId: 'obsidian_bar', quantity: 3 }],
     craftSeconds: 11.3, xpAward: 33,
@@ -2315,7 +2315,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   obsidian_chestplate: {
-    id: 'obsidian_chestplate', name: 'Obsidian Chestplate', profession: 'smithing', requiredSkill: 19,
+    id: 'obsidian_chestplate', name: 'Obsidian Chestplate', profession: 'smithing', requiredSkill: 94,
     resultItemId: 'obsidian_chestplate', resultQuantity: 1,
     materials: [{ itemId: 'obsidian_bar', quantity: 5 }],
     craftSeconds: 11.3, xpAward: 33,
@@ -2323,7 +2323,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   obsidian_gauntlets: {
-    id: 'obsidian_gauntlets', name: 'Obsidian Gauntlets', profession: 'smithing', requiredSkill: 19,
+    id: 'obsidian_gauntlets', name: 'Obsidian Gauntlets', profession: 'smithing', requiredSkill: 82,
     resultItemId: 'obsidian_gauntlets', resultQuantity: 1,
     materials: [{ itemId: 'obsidian_bar', quantity: 3 }],
     craftSeconds: 11.3, xpAward: 33,
@@ -2331,7 +2331,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   obsidian_bracers: {
-    id: 'obsidian_bracers', name: 'Obsidian Bracers', profession: 'smithing', requiredSkill: 19,
+    id: 'obsidian_bracers', name: 'Obsidian Bracers', profession: 'smithing', requiredSkill: 81,
     resultItemId: 'obsidian_bracers', resultQuantity: 1,
     materials: [{ itemId: 'obsidian_bar', quantity: 3 }],
     craftSeconds: 11.3, xpAward: 33,
@@ -2339,7 +2339,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   obsidian_shoulders: {
-    id: 'obsidian_shoulders', name: 'Obsidian Shoulders', profession: 'smithing', requiredSkill: 19,
+    id: 'obsidian_shoulders', name: 'Obsidian Shoulders', profession: 'smithing', requiredSkill: 84,
     resultItemId: 'obsidian_shoulders', resultQuantity: 1,
     materials: [{ itemId: 'obsidian_bar', quantity: 3 }],
     craftSeconds: 11.3, xpAward: 33,
@@ -2347,7 +2347,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   obsidian_legplates: {
-    id: 'obsidian_legplates', name: 'Obsidian Legplates', profession: 'smithing', requiredSkill: 19,
+    id: 'obsidian_legplates', name: 'Obsidian Legplates', profession: 'smithing', requiredSkill: 92,
     resultItemId: 'obsidian_legplates', resultQuantity: 1,
     materials: [{ itemId: 'obsidian_bar', quantity: 4 }],
     craftSeconds: 11.3, xpAward: 33,
@@ -2355,7 +2355,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   obsidian_greaves: {
-    id: 'obsidian_greaves', name: 'Obsidian Greaves', profession: 'smithing', requiredSkill: 19,
+    id: 'obsidian_greaves', name: 'Obsidian Greaves', profession: 'smithing', requiredSkill: 86,
     resultItemId: 'obsidian_greaves', resultQuantity: 1,
     materials: [{ itemId: 'obsidian_bar', quantity: 3 }],
     craftSeconds: 11.3, xpAward: 33,
@@ -2363,7 +2363,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   obsidian_shield: {
-    id: 'obsidian_shield', name: 'Obsidian Shield', profession: 'smithing', requiredSkill: 19,
+    id: 'obsidian_shield', name: 'Obsidian Shield', profession: 'smithing', requiredSkill: 90,
     resultItemId: 'obsidian_shield', resultQuantity: 1,
     materials: [{ itemId: 'obsidian_bar', quantity: 4 }],
     craftSeconds: 11.3, xpAward: 33,
@@ -2371,7 +2371,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   obsidian_sword: {
-    id: 'obsidian_sword', name: 'Obsidian Sword', profession: 'smithing', requiredSkill: 19,
+    id: 'obsidian_sword', name: 'Obsidian Sword', profession: 'smithing', requiredSkill: 98,
     resultItemId: 'obsidian_sword', resultQuantity: 1,
     materials: [{ itemId: 'obsidian_bar', quantity: 4 }],
     craftSeconds: 11.3, xpAward: 33,
@@ -2385,7 +2385,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   obsidian_battleaxe: {
-    id: 'obsidian_battleaxe', name: 'Obsidian Battleaxe', profession: 'smithing', requiredSkill: 19,
+    id: 'obsidian_battleaxe', name: 'Obsidian Battleaxe', profession: 'smithing', requiredSkill: 96,
     resultItemId: 'obsidian_battleaxe', resultQuantity: 1,
     materials: [{ itemId: 'obsidian_bar', quantity: 6 }],
     craftSeconds: 11.3, xpAward: 33,
@@ -2399,7 +2399,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'monster_drop', rarity: 'uncommon', learnedAutomatically: false,
   },
   silver_necklace: {
-    id: 'silver_necklace', name: 'Silver Necklace', profession: 'smithing', requiredSkill: 4,
+    id: 'silver_necklace', name: 'Silver Necklace', profession: 'smithing', requiredSkill: 23,
     resultItemId: 'silver_necklace', resultQuantity: 1,
     materials: [{ itemId: 'silver_bar', quantity: 2 }],
     craftSeconds: 8.5, xpAward: 6,
@@ -2407,7 +2407,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   silver_ring: {
-    id: 'silver_ring', name: 'Silver Ring', profession: 'smithing', requiredSkill: 4,
+    id: 'silver_ring', name: 'Silver Ring', profession: 'smithing', requiredSkill: 16,
     resultItemId: 'silver_ring', resultQuantity: 1,
     materials: [{ itemId: 'silver_bar', quantity: 2 }],
     craftSeconds: 8.5, xpAward: 6,
@@ -2415,7 +2415,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   gold_necklace: {
-    id: 'gold_necklace', name: 'Gold Necklace', profession: 'smithing', requiredSkill: 12,
+    id: 'gold_necklace', name: 'Gold Necklace', profession: 'smithing', requiredSkill: 46,
     resultItemId: 'gold_necklace', resultQuantity: 1,
     materials: [{ itemId: 'gold_bar', quantity: 2 }],
     craftSeconds: 10, xpAward: 20,
@@ -2423,7 +2423,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   gold_ring: {
-    id: 'gold_ring', name: 'Gold Ring', profession: 'smithing', requiredSkill: 12,
+    id: 'gold_ring', name: 'Gold Ring', profession: 'smithing', requiredSkill: 53,
     resultItemId: 'gold_ring', resultQuantity: 1,
     materials: [{ itemId: 'gold_bar', quantity: 2 }],
     craftSeconds: 10, xpAward: 20,
@@ -2431,7 +2431,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   platinum_necklace: {
-    id: 'platinum_necklace', name: 'Platinum Necklace', profession: 'smithing', requiredSkill: 19,
+    id: 'platinum_necklace', name: 'Platinum Necklace', profession: 'smithing', requiredSkill: 90,
     resultItemId: 'platinum_necklace', resultQuantity: 1,
     materials: [{ itemId: 'platinum_bar', quantity: 2 }],
     craftSeconds: 11.3, xpAward: 33,
@@ -2439,7 +2439,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'monster_drop', rarity: 'uncommon', learnedAutomatically: false,
   },
   platinum_ring: {
-    id: 'platinum_ring', name: 'Platinum Ring', profession: 'smithing', requiredSkill: 19,
+    id: 'platinum_ring', name: 'Platinum Ring', profession: 'smithing', requiredSkill: 81,
     resultItemId: 'platinum_ring', resultQuantity: 1,
     materials: [{ itemId: 'platinum_bar', quantity: 2 }],
     craftSeconds: 11.3, xpAward: 33,
@@ -2469,7 +2469,7 @@ export const RECIPES: Record<string, Recipe> = {
   // enchanting materials, the same way every scroll recipe already does.
   // No Mastery contribution of its own, same as the Book's cloth above.
   rough_wand: {
-    id: 'rough_wand', name: 'Rough Wand', profession: 'enchanting', requiredSkill: 1,
+    id: 'rough_wand', name: 'Rough Wand', profession: 'enchanting', requiredSkill: 5,
     resultItemId: 'rough_wand', resultQuantity: 1,
     materials: [{ itemId: 'simple_wood', quantity: 3 }, { itemId: 'strange_dust', quantity: 2 }],
     craftSeconds: 8, xpAward: 10,
@@ -2477,7 +2477,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   rough_staff: {
-    id: 'rough_staff', name: 'Rough Staff', profession: 'enchanting', requiredSkill: 1,
+    id: 'rough_staff', name: 'Rough Staff', profession: 'enchanting', requiredSkill: 10,
     resultItemId: 'rough_staff', resultQuantity: 1,
     materials: [{ itemId: 'simple_wood', quantity: 5 }, { itemId: 'strange_dust', quantity: 3 }],
     craftSeconds: 8, xpAward: 10,
@@ -2493,7 +2493,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   aged_wand: {
-    id: 'aged_wand', name: 'Aged Wand', profession: 'enchanting', requiredSkill: 18,
+    id: 'aged_wand', name: 'Aged Wand', profession: 'enchanting', requiredSkill: 20,
     resultItemId: 'aged_wand', resultQuantity: 1,
     materials: [{ itemId: 'star_wood', quantity: 3 }, { itemId: 'soul_dust', quantity: 2 }],
     craftSeconds: 8.5, xpAward: 13,
@@ -2501,7 +2501,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   aged_staff: {
-    id: 'aged_staff', name: 'Aged Staff', profession: 'enchanting', requiredSkill: 18,
+    id: 'aged_staff', name: 'Aged Staff', profession: 'enchanting', requiredSkill: 25,
     resultItemId: 'aged_staff', resultQuantity: 1,
     materials: [{ itemId: 'star_wood', quantity: 5 }, { itemId: 'soul_dust', quantity: 3 }],
     craftSeconds: 8.5, xpAward: 13,
@@ -2509,7 +2509,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   aged_tome: {
-    id: 'aged_tome', name: 'Aged Tome', profession: 'enchanting', requiredSkill: 18,
+    id: 'aged_tome', name: 'Aged Tome', profession: 'enchanting', requiredSkill: 16,
     resultItemId: 'aged_tome', resultQuantity: 1,
     materials: [{ itemId: 'star_wood', quantity: 3 }, { itemId: 'wool_cloth', quantity: 2 }, { itemId: 'soul_dust', quantity: 2 }],
     craftSeconds: 8.5, xpAward: 13,
@@ -2525,7 +2525,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   heartwood_staff: {
-    id: 'heartwood_staff', name: 'Heartwood Staff', profession: 'enchanting', requiredSkill: 35,
+    id: 'heartwood_staff', name: 'Heartwood Staff', profession: 'enchanting', requiredSkill: 40,
     resultItemId: 'heartwood_staff', resultQuantity: 1,
     materials: [{ itemId: 'mystic_wood', quantity: 5 }, { itemId: 'vision_dust', quantity: 3 }],
     craftSeconds: 9.6, xpAward: 23,
@@ -2533,7 +2533,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   heartwood_tome: {
-    id: 'heartwood_tome', name: 'Heartwood Tome', profession: 'enchanting', requiredSkill: 35,
+    id: 'heartwood_tome', name: 'Heartwood Tome', profession: 'enchanting', requiredSkill: 31,
     resultItemId: 'heartwood_tome', resultQuantity: 1,
     materials: [{ itemId: 'mystic_wood', quantity: 3 }, { itemId: 'silk_cloth', quantity: 2 }, { itemId: 'vision_dust', quantity: 2 }],
     craftSeconds: 9.6, xpAward: 23,
@@ -2541,7 +2541,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   ironwood_wand: {
-    id: 'ironwood_wand', name: 'Ironwood Wand', profession: 'enchanting', requiredSkill: 52,
+    id: 'ironwood_wand', name: 'Ironwood Wand', profession: 'enchanting', requiredSkill: 50,
     resultItemId: 'ironwood_wand', resultQuantity: 1,
     materials: [{ itemId: 'enchanted_hardwood', quantity: 3 }, { itemId: 'dream_dust', quantity: 2 }],
     craftSeconds: 9.8, xpAward: 40,
@@ -2549,7 +2549,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   ironwood_staff: {
-    id: 'ironwood_staff', name: 'Ironwood Staff', profession: 'enchanting', requiredSkill: 52,
+    id: 'ironwood_staff', name: 'Ironwood Staff', profession: 'enchanting', requiredSkill: 55,
     resultItemId: 'ironwood_staff', resultQuantity: 1,
     materials: [{ itemId: 'enchanted_hardwood', quantity: 5 }, { itemId: 'dream_dust', quantity: 3 }],
     craftSeconds: 9.8, xpAward: 40,
@@ -2557,7 +2557,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   ironwood_tome: {
-    id: 'ironwood_tome', name: 'Ironwood Tome', profession: 'enchanting', requiredSkill: 52,
+    id: 'ironwood_tome', name: 'Ironwood Tome', profession: 'enchanting', requiredSkill: 46,
     resultItemId: 'ironwood_tome', resultQuantity: 1,
     materials: [{ itemId: 'enchanted_hardwood', quantity: 3 }, { itemId: 'mageweave_cloth', quantity: 2 }, { itemId: 'dream_dust', quantity: 2 }],
     craftSeconds: 9.8, xpAward: 40,
@@ -2565,7 +2565,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   charwood_wand: {
-    id: 'charwood_wand', name: 'Charwood Wand', profession: 'enchanting', requiredSkill: 69,
+    id: 'charwood_wand', name: 'Charwood Wand', profession: 'enchanting', requiredSkill: 67,
     resultItemId: 'charwood_wand', resultQuantity: 1,
     materials: [{ itemId: 'ancient_runewood', quantity: 3 }, { itemId: 'illusion_dust', quantity: 2 }],
     craftSeconds: 10, xpAward: 53,
@@ -2573,7 +2573,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   charwood_staff: {
-    id: 'charwood_staff', name: 'Charwood Staff', profession: 'enchanting', requiredSkill: 69,
+    id: 'charwood_staff', name: 'Charwood Staff', profession: 'enchanting', requiredSkill: 73,
     resultItemId: 'charwood_staff', resultQuantity: 1,
     materials: [{ itemId: 'ancient_runewood', quantity: 5 }, { itemId: 'illusion_dust', quantity: 3 }],
     craftSeconds: 10, xpAward: 53,
@@ -2581,7 +2581,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   charwood_tome: {
-    id: 'charwood_tome', name: 'Charwood Tome', profession: 'enchanting', requiredSkill: 69,
+    id: 'charwood_tome', name: 'Charwood Tome', profession: 'enchanting', requiredSkill: 61,
     resultItemId: 'charwood_tome', resultQuantity: 1,
     materials: [{ itemId: 'ancient_runewood', quantity: 3 }, { itemId: 'runecloth', quantity: 2 }, { itemId: 'illusion_dust', quantity: 2 }],
     craftSeconds: 10, xpAward: 53,
@@ -2589,7 +2589,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   emberwood_wand: {
-    id: 'emberwood_wand', name: 'Emberwood Wand', profession: 'enchanting', requiredSkill: 86,
+    id: 'emberwood_wand', name: 'Emberwood Wand', profession: 'enchanting', requiredSkill: 87,
     resultItemId: 'emberwood_wand', resultQuantity: 1,
     materials: [{ itemId: 'emberheart_wood', quantity: 3 }, { itemId: 'ember_dust', quantity: 2 }],
     craftSeconds: 10.7, xpAward: 92,
@@ -2597,7 +2597,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   emberwood_staff: {
-    id: 'emberwood_staff', name: 'Emberwood Staff', profession: 'enchanting', requiredSkill: 86,
+    id: 'emberwood_staff', name: 'Emberwood Staff', profession: 'enchanting', requiredSkill: 93,
     resultItemId: 'emberwood_staff', resultQuantity: 1,
     materials: [{ itemId: 'emberheart_wood', quantity: 5 }, { itemId: 'ember_dust', quantity: 3 }],
     craftSeconds: 10.7, xpAward: 92,
@@ -2605,7 +2605,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   emberwood_tome: {
-    id: 'emberwood_tome', name: 'Emberwood Tome', profession: 'enchanting', requiredSkill: 86,
+    id: 'emberwood_tome', name: 'Emberwood Tome', profession: 'enchanting', requiredSkill: 81,
     resultItemId: 'emberwood_tome', resultQuantity: 1,
     materials: [{ itemId: 'emberheart_wood', quantity: 3 }, { itemId: 'ember_cloth', quantity: 2 }, { itemId: 'ember_dust', quantity: 2 }],
     craftSeconds: 10.7, xpAward: 92,
@@ -2618,7 +2618,7 @@ export const RECIPES: Record<string, Recipe> = {
   // that stood in during Phases E1-E5 have been removed wholesale and
   // replaced by the full 6-zone catalog below (Phase E6).
   scroll_minor_health: {
-    id: 'scroll_minor_health', name: 'Scroll: Minor Health', profession: 'enchanting', requiredSkill: 1,
+    id: 'scroll_minor_health', name: 'Scroll: Minor Health', profession: 'enchanting', requiredSkill: 5,
     resultItemId: 'scroll_minor_health', resultQuantity: 1,
     materials: [{ itemId: 'strange_dust', quantity: 2 }], goldCost: 5,
     craftSeconds: 8.0, xpAward: 10,
@@ -2626,7 +2626,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_minor_mana: {
-    id: 'scroll_minor_mana', name: 'Scroll: Minor Mana', profession: 'enchanting', requiredSkill: 1,
+    id: 'scroll_minor_mana', name: 'Scroll: Minor Mana', profession: 'enchanting', requiredSkill: 9,
     resultItemId: 'scroll_minor_mana', resultQuantity: 1,
     materials: [{ itemId: 'lesser_magic_essence', quantity: 2 }], goldCost: 5,
     craftSeconds: 8.0, xpAward: 10,
@@ -2634,7 +2634,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_minor_stamina: {
-    id: 'scroll_minor_stamina', name: 'Scroll: Minor Stamina', profession: 'enchanting', requiredSkill: 1,
+    id: 'scroll_minor_stamina', name: 'Scroll: Minor Stamina', profession: 'enchanting', requiredSkill: 11,
     resultItemId: 'scroll_minor_stamina', resultQuantity: 1,
     materials: [{ itemId: 'strange_dust', quantity: 2 }], goldCost: 5,
     craftSeconds: 8.0, xpAward: 10,
@@ -2642,7 +2642,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_minor_strength: {
-    id: 'scroll_minor_strength', name: 'Scroll: Minor Strength', profession: 'enchanting', requiredSkill: 1,
+    id: 'scroll_minor_strength', name: 'Scroll: Minor Strength', profession: 'enchanting', requiredSkill: 12,
     resultItemId: 'scroll_minor_strength', resultQuantity: 1,
     materials: [{ itemId: 'strange_dust', quantity: 2 }, { itemId: 'lesser_magic_essence', quantity: 1 }], goldCost: 5,
     craftSeconds: 8.0, xpAward: 10,
@@ -2650,7 +2650,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_minor_agility: {
-    id: 'scroll_minor_agility', name: 'Scroll: Minor Agility', profession: 'enchanting', requiredSkill: 1,
+    id: 'scroll_minor_agility', name: 'Scroll: Minor Agility', profession: 'enchanting', requiredSkill: 2,
     resultItemId: 'scroll_minor_agility', resultQuantity: 1,
     materials: [{ itemId: 'strange_dust', quantity: 2 }, { itemId: 'lesser_magic_essence', quantity: 1 }], goldCost: 5,
     craftSeconds: 8.0, xpAward: 10,
@@ -2658,7 +2658,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_minor_intellect: {
-    id: 'scroll_minor_intellect', name: 'Scroll: Minor Intellect', profession: 'enchanting', requiredSkill: 1,
+    id: 'scroll_minor_intellect', name: 'Scroll: Minor Intellect', profession: 'enchanting', requiredSkill: 8,
     resultItemId: 'scroll_minor_intellect', resultQuantity: 1,
     materials: [{ itemId: 'lesser_magic_essence', quantity: 2 }], goldCost: 5,
     craftSeconds: 8.0, xpAward: 10,
@@ -2666,7 +2666,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_minor_spirit: {
-    id: 'scroll_minor_spirit', name: 'Scroll: Minor Spirit', profession: 'enchanting', requiredSkill: 1,
+    id: 'scroll_minor_spirit', name: 'Scroll: Minor Spirit', profession: 'enchanting', requiredSkill: 10,
     resultItemId: 'scroll_minor_spirit', resultQuantity: 1,
     materials: [{ itemId: 'strange_dust', quantity: 2 }, { itemId: 'lesser_magic_essence', quantity: 1 }], goldCost: 5,
     craftSeconds: 8.0, xpAward: 10,
@@ -2674,7 +2674,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_minor_defense: {
-    id: 'scroll_minor_defense', name: 'Scroll: Minor Defense', profession: 'enchanting', requiredSkill: 1,
+    id: 'scroll_minor_defense', name: 'Scroll: Minor Defense', profession: 'enchanting', requiredSkill: 4,
     resultItemId: 'scroll_minor_defense', resultQuantity: 1,
     materials: [{ itemId: 'strange_dust', quantity: 2 }], goldCost: 5,
     craftSeconds: 8.0, xpAward: 10,
@@ -2690,7 +2690,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_minor_striking: {
-    id: 'scroll_minor_striking', name: 'Scroll: Minor Striking', profession: 'enchanting', requiredSkill: 1,
+    id: 'scroll_minor_striking', name: 'Scroll: Minor Striking', profession: 'enchanting', requiredSkill: 13,
     resultItemId: 'scroll_minor_striking', resultQuantity: 1,
     materials: [{ itemId: 'strange_dust', quantity: 2 }, { itemId: 'lesser_magic_essence', quantity: 1 }], goldCost: 5,
     craftSeconds: 8.0, xpAward: 10,
@@ -2698,7 +2698,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_minor_impact: {
-    id: 'scroll_minor_impact', name: 'Scroll: Minor Impact', profession: 'enchanting', requiredSkill: 1,
+    id: 'scroll_minor_impact', name: 'Scroll: Minor Impact', profession: 'enchanting', requiredSkill: 6,
     resultItemId: 'scroll_minor_impact', resultQuantity: 1,
     materials: [{ itemId: 'strange_dust', quantity: 3 }, { itemId: 'lesser_magic_essence', quantity: 1 }], goldCost: 5,
     craftSeconds: 8.0, xpAward: 10,
@@ -2706,7 +2706,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_minor_beastslayer: {
-    id: 'scroll_minor_beastslayer', name: 'Scroll: Minor Beastslayer', profession: 'enchanting', requiredSkill: 1,
+    id: 'scroll_minor_beastslayer', name: 'Scroll: Minor Beastslayer', profession: 'enchanting', requiredSkill: 3,
     resultItemId: 'scroll_minor_beastslayer', resultQuantity: 1,
     materials: [{ itemId: 'strange_dust', quantity: 2 }, { itemId: 'lesser_magic_essence', quantity: 1 }], goldCost: 5,
     craftSeconds: 8.0, xpAward: 10,
@@ -2714,7 +2714,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_lesser_health: {
-    id: 'scroll_lesser_health', name: 'Scroll: Lesser Health', profession: 'enchanting', requiredSkill: 18,
+    id: 'scroll_lesser_health', name: 'Scroll: Lesser Health', profession: 'enchanting', requiredSkill: 21,
     resultItemId: 'scroll_lesser_health', resultQuantity: 1,
     materials: [{ itemId: 'soul_dust', quantity: 3 }], goldCost: 12,
     craftSeconds: 8.5, xpAward: 13,
@@ -2722,7 +2722,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_lesser_mana: {
-    id: 'scroll_lesser_mana', name: 'Scroll: Lesser Mana', profession: 'enchanting', requiredSkill: 18,
+    id: 'scroll_lesser_mana', name: 'Scroll: Lesser Mana', profession: 'enchanting', requiredSkill: 24,
     resultItemId: 'scroll_lesser_mana', resultQuantity: 1,
     materials: [{ itemId: 'lesser_astral_essence', quantity: 2 }], goldCost: 12,
     craftSeconds: 8.5, xpAward: 13,
@@ -2730,7 +2730,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_lesser_stamina: {
-    id: 'scroll_lesser_stamina', name: 'Scroll: Lesser Stamina', profession: 'enchanting', requiredSkill: 18,
+    id: 'scroll_lesser_stamina', name: 'Scroll: Lesser Stamina', profession: 'enchanting', requiredSkill: 26,
     resultItemId: 'scroll_lesser_stamina', resultQuantity: 1,
     materials: [{ itemId: 'soul_dust', quantity: 3 }], goldCost: 12,
     craftSeconds: 8.5, xpAward: 13,
@@ -2738,7 +2738,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_lesser_strength: {
-    id: 'scroll_lesser_strength', name: 'Scroll: Lesser Strength', profession: 'enchanting', requiredSkill: 18,
+    id: 'scroll_lesser_strength', name: 'Scroll: Lesser Strength', profession: 'enchanting', requiredSkill: 27,
     resultItemId: 'scroll_lesser_strength', resultQuantity: 1,
     materials: [{ itemId: 'soul_dust', quantity: 2 }, { itemId: 'lesser_astral_essence', quantity: 1 }], goldCost: 12,
     craftSeconds: 8.5, xpAward: 13,
@@ -2746,7 +2746,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_lesser_agility: {
-    id: 'scroll_lesser_agility', name: 'Scroll: Lesser Agility', profession: 'enchanting', requiredSkill: 18,
+    id: 'scroll_lesser_agility', name: 'Scroll: Lesser Agility', profession: 'enchanting', requiredSkill: 17,
     resultItemId: 'scroll_lesser_agility', resultQuantity: 1,
     materials: [{ itemId: 'soul_dust', quantity: 2 }, { itemId: 'lesser_astral_essence', quantity: 1 }], goldCost: 12,
     craftSeconds: 8.5, xpAward: 13,
@@ -2754,7 +2754,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_lesser_intellect: {
-    id: 'scroll_lesser_intellect', name: 'Scroll: Lesser Intellect', profession: 'enchanting', requiredSkill: 18,
+    id: 'scroll_lesser_intellect', name: 'Scroll: Lesser Intellect', profession: 'enchanting', requiredSkill: 23,
     resultItemId: 'scroll_lesser_intellect', resultQuantity: 1,
     materials: [{ itemId: 'lesser_astral_essence', quantity: 2 }], goldCost: 12,
     craftSeconds: 8.5, xpAward: 13,
@@ -2762,7 +2762,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_lesser_spirit: {
-    id: 'scroll_lesser_spirit', name: 'Scroll: Lesser Spirit', profession: 'enchanting', requiredSkill: 18,
+    id: 'scroll_lesser_spirit', name: 'Scroll: Lesser Spirit', profession: 'enchanting', requiredSkill: 25,
     resultItemId: 'scroll_lesser_spirit', resultQuantity: 1,
     materials: [{ itemId: 'soul_dust', quantity: 2 }, { itemId: 'lesser_astral_essence', quantity: 1 }], goldCost: 12,
     craftSeconds: 8.5, xpAward: 13,
@@ -2770,7 +2770,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_lesser_defense: {
-    id: 'scroll_lesser_defense', name: 'Scroll: Lesser Defense', profession: 'enchanting', requiredSkill: 18,
+    id: 'scroll_lesser_defense', name: 'Scroll: Lesser Defense', profession: 'enchanting', requiredSkill: 19,
     resultItemId: 'scroll_lesser_defense', resultQuantity: 1,
     materials: [{ itemId: 'soul_dust', quantity: 3 }], goldCost: 12,
     craftSeconds: 8.5, xpAward: 13,
@@ -2778,7 +2778,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_lesser_absorption: {
-    id: 'scroll_lesser_absorption', name: 'Scroll: Lesser Absorption', profession: 'enchanting', requiredSkill: 18,
+    id: 'scroll_lesser_absorption', name: 'Scroll: Lesser Absorption', profession: 'enchanting', requiredSkill: 16,
     resultItemId: 'scroll_lesser_absorption', resultQuantity: 1,
     materials: [{ itemId: 'soul_dust', quantity: 3 }, { itemId: 'lesser_astral_essence', quantity: 2 }], goldCost: 12,
     craftSeconds: 8.5, xpAward: 13,
@@ -2786,7 +2786,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_lesser_striking: {
-    id: 'scroll_lesser_striking', name: 'Scroll: Lesser Striking', profession: 'enchanting', requiredSkill: 18,
+    id: 'scroll_lesser_striking', name: 'Scroll: Lesser Striking', profession: 'enchanting', requiredSkill: 28,
     resultItemId: 'scroll_lesser_striking', resultQuantity: 1,
     materials: [{ itemId: 'soul_dust', quantity: 2 }, { itemId: 'lesser_astral_essence', quantity: 2 }], goldCost: 12,
     craftSeconds: 8.5, xpAward: 13,
@@ -2794,7 +2794,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_lesser_impact: {
-    id: 'scroll_lesser_impact', name: 'Scroll: Lesser Impact', profession: 'enchanting', requiredSkill: 18,
+    id: 'scroll_lesser_impact', name: 'Scroll: Lesser Impact', profession: 'enchanting', requiredSkill: 22,
     resultItemId: 'scroll_lesser_impact', resultQuantity: 1,
     materials: [{ itemId: 'soul_dust', quantity: 3 }, { itemId: 'lesser_astral_essence', quantity: 2 }], goldCost: 12,
     craftSeconds: 8.5, xpAward: 13,
@@ -2810,7 +2810,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_lesser_elemental_resistance: {
-    id: 'scroll_lesser_elemental_resistance', name: 'Scroll: Lesser Elemental Resistance', profession: 'enchanting', requiredSkill: 18,
+    id: 'scroll_lesser_elemental_resistance', name: 'Scroll: Lesser Elemental Resistance', profession: 'enchanting', requiredSkill: 20,
     resultItemId: 'scroll_lesser_elemental_resistance', resultQuantity: 1,
     materials: [{ itemId: 'soul_dust', quantity: 3 }, { itemId: 'lesser_astral_essence', quantity: 1 }], goldCost: 12,
     craftSeconds: 8.5, xpAward: 13,
@@ -2826,7 +2826,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_mana_z3: {
-    id: 'scroll_mana_z3', name: 'Scroll: Mana', profession: 'enchanting', requiredSkill: 35,
+    id: 'scroll_mana_z3', name: 'Scroll: Mana', profession: 'enchanting', requiredSkill: 38,
     resultItemId: 'scroll_mana_z3', resultQuantity: 1,
     materials: [{ itemId: 'lesser_mystic_essence', quantity: 3 }], goldCost: 22,
     craftSeconds: 9.6, xpAward: 23,
@@ -2834,7 +2834,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_stamina_z3: {
-    id: 'scroll_stamina_z3', name: 'Scroll: Stamina', profession: 'enchanting', requiredSkill: 35,
+    id: 'scroll_stamina_z3', name: 'Scroll: Stamina', profession: 'enchanting', requiredSkill: 42,
     resultItemId: 'scroll_stamina_z3', resultQuantity: 1,
     materials: [{ itemId: 'vision_dust', quantity: 3 }, { itemId: 'lesser_mystic_essence', quantity: 1 }], goldCost: 22,
     craftSeconds: 9.6, xpAward: 23,
@@ -2842,7 +2842,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_strength_z3: {
-    id: 'scroll_strength_z3', name: 'Scroll: Strength', profession: 'enchanting', requiredSkill: 35,
+    id: 'scroll_strength_z3', name: 'Scroll: Strength', profession: 'enchanting', requiredSkill: 43,
     resultItemId: 'scroll_strength_z3', resultQuantity: 1,
     materials: [{ itemId: 'vision_dust', quantity: 3 }, { itemId: 'lesser_mystic_essence', quantity: 2 }], goldCost: 22,
     craftSeconds: 9.6, xpAward: 23,
@@ -2850,7 +2850,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_agility_z3: {
-    id: 'scroll_agility_z3', name: 'Scroll: Agility', profession: 'enchanting', requiredSkill: 35,
+    id: 'scroll_agility_z3', name: 'Scroll: Agility', profession: 'enchanting', requiredSkill: 31,
     resultItemId: 'scroll_agility_z3', resultQuantity: 1,
     materials: [{ itemId: 'vision_dust', quantity: 3 }, { itemId: 'lesser_mystic_essence', quantity: 2 }], goldCost: 22,
     craftSeconds: 9.6, xpAward: 23,
@@ -2858,7 +2858,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_intellect_z3: {
-    id: 'scroll_intellect_z3', name: 'Scroll: Intellect', profession: 'enchanting', requiredSkill: 35,
+    id: 'scroll_intellect_z3', name: 'Scroll: Intellect', profession: 'enchanting', requiredSkill: 37,
     resultItemId: 'scroll_intellect_z3', resultQuantity: 1,
     materials: [{ itemId: 'lesser_mystic_essence', quantity: 3 }], goldCost: 22,
     craftSeconds: 9.6, xpAward: 23,
@@ -2866,7 +2866,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_spirit_z3: {
-    id: 'scroll_spirit_z3', name: 'Scroll: Spirit', profession: 'enchanting', requiredSkill: 35,
+    id: 'scroll_spirit_z3', name: 'Scroll: Spirit', profession: 'enchanting', requiredSkill: 41,
     resultItemId: 'scroll_spirit_z3', resultQuantity: 1,
     materials: [{ itemId: 'vision_dust', quantity: 3 }, { itemId: 'lesser_mystic_essence', quantity: 1 }], goldCost: 22,
     craftSeconds: 9.6, xpAward: 23,
@@ -2874,7 +2874,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_greater_defense_z3: {
-    id: 'scroll_greater_defense_z3', name: 'Scroll: Greater Defense', profession: 'enchanting', requiredSkill: 35,
+    id: 'scroll_greater_defense_z3', name: 'Scroll: Greater Defense', profession: 'enchanting', requiredSkill: 34,
     resultItemId: 'scroll_greater_defense_z3', resultQuantity: 1,
     materials: [{ itemId: 'vision_dust', quantity: 4 }], goldCost: 22,
     craftSeconds: 9.6, xpAward: 23,
@@ -2882,7 +2882,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_striking_z3: {
-    id: 'scroll_striking_z3', name: 'Scroll: Striking', profession: 'enchanting', requiredSkill: 35,
+    id: 'scroll_striking_z3', name: 'Scroll: Striking', profession: 'enchanting', requiredSkill: 44,
     resultItemId: 'scroll_striking_z3', resultQuantity: 1,
     materials: [{ itemId: 'vision_dust', quantity: 3 }, { itemId: 'lesser_mystic_essence', quantity: 2 }], goldCost: 22,
     craftSeconds: 9.6, xpAward: 23,
@@ -2890,7 +2890,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_impact_z3: {
-    id: 'scroll_impact_z3', name: 'Scroll: Impact', profession: 'enchanting', requiredSkill: 35,
+    id: 'scroll_impact_z3', name: 'Scroll: Impact', profession: 'enchanting', requiredSkill: 36,
     resultItemId: 'scroll_impact_z3', resultQuantity: 1,
     materials: [{ itemId: 'vision_dust', quantity: 4 }, { itemId: 'lesser_mystic_essence', quantity: 2 }], goldCost: 22,
     craftSeconds: 9.6, xpAward: 23,
@@ -2898,7 +2898,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_greater_beastslayer_z3: {
-    id: 'scroll_greater_beastslayer_z3', name: 'Scroll: Greater Beastslayer', profession: 'enchanting', requiredSkill: 35,
+    id: 'scroll_greater_beastslayer_z3', name: 'Scroll: Greater Beastslayer', profession: 'enchanting', requiredSkill: 33,
     resultItemId: 'scroll_greater_beastslayer_z3', resultQuantity: 1,
     materials: [{ itemId: 'vision_dust', quantity: 3 }, { itemId: 'lesser_mystic_essence', quantity: 2 }], goldCost: 22,
     craftSeconds: 9.6, xpAward: 23,
@@ -2906,7 +2906,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_minor_haste_z3: {
-    id: 'scroll_minor_haste_z3', name: 'Scroll: Minor Haste', profession: 'enchanting', requiredSkill: 35,
+    id: 'scroll_minor_haste_z3', name: 'Scroll: Minor Haste', profession: 'enchanting', requiredSkill: 39,
     resultItemId: 'scroll_minor_haste_z3', resultQuantity: 1,
     materials: [{ itemId: 'vision_dust', quantity: 4 }, { itemId: 'lesser_mystic_essence', quantity: 2 }], goldCost: 22,
     craftSeconds: 9.6, xpAward: 23,
@@ -2914,7 +2914,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_fire_resistance_z3: {
-    id: 'scroll_fire_resistance_z3', name: 'Scroll: Fire Resistance', profession: 'enchanting', requiredSkill: 35,
+    id: 'scroll_fire_resistance_z3', name: 'Scroll: Fire Resistance', profession: 'enchanting', requiredSkill: 31,
     resultItemId: 'scroll_fire_resistance_z3', resultQuantity: 1,
     materials: [{ itemId: 'vision_dust', quantity: 3 }, { itemId: 'lesser_mystic_essence', quantity: 2 }], goldCost: 22,
     craftSeconds: 9.6, xpAward: 23,
@@ -2922,7 +2922,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_frost_resistance_z3: {
-    id: 'scroll_frost_resistance_z3', name: 'Scroll: Frost Resistance', profession: 'enchanting', requiredSkill: 35,
+    id: 'scroll_frost_resistance_z3', name: 'Scroll: Frost Resistance', profession: 'enchanting', requiredSkill: 32,
     resultItemId: 'scroll_frost_resistance_z3', resultQuantity: 1,
     materials: [{ itemId: 'vision_dust', quantity: 3 }, { itemId: 'lesser_mystic_essence', quantity: 2 }], goldCost: 22,
     craftSeconds: 9.6, xpAward: 23,
@@ -2930,7 +2930,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_shadow_resistance_z3: {
-    id: 'scroll_shadow_resistance_z3', name: 'Scroll: Shadow Resistance', profession: 'enchanting', requiredSkill: 35,
+    id: 'scroll_shadow_resistance_z3', name: 'Scroll: Shadow Resistance', profession: 'enchanting', requiredSkill: 40,
     resultItemId: 'scroll_shadow_resistance_z3', resultQuantity: 1,
     materials: [{ itemId: 'vision_dust', quantity: 3 }, { itemId: 'lesser_mystic_essence', quantity: 2 }], goldCost: 22,
     craftSeconds: 9.6, xpAward: 23,
@@ -2938,7 +2938,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_greater_health_z4: {
-    id: 'scroll_greater_health_z4', name: 'Scroll: Greater Health', profession: 'enchanting', requiredSkill: 52,
+    id: 'scroll_greater_health_z4', name: 'Scroll: Greater Health', profession: 'enchanting', requiredSkill: 50,
     resultItemId: 'scroll_greater_health_z4', resultQuantity: 1,
     materials: [{ itemId: 'dream_dust', quantity: 4 }, { itemId: 'lesser_nether_essence', quantity: 1 }], goldCost: 35,
     craftSeconds: 9.8, xpAward: 40,
@@ -2946,7 +2946,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_greater_mana_z4: {
-    id: 'scroll_greater_mana_z4', name: 'Scroll: Greater Mana', profession: 'enchanting', requiredSkill: 52,
+    id: 'scroll_greater_mana_z4', name: 'Scroll: Greater Mana', profession: 'enchanting', requiredSkill: 53,
     resultItemId: 'scroll_greater_mana_z4', resultQuantity: 1,
     materials: [{ itemId: 'lesser_nether_essence', quantity: 3 }], goldCost: 35,
     craftSeconds: 9.8, xpAward: 40,
@@ -2954,7 +2954,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_greater_stamina_z4: {
-    id: 'scroll_greater_stamina_z4', name: 'Scroll: Greater Stamina', profession: 'enchanting', requiredSkill: 52,
+    id: 'scroll_greater_stamina_z4', name: 'Scroll: Greater Stamina', profession: 'enchanting', requiredSkill: 56,
     resultItemId: 'scroll_greater_stamina_z4', resultQuantity: 1,
     materials: [{ itemId: 'dream_dust', quantity: 4 }, { itemId: 'lesser_nether_essence', quantity: 2 }], goldCost: 35,
     craftSeconds: 9.8, xpAward: 40,
@@ -2962,7 +2962,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_greater_strength_z4: {
-    id: 'scroll_greater_strength_z4', name: 'Scroll: Greater Strength', profession: 'enchanting', requiredSkill: 52,
+    id: 'scroll_greater_strength_z4', name: 'Scroll: Greater Strength', profession: 'enchanting', requiredSkill: 57,
     resultItemId: 'scroll_greater_strength_z4', resultQuantity: 1,
     materials: [{ itemId: 'dream_dust', quantity: 3 }, { itemId: 'lesser_nether_essence', quantity: 2 }], goldCost: 35,
     craftSeconds: 9.8, xpAward: 40,
@@ -2970,7 +2970,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_greater_agility_z4: {
-    id: 'scroll_greater_agility_z4', name: 'Scroll: Greater Agility', profession: 'enchanting', requiredSkill: 52,
+    id: 'scroll_greater_agility_z4', name: 'Scroll: Greater Agility', profession: 'enchanting', requiredSkill: 46,
     resultItemId: 'scroll_greater_agility_z4', resultQuantity: 1,
     materials: [{ itemId: 'dream_dust', quantity: 3 }, { itemId: 'lesser_nether_essence', quantity: 2 }], goldCost: 35,
     craftSeconds: 9.8, xpAward: 40,
@@ -2986,7 +2986,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_greater_spirit_z4: {
-    id: 'scroll_greater_spirit_z4', name: 'Scroll: Greater Spirit', profession: 'enchanting', requiredSkill: 52,
+    id: 'scroll_greater_spirit_z4', name: 'Scroll: Greater Spirit', profession: 'enchanting', requiredSkill: 55,
     resultItemId: 'scroll_greater_spirit_z4', resultQuantity: 1,
     materials: [{ itemId: 'dream_dust', quantity: 3 }, { itemId: 'lesser_nether_essence', quantity: 2 }], goldCost: 35,
     craftSeconds: 9.8, xpAward: 40,
@@ -2994,7 +2994,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_superior_defense_z4: {
-    id: 'scroll_superior_defense_z4', name: 'Scroll: Superior Defense', profession: 'enchanting', requiredSkill: 52,
+    id: 'scroll_superior_defense_z4', name: 'Scroll: Superior Defense', profession: 'enchanting', requiredSkill: 59,
     resultItemId: 'scroll_superior_defense_z4', resultQuantity: 1,
     materials: [{ itemId: 'dream_dust', quantity: 4 }, { itemId: 'lesser_nether_essence', quantity: 2 }], goldCost: 35,
     craftSeconds: 9.8, xpAward: 40,
@@ -3002,7 +3002,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_greater_striking_z4: {
-    id: 'scroll_greater_striking_z4', name: 'Scroll: Greater Striking', profession: 'enchanting', requiredSkill: 52,
+    id: 'scroll_greater_striking_z4', name: 'Scroll: Greater Striking', profession: 'enchanting', requiredSkill: 58,
     resultItemId: 'scroll_greater_striking_z4', resultQuantity: 1,
     materials: [{ itemId: 'dream_dust', quantity: 4 }, { itemId: 'lesser_nether_essence', quantity: 2 }], goldCost: 35,
     craftSeconds: 9.8, xpAward: 40,
@@ -3010,7 +3010,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_greater_impact_z4: {
-    id: 'scroll_greater_impact_z4', name: 'Scroll: Greater Impact', profession: 'enchanting', requiredSkill: 52,
+    id: 'scroll_greater_impact_z4', name: 'Scroll: Greater Impact', profession: 'enchanting', requiredSkill: 51,
     resultItemId: 'scroll_greater_impact_z4', resultQuantity: 1,
     materials: [{ itemId: 'dream_dust', quantity: 4 }, { itemId: 'lesser_nether_essence', quantity: 3 }], goldCost: 35,
     craftSeconds: 9.8, xpAward: 40,
@@ -3018,7 +3018,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_greater_haste_z4: {
-    id: 'scroll_greater_haste_z4', name: 'Scroll: Greater Haste', profession: 'enchanting', requiredSkill: 52,
+    id: 'scroll_greater_haste_z4', name: 'Scroll: Greater Haste', profession: 'enchanting', requiredSkill: 49,
     resultItemId: 'scroll_greater_haste_z4', resultQuantity: 1,
     materials: [{ itemId: 'dream_dust', quantity: 4 }, { itemId: 'lesser_nether_essence', quantity: 3 }], goldCost: 35,
     craftSeconds: 9.8, xpAward: 40,
@@ -3026,7 +3026,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_greater_fire_resistance_z4: {
-    id: 'scroll_greater_fire_resistance_z4', name: 'Scroll: Greater Fire Resistance', profession: 'enchanting', requiredSkill: 52,
+    id: 'scroll_greater_fire_resistance_z4', name: 'Scroll: Greater Fire Resistance', profession: 'enchanting', requiredSkill: 47,
     resultItemId: 'scroll_greater_fire_resistance_z4', resultQuantity: 1,
     materials: [{ itemId: 'dream_dust', quantity: 4 }, { itemId: 'lesser_nether_essence', quantity: 2 }], goldCost: 35,
     craftSeconds: 9.8, xpAward: 40,
@@ -3034,7 +3034,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_greater_frost_resistance_z4: {
-    id: 'scroll_greater_frost_resistance_z4', name: 'Scroll: Greater Frost Resistance', profession: 'enchanting', requiredSkill: 52,
+    id: 'scroll_greater_frost_resistance_z4', name: 'Scroll: Greater Frost Resistance', profession: 'enchanting', requiredSkill: 48,
     resultItemId: 'scroll_greater_frost_resistance_z4', resultQuantity: 1,
     materials: [{ itemId: 'dream_dust', quantity: 4 }, { itemId: 'lesser_nether_essence', quantity: 2 }], goldCost: 35,
     craftSeconds: 9.8, xpAward: 40,
@@ -3042,7 +3042,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_greater_shadow_resistance_z4: {
-    id: 'scroll_greater_shadow_resistance_z4', name: 'Scroll: Greater Shadow Resistance', profession: 'enchanting', requiredSkill: 52,
+    id: 'scroll_greater_shadow_resistance_z4', name: 'Scroll: Greater Shadow Resistance', profession: 'enchanting', requiredSkill: 54,
     resultItemId: 'scroll_greater_shadow_resistance_z4', resultQuantity: 1,
     materials: [{ itemId: 'dream_dust', quantity: 4 }, { itemId: 'lesser_nether_essence', quantity: 2 }], goldCost: 35,
     craftSeconds: 9.8, xpAward: 40,
@@ -3050,7 +3050,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_demonslaying_z4: {
-    id: 'scroll_demonslaying_z4', name: 'Scroll: Demonslaying', profession: 'enchanting', requiredSkill: 52,
+    id: 'scroll_demonslaying_z4', name: 'Scroll: Demonslaying', profession: 'enchanting', requiredSkill: 46,
     resultItemId: 'scroll_demonslaying_z4', resultQuantity: 1,
     materials: [{ itemId: 'dream_dust', quantity: 4 }, { itemId: 'lesser_nether_essence', quantity: 3 }], goldCost: 35,
     craftSeconds: 9.8, xpAward: 40,
@@ -3058,7 +3058,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_superior_health_z5: {
-    id: 'scroll_superior_health_z5', name: 'Scroll: Superior Health', profession: 'enchanting', requiredSkill: 69,
+    id: 'scroll_superior_health_z5', name: 'Scroll: Superior Health', profession: 'enchanting', requiredSkill: 71,
     resultItemId: 'scroll_superior_health_z5', resultQuantity: 1,
     materials: [{ itemId: 'illusion_dust', quantity: 5 }, { itemId: 'greater_eternal_essence', quantity: 2 }], goldCost: 55,
     craftSeconds: 10.0, xpAward: 53,
@@ -3066,7 +3066,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_superior_mana_z5: {
-    id: 'scroll_superior_mana_z5', name: 'Scroll: Superior Mana', profession: 'enchanting', requiredSkill: 69,
+    id: 'scroll_superior_mana_z5', name: 'Scroll: Superior Mana', profession: 'enchanting', requiredSkill: 74,
     resultItemId: 'scroll_superior_mana_z5', resultQuantity: 1,
     materials: [{ itemId: 'greater_eternal_essence', quantity: 4 }], goldCost: 55,
     craftSeconds: 10.0, xpAward: 53,
@@ -3074,7 +3074,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_superior_stamina_z5: {
-    id: 'scroll_superior_stamina_z5', name: 'Scroll: Superior Stamina', profession: 'enchanting', requiredSkill: 69,
+    id: 'scroll_superior_stamina_z5', name: 'Scroll: Superior Stamina', profession: 'enchanting', requiredSkill: 76,
     resultItemId: 'scroll_superior_stamina_z5', resultQuantity: 1,
     materials: [{ itemId: 'illusion_dust', quantity: 5 }, { itemId: 'greater_eternal_essence', quantity: 2 }], goldCost: 55,
     craftSeconds: 10.0, xpAward: 53,
@@ -3082,7 +3082,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_superior_strength_z5: {
-    id: 'scroll_superior_strength_z5', name: 'Scroll: Superior Strength', profession: 'enchanting', requiredSkill: 69,
+    id: 'scroll_superior_strength_z5', name: 'Scroll: Superior Strength', profession: 'enchanting', requiredSkill: 77,
     resultItemId: 'scroll_superior_strength_z5', resultQuantity: 1,
     materials: [{ itemId: 'illusion_dust', quantity: 4 }, { itemId: 'greater_eternal_essence', quantity: 3 }], goldCost: 55,
     craftSeconds: 10.0, xpAward: 53,
@@ -3098,7 +3098,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_superior_intellect_z5: {
-    id: 'scroll_superior_intellect_z5', name: 'Scroll: Superior Intellect', profession: 'enchanting', requiredSkill: 69,
+    id: 'scroll_superior_intellect_z5', name: 'Scroll: Superior Intellect', profession: 'enchanting', requiredSkill: 73,
     resultItemId: 'scroll_superior_intellect_z5', resultQuantity: 1,
     materials: [{ itemId: 'greater_eternal_essence', quantity: 4 }], goldCost: 55,
     craftSeconds: 10.0, xpAward: 53,
@@ -3106,7 +3106,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_superior_spirit_z5: {
-    id: 'scroll_superior_spirit_z5', name: 'Scroll: Superior Spirit', profession: 'enchanting', requiredSkill: 69,
+    id: 'scroll_superior_spirit_z5', name: 'Scroll: Superior Spirit', profession: 'enchanting', requiredSkill: 75,
     resultItemId: 'scroll_superior_spirit_z5', resultQuantity: 1,
     materials: [{ itemId: 'illusion_dust', quantity: 4 }, { itemId: 'greater_eternal_essence', quantity: 2 }], goldCost: 55,
     craftSeconds: 10.0, xpAward: 53,
@@ -3114,7 +3114,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_greater_stats_z5: {
-    id: 'scroll_greater_stats_z5', name: 'Scroll: Greater Stats', profession: 'enchanting', requiredSkill: 69,
+    id: 'scroll_greater_stats_z5', name: 'Scroll: Greater Stats', profession: 'enchanting', requiredSkill: 66,
     resultItemId: 'scroll_greater_stats_z5', resultQuantity: 1,
     materials: [{ itemId: 'illusion_dust', quantity: 5 }, { itemId: 'greater_eternal_essence', quantity: 3 }, { itemId: 'brilliant_shard', quantity: 1 }], goldCost: 55,
     craftSeconds: 10.0, xpAward: 53,
@@ -3122,7 +3122,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_superior_defense_z5: {
-    id: 'scroll_superior_defense_z5', name: 'Scroll: Superior Defense', profession: 'enchanting', requiredSkill: 69,
+    id: 'scroll_superior_defense_z5', name: 'Scroll: Superior Defense', profession: 'enchanting', requiredSkill: 70,
     resultItemId: 'scroll_superior_defense_z5', resultQuantity: 1,
     materials: [{ itemId: 'illusion_dust', quantity: 5 }, { itemId: 'greater_eternal_essence', quantity: 2 }], goldCost: 55,
     craftSeconds: 10.0, xpAward: 53,
@@ -3130,7 +3130,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_superior_striking_z5: {
-    id: 'scroll_superior_striking_z5', name: 'Scroll: Superior Striking', profession: 'enchanting', requiredSkill: 69,
+    id: 'scroll_superior_striking_z5', name: 'Scroll: Superior Striking', profession: 'enchanting', requiredSkill: 78,
     resultItemId: 'scroll_superior_striking_z5', resultQuantity: 1,
     materials: [{ itemId: 'illusion_dust', quantity: 4 }, { itemId: 'greater_eternal_essence', quantity: 3 }, { itemId: 'brilliant_shard', quantity: 1 }], goldCost: 55,
     craftSeconds: 10.0, xpAward: 53,
@@ -3138,7 +3138,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_superior_impact_z5: {
-    id: 'scroll_superior_impact_z5', name: 'Scroll: Superior Impact', profession: 'enchanting', requiredSkill: 69,
+    id: 'scroll_superior_impact_z5', name: 'Scroll: Superior Impact', profession: 'enchanting', requiredSkill: 72,
     resultItemId: 'scroll_superior_impact_z5', resultQuantity: 1,
     materials: [{ itemId: 'illusion_dust', quantity: 5 }, { itemId: 'greater_eternal_essence', quantity: 3 }, { itemId: 'brilliant_shard', quantity: 1 }], goldCost: 55,
     craftSeconds: 10.0, xpAward: 53,
@@ -3146,7 +3146,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_greater_haste_z5: {
-    id: 'scroll_greater_haste_z5', name: 'Scroll: Greater Haste', profession: 'enchanting', requiredSkill: 69,
+    id: 'scroll_greater_haste_z5', name: 'Scroll: Greater Haste', profession: 'enchanting', requiredSkill: 64,
     resultItemId: 'scroll_greater_haste_z5', resultQuantity: 1,
     materials: [{ itemId: 'illusion_dust', quantity: 5 }, { itemId: 'greater_eternal_essence', quantity: 3 }, { itemId: 'brilliant_shard', quantity: 1 }], goldCost: 55,
     craftSeconds: 10.0, xpAward: 53,
@@ -3154,7 +3154,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_greater_fire_resistance_z5: {
-    id: 'scroll_greater_fire_resistance_z5', name: 'Scroll: Greater Fire Resistance', profession: 'enchanting', requiredSkill: 69,
+    id: 'scroll_greater_fire_resistance_z5', name: 'Scroll: Greater Fire Resistance', profession: 'enchanting', requiredSkill: 62,
     resultItemId: 'scroll_greater_fire_resistance_z5', resultQuantity: 1,
     materials: [{ itemId: 'illusion_dust', quantity: 5 }, { itemId: 'greater_eternal_essence', quantity: 2 }, { itemId: 'brilliant_shard', quantity: 1 }], goldCost: 55,
     craftSeconds: 10.0, xpAward: 53,
@@ -3162,7 +3162,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_greater_frost_resistance_z5: {
-    id: 'scroll_greater_frost_resistance_z5', name: 'Scroll: Greater Frost Resistance', profession: 'enchanting', requiredSkill: 69,
+    id: 'scroll_greater_frost_resistance_z5', name: 'Scroll: Greater Frost Resistance', profession: 'enchanting', requiredSkill: 63,
     resultItemId: 'scroll_greater_frost_resistance_z5', resultQuantity: 1,
     materials: [{ itemId: 'illusion_dust', quantity: 5 }, { itemId: 'greater_eternal_essence', quantity: 2 }, { itemId: 'brilliant_shard', quantity: 1 }], goldCost: 55,
     craftSeconds: 10.0, xpAward: 53,
@@ -3170,7 +3170,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_greater_shadow_resistance_z5: {
-    id: 'scroll_greater_shadow_resistance_z5', name: 'Scroll: Greater Shadow Resistance', profession: 'enchanting', requiredSkill: 69,
+    id: 'scroll_greater_shadow_resistance_z5', name: 'Scroll: Greater Shadow Resistance', profession: 'enchanting', requiredSkill: 65,
     resultItemId: 'scroll_greater_shadow_resistance_z5', resultQuantity: 1,
     materials: [{ itemId: 'illusion_dust', quantity: 5 }, { itemId: 'greater_eternal_essence', quantity: 2 }, { itemId: 'brilliant_shard', quantity: 1 }], goldCost: 55,
     craftSeconds: 10.0, xpAward: 53,
@@ -3178,7 +3178,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_fiery_weapon_z5: {
-    id: 'scroll_fiery_weapon_z5', name: 'Scroll: Fiery Weapon', profession: 'enchanting', requiredSkill: 69,
+    id: 'scroll_fiery_weapon_z5', name: 'Scroll: Fiery Weapon', profession: 'enchanting', requiredSkill: 61,
     resultItemId: 'scroll_fiery_weapon_z5', resultQuantity: 1,
     materials: [{ itemId: 'illusion_dust', quantity: 4 }, { itemId: 'greater_eternal_essence', quantity: 2 }, { itemId: 'brilliant_shard', quantity: 2 }], goldCost: 82,
     craftSeconds: 10.0, xpAward: 80,
@@ -3186,7 +3186,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'dungeon_drop', rarity: 'rare', learnedAutomatically: false,
   },
   scroll_icy_chill_z5: {
-    id: 'scroll_icy_chill_z5', name: 'Scroll: Icy Chill', profession: 'enchanting', requiredSkill: 69,
+    id: 'scroll_icy_chill_z5', name: 'Scroll: Icy Chill', profession: 'enchanting', requiredSkill: 67,
     resultItemId: 'scroll_icy_chill_z5', resultQuantity: 1,
     materials: [{ itemId: 'illusion_dust', quantity: 4 }, { itemId: 'greater_eternal_essence', quantity: 2 }, { itemId: 'brilliant_shard', quantity: 2 }], goldCost: 82,
     craftSeconds: 10.0, xpAward: 80,
@@ -3194,7 +3194,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'dungeon_drop', rarity: 'rare', learnedAutomatically: false,
   },
   scroll_lifestealing_z5: {
-    id: 'scroll_lifestealing_z5', name: 'Scroll: Lifestealing', profession: 'enchanting', requiredSkill: 69,
+    id: 'scroll_lifestealing_z5', name: 'Scroll: Lifestealing', profession: 'enchanting', requiredSkill: 68,
     resultItemId: 'scroll_lifestealing_z5', resultQuantity: 1,
     materials: [{ itemId: 'illusion_dust', quantity: 4 }, { itemId: 'greater_eternal_essence', quantity: 3 }, { itemId: 'brilliant_shard', quantity: 2 }], goldCost: 82,
     craftSeconds: 10.0, xpAward: 80,
@@ -3210,7 +3210,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_ember_mana: {
-    id: 'scroll_ember_mana', name: 'Scroll: Ember Mana', profession: 'enchanting', requiredSkill: 86,
+    id: 'scroll_ember_mana', name: 'Scroll: Ember Mana', profession: 'enchanting', requiredSkill: 90,
     resultItemId: 'scroll_ember_mana', resultQuantity: 1,
     materials: [{ itemId: 'ember_shards', quantity: 3 }, { itemId: 'greater_eternal_essence', quantity: 4 }], goldCost: 85,
     craftSeconds: 10.7, xpAward: 92,
@@ -3218,7 +3218,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_ember_stamina: {
-    id: 'scroll_ember_stamina', name: 'Scroll: Ember Stamina', profession: 'enchanting', requiredSkill: 86,
+    id: 'scroll_ember_stamina', name: 'Scroll: Ember Stamina', profession: 'enchanting', requiredSkill: 92,
     resultItemId: 'scroll_ember_stamina', resultQuantity: 1,
     materials: [{ itemId: 'ember_shards', quantity: 3 }, { itemId: 'greater_eternal_essence', quantity: 4 }], goldCost: 85,
     craftSeconds: 10.7, xpAward: 92,
@@ -3226,7 +3226,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_ember_strength: {
-    id: 'scroll_ember_strength', name: 'Scroll: Ember Strength', profession: 'enchanting', requiredSkill: 86,
+    id: 'scroll_ember_strength', name: 'Scroll: Ember Strength', profession: 'enchanting', requiredSkill: 93,
     resultItemId: 'scroll_ember_strength', resultQuantity: 1,
     materials: [{ itemId: 'ember_shards', quantity: 3 }, { itemId: 'greater_eternal_essence', quantity: 4 }], goldCost: 85,
     craftSeconds: 10.7, xpAward: 92,
@@ -3234,7 +3234,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_ember_agility: {
-    id: 'scroll_ember_agility', name: 'Scroll: Ember Agility', profession: 'enchanting', requiredSkill: 86,
+    id: 'scroll_ember_agility', name: 'Scroll: Ember Agility', profession: 'enchanting', requiredSkill: 81,
     resultItemId: 'scroll_ember_agility', resultQuantity: 1,
     materials: [{ itemId: 'ember_shards', quantity: 3 }, { itemId: 'greater_eternal_essence', quantity: 4 }], goldCost: 85,
     craftSeconds: 10.7, xpAward: 92,
@@ -3242,7 +3242,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_ember_intellect: {
-    id: 'scroll_ember_intellect', name: 'Scroll: Ember Intellect', profession: 'enchanting', requiredSkill: 86,
+    id: 'scroll_ember_intellect', name: 'Scroll: Ember Intellect', profession: 'enchanting', requiredSkill: 88,
     resultItemId: 'scroll_ember_intellect', resultQuantity: 1,
     materials: [{ itemId: 'ember_shards', quantity: 3 }, { itemId: 'greater_eternal_essence', quantity: 4 }], goldCost: 85,
     craftSeconds: 10.7, xpAward: 92,
@@ -3250,7 +3250,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_ember_spirit: {
-    id: 'scroll_ember_spirit', name: 'Scroll: Ember Spirit', profession: 'enchanting', requiredSkill: 86,
+    id: 'scroll_ember_spirit', name: 'Scroll: Ember Spirit', profession: 'enchanting', requiredSkill: 91,
     resultItemId: 'scroll_ember_spirit', resultQuantity: 1,
     materials: [{ itemId: 'ember_shards', quantity: 3 }, { itemId: 'greater_eternal_essence', quantity: 4 }], goldCost: 85,
     craftSeconds: 10.7, xpAward: 92,
@@ -3258,7 +3258,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_ember_stats: {
-    id: 'scroll_ember_stats', name: 'Scroll: Ember Stats', profession: 'enchanting', requiredSkill: 86,
+    id: 'scroll_ember_stats', name: 'Scroll: Ember Stats', profession: 'enchanting', requiredSkill: 93,
     resultItemId: 'scroll_ember_stats', resultQuantity: 1,
     materials: [{ itemId: 'ember_shards', quantity: 5 }, { itemId: 'greater_eternal_essence', quantity: 5 }], goldCost: 85,
     craftSeconds: 10.7, xpAward: 92,
@@ -3266,7 +3266,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_ember_defense: {
-    id: 'scroll_ember_defense', name: 'Scroll: Ember Defense', profession: 'enchanting', requiredSkill: 86,
+    id: 'scroll_ember_defense', name: 'Scroll: Ember Defense', profession: 'enchanting', requiredSkill: 82,
     resultItemId: 'scroll_ember_defense', resultQuantity: 1,
     materials: [{ itemId: 'ember_shards', quantity: 3 }, { itemId: 'greater_eternal_essence', quantity: 4 }], goldCost: 85,
     craftSeconds: 10.7, xpAward: 92,
@@ -3274,7 +3274,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_ember_striking: {
-    id: 'scroll_ember_striking', name: 'Scroll: Ember Striking', profession: 'enchanting', requiredSkill: 86,
+    id: 'scroll_ember_striking', name: 'Scroll: Ember Striking', profession: 'enchanting', requiredSkill: 94,
     resultItemId: 'scroll_ember_striking', resultQuantity: 1,
     materials: [{ itemId: 'ember_shards', quantity: 4 }, { itemId: 'greater_eternal_essence', quantity: 4 }], goldCost: 85,
     craftSeconds: 10.7, xpAward: 92,
@@ -3282,7 +3282,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_ember_impact: {
-    id: 'scroll_ember_impact', name: 'Scroll: Ember Impact', profession: 'enchanting', requiredSkill: 86,
+    id: 'scroll_ember_impact', name: 'Scroll: Ember Impact', profession: 'enchanting', requiredSkill: 87,
     resultItemId: 'scroll_ember_impact', resultQuantity: 1,
     materials: [{ itemId: 'ember_shards', quantity: 5 }, { itemId: 'greater_eternal_essence', quantity: 4 }], goldCost: 85,
     craftSeconds: 10.7, xpAward: 92,
@@ -3290,7 +3290,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_ember_haste: {
-    id: 'scroll_ember_haste', name: 'Scroll: Ember Haste', profession: 'enchanting', requiredSkill: 86,
+    id: 'scroll_ember_haste', name: 'Scroll: Ember Haste', profession: 'enchanting', requiredSkill: 85,
     resultItemId: 'scroll_ember_haste', resultQuantity: 1,
     materials: [{ itemId: 'ember_shards', quantity: 4 }, { itemId: 'greater_eternal_essence', quantity: 4 }], goldCost: 85,
     craftSeconds: 10.7, xpAward: 92,
@@ -3298,7 +3298,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_ember_fire_resistance: {
-    id: 'scroll_ember_fire_resistance', name: 'Scroll: Ember Fire Resistance', profession: 'enchanting', requiredSkill: 86,
+    id: 'scroll_ember_fire_resistance', name: 'Scroll: Ember Fire Resistance', profession: 'enchanting', requiredSkill: 84,
     resultItemId: 'scroll_ember_fire_resistance', resultQuantity: 1,
     materials: [{ itemId: 'ember_shards', quantity: 4 }, { itemId: 'greater_eternal_essence', quantity: 4 }], goldCost: 85,
     craftSeconds: 10.7, xpAward: 92,
@@ -3306,7 +3306,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_ember_frost_resistance: {
-    id: 'scroll_ember_frost_resistance', name: 'Scroll: Ember Frost Resistance', profession: 'enchanting', requiredSkill: 86,
+    id: 'scroll_ember_frost_resistance', name: 'Scroll: Ember Frost Resistance', profession: 'enchanting', requiredSkill: 84,
     resultItemId: 'scroll_ember_frost_resistance', resultQuantity: 1,
     materials: [{ itemId: 'ember_shards', quantity: 4 }, { itemId: 'greater_eternal_essence', quantity: 4 }], goldCost: 85,
     craftSeconds: 10.7, xpAward: 92,
@@ -3314,7 +3314,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_ember_shadow_resistance: {
-    id: 'scroll_ember_shadow_resistance', name: 'Scroll: Ember Shadow Resistance', profession: 'enchanting', requiredSkill: 86,
+    id: 'scroll_ember_shadow_resistance', name: 'Scroll: Ember Shadow Resistance', profession: 'enchanting', requiredSkill: 90,
     resultItemId: 'scroll_ember_shadow_resistance', resultQuantity: 1,
     materials: [{ itemId: 'ember_shards', quantity: 4 }, { itemId: 'greater_eternal_essence', quantity: 4 }], goldCost: 85,
     craftSeconds: 10.7, xpAward: 92,
@@ -3322,7 +3322,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_ember_fiery_weapon: {
-    id: 'scroll_ember_fiery_weapon', name: 'Scroll: Ember Fiery Weapon', profession: 'enchanting', requiredSkill: 86,
+    id: 'scroll_ember_fiery_weapon', name: 'Scroll: Ember Fiery Weapon', profession: 'enchanting', requiredSkill: 83,
     resultItemId: 'scroll_ember_fiery_weapon', resultQuantity: 1,
     materials: [{ itemId: 'ember_shards', quantity: 5 }, { itemId: 'greater_eternal_essence', quantity: 5 }], goldCost: 128,
     craftSeconds: 10.7, xpAward: 138,
@@ -3330,7 +3330,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'dungeon_drop', rarity: 'rare', learnedAutomatically: false,
   },
   scroll_ember_icy_chill: {
-    id: 'scroll_ember_icy_chill', name: 'Scroll: Ember Icy Chill', profession: 'enchanting', requiredSkill: 86,
+    id: 'scroll_ember_icy_chill', name: 'Scroll: Ember Icy Chill', profession: 'enchanting', requiredSkill: 87,
     resultItemId: 'scroll_ember_icy_chill', resultQuantity: 1,
     materials: [{ itemId: 'ember_shards', quantity: 5 }, { itemId: 'greater_eternal_essence', quantity: 5 }], goldCost: 128,
     craftSeconds: 10.7, xpAward: 138,
@@ -3338,7 +3338,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'dungeon_drop', rarity: 'rare', learnedAutomatically: false,
   },
   scroll_ember_lifestealing: {
-    id: 'scroll_ember_lifestealing', name: 'Scroll: Ember Lifestealing', profession: 'enchanting', requiredSkill: 86,
+    id: 'scroll_ember_lifestealing', name: 'Scroll: Ember Lifestealing', profession: 'enchanting', requiredSkill: 89,
     resultItemId: 'scroll_ember_lifestealing', resultQuantity: 1,
     materials: [{ itemId: 'ember_shards', quantity: 5 }, { itemId: 'greater_eternal_essence', quantity: 5 }], goldCost: 128,
     craftSeconds: 10.7, xpAward: 138,
@@ -3346,7 +3346,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'dungeon_drop', rarity: 'rare', learnedAutomatically: false,
   },
   scroll_crusader: {
-    id: 'scroll_crusader', name: 'Scroll: Crusader', profession: 'enchanting', requiredSkill: 86,
+    id: 'scroll_crusader', name: 'Scroll: Crusader', profession: 'enchanting', requiredSkill: 81,
     resultItemId: 'scroll_crusader', resultQuantity: 1,
     materials: [{ itemId: 'ember_shards', quantity: 6 }, { itemId: 'greater_eternal_essence', quantity: 5 }], goldCost: 136,
     craftSeconds: 10.7, xpAward: 147,
@@ -3354,7 +3354,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'dungeon_drop', rarity: 'rare', learnedAutomatically: false,
   },
   scroll_spellpower: {
-    id: 'scroll_spellpower', name: 'Scroll: Spellpower', profession: 'enchanting', requiredSkill: 86,
+    id: 'scroll_spellpower', name: 'Scroll: Spellpower', profession: 'enchanting', requiredSkill: 99,
     resultItemId: 'scroll_spellpower', resultQuantity: 1,
     materials: [{ itemId: 'ember_shards', quantity: 6 }, { itemId: 'greater_eternal_essence', quantity: 5 }], goldCost: 119,
     craftSeconds: 10.7, xpAward: 129,
@@ -3362,7 +3362,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'dungeon_drop', rarity: 'rare', learnedAutomatically: false,
   },
   scroll_healing_power: {
-    id: 'scroll_healing_power', name: 'Scroll: Healing Power', profession: 'enchanting', requiredSkill: 86,
+    id: 'scroll_healing_power', name: 'Scroll: Healing Power', profession: 'enchanting', requiredSkill: 95,
     resultItemId: 'scroll_healing_power', resultQuantity: 1,
     materials: [{ itemId: 'ember_shards', quantity: 6 }, { itemId: 'greater_eternal_essence', quantity: 5 }], goldCost: 119,
     craftSeconds: 10.7, xpAward: 129,
@@ -3370,7 +3370,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'dungeon_drop', rarity: 'rare', learnedAutomatically: false,
   },
   scroll_mighty_intellect: {
-    id: 'scroll_mighty_intellect', name: 'Scroll: Mighty Intellect', profession: 'enchanting', requiredSkill: 86,
+    id: 'scroll_mighty_intellect', name: 'Scroll: Mighty Intellect', profession: 'enchanting', requiredSkill: 96,
     resultItemId: 'scroll_mighty_intellect', resultQuantity: 1,
     materials: [{ itemId: 'ember_shards', quantity: 6 }, { itemId: 'greater_eternal_essence', quantity: 5 }], goldCost: 119,
     craftSeconds: 10.7, xpAward: 129,
@@ -3378,7 +3378,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_mighty_spirit: {
-    id: 'scroll_mighty_spirit', name: 'Scroll: Mighty Spirit', profession: 'enchanting', requiredSkill: 86,
+    id: 'scroll_mighty_spirit', name: 'Scroll: Mighty Spirit', profession: 'enchanting', requiredSkill: 97,
     resultItemId: 'scroll_mighty_spirit', resultQuantity: 1,
     materials: [{ itemId: 'ember_shards', quantity: 6 }, { itemId: 'greater_eternal_essence', quantity: 5 }], goldCost: 119,
     craftSeconds: 10.7, xpAward: 129,
@@ -3386,7 +3386,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_mighty_strength: {
-    id: 'scroll_mighty_strength', name: 'Scroll: Mighty Strength', profession: 'enchanting', requiredSkill: 86,
+    id: 'scroll_mighty_strength', name: 'Scroll: Mighty Strength', profession: 'enchanting', requiredSkill: 98,
     resultItemId: 'scroll_mighty_strength', resultQuantity: 1,
     materials: [{ itemId: 'ember_shards', quantity: 6 }, { itemId: 'greater_eternal_essence', quantity: 5 }], goldCost: 119,
     craftSeconds: 10.7, xpAward: 129,
@@ -3394,7 +3394,7 @@ export const RECIPES: Record<string, Recipe> = {
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
   },
   scroll_mighty_agility: {
-    id: 'scroll_mighty_agility', name: 'Scroll: Mighty Agility', profession: 'enchanting', requiredSkill: 86,
+    id: 'scroll_mighty_agility', name: 'Scroll: Mighty Agility', profession: 'enchanting', requiredSkill: 96,
     resultItemId: 'scroll_mighty_agility', resultQuantity: 1,
     materials: [{ itemId: 'ember_shards', quantity: 6 }, { itemId: 'greater_eternal_essence', quantity: 5 }], goldCost: 119,
     craftSeconds: 10.7, xpAward: 129,
