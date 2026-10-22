@@ -329,6 +329,14 @@ const STATIC_ITEMS: Record<string, ItemDef> = {
     description: 'A Emberscar Leather legplates, crafted by a skilled leatherworker.',
     stackable: true, equipSlot: 'legs', armorType: 'leather', statBonuses: { STA: 14, STR: 14 }, sellValue: 95, rarity: 'blue',
   },
+  // Milestone 4 masterwork crafting — Leatherworking's requiredSkill:100
+  // capstone recipe (see masterforged_obsidian_gauntlets' comment above
+  // items.ts's Blacksmithing section for the shared design rationale).
+  masterwork_emberscar_legplates: {
+    id: 'masterwork_emberscar_legplates', name: 'Masterwork Emberscar Legplates', type: 'equipment',
+    description: 'Legplates reworked by a Leatherworker who has mastered every secret of Emberscar hide — and a shard of raid-forged power besides.',
+    stackable: true, equipSlot: 'legs', armorType: 'leather', statBonuses: { STA: 25, STR: 25 }, sellValue: 145, rarity: 'purple',
+  },
   emberscar_leather_boots: {
     id: 'emberscar_leather_boots', name: 'Emberscar Leather Boots', type: 'equipment',
     description: 'A Emberscar Leather boots, crafted by a skilled leatherworker.',
@@ -570,6 +578,14 @@ const STATIC_ITEMS: Record<string, ItemDef> = {
     id: 'ember_shoulders', name: 'Ember Shoulders', type: 'equipment',
     description: 'A ember shoulders, woven by a skilled tailor.',
     stackable: true, equipSlot: 'shoulders', armorType: 'cloth', statBonuses: { INT: 9, STA: 9 }, sellValue: 57, rarity: 'blue',
+  },
+  // Milestone 4 masterwork crafting — Tailoring's requiredSkill:100
+  // capstone recipe (see masterforged_obsidian_gauntlets' comment above
+  // items.ts's Blacksmithing section for the shared design rationale).
+  masterwork_ember_shoulders: {
+    id: 'masterwork_ember_shoulders', name: 'Masterwork Ember Shoulders', type: 'equipment',
+    description: 'Shoulders rewoven by a Tailor who has mastered every secret of Ember Cloth — and a shard of raid-forged power besides.',
+    stackable: true, equipSlot: 'shoulders', armorType: 'cloth', statBonuses: { INT: 25, STA: 25 }, sellValue: 145, rarity: 'purple',
   },
 
   // ── Tailoring Bracers (6 tiers) — Equipment overhaul's itemization
@@ -4431,6 +4447,18 @@ const STATIC_ITEMS: Record<string, ItemDef> = {
     id: 'obsidian_shoulders', name: 'Obsidian Shoulders', type: 'equipment',
     description: 'A black shoulders forged from Obsidian by a skilled blacksmith.',
     stackable: true, equipSlot: 'shoulders', statBonuses: { STA: 10, STR: 10 }, sellValue: 72, rarity: 'blue',
+  },
+  // Milestone 4 masterwork crafting — one requiredSkill:100 capstone recipe
+  // per armor-crafting profession (Blacksmithing/Leatherworking/Tailoring),
+  // a notch above that profession's existing Zone 6 "limited" purple piece
+  // (the chestplate/robe, value 20-22) but kept below the Citadel's
+  // KRYPT_WEAPON_BUDGET=40-equivalent (primary stat 26) so crafting a
+  // masterwork never outclasses raid gear — see equipmentRolls.ts's
+  // ARMOR_STAT_VALUES comment for the exact value.
+  masterforged_obsidian_gauntlets: {
+    id: 'masterforged_obsidian_gauntlets', name: 'Masterforged Obsidian Gauntlets', type: 'equipment',
+    description: 'Gauntlets reforged by a Blacksmith who has mastered every secret of Obsidian — and a shard of raid-forged power besides.',
+    stackable: true, equipSlot: 'gloves', statBonuses: { STA: 25, STR: 25 }, sellValue: 145, rarity: 'purple',
   },
 
   silver_necklace: {

@@ -4,7 +4,10 @@ import { useCharacter } from '../hooks/useCharacter';
 import { subscribeToInventory, isLocked, setItemLocked } from '../firebase/inventory';
 import { useConsumableOutOfCombat, setEquippedConsumable, equipStatFood } from '../firebase/consumables';
 import { setInventorySortPrefs } from '../firebase/character';
+import { learnRecipe } from '../firebase/professions';
+import { notify } from '../utils/notifications';
 import { ITEMS } from '../gameData/items';
+import { RECIPES } from '../gameData/recipes';
 import { consumableOwnedQuantities } from '../gameData/consumableClassification';
 import { equipmentSuffixFor } from '../gameData/equipmentSuffixes';
 import { materialIdForItem } from '../gameData/itemMetadata';
@@ -125,6 +128,27 @@ export function InventoryScreen() {
   async function handleToggleLock(identifier: string, currentlyLocked: boolean) {
     if (!user) return;
     await setItemLocked(user.uid, identifier, !currentlyLocked);
+  }
+
+  // Recipe-discovery items ('recipe'-type formula/scroll drops — see
+  // Character.learnedRecipeIds' doc comment) had no click action anywhere
+  // in the UI before this, making every dungeon/monster-drop formula item
+  // in the game permanently unusable despite firebase/professions.ts's
+  // learnRecipe already existing to consume them. This is the one place
+  // that calls it.
+  async function handleUseRecipe(itemId: string) {
+    if (!user) return;
+    setError(null);
+    const recipeName = ITEMS[itemId]?.teachesRecipeId ? RECIPES[ITEMS[itemId]!.teachesRecipeId!]?.name : undefined;
+    const result = await learnRecipe(user.uid, itemId);
+    if (!result.success) {
+      setError(result.reason ?? 'Could not learn that recipe.');
+    } else if (result.alreadyKnown) {
+      notify('Recipe already known', [`${ITEMS[itemId]?.name ?? 'Formula'} discarded — you already know this recipe.`]);
+    } else {
+      notify('Recipe learned', [recipeName ? `You can now craft ${recipeName}.` : 'A new recipe is ready to craft.']);
+    }
+    await refetch();
   }
 
   // A base item already counts as one occupied slot whether it's a plain
@@ -316,13 +340,16 @@ export function InventoryScreen() {
             if (!item) return null;
             const isStatFood = item.consumableEffect?.buff?.category === 'stat_food';
             const isLockableEquipment = item.type === 'equipment';
+            const isRecipeItem = item.type === 'recipe' && !!item.teachesRecipeId;
             const equippedRef = item.equipSlot ? character.equipment[item.equipSlot] : null;
             const compareStats = equippedRef ? equippedRef.rolls ?? ITEMS[equippedRef.itemId]?.statBonuses : undefined;
             const onClick = isStatFood
               ? () => handleEquipStatFood(itemId)
               : isLockableEquipment
                 ? () => handleToggleLock(key, locked)
-                : undefined;
+                : isRecipeItem
+                  ? () => handleUseRecipe(itemId)
+                  : undefined;
             return (
               <ItemSlot
                 key={key}

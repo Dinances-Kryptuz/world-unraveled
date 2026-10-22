@@ -105,6 +105,12 @@ export const ARMOR_STAT_VALUES: Record<string, number> = {
   mithril_shoulders: 5,
   thorium_shoulders: 7,
   obsidian_shoulders: 10,
+  // Milestone 4 masterwork crafting — one requiredSkill:100 capstone item
+  // per armor-crafting profession, value 25: above that profession's own
+  // Zone 6 "limited" purple piece (chest/robe, value 20-22) but below the
+  // Citadel's KRYPT_WEAPON_BUDGET=40 primary-stat value of 26 (40 * 0.65,
+  // see citadelLoot.ts), so a masterwork never outclasses raid gear.
+  masterforged_obsidian_gauntlets: 25,
   silver_necklace: 2,
   silver_ring: 1,
   gold_necklace: 4,
@@ -154,6 +160,9 @@ export const ARMOR_STAT_VALUES: Record<string, number> = {
   emberscar_leather_chest: 20,
   emberscar_leather_gloves: 9,
   emberscar_leather_legs: 14,
+  // Milestone 4 masterwork crafting — see masterforged_obsidian_gauntlets'
+  // comment above (Blacksmithing section) for the shared value rationale.
+  masterwork_emberscar_legplates: 25,
   emberscar_leather_boots: 10,
   emberscar_leather_shoulders: 9,
   emberscar_leather_belt: 9,
@@ -205,6 +214,9 @@ export const ARMOR_STAT_VALUES: Record<string, number> = {
   ember_leggings: 14,
   ember_boots: 10,
   ember_shoulders: 9,
+  // Milestone 4 masterwork crafting — see masterforged_obsidian_gauntlets'
+  // comment above (Blacksmithing section) for the shared value rationale.
+  masterwork_ember_shoulders: 25,
   // ── Tailoring Bracers (6 tiers) — Equipment overhaul's itemization
   // parity fix (user-confirmed): Tailoring had Shoulders at every tier but
   // no Bracers. Ranges mirror each tier's own Gloves 1:1.

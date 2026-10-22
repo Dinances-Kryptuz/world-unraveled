@@ -1,6 +1,7 @@
 import { MATERIALS, LEATHER_MATERIALS, CLOTH_MATERIALS, WOOD_MATERIALS } from './materials';
 import { ZONES, CONTENT_ZONE_IDS } from './zones';
 import { TOWER_MILESTONE_FLOORS } from './towerLoot';
+import { ALL_PROFESSION_IDS, PROFESSION_LABELS } from './professionTiers';
 
 // A player-selectable cosmetic title — purely display, no stat/combat/
 // crafting effect (see types/character.ts's equippedTitleId doc comment).
@@ -89,6 +90,20 @@ function generateTowerTitles(): TitleDef[] {
   return TOWER_MILESTONE_FLOORS.map((floor) => ({ id: `tower_floor_${floor}`, name: `Floor ${floor} Conqueror` }));
 }
 
+// Mirrors achievements.ts's generateProfessionLevelAchievements exactly
+// (same ids, same names) — one title per profession per 25/50/75/100
+// milestone on the shared 1-100 level scale.
+const PROFESSION_MILESTONE_LEVELS = [25, 50, 75, 100] as const;
+
+function generateProfessionLevelTitles(): TitleDef[] {
+  return ALL_PROFESSION_IDS.flatMap((professionId) =>
+    PROFESSION_MILESTONE_LEVELS.map((level) => ({
+      id: `level_${level}_${professionId}`,
+      name: level === 100 ? `Master ${PROFESSION_LABELS[professionId]}` : `${PROFESSION_LABELS[professionId]} ${level}`,
+    }))
+  );
+}
+
 export const TITLES: TitleDef[] = [
   ...generateMaterialTitles(),
   { id: 'master_blacksmith', name: 'Master Blacksmith' },
@@ -109,6 +124,7 @@ export const TITLES: TitleDef[] = [
   ...generateChefTitles(),
   { id: 'grandmaster_chef', name: 'Grandmaster Chef' },
   ...generateTowerTitles(),
+  ...generateProfessionLevelTitles(),
   // Mirrors achievements.ts's CITADEL_LEVEL_ACHIEVEMENTS exactly (same ids).
   { id: 'citadel_level_1_cleared', name: 'Into the Citadel' },
   { id: 'citadel_level_2_cleared', name: 'Cultist Hunter' },

@@ -14,6 +14,11 @@ import type { Character, ZoneMasteryState } from '../types/character';
 export interface ProfessionActionResult {
   success: boolean;
   reason?: string;
+  // learnRecipe only — true when the formula item was consumed because its
+  // recipe was already known (a duplicate drop), not because it was newly
+  // learned. Lets the UI show a distinct "already known" toast instead of
+  // treating every success the same way.
+  alreadyKnown?: boolean;
 }
 
 // Visiting an Apprentice trainer for the very first time in a profession —
@@ -101,16 +106,25 @@ export async function learnRecipe(uid: string, recipeItemId: string): Promise<Pr
   }
   const recipe = RECIPES[item.teachesRecipeId];
   if (!recipe) return { success: false, reason: 'Unknown recipe.' };
-  if (character.learnedRecipeIds.includes(item.teachesRecipeId)) {
-    return { success: false, reason: 'Already known.' };
-  }
-  if (!character.professions[recipe.profession]) {
-    return { success: false, reason: `Requires knowing ${recipe.profession}.` };
-  }
 
   const inventory = await getInventory(uid);
   if ((inventory.items[recipeItemId] ?? 0) <= 0) {
     return { success: false, reason: 'You don’t have this recipe.' };
+  }
+
+  // A duplicate drop of an already-known recipe has nothing left to teach —
+  // canUseRecipe only ever checks learnedRecipeIds.includes(id), so a second
+  // copy sitting in the bag would otherwise be permanently inert. Consume
+  // it here instead, with a distinct result the UI can show its own toast
+  // for, rather than leaving it stuck forever or failing with no feedback.
+  if (character.learnedRecipeIds.includes(item.teachesRecipeId)) {
+    await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), {
+      [`items.${recipeItemId}`]: increment(-1),
+    });
+    return { success: true, alreadyKnown: true };
+  }
+  if (!character.professions[recipe.profession]) {
+    return { success: false, reason: `Requires knowing ${recipe.profession}.` };
   }
 
   await updateDoc(doc(db, 'characters', uid), {

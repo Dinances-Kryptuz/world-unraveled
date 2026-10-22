@@ -379,6 +379,17 @@ export const RECIPES: Record<string, Recipe> = {
     materialId: 'emberscar_leather',
     source: 'monster_drop', rarity: 'uncommon', learnedAutomatically: false,
   },
+  // Milestone 4 masterwork crafting — Leatherworking's requiredSkill:100
+  // capstone recipe (see masterforged_obsidian_gauntlets' comment above
+  // for the shared Ember Shards/dungeon-raid-ingredient rationale).
+  masterwork_emberscar_legplates: {
+    id: 'masterwork_emberscar_legplates', name: 'Masterwork Emberscar Legplates', profession: 'leatherworking', requiredSkill: 100,
+    resultItemId: 'masterwork_emberscar_legplates', resultQuantity: 1,
+    materials: [{ itemId: 'emberscar_leather', quantity: 10 }, { itemId: 'ember_shards', quantity: 2 }],
+    craftSeconds: 16, xpAward: 50,
+    materialId: 'emberscar_leather',
+    source: 'trainer', rarity: 'rare', learnedAutomatically: true,
+  },
   emberscar_leather_boots: {
     id: 'emberscar_leather_boots', name: 'Emberscar Leather Boots', profession: 'leatherworking', requiredSkill: 90,
     resultItemId: 'emberscar_leather_boots', resultQuantity: 1,
@@ -757,6 +768,17 @@ export const RECIPES: Record<string, Recipe> = {
     craftSeconds: 10.7, xpAward: 92,
     materialId: 'ember_cloth',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  // Milestone 4 masterwork crafting — Tailoring's requiredSkill:100
+  // capstone recipe (see masterforged_obsidian_gauntlets' comment above
+  // for the shared Ember Shards/dungeon-raid-ingredient rationale).
+  masterwork_ember_shoulders: {
+    id: 'masterwork_ember_shoulders', name: 'Masterwork Ember Shoulders', profession: 'tailoring', requiredSkill: 100,
+    resultItemId: 'masterwork_ember_shoulders', resultQuantity: 1,
+    materials: [{ itemId: 'ember_cloth', quantity: 8 }, { itemId: 'ember_thread', quantity: 4 }, { itemId: 'ember_shards', quantity: 2 }],
+    craftSeconds: 16, xpAward: 50,
+    materialId: 'ember_cloth',
+    source: 'trainer', rarity: 'rare', learnedAutomatically: true,
   },
   ember_bracers: {
     id: 'ember_bracers', name: 'Ember Bracers', profession: 'tailoring', requiredSkill: 81,
@@ -2329,6 +2351,20 @@ export const RECIPES: Record<string, Recipe> = {
     craftSeconds: 11.3, xpAward: 33,
     materialId: 'obsidian',
     source: 'trainer', rarity: 'common', learnedAutomatically: true,
+  },
+  // Milestone 4 masterwork crafting — Blacksmithing's requiredSkill:100
+  // capstone recipe. A large Obsidian Bar cost plus Ember Shards (the
+  // Zone 6 "shard"-tier disenchant material — gameData/enchanting.ts's
+  // DISENCHANT_MATERIAL_BY_ZONE[6] — obtained only by disenchanting
+  // Cinderheart Crater's rarest, i.e. dungeon/raid purple, equipment) ties
+  // this to real dungeon/raid-tier progress without inventing a new item.
+  masterforged_obsidian_gauntlets: {
+    id: 'masterforged_obsidian_gauntlets', name: 'Masterforged Obsidian Gauntlets', profession: 'smithing', requiredSkill: 100,
+    resultItemId: 'masterforged_obsidian_gauntlets', resultQuantity: 1,
+    materials: [{ itemId: 'obsidian_bar', quantity: 8 }, { itemId: 'ember_shards', quantity: 2 }],
+    craftSeconds: 16, xpAward: 50,
+    materialId: 'obsidian',
+    source: 'trainer', rarity: 'rare', learnedAutomatically: true,
   },
   obsidian_bracers: {
     id: 'obsidian_bracers', name: 'Obsidian Bracers', profession: 'smithing', requiredSkill: 81,
