@@ -66,7 +66,14 @@ function buildSellableEntries(inventory: Inventory): SellableEntry[] {
       sell: (uid, q) => sellChargedConsumable(uid, instanceId, q),
     });
   }
-  return entries;
+  // Each Object.entries() above walks a Firestore-synced map whose key
+  // order isn't guaranteed stable across snapshots (a charge/potion bucket
+  // or equipment instance that empties and later gets re-granted comes
+  // back as a freshly-inserted key — see firebase/consumables.ts's delete-
+  // then-recreate pattern) — without this, the Sell list visibly reshuffled
+  // after every sale/craft. Same fix as EquipmentPaperDoll.tsx's picker and
+  // QuestLog.tsx's own Firestore-map iteration.
+  return entries.sort((a, b) => a.item.id.localeCompare(b.item.id) || a.key.localeCompare(b.key));
 }
 
 // `stockOverride` is the Grand Market's aggregated cross-zone list
