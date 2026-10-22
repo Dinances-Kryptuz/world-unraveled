@@ -17,30 +17,28 @@
 // own consumableEffect, so there's nothing left to configure (see
 // buildConsumableAutomationState below).
 //
-// Deliberately NOT the old activeBuffs.offensive_potion/defensive_potion
-// single-slot mechanism (gameData/buffs.ts/firebase/consumables.ts) — that
-// stays untouched for the old, now-frozen potions that still use it
-// (minor_battle_draught etc., whose charges are fixed on the item itself).
-// This is a second, PARALLEL mechanism whose charge pool is a flat sum
-// across every owned chargedConsumables bucket for the pinned item
-// (mastery-rolled, 1-4 per unit) — matching the design brief's own worked
-// example ("20 potions x 4 charges = 80 charges; 100 attacks -> first 80
-// buffed, last 20 not") exactly. The two can coexist (they'd simply add),
-// but in practice a player only ever runs one or the other.
+// No-more-charges redesign — an offensive/defensive potion's "stock" is now
+// just the pinned item's plain `items` inventory count (one potion = one
+// use, same as every other stackable item), not a charge-bucket pool.
+// offensive.stockRemaining/defensive.stockRemaining starts at that count
+// and the engine (combatEngine/engine.ts) decrements it by exactly 1 per
+// matching trigger (one offensive potion per attack, one defensive potion
+// per hit taken) — manual out-of-combat use is rejected for these two
+// categories (see firebase/consumables.ts's useConsumableOutOfCombat) since
+// this pinned-slot automation is the only way they're ever consumed.
 import type { Character, Inventory } from '../types/character';
 import { ITEMS } from './items';
-import { totalChargesAvailable, type ChargeBucket } from './consumableCharges';
 import { autoEatRankDef } from './cooking';
 
 export interface OffensiveAutomationState {
   itemId: string;
   damageMultiplierPct: number;
-  chargesRemaining: number;
+  stockRemaining: number;
 }
 
 export interface DefensiveAutomationState {
   itemId: string;
-  chargesRemaining: number;
+  stockRemaining: number;
   armorBonusPct?: number;
   maxHpBonusPct?: number;
   fireResistancePct?: number;
@@ -65,7 +63,7 @@ export interface ResourceAutomationState {
 // offensiveChargesConsumed/defensiveChargesConsumed/healingUsed/manaUsed are
 // OUTPUT accumulators the engine increments as it resolves hits/ticks; the
 // caller reads them once per autosave/offline-claim batch and resets them to
-// 0 (never the state's own chargesRemaining/stockRemaining/cooldownRemaining,
+// 0 (never the state's own stockRemaining/cooldownRemaining,
 // which keep draining continuously across batches within one encounter) —
 // see firebase/consumables.ts's applyConsumableAutomationUsage for where
 // that one Firestore write per batch happens.
@@ -90,12 +88,6 @@ export interface ConsumableAutomationRuntimeState {
 
 export function emptyConsumableAutomationState(): ConsumableAutomationRuntimeState {
   return { offensiveChargesConsumed: 0, defensiveChargesConsumed: 0, healingUsed: 0, manaUsed: 0, autoEatUsed: 0 };
-}
-
-function bucketsForItem(inventory: Inventory, itemId: string): ChargeBucket[] {
-  return Object.values(inventory.chargedConsumables ?? {})
-    .filter((b) => b.itemId === itemId)
-    .map((b) => ({ remainingCharges: b.remainingCharges, quantity: b.quantity }));
 }
 
 // Mirrors firebase/consumables.ts's remainingCooldownSeconds exactly —
@@ -162,16 +154,16 @@ export function buildConsumableAutomationState(
     const effect = item?.consumableEffect;
     const buff = effect?.buff;
     if (buff?.category === 'offensive_potion') {
-      const chargesRemaining = totalChargesAvailable(bucketsForItem(inventory, potionItemId));
-      if (chargesRemaining > 0) {
-        offensive = { itemId: potionItemId, damageMultiplierPct: buff.damageMultiplierPct ?? 0, chargesRemaining };
+      const stockRemaining = inventory.items[potionItemId] ?? 0;
+      if (stockRemaining > 0) {
+        offensive = { itemId: potionItemId, damageMultiplierPct: buff.damageMultiplierPct ?? 0, stockRemaining };
       }
     } else if (buff?.category === 'defensive_potion') {
-      const chargesRemaining = totalChargesAvailable(bucketsForItem(inventory, potionItemId));
-      if (chargesRemaining > 0) {
+      const stockRemaining = inventory.items[potionItemId] ?? 0;
+      if (stockRemaining > 0) {
         defensive = {
           itemId: potionItemId,
-          chargesRemaining,
+          stockRemaining,
           armorBonusPct: buff.armorBonusPct,
           maxHpBonusPct: buff.maxHpBonusPct,
           fireResistancePct: buff.fireResistancePct,

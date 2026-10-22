@@ -1675,12 +1675,12 @@ const STATIC_ITEMS: Record<string, ItemDef> = {
   },
   elixir_of_lions_strength: {
     id: 'elixir_of_lions_strength', name: "Elixir of Lion's Strength", type: 'consumable',
-    description: '+5% physical attack damage for your next attack per charge.', stackable: true, sellValue: 4,
+    description: 'An offensive potion: +5% physical attack damage. Pin to your Potion slot — one is used automatically per attack.', stackable: true, sellValue: 4,
     consumableEffect: { cooldownSeconds: 30, buff: { category: 'offensive_potion', damageMultiplierPct: 5, trigger: 'offensive_action' } },
   },
   elixir_of_minor_defense: {
     id: 'elixir_of_minor_defense', name: 'Elixir of Minor Defense', type: 'consumable',
-    description: '+5% armor against your next hit taken per charge.', stackable: true, sellValue: 4,
+    description: 'A defensive potion: +5% armor against the next hit you take. Pin to your Potion slot — one is used automatically per hit taken.', stackable: true, sellValue: 4,
     consumableEffect: { cooldownSeconds: 30, buff: { category: 'defensive_potion', armorBonusPct: 5, trigger: 'damage_taken' } },
   },
   weak_trolls_blood_elixir: {
@@ -3506,15 +3506,15 @@ const STATIC_ITEMS: Record<string, ItemDef> = {
   },
   minor_battle_draught: {
     id: 'minor_battle_draught', name: 'Minor Battle Draught', type: 'consumable',
-    description: 'An offensive draught: +10% damage dealt for 20 offensive actions.',
+    description: 'An offensive potion: +10% damage dealt. Pin to your Potion slot — one is used automatically per attack.',
     stackable: true, sellValue: 8,
-    consumableEffect: { cooldownSeconds: 60, buff: { category: 'offensive_potion', damageMultiplierPct: 10, charges: 20 } },
+    consumableEffect: { cooldownSeconds: 60, buff: { category: 'offensive_potion', damageMultiplierPct: 10 } },
   },
   minor_stoneskin_draught: {
     id: 'minor_stoneskin_draught', name: 'Minor Stoneskin Draught', type: 'consumable',
-    description: 'A defensive draught: -10% damage taken for 20 hits.',
+    description: 'A defensive potion: -10% damage taken. Pin to your Potion slot — one is used automatically per hit taken.',
     stackable: true, sellValue: 8,
-    consumableEffect: { cooldownSeconds: 60, buff: { category: 'defensive_potion', mitigationMultiplierPct: 10, charges: 20 } },
+    consumableEffect: { cooldownSeconds: 60, buff: { category: 'defensive_potion', mitigationMultiplierPct: 10 } },
   },
   tonic_of_might: {
     id: 'tonic_of_might', name: 'Tonic of Might', type: 'consumable',
@@ -3548,15 +3548,15 @@ const STATIC_ITEMS: Record<string, ItemDef> = {
   },
   greater_battle_draught: {
     id: 'greater_battle_draught', name: 'Greater Battle Draught', type: 'consumable',
-    description: 'An offensive draught: +18% damage dealt for 25 offensive actions.',
+    description: 'An offensive potion: +18% damage dealt. Pin to your Potion slot — one is used automatically per attack.',
     stackable: true, sellValue: 30,
-    consumableEffect: { cooldownSeconds: 60, buff: { category: 'offensive_potion', damageMultiplierPct: 18, charges: 25 } },
+    consumableEffect: { cooldownSeconds: 60, buff: { category: 'offensive_potion', damageMultiplierPct: 18 } },
   },
   greater_stoneskin_draught: {
     id: 'greater_stoneskin_draught', name: 'Greater Stoneskin Draught', type: 'consumable',
-    description: 'A defensive draught: -18% damage taken for 25 hits.',
+    description: 'A defensive potion: -18% damage taken. Pin to your Potion slot — one is used automatically per hit taken.',
     stackable: true, sellValue: 30,
-    consumableEffect: { cooldownSeconds: 60, buff: { category: 'defensive_potion', mitigationMultiplierPct: 18, charges: 25 } },
+    consumableEffect: { cooldownSeconds: 60, buff: { category: 'defensive_potion', mitigationMultiplierPct: 18 } },
   },
 
   // ── Cooking food (legacy) — frozen in place (their recipes are deleted,

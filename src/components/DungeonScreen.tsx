@@ -668,6 +668,13 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
     // trusts the UI alone (same posture as every server-revalidated action
     // in this codebase).
     if (effect.recoveryFood) return;
+    // No-more-charges redesign — offensive/defensive potions only ever fire
+    // through the pinned-slot automation (one per attack/hit taken, see
+    // gameData/consumableAutomation.ts); a manual click here has nothing
+    // coherent to do and would otherwise apply the buff once, permanently,
+    // with no decrement — same rejection as useConsumableOutOfCombat.
+    const buffCategory = effect.buff?.category;
+    if (buffCategory === 'offensive_potion' || buffCategory === 'defensive_potion') return;
     const currentCharacter = characterRef.current ?? character;
     if (remainingCooldownSeconds(currentCharacter, itemId, effect.cooldownSeconds, new Date()) > 0) return;
 

@@ -618,8 +618,8 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
           {displayAlchemyZone ? (
             <>
               <p>
-                {displayAlchemyZone.name} Mastery: {alchemyZonePercent.toFixed(1)}% — Creates {alchemyMilestoneInfo!.charges}-charge
-                potions and crafts {alchemyMilestoneInfo!.craftTimeReductionPct}% faster.
+                {displayAlchemyZone.name} Mastery: {alchemyZonePercent.toFixed(1)}% — Produces {alchemyMilestoneInfo!.potionsPerCraft} potion
+                {alchemyMilestoneInfo!.potionsPerCraft === 1 ? '' : 's'} per craft and crafts {alchemyMilestoneInfo!.craftTimeReductionPct}% faster.
               </p>
               <div className="profession-xp-bar-track">
                 <div className="profession-xp-bar-fill" style={{ width: `${alchemyZonePercent}%` }} />

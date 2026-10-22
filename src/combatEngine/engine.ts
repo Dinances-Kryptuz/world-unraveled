@@ -804,18 +804,18 @@ function computeEffectDamage(
   const isCrit = Math.random() < attacker.profile.critChance;
 
   let offensiveMultPct = 0;
-  if (attacker.isPlayer && consumableState?.offensive && consumableState.offensive.chargesRemaining > 0) {
+  if (attacker.isPlayer && consumableState?.offensive && consumableState.offensive.stockRemaining > 0) {
     offensiveMultPct = consumableState.offensive.damageMultiplierPct;
-    consumableState.offensive.chargesRemaining--;
+    consumableState.offensive.stockRemaining--;
     consumableState.offensiveChargesConsumed++;
   }
 
   const defensive =
-    defender.isPlayer && consumableState?.defensive && consumableState.defensive.chargesRemaining > 0
+    defender.isPlayer && consumableState?.defensive && consumableState.defensive.stockRemaining > 0
       ? consumableState.defensive
       : undefined;
   if (defensive && consumableState) {
-    defensive.chargesRemaining--;
+    defensive.stockRemaining--;
     consumableState.defensiveChargesConsumed++;
   }
 
