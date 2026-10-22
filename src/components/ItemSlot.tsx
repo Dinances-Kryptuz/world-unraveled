@@ -40,7 +40,8 @@ function buildTooltip(
   statOverride?: Partial<Record<BaseStat, number>>,
   remainingCharges?: number,
   compareStats?: Partial<Record<BaseStat, number>>,
-  locked?: boolean
+  locked?: boolean,
+  enchant?: { name: string; effect: string; charges?: number }
 ): ReactNode {
   const stats = statOverride ?? item.statBonuses;
   // Previewing a base item (no statOverride — e.g. a recipe's result in
@@ -118,6 +119,16 @@ function buildTooltip(
       {item.scrollEnchantId && ENCHANTS[item.scrollEnchantId] ? (
         <div className="item-tooltip-stats">{describeEnchantEffect(ENCHANTS[item.scrollEnchantId])}</div>
       ) : null}
+      {/* The equipped-item paper doll's own enchant dot (EquipmentPaperDoll.tsx) —
+          shows WHICH enchant is applied and what it actually does, not just
+          flavor text, so inspecting an enchanted weapon answers "what enchant
+          is this and what does it give me" without leaving the tooltip. */}
+      {enchant && (
+        <div className="item-tooltip-stats item-tooltip-enchant">
+          Enchant: {enchant.name} — {enchant.effect}
+          {enchant.charges !== undefined ? ` (${enchant.charges} charges left)` : ''}
+        </div>
+      )}
       <div className="item-tooltip-desc">{item.description}</div>
       <div className="item-tooltip-sell">Sells for {item.sellValue} gold</div>
     </div>
@@ -166,6 +177,7 @@ export function ItemSlot({
   remainingCharges,
   compareStats,
   locked,
+  enchant,
   children,
 }: {
   item: ItemDef;
@@ -187,6 +199,12 @@ export function ItemSlot({
   // 🔒 marker. Purely display; actual lock enforcement lives server-side
   // (firebase/inventory.ts's isLocked), not here.
   locked?: boolean;
+  // Whatever enchant is applied to this equipped slot (EquipmentPaperDoll.tsx),
+  // already resolved to its name + mechanical effect description (see
+  // gameData/enchanting.ts's describeEnchantEffect) — shown as its own line
+  // in the tooltip so inspecting an enchanted item tells you what enchant is
+  // on it and what it actually does, not just that a dot is present.
+  enchant?: { name: string; effect: string; charges?: number };
   children?: ReactNode;
 }) {
   const Tag = onClick ? 'button' : 'div';
@@ -209,7 +227,7 @@ export function ItemSlot({
       {quantity !== undefined && quantity > 1 && <span className="item-slot-qty">{quantity}</span>}
       {remainingCharges !== undefined && <span className="item-slot-charges">{remainingCharges}c</span>}
       {locked && <span className="item-slot-locked">🔒</span>}
-      {buildTooltip(item, statOverride, remainingCharges, compareStats, locked)}
+      {buildTooltip(item, statOverride, remainingCharges, compareStats, locked, enchant)}
       {children}
     </Tag>
   );
