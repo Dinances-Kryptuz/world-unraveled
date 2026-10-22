@@ -8,6 +8,7 @@ import {
   arrayUnion,
   arrayRemove,
   runTransaction,
+  deleteField,
   type Unsubscribe,
 } from 'firebase/firestore';
 import { db } from './config';
@@ -49,7 +50,7 @@ function notifyDroppedForVariantCap(itemId: string, quantity: number): void {
 export async function getInventory(uid: string): Promise<Inventory> {
   const snap = await getDoc(doc(db, 'characters', uid, 'inventory', 'main'));
   if (!snap.exists()) return { items: {} };
-  return selfHealFractionalQuantities(uid, snap.data() as Inventory);
+  return migratePotionsOutOfChargeBuckets(uid, selfHealFractionalQuantities(uid, snap.data() as Inventory));
 }
 
 // A pre-fix build of resolveCraftingOffline (craftingEngine.ts) applied the
@@ -82,6 +83,44 @@ function selfHealFractionalQuantities(uid: string, inventory: Inventory): Invent
     );
   }
   return { ...inventory, items: roundedItems };
+}
+
+// No-more-charges redesign — every Alchemy-crafted potion (healing, mana,
+// offensive, defensive, stat — any recipe tagged alchemyZoneId) used to be
+// granted into chargedConsumables instead of the plain `items` stack
+// (the root cause of the "potion says I don't have one" bug: several
+// consumption paths only ever checked `items`). Only Cooking's Stat Food
+// still legitimately uses chargedConsumables going forward (see
+// consumableCharges.ts's own doc comment) — any OTHER itemId still sitting
+// in a player's chargedConsumables bucket from before this fix is stale
+// pre-migration data. Self-heals it the same lazy, idempotent way
+// selfHealFractionalQuantities does: fold it into `items` once on read (so
+// the caller never sees the stale shape) and fire a one-time corrective
+// write that can't race a concurrent autosave. Converts quantity x
+// remainingCharges (not just quantity) so a player doesn't lose the
+// "attacks worth" they'd already banked under the old charge-per-potion
+// model — e.g. 5 potions at 4 charges each becomes 20 plain potions.
+function migratePotionsOutOfChargeBuckets(uid: string, inventory: Inventory): Inventory {
+  const buckets = inventory.chargedConsumables ?? {};
+  const staleEntries = Object.entries(buckets).filter(
+    ([, bucket]) => ITEMS[bucket.itemId]?.consumableEffect?.buff?.category !== 'stat_food'
+  );
+  if (staleEntries.length === 0) return inventory;
+
+  const corrections: Record<string, unknown> = {};
+  const migratedItems: Record<string, number> = { ...inventory.items };
+  const remainingChargedConsumables = { ...buckets };
+  for (const [instanceId, bucket] of staleEntries) {
+    const migratedQuantity = bucket.quantity * bucket.remainingCharges;
+    migratedItems[bucket.itemId] = (migratedItems[bucket.itemId] ?? 0) + migratedQuantity;
+    corrections[`items.${bucket.itemId}`] = increment(migratedQuantity);
+    corrections[`chargedConsumables.${instanceId}`] = deleteField();
+    delete remainingChargedConsumables[instanceId];
+  }
+  void updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), corrections).catch((err) =>
+    console.error('Failed to self-heal stale charge-bucketed potions:', err)
+  );
+  return { ...inventory, items: migratedItems, chargedConsumables: remainingChargedConsumables };
 }
 
 // The single choke point every loot-granting write (combat kills, gathering/
@@ -384,7 +423,7 @@ export async function grantChargedConsumables(
 // a timer that could be out of sync with when a save actually happens.
 export function subscribeToInventory(uid: string, callback: (inventory: Inventory) => void): Unsubscribe {
   return onSnapshot(doc(db, 'characters', uid, 'inventory', 'main'), (snap) => {
-    callback(snap.exists() ? (snap.data() as Inventory) : { items: {} });
+    callback(snap.exists() ? migratePotionsOutOfChargeBuckets(uid, snap.data() as Inventory) : { items: {} });
   });
 }
 

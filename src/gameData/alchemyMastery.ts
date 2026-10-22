@@ -13,7 +13,13 @@ export function alchemyZoneMasteryPercent(xp: number): number {
 }
 
 export interface AlchemyMasteryMilestone {
-  charges: number;
+  // How many potions ONE craft action produces at this mastery tier — used
+  // to be "how many charges ONE potion has" (the no-more-charges redesign
+  // retired the whole charge-bucket model for potions; a crafted potion is
+  // now just a plain items stack, and mastery instead multiplies the batch
+  // output per craft, same 1/2/3/4 progression as before, just applied to
+  // quantity produced instead of durability-per-unit).
+  potionsPerCraft: number;
   craftTimeReductionPct: number;
 }
 
@@ -23,10 +29,10 @@ export interface AlchemyMasteryMilestone {
 // `craftSeconds * (1 - pct/100)` by the resolver — matches the design's own
 // worked example (10s base -> 9/8/7s) exactly, no intermediate multiplier.
 export function alchemyMasteryMilestone(percent: number): AlchemyMasteryMilestone {
-  if (percent >= 90) return { charges: 4, craftTimeReductionPct: 30 };
-  if (percent >= 60) return { charges: 3, craftTimeReductionPct: 20 };
-  if (percent >= 25) return { charges: 2, craftTimeReductionPct: 10 };
-  return { charges: 1, craftTimeReductionPct: 0 };
+  if (percent >= 90) return { potionsPerCraft: 4, craftTimeReductionPct: 30 };
+  if (percent >= 60) return { potionsPerCraft: 3, craftTimeReductionPct: 20 };
+  if (percent >= 25) return { potionsPerCraft: 2, craftTimeReductionPct: 10 };
+  return { potionsPerCraft: 1, craftTimeReductionPct: 0 };
 }
 
 const MILESTONE_XP_THRESHOLDS = [0.25, 0.6, 0.9].map((pct) => pct * ALCHEMY_ZONE_MASTERY_THRESHOLD);

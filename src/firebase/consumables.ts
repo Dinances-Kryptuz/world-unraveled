@@ -8,7 +8,7 @@ import { isFoodItem, isPotionItem } from '../gameData/consumableClassification';
 import type { Character } from '../types/character';
 import type { ItemDef, BuffCategory } from '../gameData/types';
 import { BUFF_CATEGORY_TRIGGER } from '../gameData/buffs';
-import { applyChargeConsumption, chargedInstanceId } from '../gameData/consumableCharges';
+import { chargedInstanceId } from '../gameData/consumableCharges';
 
 // Builds the activeBuffs.<category> write for a consumable with a buff
 // effect — charge-based (offensive/defensive potions) stores `charges`,
@@ -126,6 +126,14 @@ export async function consumeFeast(uid: string, itemId: string): Promise<{ succe
 export async function useConsumableOutOfCombat(uid: string, itemId: string): Promise<{ success: boolean; reason?: string }> {
   const item = ITEMS[itemId];
   if (!item?.consumableEffect) return { success: false, reason: 'That can’t be used.' };
+  const buffCategory = item.consumableEffect.buff?.category;
+  // Offensive/defensive potions no longer have a standalone "use" — one
+  // potion fires itself automatically per attack/hit taken for whatever's
+  // pinned to the Potion slot (gameData/consumableAutomation.ts), so a
+  // manual click here (in or out of combat) has nothing coherent to do.
+  if (buffCategory === 'offensive_potion' || buffCategory === 'defensive_potion') {
+    return { success: false, reason: 'Pin this to your Potion slot — it fires automatically.' };
+  }
   if (
     item.consumableEffect.healAmount === undefined &&
     !item.consumableEffect.buff &&
@@ -216,37 +224,6 @@ export async function recordConsumableUse(uid: string, itemId: string): Promise<
   });
 }
 
-// Resolves however many charges a batch of combat (one online autosave
-// cycle, or one offline-claim window) actually consumed from an automation-
-// selected item's flat charge pool (gameData/consumableAutomation.ts) back
-// into real chargedConsumables bucket deltas — one Firestore write, at the
-// end of the batch, same "never write per-attack" rule every other part of
-// this overhaul follows. Reads the current buckets fresh rather than being
-// handed the snapshot the engine started from, since nothing else writes
-// this item's buckets between batch start and here (single writer per
-// character, same assumption firebase/inventory.ts's grant functions make).
-async function consumeChargedConsumable(uid: string, itemId: string, totalCharges: number): Promise<void> {
-  const inventory = await getInventory(uid);
-  const buckets = Object.values(inventory.chargedConsumables ?? {})
-    .filter((b) => b.itemId === itemId)
-    .map((b) => ({ remainingCharges: b.remainingCharges, quantity: b.quantity }));
-  if (buckets.length === 0) return;
-
-  const { newBuckets } = applyChargeConsumption(buckets, totalCharges);
-  const updates: Record<string, unknown> = {};
-  for (const b of buckets) {
-    updates[`chargedConsumables.${chargedInstanceId(itemId, b.remainingCharges)}`] = deleteField();
-  }
-  for (const b of newBuckets) {
-    updates[`chargedConsumables.${chargedInstanceId(itemId, b.remainingCharges)}`] = {
-      itemId,
-      remainingCharges: b.remainingCharges,
-      quantity: b.quantity,
-    };
-  }
-  await updateDoc(doc(db, 'characters', uid, 'inventory', 'main'), updates);
-}
-
 // Persists one batch's worth of potion-slot automation usage — the engine
 // (combatEngine/engine.ts, both online and offline) only ever mutates an
 // in-memory ConsumableAutomationRuntimeState; this is the single place that
@@ -269,15 +246,18 @@ export async function applyConsumableAutomationUsage(
   // potion are independent slots.
   autoEat?: { used: number; itemId: string }
 ): Promise<void> {
-  if (usage.offensiveChargesConsumed > 0 && potionItemId) {
-    await consumeChargedConsumable(uid, potionItemId, usage.offensiveChargesConsumed);
-  }
-  if (usage.defensiveChargesConsumed > 0 && potionItemId) {
-    await consumeChargedConsumable(uid, potionItemId, usage.defensiveChargesConsumed);
-  }
-
   const characterUpdate: Record<string, unknown> = {};
   const inventoryUpdate: Record<string, unknown> = {};
+  // No-more-charges redesign — offensive/defensive potions are now plain
+  // `items` stacks, one unit consumed per attack/hit taken (see
+  // combatEngine/engine.ts's stockRemaining decrement), so this is the
+  // same flat items decrement healing/mana/autoEat already use below.
+  if (usage.offensiveChargesConsumed > 0 && potionItemId) {
+    inventoryUpdate[`items.${potionItemId}`] = increment(-usage.offensiveChargesConsumed);
+  }
+  if (usage.defensiveChargesConsumed > 0 && potionItemId) {
+    inventoryUpdate[`items.${potionItemId}`] = increment(-usage.defensiveChargesConsumed);
+  }
   if (usage.healingUsed > 0 && potionItemId) {
     inventoryUpdate[`items.${potionItemId}`] = increment(-usage.healingUsed);
     characterUpdate[`itemCooldowns.${potionItemId}`] = serverTimestamp();

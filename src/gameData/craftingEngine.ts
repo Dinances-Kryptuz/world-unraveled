@@ -157,12 +157,6 @@ export interface CraftingOfflineResult {
   // resolver's).
   alchemyZoneMasteryXpGained?: number;
   finalAlchemyZoneMasteryXp?: number;
-  // One entry per batch-loop iteration that produced items, recording how
-  // many potions got rolled at which charge count — same "don't apply the
-  // batch's ENDING mastery to the whole batch" correctness fix as
-  // materialMasteryBatches, just steppped by milestone tier instead of by
-  // percent point.
-  alchemyZoneMasteryBatches?: { quantity: number; chargesAtCraft: number }[];
   // Only populated when resolveCraftingOffline is called with
   // `enchantingZoneMastery` (an enchantingZoneId-tagged scroll recipe) —
   // same role as alchemyZoneMasteryXpGained/finalAlchemyZoneMasteryXp
@@ -175,10 +169,12 @@ export interface CraftingOfflineResult {
   // Cooking's own 6-zone Mastery axis.
   cookingZoneMasteryXpGained?: number;
   finalCookingZoneMasteryXp?: number;
-  // Only present for a Tier 2 (Stat Food) recipe — same batch-by-milestone
-  // shape as alchemyZoneMasteryBatches above, recording how many servings
-  // got rolled at which charge count. Absent for Tier 1/3 recipes (no
-  // charge-count concept — Recovery Food/Feasts are plain stackable
+  // Only present for a Tier 2 (Stat Food) recipe — one entry per batch-loop
+  // iteration that produced servings, recording how many got rolled at
+  // which charge count (Stat Food still uses the charge-bucket model —
+  // only Alchemy's own potions dropped it, see alchemyMastery.ts's
+  // AlchemyMasteryMilestone.potionsPerCraft). Absent for Tier 1/3 recipes
+  // (no charge-count concept — Recovery Food/Feasts are plain stackable
   // grants), even when cookingZoneMastery is otherwise populated.
   cookingZoneMasteryBatches?: { quantity: number; chargesAtCraft: number }[];
 }
@@ -292,7 +288,6 @@ export function resolveCraftingOffline(
   let materialMasteryXpGained = 0;
   const materialMasteryBatches: { quantity: number; masteryPercentAtCraft: number }[] = [];
   let alchemyZoneMasteryXpGained = 0;
-  const alchemyZoneMasteryBatches: { quantity: number; chargesAtCraft: number }[] = [];
   let enchantingZoneMasteryXpGained = 0;
   let cookingZoneMasteryXpGained = 0;
   const cookingZoneMasteryBatches: { quantity: number; chargesAtCraft: number }[] = [];
@@ -416,8 +411,16 @@ export function resolveCraftingOffline(
     const bonusChance = materialMastery
       ? materialMasteryBonusChance(materialPercent)
       : alchemyZoneMastery || enchantingZoneMastery || cookingZoneMastery
-        ? 0 // Zone-Mastery axes' bonuses are charges/speed/preserve only — never probabilistic bonus output.
+        ? 0 // Zone-Mastery axes' bonuses are speed/preserve (+ Alchemy's own deterministic potionsPerCraft multiplier below) — never a probabilistic bonus-output fraction.
         : craftingMasteryBonusChance(masteryLevel);
+    // No-more-charges redesign — a crafted potion is now a plain stackable
+    // item, so Alchemy's own mastery reward (used to be "this one potion
+    // gets more charges") instead multiplies how many potions THIS craft
+    // action produces. zoneMilestone is recomputed every iteration and
+    // craftAttempts is already capped at the next milestone boundary
+    // (craftsToNextMilestone above), so an earlier batch crafted before a
+    // tier change correctly keeps its lower multiplier.
+    const alchemyPotionsPerCraft = alchemyZoneMastery ? zoneMilestone!.potionsPerCraft : 1;
     // Cooking's Tier 1 "+1 serving from 25% zone Mastery" reward is a FLAT
     // deterministic extra, not a probabilistic bonusChance fraction (unlike
     // every other axis's bonus-output share) — per the design brief's own
@@ -446,7 +449,8 @@ export function resolveCraftingOffline(
             : craftingMasteryIngredientSaveChance(masteryLevel)) +
       (craftingShirtBonuses?.materialPreservePct ?? 0) / 100;
 
-    const quantityThisBatch = craftAttempts * (1 + bonusChance) + craftAttempts * cookingBonusServingsPerCraft;
+    const quantityThisBatch =
+      craftAttempts * (1 + bonusChance) * alchemyPotionsPerCraft + craftAttempts * cookingBonusServingsPerCraft;
     itemsCrafted += quantityThisBatch;
     remainingSeconds -= craftAttempts * craftSeconds;
     if (recipe.goldCost) remainingGold -= craftAttempts * recipe.goldCost;
@@ -466,7 +470,6 @@ export function resolveCraftingOffline(
       materialMasteryXpGained += materialXpThisBatch;
       materialXp += materialXpThisBatch;
     } else if (alchemyZoneMastery) {
-      alchemyZoneMasteryBatches.push({ quantity: quantityThisBatch, chargesAtCraft: zoneMilestone!.charges });
       const zoneXpThisBatch = craftAttempts * zoneXpPerCraft;
       alchemyZoneMasteryXpGained += zoneXpThisBatch;
       zoneXp += zoneXpThisBatch;
@@ -533,9 +536,7 @@ export function resolveCraftingOffline(
     ...(materialMastery
       ? { materialMasteryXpGained, finalMaterialMasteryXp: materialXp, materialMasteryBatches }
       : {}),
-    ...(alchemyZoneMastery
-      ? { alchemyZoneMasteryXpGained, finalAlchemyZoneMasteryXp: zoneXp, alchemyZoneMasteryBatches }
-      : {}),
+    ...(alchemyZoneMastery ? { alchemyZoneMasteryXpGained, finalAlchemyZoneMasteryXp: zoneXp } : {}),
     ...(enchantingZoneMastery
       ? { enchantingZoneMasteryXpGained, finalEnchantingZoneMasteryXp: enchantZoneXp }
       : {}),

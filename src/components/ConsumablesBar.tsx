@@ -47,6 +47,12 @@ function EquippedSlot({
   const manaOnly = !!effect && effect.healAmount === undefined && effect.manaAmount !== undefined;
   const remaining = pinnedItem ? remainingCooldownSeconds(character, pinnedId!, effect!.cooldownSeconds, new Date()) : 0;
   const blockedOutOfCombat = manaOnly && !allowMana;
+  // No-more-charges redesign — offensive/defensive potions only ever fire
+  // automatically, one per attack/hit taken (gameData/consumableAutomation.ts);
+  // pinning is still how you choose which one, but clicking it manually has
+  // nothing to do.
+  const autoFiresOnly =
+    effect?.buff?.category === 'offensive_potion' || effect?.buff?.category === 'defensive_potion';
   // Cooking overhaul Tier 1 — Recovery Food is completely prohibited in a
   // dungeon/raid: if it's still pinned from open-world play, disable it
   // here rather than silently unpinning (the pin is just a pointer, and
@@ -62,7 +68,7 @@ function EquippedSlot({
             item={pinnedItem}
             quantity={quantity}
             onClick={() => onUse(pinnedId!)}
-            disabled={quantity <= 0 || remaining > 0 || blockedOutOfCombat || blockedInDungeon}
+            disabled={quantity <= 0 || remaining > 0 || blockedOutOfCombat || blockedInDungeon || autoFiresOnly}
           />
         ) : (
           <div className="item-slot item-slot-empty" />
@@ -160,6 +166,8 @@ export function ConsumablesBar({
               const manaOnly = effect.healAmount === undefined && effect.manaAmount !== undefined;
               const remaining = remainingCooldownSeconds(character, item.id, effect.cooldownSeconds, new Date());
               const blockedOutOfCombat = manaOnly && !allowMana;
+              const autoFiresOnly =
+                effect.buff?.category === 'offensive_potion' || effect.buff?.category === 'defensive_potion';
               const quantity = inventoryItems[item.id] ?? 0;
               return (
                 <div key={item.id} className="loot-entry">
@@ -167,7 +175,7 @@ export function ConsumablesBar({
                     item={item}
                     quantity={quantity}
                     onClick={() => onUse(item.id)}
-                    disabled={remaining > 0 || blockedOutOfCombat}
+                    disabled={remaining > 0 || blockedOutOfCombat || autoFiresOnly}
                   />
                   {remaining > 0 && <small>{Math.ceil(remaining)}s</small>}
                 </div>

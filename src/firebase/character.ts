@@ -883,16 +883,17 @@ export async function applyCraftingProfessionResult(
     // Only set for a Recipe.alchemyZoneId-tagged recipe — see
     // craftingEngine.ts's resolveCraftingOffline/AlchemyZoneMasteryInput.
     // Mutually exclusive with materialMastery (a recipe is never tagged
-    // with both a materialId and an alchemyZoneId).
-    alchemyZoneMastery?: {
-      batches: { quantity: number; chargesAtCraft: number }[];
-    };
+    // with both a materialId and an alchemyZoneId). A no-more-charges-era
+    // presence marker only (no batch data) — a crafted potion is a plain
+    // stackable item now, same as a scroll (see enchantingZoneMastery's
+    // comment just below), so the normal resultQuantity grant handles it.
+    alchemyZoneMastery?: object;
     // Only set for a Recipe.enchantingZoneId-tagged recipe (every Phase E6
     // scroll recipe) — see craftingEngine.ts's resolveCraftingOffline/
     // EnchantingZoneMasteryInput. No batches array needed (unlike
-    // materialMastery/alchemyZoneMastery): a scroll is a plain stackable
-    // item with no stat roll or charge-count variant to pick per-batch, so
-    // the normal resultQuantity grant below already handles it correctly.
+    // materialMastery): a scroll is a plain stackable item with no stat
+    // roll or charge-count variant to pick per-batch, so the normal
+    // resultQuantity grant below already handles it correctly.
     enchantingZoneMastery?: {
       zoneId: string;
       newEnchantingZoneMasteryXp: number;
@@ -1107,35 +1108,15 @@ export async function applyCraftingProfessionResult(
         Array.from(grantsByInstance, ([instanceId, g]) => ({ instanceId, rolls: g.rolls, quantity: g.quantity }))
       );
     }
-  } else if (result.alchemyZoneMastery) {
-    // Same batch-carry/floor treatment as the materialMastery branch above,
-    // but keyed by charge count instead of by rolled stats — each batch was
-    // crafted at THAT batch's own milestone (see
-    // CraftingOfflineResult.alchemyZoneMasteryBatches' doc comment), so an
-    // earlier batch crafted before a milestone boundary must keep its lower
-    // charge count rather than being up-leveled to the run's final tier.
-    const grantsByCharges = new Map<number, number>();
-    let carry = 0;
-    for (const batch of result.alchemyZoneMastery.batches) {
-      carry += batch.quantity;
-      const whole = Math.floor(carry);
-      carry -= whole;
-      if (whole > 0) {
-        grantsByCharges.set(batch.chargesAtCraft, (grantsByCharges.get(batch.chargesAtCraft) ?? 0) + whole);
-      }
-    }
-    if (grantsByCharges.size > 0) {
-      await grantChargedConsumables(
-        uid,
-        result.resultItemId,
-        Array.from(grantsByCharges, ([remainingCharges, quantity]) => ({ remainingCharges, quantity }))
-      );
-    }
   } else if (result.cookingZoneMastery?.batches) {
     // Only a Tier 2 (Stat Food) recipe ever sets `batches` — same batch-
-    // carry/floor/charge-count treatment as the alchemyZoneMastery branch
-    // above, since Stat Food's charges-per-serving are set at CRAFT TIME
-    // and must never be retroactively changed for already-crafted servings.
+    // carry/floor treatment as the materialMastery branch above, keyed by
+    // charge count instead of by rolled stats, since Stat Food's
+    // charges-per-serving are set at CRAFT TIME and must never be
+    // retroactively changed for already-crafted servings. (Alchemy's own
+    // potions dropped this charge-bucket model entirely — see
+    // alchemyMastery.ts's AlchemyMasteryMilestone.potionsPerCraft — so they
+    // fall straight through to the plain resultQuantity grant below.)
     const grantsByCharges = new Map<number, number>();
     let carry = 0;
     for (const batch of result.cookingZoneMastery.batches) {

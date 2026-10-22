@@ -97,7 +97,13 @@ export function buildCraftingProfessionResultOptions(
           },
         }
       : {}),
-    ...(recipe.alchemyZoneId ? { alchemyZoneMastery: { batches: result.alchemyZoneMasteryBatches ?? [] } } : {}),
+    // No-more-charges redesign — Alchemy potions are now plain stackable
+    // grants (the generic resultQuantity path below), so this is purely a
+    // presence marker telling applyCraftingProfessionResult's XP chain to
+    // credit this craft's herb zones; it carries no batch/charge data of
+    // its own anymore (contrast materialMastery's batches above, still
+    // needed there for equipment's per-unit stat rolls).
+    ...(recipe.alchemyZoneId ? { alchemyZoneMastery: {} } : {}),
     ...(recipe.enchantingZoneId
       ? {
           enchantingZoneMastery: {
