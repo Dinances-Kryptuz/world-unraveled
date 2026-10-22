@@ -4,7 +4,7 @@ import { useCharacter } from '../../hooks/useCharacter';
 import { startActivity, advanceDisenchantQueue } from '../../firebase/character';
 import { ZONES, GATHER_NODES, FISHING_HOLES } from '../../gameData/zones';
 import { RECIPES } from '../../gameData/recipes';
-import { PROFESSION_LABELS, PROFESSION_CATEGORY, getProfessionState } from '../../gameData/professionTiers';
+import { PROFESSION_LABELS, PROFESSION_CATEGORY, PROFESSION_MILESTONE_LEVELS, getProfessionState } from '../../gameData/professionTiers';
 import { gatheringColorTier, GATHERING_COLOR_XP_PCT, fishingZoneMasteryPercent } from '../../gameData/gatheringEngine';
 import { craftingColorTier, CRAFTING_COLOR_XP_PCT } from '../../gameData/craftingEngine';
 import { canUseRecipe } from '../../firebase/professions';
@@ -16,7 +16,7 @@ import { equippedItemId, toolTypeToEquipSlot } from '../../gameData/equipmentSta
 import { describeItemStats } from '../../gameData/equipmentStats';
 import { MATERIALS, LEATHER_MATERIALS, CLOTH_MATERIALS, WOOD_MATERIALS, getMaterial, type MaterialDef } from '../../gameData/materials';
 import { getItemDisplayName, equipmentSuffixFor } from '../../gameData/equipmentSuffixes';
-import { rarityColor } from '../../gameData/itemRarity';
+import { rarityColor, inferItemRarity, RARITY_LABELS, RARITY_COLORS } from '../../gameData/itemRarity';
 import { materialIdForItem } from '../../gameData/itemMetadata';
 import { matchesInventoryFilter, type InventoryEntry } from '../../gameData/inventorySort';
 import {
@@ -370,69 +370,104 @@ export function ProfessionScreen({
   function renderRecipeList(recipesToShow: typeof recipesForProfession = recipesForProfession) {
     return (
       <ul>
-        {recipesToShow
-          .filter((recipe) => canUseRecipe(char, recipe))
-          .map((recipe) => {
-            const meetsSkill = professionLevel >= recipe.requiredSkill;
-            const meetsLevel = !recipe.requiredCharacterLevel || char.level >= recipe.requiredCharacterLevel;
-            const meetsGold = !recipe.goldCost || char.gold >= recipe.goldCost;
-            const meetsMaterials = recipe.materials.every((m) => (inventory?.items[m.itemId] ?? 0) >= m.quantity);
-            const canCraft = meetsSkill && meetsLevel && meetsGold && meetsMaterials;
-            // All 6 crafting professions now share craftingEngine.ts's
-            // level-delta color formula — "red" (below requiredSkill) stays
-            // a purely gating display on top of it. Mining's Smelting
-            // recipes land here too (tagged to a gathering-category
-            // profession) and still show a color/XP% for flavor even though
-            // they never actually earn Mining XP (see CraftingScreen's
-            // earnsProfessionXp comment) — harmless since the % is never
-            // read anywhere but this tooltip.
-            const tier = !meetsSkill ? 'red' : craftingColorTier(professionLevel, recipe.requiredSkill);
-            const resultItem = ITEMS[recipe.resultItemId];
-            const masteryLevel = getProfessionState(char.professions, professionId).mastery?.[recipe.id]?.level ?? 0;
+        {recipesToShow.map((recipe) => {
+          const resultItem = ITEMS[recipe.resultItemId];
+          // Recipe-discovery recipes (learnedAutomatically: false — RARITY-6's
+          // dungeon/monster-drop formulas, the Tailoring/Enchanting formula
+          // scrolls) used to be filtered out of this list entirely until
+          // learned, which hid them from a player who had no idea such a
+          // recipe existed at all. Show them as an explicit locked row
+          // instead — "requirements shown rather than hidden" per the design
+          // brief's UI section — rather than vanishing silently.
+          if (!canUseRecipe(char, recipe)) {
             return (
-              <li key={recipe.id}>
+              <li key={recipe.id} className="recipe-undiscovered" style={{ opacity: 0.55 }}>
                 <div className="item-row-main">
                   {resultItem && <ItemSlot item={resultItem} />}
                   <span>
-                    <span
-                      style={{ color: TIER_COLORS[tier], fontWeight: 700, cursor: 'help' }}
-                      title={resultItem ? describeItemStats(resultItem) : undefined}
-                    >
-                      {recipe.name}
-                    </span>{' '}
-                    (requires level {recipe.requiredSkill}
-                    {recipe.requiredCharacterLevel ? `, Lv ${recipe.requiredCharacterLevel}` : ''}
-                    {meetsSkill ? `, ${(CRAFTING_COLOR_XP_PCT[tier as keyof typeof CRAFTING_COLOR_XP_PCT] * 100).toFixed(0)}% XP` : ''}
-                    ) — materials:{' '}
-                    {recipe.materials
-                      .map((m, i) => {
-                        const have = inventory?.items[m.itemId] ?? 0;
-                        const short = have < m.quantity;
-                        return (
-                          <span key={m.itemId} style={short ? { color: '#c0392b' } : undefined}>
-                            {i > 0 ? ', ' : ''}
-                            {have}/{m.quantity} {ITEMS[m.itemId]?.name ?? m.itemId}
-                          </span>
-                        );
-                      })}
-                    {recipe.goldCost ? ` + ${recipe.goldCost} gold` : ''}
-                    {known ? ` — Mastery ${masteryLevel}%` : ''}
+                    <strong>{recipe.name}</strong> — Undiscovered (learn this recipe from a{' '}
+                    {recipe.source === 'dungeon_drop'
+                      ? 'dungeon'
+                      : recipe.source === 'monster_drop'
+                        ? 'monster'
+                        : recipe.source === 'rare_world_drop'
+                          ? 'rare world'
+                          : 'special'}{' '}
+                    drop)
                   </span>
                 </div>
-                <button onClick={() => handleCraft(recipe.id)} disabled={!canCraft}>
-                  {canCraft
-                    ? 'Craft'
-                    : !meetsLevel
-                      ? `Need Lv ${recipe.requiredCharacterLevel}`
-                      : !meetsSkill
-                        ? `Need skill ${recipe.requiredSkill}`
-                        : !meetsMaterials
-                          ? 'Need materials'
-                          : `Need ${recipe.goldCost} gold`}
-                </button>
               </li>
             );
-          })}
+          }
+          const meetsSkill = professionLevel >= recipe.requiredSkill;
+          const meetsLevel = !recipe.requiredCharacterLevel || char.level >= recipe.requiredCharacterLevel;
+          const meetsGold = !recipe.goldCost || char.gold >= recipe.goldCost;
+          const meetsMaterials = recipe.materials.every((m) => (inventory?.items[m.itemId] ?? 0) >= m.quantity);
+          const canCraft = meetsSkill && meetsLevel && meetsGold && meetsMaterials;
+          // All 6 crafting professions now share craftingEngine.ts's
+          // level-delta color formula — "red" (below requiredSkill) stays
+          // a purely gating display on top of it. Mining's Smelting
+          // recipes land here too (tagged to a gathering-category
+          // profession) and still show a color/XP% for flavor even though
+          // they never actually earn Mining XP (see CraftingScreen's
+          // earnsProfessionXp comment) — harmless since the % is never
+          // read anywhere but this tooltip.
+          const tier = !meetsSkill ? 'red' : craftingColorTier(professionLevel, recipe.requiredSkill);
+          const masteryLevel = getProfessionState(char.professions, professionId).mastery?.[recipe.id]?.level ?? 0;
+          // Milestone 4's masterwork recipes are exactly "requiredSkill 100
+          // + a purple result" — read directly off the data rather than a
+          // hardcoded id list, so a future masterwork recipe gets the badge
+          // automatically.
+          const isMasterwork = recipe.requiredSkill >= 100 && resultItem?.rarity === 'purple';
+          const itemRarity = resultItem ? inferItemRarity(resultItem) : null;
+          return (
+            <li key={recipe.id}>
+              <div className="item-row-main">
+                {resultItem && <ItemSlot item={resultItem} />}
+                <span>
+                  <span
+                    style={{ color: TIER_COLORS[tier], fontWeight: 700, cursor: 'help' }}
+                    title={resultItem ? describeItemStats(resultItem) : undefined}
+                  >
+                    {recipe.name}
+                  </span>{' '}
+                  {isMasterwork && <span style={{ color: RARITY_COLORS.purple, fontWeight: 700 }}>[Masterwork]</span>}{' '}
+                  {itemRarity && resultItem && (
+                    <span style={{ color: rarityColor(resultItem) ?? undefined }}>({RARITY_LABELS[itemRarity]})</span>
+                  )}{' '}
+                  (requires level {recipe.requiredSkill}
+                  {recipe.requiredCharacterLevel ? `, Lv ${recipe.requiredCharacterLevel}` : ''}
+                  {meetsSkill ? `, ${(CRAFTING_COLOR_XP_PCT[tier as keyof typeof CRAFTING_COLOR_XP_PCT] * 100).toFixed(0)}% XP` : ''}
+                  ) — materials:{' '}
+                  {recipe.materials
+                    .map((m, i) => {
+                      const have = inventory?.items[m.itemId] ?? 0;
+                      const short = have < m.quantity;
+                      return (
+                        <span key={m.itemId} style={short ? { color: '#c0392b' } : undefined}>
+                          {i > 0 ? ', ' : ''}
+                          {have}/{m.quantity} {ITEMS[m.itemId]?.name ?? m.itemId}
+                        </span>
+                      );
+                    })}
+                  {recipe.goldCost ? ` + ${recipe.goldCost} gold` : ''}
+                  {known ? ` — Mastery ${masteryLevel}%` : ''}
+                </span>
+              </div>
+              <button onClick={() => handleCraft(recipe.id)} disabled={!canCraft}>
+                {canCraft
+                  ? 'Craft'
+                  : !meetsLevel
+                    ? `Need Lv ${recipe.requiredCharacterLevel}`
+                    : !meetsSkill
+                      ? `Need skill ${recipe.requiredSkill}`
+                      : !meetsMaterials
+                        ? 'Need materials'
+                        : `Need ${recipe.goldCost} gold`}
+              </button>
+            </li>
+          );
+        })}
       </ul>
     );
   }
@@ -906,9 +941,23 @@ export function ProfessionScreen({
     );
   }
 
+  // Milestone 4's 25/50/75/100 achievement/title milestones — shown here
+  // as "next milestone" progress so they read as an active goal, not just
+  // a Collection Log entry discovered after the fact.
+  const nextProfessionMilestone = known ? PROFESSION_MILESTONE_LEVELS.find((lvl) => professionLevel < lvl) : undefined;
+
   return (
     <div className="zone-screen">
       <h2>{label}</h2>
+      {known && (
+        <p className="profession-milestone-progress">
+          {nextProfessionMilestone
+            ? `Level ${professionLevel} / ${nextProfessionMilestone} — next milestone: ${
+                nextProfessionMilestone === 100 ? `Master ${label}` : `${label} ${nextProfessionMilestone}`
+              }`
+            : `Level ${professionLevel} — Master ${label} achieved.`}
+        </p>
+      )}
 
       {category === 'gathering' && (
         <ul>

@@ -1,4 +1,4 @@
-import { PRIMARY_STAT, type BaseStat, type ClassId, type EquipRole, type SpecId } from './classStats';
+import { ALLOWED_ARMOR_TYPES, CLASS_LABELS, PRIMARY_STAT, type BaseStat, type ClassId, type EquipRole, type SpecId } from './classStats';
 import type { EquipmentSlot, EquippedItemRef, ItemDef, ToolType } from './types';
 import { ITEMS } from './items';
 import { ENCHANTS } from './enchanting';
@@ -281,6 +281,18 @@ export function describeItemStats(item: ItemDef): string {
       .filter(([, value]) => value)
       .map(([stat, value]) => `+${value} ${stat}`);
     if (bonuses.length > 0) parts.push(bonuses.join(', '));
+  }
+  // Companions share the same ClassId/ALLOWED_ARMOR_TYPES table as the
+  // player (see classStats.ts), so one class list covers both — a crafter
+  // gearing a Mage companion sees the same "Mage" here as for their own
+  // Mage alt. Only armor pieces actually restrict by class; weapons/
+  // jewelry/trinkets have no armorType and are suitable for everyone, so
+  // the line is skipped there rather than printing a no-op "all classes".
+  if (item.armorType) {
+    const suitableClasses = (Object.keys(ALLOWED_ARMOR_TYPES) as ClassId[]).filter((cls) =>
+      ALLOWED_ARMOR_TYPES[cls].includes(item.armorType!)
+    );
+    parts.push(`Suitable for: ${suitableClasses.map((cls) => CLASS_LABELS[cls]).join(', ')} (player or companion)`);
   }
   return parts.join(' — ');
 }

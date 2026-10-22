@@ -1,7 +1,7 @@
 import type { Character } from '../types/character';
 import type { AccountState } from './characterSlots';
 import { MAX_CHARACTER_LEVEL } from './xpTables';
-import { ALL_PROFESSION_IDS } from './professionTiers';
+import { ALL_PROFESSION_IDS, PROFESSION_LABELS, PROFESSION_MILESTONE_LEVELS } from './professionTiers';
 import { COMPANIONS } from './companions';
 import { DUNGEONS } from './dungeons';
 import { MAX_CHARACTER_SLOTS } from './characterSlots';
@@ -34,8 +34,26 @@ function totalDungeonClears(character: Character): number {
   return Object.values(character.dungeonClears).reduce((sum, n) => sum + n, 0);
 }
 
-function maxProfessionSkill(character: Character): number {
-  return Object.values(character.professions).reduce((max, p) => Math.max(max, p?.level ?? 0), 0);
+// Milestone 4 (Profession Progression overhaul) — one achievement/title
+// pair per profession at 25/50/75/100 on the shared 1-100 level scale.
+// 25/50/75 are crafting-opportunity-flavored milestones only (explicitly
+// no stat bonus, per the design brief); 100 is the genuine profession-
+// level-100 capstone. This is a DIFFERENT axis from the zone-Mastery
+// "Grandmaster X" achievements elsewhere in this file (generateForager/
+// Angler/Alchemist/Enchanter/ChefAchievements, and the material-Mastery
+// generators above) — reaching profession level 100 doesn't require
+// having mastered every zone's materials, and vice versa; replaces the
+// old 1-300-scale skilled_hands/grandmaster achievements, which could
+// never be earned again once the profession curve was rescaled to 1-100.
+function generateProfessionLevelAchievements(): AchievementDef[] {
+  return ALL_PROFESSION_IDS.flatMap((professionId) =>
+    PROFESSION_MILESTONE_LEVELS.map((level) => ({
+      id: `level_${level}_${professionId}`,
+      name: level === 100 ? `Master ${PROFESSION_LABELS[professionId]}` : `${PROFESSION_LABELS[professionId]} ${level}`,
+      description: `Raise ${PROFESSION_LABELS[professionId]} to level ${level}.`,
+      check: (c: Character) => (c.professions[professionId]?.level ?? 0) >= level,
+    }))
+  );
 }
 
 export function isMaterialMastered(character: Character, materialId: string): boolean {
@@ -350,18 +368,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     description: 'Learn all 10 professions.',
     check: (c) => ALL_PROFESSION_IDS.every((id) => !!c.professions[id]),
   },
-  {
-    id: 'skilled_hands',
-    name: 'Skilled Hands',
-    description: 'Raise any profession to skill 150.',
-    check: (c) => maxProfessionSkill(c) >= 150,
-  },
-  {
-    id: 'grandmaster',
-    name: 'Grandmaster',
-    description: 'Raise any profession to the skill cap (300).',
-    check: (c) => maxProfessionSkill(c) >= 300,
-  },
+  ...generateProfessionLevelAchievements(),
   {
     id: 'making_friends',
     name: 'Making Friends',

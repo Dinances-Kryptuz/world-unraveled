@@ -226,6 +226,7 @@ export const MONSTERS: Record<string, Monster> = {
       { itemId: 'ember_shard', chance: 0.05, minQty: 1, maxQty: 1 },
       { itemId: 'gray_necklace_z3', chance: 0.12, minQty: 1, maxQty: 1 },
       { itemId: 'white_belt_z3', chance: 0.08, minQty: 1, maxQty: 1 },
+      { itemId: 'green_ring_z3', chance: 0.04, minQty: 1, maxQty: 1 },
     ],
     specialAbility: {
       name: 'Ember Bite',
@@ -435,6 +436,7 @@ export const MONSTERS: Record<string, Monster> = {
       { itemId: 'smoky_quartz', chance: 0.06, minQty: 1, maxQty: 1 },
       { itemId: 'gray_necklace_z4', chance: 0.12, minQty: 1, maxQty: 1 },
       { itemId: 'white_belt_z4', chance: 0.08, minQty: 1, maxQty: 1 },
+      { itemId: 'green_ring_z4', chance: 0.04, minQty: 1, maxQty: 1 },
       { itemId: 'formula_obsidian_battleaxe', chance: 0.12, minQty: 1, maxQty: 1 },
     ],
     specialAbility: {
@@ -542,6 +544,8 @@ export const MONSTERS: Record<string, Monster> = {
       { itemId: 'fire_opal', chance: 0.06, minQty: 1, maxQty: 1 },
       { itemId: 'gray_necklace_z5', chance: 0.12, minQty: 1, maxQty: 1 },
       { itemId: 'white_belt_z5', chance: 0.08, minQty: 1, maxQty: 1 },
+      { itemId: 'green_ring_z5', chance: 0.04, minQty: 1, maxQty: 1 },
+      { itemId: 'blue_ring_z5', chance: 0.015, minQty: 1, maxQty: 1 },
       { itemId: 'formula_elixir_of_giants', chance: 0.12, minQty: 1, maxQty: 1 },
       { itemId: 'formula_elixir_of_shadow_power', chance: 0.12, minQty: 1, maxQty: 1 },
       { itemId: 'formula_platinum_ring', chance: 0.12, minQty: 1, maxQty: 1 },
@@ -654,6 +658,8 @@ export const MONSTERS: Record<string, Monster> = {
       { itemId: 'heartflame_crystal', chance: 0.06, minQty: 1, maxQty: 1 },
       { itemId: 'gray_necklace_z6', chance: 0.12, minQty: 1, maxQty: 1 },
       { itemId: 'white_belt_z6', chance: 0.08, minQty: 1, maxQty: 1 },
+      { itemId: 'green_ring_z6', chance: 0.04, minQty: 1, maxQty: 1 },
+      { itemId: 'blue_ring_z6', chance: 0.02, minQty: 1, maxQty: 1 },
       { itemId: 'formula_greater_shadow_protection_potion', chance: 0.12, minQty: 1, maxQty: 1 },
       { itemId: 'formula_elixir_of_the_mongoose', chance: 0.12, minQty: 1, maxQty: 1 },
       { itemId: 'formula_greater_arcane_elixir', chance: 0.12, minQty: 1, maxQty: 1 },
