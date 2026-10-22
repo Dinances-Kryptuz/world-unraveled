@@ -31,6 +31,18 @@ const ARMOR_STATS: BaseStat[] = ['STR', 'STA', 'INT', 'SPI', 'AGI'];
 // zone's monsters/dungeons stay a real fight at every point in that zone's
 // gearing curve, not just at the very start of it — leaning on potions/food
 // for sustained difficulty stays meaningful throughout, not just early on.
+// Equipment Rarity overhaul — thorium/obsidian (and their Leatherworking/
+// Tailoring/Enchanting/jewelry equivalents) were bumped further above, no
+// longer sitting at a flat "min" value like Z1-Z4. Zone 5/6 crafted gear
+// now splits into two rarities by piece (see items.ts's matching `rarity`
+// tags): Zone 5's smaller/earlier-unlocking pieces stay 'green' at the
+// original value, its larger/later pieces (helm/shield/legplates/chest/
+// weapon) become 'blue' at ×11/8; Zone 6's pieces are all 'blue' at ×13/9
+// except the single most-desirable piece per profession (chestplate/robe/
+// staff/etc.), which is 'purple' at ×15/9 — "limited purple," per the
+// design brief's Zone 6 crafting column. The multiplier is applied to each
+// tier's OWN old value, so every slot's existing relative weighting
+// (chest > legs > helm > gloves/bracers/shoulders) carries over unchanged.
 export const ARMOR_STAT_VALUES: Record<string, number> = {
   copper_helm: 2,
   copper_chestplate: 3,
@@ -67,20 +79,20 @@ export const ARMOR_STAT_VALUES: Record<string, number> = {
   mithril_legplates: 9,
   mithril_greaves: 5,
   mithril_shield: 8,
-  thorium_helm: 8,
-  thorium_chestplate: 12,
-  thorium_gauntlets: 6,
-  thorium_bracers: 6,
-  thorium_legplates: 10,
-  thorium_greaves: 7,
-  thorium_shield: 9,
-  obsidian_helm: 9,
-  obsidian_chestplate: 13,
-  obsidian_gauntlets: 7,
-  obsidian_bracers: 7,
-  obsidian_legplates: 12,
-  obsidian_greaves: 8,
-  obsidian_shield: 11,
+  thorium_helm: 11,
+  thorium_chestplate: 16,
+  thorium_gauntlets: 7,
+  thorium_bracers: 7,
+  thorium_legplates: 14,
+  thorium_greaves: 8,
+  thorium_shield: 12,
+  obsidian_helm: 13,
+  obsidian_chestplate: 22,
+  obsidian_gauntlets: 10,
+  obsidian_bracers: 10,
+  obsidian_legplates: 17,
+  obsidian_greaves: 12,
+  obsidian_shield: 16,
   // ── Blacksmithing Shoulders (7 tiers) — Equipment overhaul's itemization
   // parity fix (user-confirmed): Blacksmithing had every other plate slot
   // (Bracers included) but no Shoulders. Ranges mirror each tier's own
@@ -91,16 +103,14 @@ export const ARMOR_STAT_VALUES: Record<string, number> = {
   iron_shoulders: 3,
   steel_shoulders: 4,
   mithril_shoulders: 5,
-  thorium_shoulders: 6,
-  obsidian_shoulders: 7,
-
+  thorium_shoulders: 7,
+  obsidian_shoulders: 10,
   silver_necklace: 2,
   silver_ring: 1,
   gold_necklace: 4,
   gold_ring: 4,
-  platinum_necklace: 6,
-  platinum_ring: 5,
-
+  platinum_necklace: 9,
+  platinum_ring: 8,
   // ── Leatherworking (6 tiers × 7 pieces) — ranges copied 1:1 from the
   // Blacksmithing analog piece of the same tier (helm/chestplate/gauntlets/
   // legplates/greaves respectively; Shoulders and Belt mirror Gauntlets',
@@ -133,21 +143,20 @@ export const ARMOR_STAT_VALUES: Record<string, number> = {
   nightscape_leather_boots: 4,
   nightscape_leather_shoulders: 4,
   nightscape_leather_belt: 4,
-  wicked_leather_helm: 7,
-  wicked_leather_chest: 10,
-  wicked_leather_gloves: 5,
-  wicked_leather_legs: 9,
-  wicked_leather_boots: 5,
-  wicked_leather_shoulders: 5,
-  wicked_leather_belt: 5,
-  emberscar_leather_helm: 8,
-  emberscar_leather_chest: 12,
-  emberscar_leather_gloves: 6,
-  emberscar_leather_legs: 10,
-  emberscar_leather_boots: 7,
-  emberscar_leather_shoulders: 6,
-  emberscar_leather_belt: 6,
-
+  wicked_leather_helm: 10,
+  wicked_leather_chest: 14,
+  wicked_leather_gloves: 6,
+  wicked_leather_legs: 12,
+  wicked_leather_boots: 6,
+  wicked_leather_shoulders: 6,
+  wicked_leather_belt: 6,
+  emberscar_leather_helm: 12,
+  emberscar_leather_chest: 20,
+  emberscar_leather_gloves: 9,
+  emberscar_leather_legs: 14,
+  emberscar_leather_boots: 10,
+  emberscar_leather_shoulders: 9,
+  emberscar_leather_belt: 9,
   // ── Leatherworking Bracers (6 tiers) — Equipment overhaul's itemization
   // parity fix (user-confirmed): Leatherworking had Shoulders at every
   // tier but no Bracers. Ranges mirror each tier's own Gloves 1:1.
@@ -155,9 +164,8 @@ export const ARMOR_STAT_VALUES: Record<string, number> = {
   fine_leather_bracers: 2,
   barbaric_leather_bracers: 3,
   nightscape_leather_bracers: 4,
-  wicked_leather_bracers: 5,
-  emberscar_leather_bracers: 6,
-
+  wicked_leather_bracers: 6,
+  emberscar_leather_bracers: 9,
   // ── Tailoring (6 tiers × 6 armor pieces + 6 capes) — ranges copied 1:1
   // from the Blacksmithing analog piece of the same tier (helm/chestplate/
   // gauntlets/legplates/greaves; Shoulders AND Cape mirror Gauntlets').
@@ -185,18 +193,18 @@ export const ARMOR_STAT_VALUES: Record<string, number> = {
   mageweave_leggings: 7,
   mageweave_boots: 4,
   mageweave_shoulders: 4,
-  runecloth_robe_helm: 7,
-  runecloth_robe: 10,
-  runecloth_gloves: 5,
-  runecloth_leggings: 9,
-  runecloth_boots: 5,
-  runecloth_shoulders: 5,
-  ember_robe_helm: 8,
-  ember_robe: 12,
-  ember_gloves: 6,
-  ember_leggings: 10,
-  ember_boots: 7,
-  ember_shoulders: 6,
+  runecloth_robe_helm: 10,
+  runecloth_robe: 14,
+  runecloth_gloves: 6,
+  runecloth_leggings: 12,
+  runecloth_boots: 6,
+  runecloth_shoulders: 6,
+  ember_robe_helm: 12,
+  ember_robe: 20,
+  ember_gloves: 9,
+  ember_leggings: 14,
+  ember_boots: 10,
+  ember_shoulders: 9,
   // ── Tailoring Bracers (6 tiers) — Equipment overhaul's itemization
   // parity fix (user-confirmed): Tailoring had Shoulders at every tier but
   // no Bracers. Ranges mirror each tier's own Gloves 1:1.
@@ -204,16 +212,14 @@ export const ARMOR_STAT_VALUES: Record<string, number> = {
   wool_bracers: 2,
   silk_bracers: 3,
   mageweave_bracers: 4,
-  runecloth_bracers: 5,
-  ember_bracers: 6,
-
+  runecloth_bracers: 6,
+  ember_bracers: 9,
   cape_of_linen: 1,
   cape_of_wool: 2,
   cape_of_silk: 3,
   cape_of_mageweave: 4,
-  cape_of_runecloth: 5,
-  cape_of_ember: 6,
-
+  cape_of_runecloth: 6,
+  cape_of_ember: 9,
   // ── Enchanting (6 zones x Wand/Staff/Book) — Wand/Book reuse the same
   // "helm"-tier budget as Blacksmithing/Tailoring's own lightest accessory
   // slot at each zone; Staff is roughly double both numbers, "a bigger
@@ -233,12 +239,12 @@ export const ARMOR_STAT_VALUES: Record<string, number> = {
   ironwood_wand: 5,
   ironwood_staff: 10,
   ironwood_tome: 5,
-  charwood_wand: 7,
-  charwood_staff: 14,
-  charwood_tome: 7,
-  emberwood_wand: 8,
-  emberwood_staff: 16,
-  emberwood_tome: 8,
+  charwood_wand: 8,
+  charwood_staff: 19,
+  charwood_tome: 8,
+  emberwood_wand: 12,
+  emberwood_staff: 27,
+  emberwood_tome: 12,
 };
 
 // Mastery XP = (bars the recipe originally requires) × this constant —

@@ -127,222 +127,222 @@ const STATIC_ITEMS: Record<string, ItemDef> = {
   handstitched_leather_helm: {
     id: 'handstitched_leather_helm', name: 'Handstitched Leather Helm', type: 'equipment',
     description: 'A Handstitched Leather helm, crafted by a skilled leatherworker.',
-    stackable: true, equipSlot: 'helmet', armorType: 'leather', statBonuses: { STA: 3, STR: 3 }, sellValue: 18,
+    stackable: true, equipSlot: 'helmet', armorType: 'leather', statBonuses: { STA: 2, STR: 2 }, sellValue: 18, rarity: 'gray',
   },
   handstitched_leather_chest: {
     id: 'handstitched_leather_chest', name: 'Handstitched Leather Chestplate', type: 'equipment',
     description: 'A Handstitched Leather chestplate, crafted by a skilled leatherworker.',
-    stackable: true, equipSlot: 'chest', armorType: 'leather', statBonuses: { STA: 4, STR: 4 }, sellValue: 24,
+    stackable: true, equipSlot: 'chest', armorType: 'leather', statBonuses: { STA: 3, STR: 3 }, sellValue: 24, rarity: 'gray',
   },
   handstitched_leather_gloves: {
     id: 'handstitched_leather_gloves', name: 'Handstitched Leather Gloves', type: 'equipment',
     description: 'A Handstitched Leather gloves, crafted by a skilled leatherworker.',
-    stackable: true, equipSlot: 'gloves', armorType: 'leather', statBonuses: { STA: 2, STR: 2 }, sellValue: 12,
+    stackable: true, equipSlot: 'gloves', armorType: 'leather', statBonuses: { STA: 1, STR: 1 }, sellValue: 12, rarity: 'gray',
   },
   handstitched_leather_legs: {
     id: 'handstitched_leather_legs', name: 'Handstitched Leather Legplates', type: 'equipment',
     description: 'A Handstitched Leather legplates, crafted by a skilled leatherworker.',
-    stackable: true, equipSlot: 'legs', armorType: 'leather', statBonuses: { STA: 4, STR: 3 }, sellValue: 21,
+    stackable: true, equipSlot: 'legs', armorType: 'leather', statBonuses: { STA: 2, STR: 2 }, sellValue: 21, rarity: 'gray',
   },
   handstitched_leather_boots: {
     id: 'handstitched_leather_boots', name: 'Handstitched Leather Boots', type: 'equipment',
     description: 'A Handstitched Leather boots, crafted by a skilled leatherworker.',
-    stackable: true, equipSlot: 'boots', armorType: 'leather', statBonuses: { STA: 3, STR: 2 }, sellValue: 15,
+    stackable: true, equipSlot: 'boots', armorType: 'leather', statBonuses: { STA: 1, STR: 1 }, sellValue: 15, rarity: 'gray',
   },
   handstitched_leather_shoulders: {
     id: 'handstitched_leather_shoulders', name: 'Handstitched Leather Shoulders', type: 'equipment',
     description: 'A Handstitched Leather shoulders, crafted by a skilled leatherworker.',
-    stackable: true, equipSlot: 'shoulders', armorType: 'leather', statBonuses: { STA: 2, STR: 2 }, sellValue: 12,
+    stackable: true, equipSlot: 'shoulders', armorType: 'leather', statBonuses: { STA: 1, STR: 1 }, sellValue: 12, rarity: 'gray',
   },
   handstitched_leather_belt: {
     id: 'handstitched_leather_belt', name: 'Handstitched Leather Belt', type: 'equipment',
     description: 'A sturdy handstitched leather belt, crafted by a skilled leatherworker. No armor training required — anyone can wear it.',
-    stackable: true, equipSlot: 'belt', statBonuses: { STA: 2, STR: 2 }, sellValue: 12,
+    stackable: true, equipSlot: 'belt', statBonuses: { STA: 1, STR: 1 }, sellValue: 12, rarity: 'gray',
   },
 
   // ── Fine Leather (zone, requiredSkill 18) ──────────────────
   fine_leather_helm: {
     id: 'fine_leather_helm', name: 'Fine Leather Helm', type: 'equipment',
     description: 'A Fine Leather helm, crafted by a skilled leatherworker.',
-    stackable: true, equipSlot: 'helmet', armorType: 'leather', statBonuses: { STA: 4, STR: 4 }, sellValue: 26,
+    stackable: true, equipSlot: 'helmet', armorType: 'leather', statBonuses: { STA: 3, STR: 3 }, sellValue: 26, rarity: 'white',
   },
   fine_leather_chest: {
     id: 'fine_leather_chest', name: 'Fine Leather Chestplate', type: 'equipment',
     description: 'A Fine Leather chestplate, crafted by a skilled leatherworker.',
-    stackable: true, equipSlot: 'chest', armorType: 'leather', statBonuses: { STA: 7, STR: 5 }, sellValue: 38,
+    stackable: true, equipSlot: 'chest', armorType: 'leather', statBonuses: { STA: 4, STR: 4 }, sellValue: 38, rarity: 'white',
   },
   fine_leather_gloves: {
     id: 'fine_leather_gloves', name: 'Fine Leather Gloves', type: 'equipment',
     description: 'A Fine Leather gloves, crafted by a skilled leatherworker.',
-    stackable: true, equipSlot: 'gloves', armorType: 'leather', statBonuses: { STA: 4, STR: 3 }, sellValue: 22,
+    stackable: true, equipSlot: 'gloves', armorType: 'leather', statBonuses: { STA: 2, STR: 2 }, sellValue: 22, rarity: 'white',
   },
   fine_leather_legs: {
     id: 'fine_leather_legs', name: 'Fine Leather Legplates', type: 'equipment',
     description: 'A Fine Leather legplates, crafted by a skilled leatherworker.',
-    stackable: true, equipSlot: 'legs', armorType: 'leather', statBonuses: { STA: 6, STR: 5 }, sellValue: 35,
+    stackable: true, equipSlot: 'legs', armorType: 'leather', statBonuses: { STA: 4, STR: 4 }, sellValue: 35, rarity: 'white',
   },
   fine_leather_boots: {
     id: 'fine_leather_boots', name: 'Fine Leather Boots', type: 'equipment',
     description: 'A Fine Leather boots, crafted by a skilled leatherworker.',
-    stackable: true, equipSlot: 'boots', armorType: 'leather', statBonuses: { STA: 4, STR: 3 }, sellValue: 22,
+    stackable: true, equipSlot: 'boots', armorType: 'leather', statBonuses: { STA: 2, STR: 2 }, sellValue: 22, rarity: 'white',
   },
   fine_leather_shoulders: {
     id: 'fine_leather_shoulders', name: 'Fine Leather Shoulders', type: 'equipment',
     description: 'A Fine Leather shoulders, crafted by a skilled leatherworker.',
-    stackable: true, equipSlot: 'shoulders', armorType: 'leather', statBonuses: { STA: 4, STR: 3 }, sellValue: 22,
+    stackable: true, equipSlot: 'shoulders', armorType: 'leather', statBonuses: { STA: 2, STR: 2 }, sellValue: 22, rarity: 'white',
   },
   fine_leather_belt: {
     id: 'fine_leather_belt', name: 'Fine Leather Belt', type: 'equipment',
     description: 'A sturdy fine leather belt, crafted by a skilled leatherworker. No armor training required — anyone can wear it.',
-    stackable: true, equipSlot: 'belt', statBonuses: { STA: 4, STR: 3 }, sellValue: 22,
+    stackable: true, equipSlot: 'belt', statBonuses: { STA: 2, STR: 2 }, sellValue: 22, rarity: 'white',
   },
 
   // ── Barbaric Leather (zone, requiredSkill 35) ──────────────────
   barbaric_leather_helm: {
     id: 'barbaric_leather_helm', name: 'Barbaric Leather Helm', type: 'equipment',
     description: 'A Barbaric Leather helm, crafted by a skilled leatherworker.',
-    stackable: true, equipSlot: 'helmet', armorType: 'leather', statBonuses: { STA: 6, STR: 5 }, sellValue: 37,
+    stackable: true, equipSlot: 'helmet', armorType: 'leather', statBonuses: { STA: 4, STR: 4 }, sellValue: 37, rarity: 'white',
   },
   barbaric_leather_chest: {
     id: 'barbaric_leather_chest', name: 'Barbaric Leather Chestplate', type: 'equipment',
     description: 'A Barbaric Leather chestplate, crafted by a skilled leatherworker.',
-    stackable: true, equipSlot: 'chest', armorType: 'leather', statBonuses: { STA: 9, STR: 7 }, sellValue: 54,
+    stackable: true, equipSlot: 'chest', armorType: 'leather', statBonuses: { STA: 6, STR: 6 }, sellValue: 54, rarity: 'white',
   },
   barbaric_leather_gloves: {
     id: 'barbaric_leather_gloves', name: 'Barbaric Leather Gloves', type: 'equipment',
     description: 'A Barbaric Leather gloves, crafted by a skilled leatherworker.',
-    stackable: true, equipSlot: 'gloves', armorType: 'leather', statBonuses: { STA: 5, STR: 4 }, sellValue: 31,
+    stackable: true, equipSlot: 'gloves', armorType: 'leather', statBonuses: { STA: 3, STR: 3 }, sellValue: 31, rarity: 'white',
   },
   barbaric_leather_legs: {
     id: 'barbaric_leather_legs', name: 'Barbaric Leather Legplates', type: 'equipment',
     description: 'A Barbaric Leather legplates, crafted by a skilled leatherworker.',
-    stackable: true, equipSlot: 'legs', armorType: 'leather', statBonuses: { STA: 8, STR: 6 }, sellValue: 48,
+    stackable: true, equipSlot: 'legs', armorType: 'leather', statBonuses: { STA: 5, STR: 5 }, sellValue: 48, rarity: 'white',
   },
   barbaric_leather_boots: {
     id: 'barbaric_leather_boots', name: 'Barbaric Leather Boots', type: 'equipment',
     description: 'A Barbaric Leather boots, crafted by a skilled leatherworker.',
-    stackable: true, equipSlot: 'boots', armorType: 'leather', statBonuses: { STA: 6, STR: 5 }, sellValue: 34,
+    stackable: true, equipSlot: 'boots', armorType: 'leather', statBonuses: { STA: 4, STR: 4 }, sellValue: 34, rarity: 'white',
   },
   barbaric_leather_shoulders: {
     id: 'barbaric_leather_shoulders', name: 'Barbaric Leather Shoulders', type: 'equipment',
     description: 'A Barbaric Leather shoulders, crafted by a skilled leatherworker.',
-    stackable: true, equipSlot: 'shoulders', armorType: 'leather', statBonuses: { STA: 5, STR: 4 }, sellValue: 31,
+    stackable: true, equipSlot: 'shoulders', armorType: 'leather', statBonuses: { STA: 3, STR: 3 }, sellValue: 31, rarity: 'white',
   },
   barbaric_leather_belt: {
     id: 'barbaric_leather_belt', name: 'Barbaric Leather Belt', type: 'equipment',
     description: 'A sturdy barbaric leather belt, crafted by a skilled leatherworker. No armor training required — anyone can wear it.',
-    stackable: true, equipSlot: 'belt', statBonuses: { STA: 5, STR: 4 }, sellValue: 31,
+    stackable: true, equipSlot: 'belt', statBonuses: { STA: 3, STR: 3 }, sellValue: 31, rarity: 'white',
   },
 
   // ── Nightscape Leather (zone, requiredSkill 52) ──────────────────
   nightscape_leather_helm: {
     id: 'nightscape_leather_helm', name: 'Nightscape Leather Helm', type: 'equipment',
     description: 'A Nightscape Leather helm, crafted by a skilled leatherworker.',
-    stackable: true, equipSlot: 'helmet', armorType: 'leather', statBonuses: { STA: 8, STR: 6 }, sellValue: 49,
+    stackable: true, equipSlot: 'helmet', armorType: 'leather', statBonuses: { STA: 5, STR: 5 }, sellValue: 49, rarity: 'green',
   },
   nightscape_leather_chest: {
     id: 'nightscape_leather_chest', name: 'Nightscape Leather Chestplate', type: 'equipment',
     description: 'A Nightscape Leather chestplate, crafted by a skilled leatherworker.',
-    stackable: true, equipSlot: 'chest', armorType: 'leather', statBonuses: { STA: 11, STR: 9 }, sellValue: 70,
+    stackable: true, equipSlot: 'chest', armorType: 'leather', statBonuses: { STA: 8, STR: 8 }, sellValue: 70, rarity: 'green',
   },
   nightscape_leather_gloves: {
     id: 'nightscape_leather_gloves', name: 'Nightscape Leather Gloves', type: 'equipment',
     description: 'A Nightscape Leather gloves, crafted by a skilled leatherworker.',
-    stackable: true, equipSlot: 'gloves', armorType: 'leather', statBonuses: { STA: 6, STR: 5 }, sellValue: 39,
+    stackable: true, equipSlot: 'gloves', armorType: 'leather', statBonuses: { STA: 4, STR: 4 }, sellValue: 39, rarity: 'green',
   },
   nightscape_leather_legs: {
     id: 'nightscape_leather_legs', name: 'Nightscape Leather Legplates', type: 'equipment',
     description: 'A Nightscape Leather legplates, crafted by a skilled leatherworker.',
-    stackable: true, equipSlot: 'legs', armorType: 'leather', statBonuses: { STA: 10, STR: 8 }, sellValue: 63,
+    stackable: true, equipSlot: 'legs', armorType: 'leather', statBonuses: { STA: 7, STR: 7 }, sellValue: 63, rarity: 'green',
   },
   nightscape_leather_boots: {
     id: 'nightscape_leather_boots', name: 'Nightscape Leather Boots', type: 'equipment',
     description: 'A Nightscape Leather boots, crafted by a skilled leatherworker.',
-    stackable: true, equipSlot: 'boots', armorType: 'leather', statBonuses: { STA: 7, STR: 5 }, sellValue: 42,
+    stackable: true, equipSlot: 'boots', armorType: 'leather', statBonuses: { STA: 4, STR: 4 }, sellValue: 42, rarity: 'green',
   },
   nightscape_leather_shoulders: {
     id: 'nightscape_leather_shoulders', name: 'Nightscape Leather Shoulders', type: 'equipment',
     description: 'A Nightscape Leather shoulders, crafted by a skilled leatherworker.',
-    stackable: true, equipSlot: 'shoulders', armorType: 'leather', statBonuses: { STA: 6, STR: 5 }, sellValue: 39,
+    stackable: true, equipSlot: 'shoulders', armorType: 'leather', statBonuses: { STA: 4, STR: 4 }, sellValue: 39, rarity: 'green',
   },
   nightscape_leather_belt: {
     id: 'nightscape_leather_belt', name: 'Nightscape Leather Belt', type: 'equipment',
     description: 'A sturdy nightscape leather belt, crafted by a skilled leatherworker. No armor training required — anyone can wear it.',
-    stackable: true, equipSlot: 'belt', statBonuses: { STA: 6, STR: 5 }, sellValue: 39,
+    stackable: true, equipSlot: 'belt', statBonuses: { STA: 4, STR: 4 }, sellValue: 39, rarity: 'green',
   },
 
   // ── Wicked Leather (zone, requiredSkill 69) ──────────────────
   wicked_leather_helm: {
     id: 'wicked_leather_helm', name: 'Wicked Leather Helm', type: 'equipment',
     description: 'A Wicked Leather helm, crafted by a skilled leatherworker.',
-    stackable: true, equipSlot: 'helmet', armorType: 'leather', statBonuses: { STA: 9, STR: 8 }, sellValue: 61,
+    stackable: true, equipSlot: 'helmet', armorType: 'leather', statBonuses: { STA: 10, STR: 10 }, sellValue: 61, rarity: 'blue',
   },
   wicked_leather_chest: {
     id: 'wicked_leather_chest', name: 'Wicked Leather Chestplate', type: 'equipment',
     description: 'A Wicked Leather chestplate, crafted by a skilled leatherworker.',
-    stackable: true, equipSlot: 'chest', armorType: 'leather', statBonuses: { STA: 13, STR: 11 }, sellValue: 86,
+    stackable: true, equipSlot: 'chest', armorType: 'leather', statBonuses: { STA: 14, STR: 14 }, sellValue: 86, rarity: 'blue',
   },
   wicked_leather_gloves: {
     id: 'wicked_leather_gloves', name: 'Wicked Leather Gloves', type: 'equipment',
     description: 'A Wicked Leather gloves, crafted by a skilled leatherworker.',
-    stackable: true, equipSlot: 'gloves', armorType: 'leather', statBonuses: { STA: 7, STR: 6 }, sellValue: 47,
+    stackable: true, equipSlot: 'gloves', armorType: 'leather', statBonuses: { STA: 6, STR: 6 }, sellValue: 47, rarity: 'green',
   },
   wicked_leather_legs: {
     id: 'wicked_leather_legs', name: 'Wicked Leather Legplates', type: 'equipment',
     description: 'A Wicked Leather legplates, crafted by a skilled leatherworker.',
-    stackable: true, equipSlot: 'legs', armorType: 'leather', statBonuses: { STA: 12, STR: 10 }, sellValue: 79,
+    stackable: true, equipSlot: 'legs', armorType: 'leather', statBonuses: { STA: 12, STR: 12 }, sellValue: 79, rarity: 'blue',
   },
   wicked_leather_boots: {
     id: 'wicked_leather_boots', name: 'Wicked Leather Boots', type: 'equipment',
     description: 'A Wicked Leather boots, crafted by a skilled leatherworker.',
-    stackable: true, equipSlot: 'boots', armorType: 'leather', statBonuses: { STA: 8, STR: 6 }, sellValue: 50,
+    stackable: true, equipSlot: 'boots', armorType: 'leather', statBonuses: { STA: 6, STR: 6 }, sellValue: 50, rarity: 'green',
   },
   wicked_leather_shoulders: {
     id: 'wicked_leather_shoulders', name: 'Wicked Leather Shoulders', type: 'equipment',
     description: 'A Wicked Leather shoulders, crafted by a skilled leatherworker.',
-    stackable: true, equipSlot: 'shoulders', armorType: 'leather', statBonuses: { STA: 7, STR: 6 }, sellValue: 47,
+    stackable: true, equipSlot: 'shoulders', armorType: 'leather', statBonuses: { STA: 6, STR: 6 }, sellValue: 47, rarity: 'green',
   },
   wicked_leather_belt: {
     id: 'wicked_leather_belt', name: 'Wicked Leather Belt', type: 'equipment',
     description: 'A sturdy wicked leather belt, crafted by a skilled leatherworker. No armor training required — anyone can wear it.',
-    stackable: true, equipSlot: 'belt', statBonuses: { STA: 7, STR: 6 }, sellValue: 47,
+    stackable: true, equipSlot: 'belt', statBonuses: { STA: 6, STR: 6 }, sellValue: 47, rarity: 'green',
   },
 
   // ── Emberscar Leather (zone, requiredSkill 86) ──────────────────
   emberscar_leather_helm: {
     id: 'emberscar_leather_helm', name: 'Emberscar Leather Helm', type: 'equipment',
     description: 'A Emberscar Leather helm, crafted by a skilled leatherworker.',
-    stackable: true, equipSlot: 'helmet', armorType: 'leather', statBonuses: { STA: 11, STR: 9 }, sellValue: 76,
+    stackable: true, equipSlot: 'helmet', armorType: 'leather', statBonuses: { STA: 12, STR: 12 }, sellValue: 76, rarity: 'blue',
   },
   emberscar_leather_chest: {
     id: 'emberscar_leather_chest', name: 'Emberscar Leather Chestplate', type: 'equipment',
     description: 'A Emberscar Leather chestplate, crafted by a skilled leatherworker.',
-    stackable: true, equipSlot: 'chest', armorType: 'leather', statBonuses: { STA: 15, STR: 13 }, sellValue: 106,
+    stackable: true, equipSlot: 'chest', armorType: 'leather', statBonuses: { STA: 20, STR: 20 }, sellValue: 106, rarity: 'purple',
   },
   emberscar_leather_gloves: {
     id: 'emberscar_leather_gloves', name: 'Emberscar Leather Gloves', type: 'equipment',
     description: 'A Emberscar Leather gloves, crafted by a skilled leatherworker.',
-    stackable: true, equipSlot: 'gloves', armorType: 'leather', statBonuses: { STA: 8, STR: 7 }, sellValue: 57,
+    stackable: true, equipSlot: 'gloves', armorType: 'leather', statBonuses: { STA: 9, STR: 9 }, sellValue: 57, rarity: 'blue',
   },
   emberscar_leather_legs: {
     id: 'emberscar_leather_legs', name: 'Emberscar Leather Legplates', type: 'equipment',
     description: 'A Emberscar Leather legplates, crafted by a skilled leatherworker.',
-    stackable: true, equipSlot: 'legs', armorType: 'leather', statBonuses: { STA: 14, STR: 11 }, sellValue: 95,
+    stackable: true, equipSlot: 'legs', armorType: 'leather', statBonuses: { STA: 14, STR: 14 }, sellValue: 95, rarity: 'blue',
   },
   emberscar_leather_boots: {
     id: 'emberscar_leather_boots', name: 'Emberscar Leather Boots', type: 'equipment',
     description: 'A Emberscar Leather boots, crafted by a skilled leatherworker.',
-    stackable: true, equipSlot: 'boots', armorType: 'leather', statBonuses: { STA: 9, STR: 8 }, sellValue: 65,
+    stackable: true, equipSlot: 'boots', armorType: 'leather', statBonuses: { STA: 10, STR: 10 }, sellValue: 65, rarity: 'blue',
   },
   emberscar_leather_shoulders: {
     id: 'emberscar_leather_shoulders', name: 'Emberscar Leather Shoulders', type: 'equipment',
     description: 'A Emberscar Leather shoulders, crafted by a skilled leatherworker.',
-    stackable: true, equipSlot: 'shoulders', armorType: 'leather', statBonuses: { STA: 8, STR: 7 }, sellValue: 57,
+    stackable: true, equipSlot: 'shoulders', armorType: 'leather', statBonuses: { STA: 9, STR: 9 }, sellValue: 57, rarity: 'blue',
   },
   emberscar_leather_belt: {
     id: 'emberscar_leather_belt', name: 'Emberscar Leather Belt', type: 'equipment',
     description: 'A sturdy emberscar leather belt, crafted by a skilled leatherworker. No armor training required — anyone can wear it.',
-    stackable: true, equipSlot: 'belt', statBonuses: { STA: 8, STR: 7 }, sellValue: 57,
+    stackable: true, equipSlot: 'belt', statBonuses: { STA: 9, STR: 9 }, sellValue: 57, rarity: 'blue',
   },
 
   // ── Leatherworking Bracers (6 tiers) — Equipment overhaul's itemization
@@ -353,32 +353,32 @@ const STATIC_ITEMS: Record<string, ItemDef> = {
   handstitched_leather_bracers: {
     id: 'handstitched_leather_bracers', name: 'Handstitched Leather Bracers', type: 'equipment',
     description: 'A Handstitched Leather bracers, crafted by a skilled leatherworker.',
-    stackable: true, equipSlot: 'bracers', armorType: 'leather', statBonuses: { STA: 2, STR: 2 }, sellValue: 12,
+    stackable: true, equipSlot: 'bracers', armorType: 'leather', statBonuses: { STA: 1, STR: 1 }, sellValue: 12, rarity: 'gray',
   },
   fine_leather_bracers: {
     id: 'fine_leather_bracers', name: 'Fine Leather Bracers', type: 'equipment',
     description: 'A Fine Leather bracers, crafted by a skilled leatherworker.',
-    stackable: true, equipSlot: 'bracers', armorType: 'leather', statBonuses: { STA: 4, STR: 3 }, sellValue: 22,
+    stackable: true, equipSlot: 'bracers', armorType: 'leather', statBonuses: { STA: 2, STR: 2 }, sellValue: 22, rarity: 'white',
   },
   barbaric_leather_bracers: {
     id: 'barbaric_leather_bracers', name: 'Barbaric Leather Bracers', type: 'equipment',
     description: 'A Barbaric Leather bracers, crafted by a skilled leatherworker.',
-    stackable: true, equipSlot: 'bracers', armorType: 'leather', statBonuses: { STA: 5, STR: 4 }, sellValue: 31,
+    stackable: true, equipSlot: 'bracers', armorType: 'leather', statBonuses: { STA: 3, STR: 3 }, sellValue: 31, rarity: 'white',
   },
   nightscape_leather_bracers: {
     id: 'nightscape_leather_bracers', name: 'Nightscape Leather Bracers', type: 'equipment',
     description: 'A Nightscape Leather bracers, crafted by a skilled leatherworker.',
-    stackable: true, equipSlot: 'bracers', armorType: 'leather', statBonuses: { STA: 6, STR: 5 }, sellValue: 39,
+    stackable: true, equipSlot: 'bracers', armorType: 'leather', statBonuses: { STA: 4, STR: 4 }, sellValue: 39, rarity: 'green',
   },
   wicked_leather_bracers: {
     id: 'wicked_leather_bracers', name: 'Wicked Leather Bracers', type: 'equipment',
     description: 'A Wicked Leather bracers, crafted by a skilled leatherworker.',
-    stackable: true, equipSlot: 'bracers', armorType: 'leather', statBonuses: { STA: 7, STR: 6 }, sellValue: 47,
+    stackable: true, equipSlot: 'bracers', armorType: 'leather', statBonuses: { STA: 6, STR: 6 }, sellValue: 47, rarity: 'green',
   },
   emberscar_leather_bracers: {
     id: 'emberscar_leather_bracers', name: 'Emberscar Leather Bracers', type: 'equipment',
     description: 'A Emberscar Leather bracers, crafted by a skilled leatherworker.',
-    stackable: true, equipSlot: 'bracers', armorType: 'leather', statBonuses: { STA: 8, STR: 7 }, sellValue: 57,
+    stackable: true, equipSlot: 'bracers', armorType: 'leather', statBonuses: { STA: 9, STR: 9 }, sellValue: 57, rarity: 'blue',
   },
 
   // ── Tailoring overhaul — 36 cloth armor items (6 tiers x 6 pieces) + 6
@@ -394,182 +394,182 @@ const STATIC_ITEMS: Record<string, ItemDef> = {
   tailored_linen_helm: {
     id: 'tailored_linen_helm', name: 'Linen Hood', type: 'equipment',
     description: 'A linen hood, woven by a skilled tailor.',
-    stackable: true, equipSlot: 'helmet', armorType: 'cloth', statBonuses: { INT: 3, STA: 3 }, sellValue: 18,
+    stackable: true, equipSlot: 'helmet', armorType: 'cloth', statBonuses: { INT: 2, STA: 2 }, sellValue: 18, rarity: 'gray',
   },
   tailored_linen_robe: {
     id: 'tailored_linen_robe', name: 'Linen Robe', type: 'equipment',
     description: 'A linen robe, woven by a skilled tailor.',
-    stackable: true, equipSlot: 'chest', armorType: 'cloth', statBonuses: { INT: 4, STA: 4 }, sellValue: 24,
+    stackable: true, equipSlot: 'chest', armorType: 'cloth', statBonuses: { INT: 3, STA: 3 }, sellValue: 24, rarity: 'gray',
   },
   tailored_linen_gloves: {
     id: 'tailored_linen_gloves', name: 'Linen Gloves', type: 'equipment',
     description: 'A linen gloves, woven by a skilled tailor.',
-    stackable: true, equipSlot: 'gloves', armorType: 'cloth', statBonuses: { INT: 2, STA: 2 }, sellValue: 12,
+    stackable: true, equipSlot: 'gloves', armorType: 'cloth', statBonuses: { INT: 1, STA: 1 }, sellValue: 12, rarity: 'gray',
   },
   tailored_linen_leggings: {
     id: 'tailored_linen_leggings', name: 'Linen Leggings', type: 'equipment',
     description: 'A linen leggings, woven by a skilled tailor.',
-    stackable: true, equipSlot: 'legs', armorType: 'cloth', statBonuses: { INT: 4, STA: 3 }, sellValue: 21,
+    stackable: true, equipSlot: 'legs', armorType: 'cloth', statBonuses: { INT: 2, STA: 2 }, sellValue: 21, rarity: 'gray',
   },
   tailored_linen_boots: {
     id: 'tailored_linen_boots', name: 'Linen Boots', type: 'equipment',
     description: 'A linen boots, woven by a skilled tailor.',
-    stackable: true, equipSlot: 'boots', armorType: 'cloth', statBonuses: { INT: 3, STA: 2 }, sellValue: 15,
+    stackable: true, equipSlot: 'boots', armorType: 'cloth', statBonuses: { INT: 1, STA: 1 }, sellValue: 15, rarity: 'gray',
   },
   tailored_linen_shoulders: {
     id: 'tailored_linen_shoulders', name: 'Linen Shoulders', type: 'equipment',
     description: 'A linen shoulders, woven by a skilled tailor.',
-    stackable: true, equipSlot: 'shoulders', armorType: 'cloth', statBonuses: { INT: 2, STA: 2 }, sellValue: 12,
+    stackable: true, equipSlot: 'shoulders', armorType: 'cloth', statBonuses: { INT: 1, STA: 1 }, sellValue: 12, rarity: 'gray',
   },
   wool_robe_helm: {
     id: 'wool_robe_helm', name: 'Wool Hood', type: 'equipment',
     description: 'A wool hood, woven by a skilled tailor.',
-    stackable: true, equipSlot: 'helmet', armorType: 'cloth', statBonuses: { INT: 4, STA: 4 }, sellValue: 26,
+    stackable: true, equipSlot: 'helmet', armorType: 'cloth', statBonuses: { INT: 3, STA: 3 }, sellValue: 26, rarity: 'white',
   },
   wool_robe: {
     id: 'wool_robe', name: 'Wool Robe', type: 'equipment',
     description: 'A wool robe, woven by a skilled tailor.',
-    stackable: true, equipSlot: 'chest', armorType: 'cloth', statBonuses: { INT: 7, STA: 5 }, sellValue: 38,
+    stackable: true, equipSlot: 'chest', armorType: 'cloth', statBonuses: { INT: 4, STA: 4 }, sellValue: 38, rarity: 'white',
   },
   wool_gloves: {
     id: 'wool_gloves', name: 'Wool Gloves', type: 'equipment',
     description: 'A wool gloves, woven by a skilled tailor.',
-    stackable: true, equipSlot: 'gloves', armorType: 'cloth', statBonuses: { INT: 4, STA: 3 }, sellValue: 22,
+    stackable: true, equipSlot: 'gloves', armorType: 'cloth', statBonuses: { INT: 2, STA: 2 }, sellValue: 22, rarity: 'white',
   },
   wool_leggings: {
     id: 'wool_leggings', name: 'Wool Leggings', type: 'equipment',
     description: 'A wool leggings, woven by a skilled tailor.',
-    stackable: true, equipSlot: 'legs', armorType: 'cloth', statBonuses: { INT: 6, STA: 5 }, sellValue: 35,
+    stackable: true, equipSlot: 'legs', armorType: 'cloth', statBonuses: { INT: 4, STA: 4 }, sellValue: 35, rarity: 'white',
   },
   wool_boots: {
     id: 'wool_boots', name: 'Wool Boots', type: 'equipment',
     description: 'A wool boots, woven by a skilled tailor.',
-    stackable: true, equipSlot: 'boots', armorType: 'cloth', statBonuses: { INT: 4, STA: 3 }, sellValue: 22,
+    stackable: true, equipSlot: 'boots', armorType: 'cloth', statBonuses: { INT: 2, STA: 2 }, sellValue: 22, rarity: 'white',
   },
   wool_shoulders: {
     id: 'wool_shoulders', name: 'Wool Shoulders', type: 'equipment',
     description: 'A wool shoulders, woven by a skilled tailor.',
-    stackable: true, equipSlot: 'shoulders', armorType: 'cloth', statBonuses: { INT: 4, STA: 3 }, sellValue: 22,
+    stackable: true, equipSlot: 'shoulders', armorType: 'cloth', statBonuses: { INT: 2, STA: 2 }, sellValue: 22, rarity: 'white',
   },
   silk_robe_helm: {
     id: 'silk_robe_helm', name: 'Silk Hood', type: 'equipment',
     description: 'A silk hood, woven by a skilled tailor.',
-    stackable: true, equipSlot: 'helmet', armorType: 'cloth', statBonuses: { INT: 6, STA: 5 }, sellValue: 37,
+    stackable: true, equipSlot: 'helmet', armorType: 'cloth', statBonuses: { INT: 4, STA: 4 }, sellValue: 37, rarity: 'white',
   },
   silk_robe: {
     id: 'silk_robe', name: 'Silk Robe', type: 'equipment',
     description: 'A silk robe, woven by a skilled tailor.',
-    stackable: true, equipSlot: 'chest', armorType: 'cloth', statBonuses: { INT: 9, STA: 7 }, sellValue: 54,
+    stackable: true, equipSlot: 'chest', armorType: 'cloth', statBonuses: { INT: 6, STA: 6 }, sellValue: 54, rarity: 'white',
   },
   silk_gloves: {
     id: 'silk_gloves', name: 'Silk Gloves', type: 'equipment',
     description: 'A silk gloves, woven by a skilled tailor.',
-    stackable: true, equipSlot: 'gloves', armorType: 'cloth', statBonuses: { INT: 5, STA: 4 }, sellValue: 31,
+    stackable: true, equipSlot: 'gloves', armorType: 'cloth', statBonuses: { INT: 3, STA: 3 }, sellValue: 31, rarity: 'white',
   },
   silk_leggings: {
     id: 'silk_leggings', name: 'Silk Leggings', type: 'equipment',
     description: 'A silk leggings, woven by a skilled tailor.',
-    stackable: true, equipSlot: 'legs', armorType: 'cloth', statBonuses: { INT: 8, STA: 6 }, sellValue: 48,
+    stackable: true, equipSlot: 'legs', armorType: 'cloth', statBonuses: { INT: 5, STA: 5 }, sellValue: 48, rarity: 'white',
   },
   silk_boots: {
     id: 'silk_boots', name: 'Silk Boots', type: 'equipment',
     description: 'A silk boots, woven by a skilled tailor.',
-    stackable: true, equipSlot: 'boots', armorType: 'cloth', statBonuses: { INT: 6, STA: 5 }, sellValue: 34,
+    stackable: true, equipSlot: 'boots', armorType: 'cloth', statBonuses: { INT: 4, STA: 4 }, sellValue: 34, rarity: 'white',
   },
   silk_shoulders: {
     id: 'silk_shoulders', name: 'Silk Shoulders', type: 'equipment',
     description: 'A silk shoulders, woven by a skilled tailor.',
-    stackable: true, equipSlot: 'shoulders', armorType: 'cloth', statBonuses: { INT: 5, STA: 4 }, sellValue: 31,
+    stackable: true, equipSlot: 'shoulders', armorType: 'cloth', statBonuses: { INT: 3, STA: 3 }, sellValue: 31, rarity: 'white',
   },
   mageweave_robe_helm: {
     id: 'mageweave_robe_helm', name: 'Mageweave Hood', type: 'equipment',
     description: 'A mageweave hood, woven by a skilled tailor.',
-    stackable: true, equipSlot: 'helmet', armorType: 'cloth', statBonuses: { INT: 8, STA: 6 }, sellValue: 49,
+    stackable: true, equipSlot: 'helmet', armorType: 'cloth', statBonuses: { INT: 5, STA: 5 }, sellValue: 49, rarity: 'green',
   },
   mageweave_robe: {
     id: 'mageweave_robe', name: 'Mageweave Robe', type: 'equipment',
     description: 'A mageweave robe, woven by a skilled tailor.',
-    stackable: true, equipSlot: 'chest', armorType: 'cloth', statBonuses: { INT: 11, STA: 9 }, sellValue: 70,
+    stackable: true, equipSlot: 'chest', armorType: 'cloth', statBonuses: { INT: 8, STA: 8 }, sellValue: 70, rarity: 'green',
   },
   mageweave_gloves: {
     id: 'mageweave_gloves', name: 'Mageweave Gloves', type: 'equipment',
     description: 'A mageweave gloves, woven by a skilled tailor.',
-    stackable: true, equipSlot: 'gloves', armorType: 'cloth', statBonuses: { INT: 6, STA: 5 }, sellValue: 39,
+    stackable: true, equipSlot: 'gloves', armorType: 'cloth', statBonuses: { INT: 4, STA: 4 }, sellValue: 39, rarity: 'green',
   },
   mageweave_leggings: {
     id: 'mageweave_leggings', name: 'Mageweave Leggings', type: 'equipment',
     description: 'A mageweave leggings, woven by a skilled tailor.',
-    stackable: true, equipSlot: 'legs', armorType: 'cloth', statBonuses: { INT: 10, STA: 8 }, sellValue: 63,
+    stackable: true, equipSlot: 'legs', armorType: 'cloth', statBonuses: { INT: 7, STA: 7 }, sellValue: 63, rarity: 'green',
   },
   mageweave_boots: {
     id: 'mageweave_boots', name: 'Mageweave Boots', type: 'equipment',
     description: 'A mageweave boots, woven by a skilled tailor.',
-    stackable: true, equipSlot: 'boots', armorType: 'cloth', statBonuses: { INT: 7, STA: 5 }, sellValue: 42,
+    stackable: true, equipSlot: 'boots', armorType: 'cloth', statBonuses: { INT: 4, STA: 4 }, sellValue: 42, rarity: 'green',
   },
   mageweave_shoulders: {
     id: 'mageweave_shoulders', name: 'Mageweave Shoulders', type: 'equipment',
     description: 'A mageweave shoulders, woven by a skilled tailor.',
-    stackable: true, equipSlot: 'shoulders', armorType: 'cloth', statBonuses: { INT: 6, STA: 5 }, sellValue: 39,
+    stackable: true, equipSlot: 'shoulders', armorType: 'cloth', statBonuses: { INT: 4, STA: 4 }, sellValue: 39, rarity: 'green',
   },
   runecloth_robe_helm: {
     id: 'runecloth_robe_helm', name: 'Runecloth Hood', type: 'equipment',
     description: 'A runecloth hood, woven by a skilled tailor.',
-    stackable: true, equipSlot: 'helmet', armorType: 'cloth', statBonuses: { INT: 9, STA: 8 }, sellValue: 61,
+    stackable: true, equipSlot: 'helmet', armorType: 'cloth', statBonuses: { INT: 10, STA: 10 }, sellValue: 61, rarity: 'blue',
   },
   runecloth_robe: {
     id: 'runecloth_robe', name: 'Runecloth Robe', type: 'equipment',
     description: 'A runecloth robe, woven by a skilled tailor.',
-    stackable: true, equipSlot: 'chest', armorType: 'cloth', statBonuses: { INT: 13, STA: 11 }, sellValue: 86,
+    stackable: true, equipSlot: 'chest', armorType: 'cloth', statBonuses: { INT: 14, STA: 14 }, sellValue: 86, rarity: 'blue',
   },
   runecloth_gloves: {
     id: 'runecloth_gloves', name: 'Runecloth Gloves', type: 'equipment',
     description: 'A runecloth gloves, woven by a skilled tailor.',
-    stackable: true, equipSlot: 'gloves', armorType: 'cloth', statBonuses: { INT: 7, STA: 6 }, sellValue: 47,
+    stackable: true, equipSlot: 'gloves', armorType: 'cloth', statBonuses: { INT: 6, STA: 6 }, sellValue: 47, rarity: 'green',
   },
   runecloth_leggings: {
     id: 'runecloth_leggings', name: 'Runecloth Leggings', type: 'equipment',
     description: 'A runecloth leggings, woven by a skilled tailor.',
-    stackable: true, equipSlot: 'legs', armorType: 'cloth', statBonuses: { INT: 12, STA: 10 }, sellValue: 79,
+    stackable: true, equipSlot: 'legs', armorType: 'cloth', statBonuses: { INT: 12, STA: 12 }, sellValue: 79, rarity: 'blue',
   },
   runecloth_boots: {
     id: 'runecloth_boots', name: 'Runecloth Boots', type: 'equipment',
     description: 'A runecloth boots, woven by a skilled tailor.',
-    stackable: true, equipSlot: 'boots', armorType: 'cloth', statBonuses: { INT: 8, STA: 6 }, sellValue: 50,
+    stackable: true, equipSlot: 'boots', armorType: 'cloth', statBonuses: { INT: 6, STA: 6 }, sellValue: 50, rarity: 'green',
   },
   runecloth_shoulders: {
     id: 'runecloth_shoulders', name: 'Runecloth Shoulders', type: 'equipment',
     description: 'A runecloth shoulders, woven by a skilled tailor.',
-    stackable: true, equipSlot: 'shoulders', armorType: 'cloth', statBonuses: { INT: 7, STA: 6 }, sellValue: 47,
+    stackable: true, equipSlot: 'shoulders', armorType: 'cloth', statBonuses: { INT: 6, STA: 6 }, sellValue: 47, rarity: 'green',
   },
   ember_robe_helm: {
     id: 'ember_robe_helm', name: 'Ember Hood', type: 'equipment',
     description: 'A ember hood, woven by a skilled tailor.',
-    stackable: true, equipSlot: 'helmet', armorType: 'cloth', statBonuses: { INT: 11, STA: 9 }, sellValue: 76,
+    stackable: true, equipSlot: 'helmet', armorType: 'cloth', statBonuses: { INT: 12, STA: 12 }, sellValue: 76, rarity: 'blue',
   },
   ember_robe: {
     id: 'ember_robe', name: 'Ember Robe', type: 'equipment',
     description: 'A ember robe, woven by a skilled tailor.',
-    stackable: true, equipSlot: 'chest', armorType: 'cloth', statBonuses: { INT: 15, STA: 13 }, sellValue: 106,
+    stackable: true, equipSlot: 'chest', armorType: 'cloth', statBonuses: { INT: 20, STA: 20 }, sellValue: 106, rarity: 'purple',
   },
   ember_gloves: {
     id: 'ember_gloves', name: 'Ember Gloves', type: 'equipment',
     description: 'A ember gloves, woven by a skilled tailor.',
-    stackable: true, equipSlot: 'gloves', armorType: 'cloth', statBonuses: { INT: 8, STA: 7 }, sellValue: 57,
+    stackable: true, equipSlot: 'gloves', armorType: 'cloth', statBonuses: { INT: 9, STA: 9 }, sellValue: 57, rarity: 'blue',
   },
   ember_leggings: {
     id: 'ember_leggings', name: 'Ember Leggings', type: 'equipment',
     description: 'A ember leggings, woven by a skilled tailor.',
-    stackable: true, equipSlot: 'legs', armorType: 'cloth', statBonuses: { INT: 14, STA: 11 }, sellValue: 95,
+    stackable: true, equipSlot: 'legs', armorType: 'cloth', statBonuses: { INT: 14, STA: 14 }, sellValue: 95, rarity: 'blue',
   },
   ember_boots: {
     id: 'ember_boots', name: 'Ember Boots', type: 'equipment',
     description: 'A ember boots, woven by a skilled tailor.',
-    stackable: true, equipSlot: 'boots', armorType: 'cloth', statBonuses: { INT: 9, STA: 8 }, sellValue: 65,
+    stackable: true, equipSlot: 'boots', armorType: 'cloth', statBonuses: { INT: 10, STA: 10 }, sellValue: 65, rarity: 'blue',
   },
   ember_shoulders: {
     id: 'ember_shoulders', name: 'Ember Shoulders', type: 'equipment',
     description: 'A ember shoulders, woven by a skilled tailor.',
-    stackable: true, equipSlot: 'shoulders', armorType: 'cloth', statBonuses: { INT: 8, STA: 7 }, sellValue: 57,
+    stackable: true, equipSlot: 'shoulders', armorType: 'cloth', statBonuses: { INT: 9, STA: 9 }, sellValue: 57, rarity: 'blue',
   },
 
   // ── Tailoring Bracers (6 tiers) — Equipment overhaul's itemization
@@ -579,32 +579,32 @@ const STATIC_ITEMS: Record<string, ItemDef> = {
   tailored_linen_bracers: {
     id: 'tailored_linen_bracers', name: 'Linen Bracers', type: 'equipment',
     description: 'A linen bracers, woven by a skilled tailor.',
-    stackable: true, equipSlot: 'bracers', armorType: 'cloth', statBonuses: { INT: 2, STA: 2 }, sellValue: 12,
+    stackable: true, equipSlot: 'bracers', armorType: 'cloth', statBonuses: { INT: 1, STA: 1 }, sellValue: 12, rarity: 'gray',
   },
   wool_bracers: {
     id: 'wool_bracers', name: 'Wool Bracers', type: 'equipment',
     description: 'A wool bracers, woven by a skilled tailor.',
-    stackable: true, equipSlot: 'bracers', armorType: 'cloth', statBonuses: { INT: 4, STA: 3 }, sellValue: 22,
+    stackable: true, equipSlot: 'bracers', armorType: 'cloth', statBonuses: { INT: 2, STA: 2 }, sellValue: 22, rarity: 'white',
   },
   silk_bracers: {
     id: 'silk_bracers', name: 'Silk Bracers', type: 'equipment',
     description: 'A silk bracers, woven by a skilled tailor.',
-    stackable: true, equipSlot: 'bracers', armorType: 'cloth', statBonuses: { INT: 5, STA: 4 }, sellValue: 31,
+    stackable: true, equipSlot: 'bracers', armorType: 'cloth', statBonuses: { INT: 3, STA: 3 }, sellValue: 31, rarity: 'white',
   },
   mageweave_bracers: {
     id: 'mageweave_bracers', name: 'Mageweave Bracers', type: 'equipment',
     description: 'A mageweave bracers, woven by a skilled tailor.',
-    stackable: true, equipSlot: 'bracers', armorType: 'cloth', statBonuses: { INT: 6, STA: 5 }, sellValue: 39,
+    stackable: true, equipSlot: 'bracers', armorType: 'cloth', statBonuses: { INT: 4, STA: 4 }, sellValue: 39, rarity: 'green',
   },
   runecloth_bracers: {
     id: 'runecloth_bracers', name: 'Runecloth Bracers', type: 'equipment',
     description: 'A runecloth bracers, woven by a skilled tailor.',
-    stackable: true, equipSlot: 'bracers', armorType: 'cloth', statBonuses: { INT: 7, STA: 6 }, sellValue: 47,
+    stackable: true, equipSlot: 'bracers', armorType: 'cloth', statBonuses: { INT: 6, STA: 6 }, sellValue: 47, rarity: 'green',
   },
   ember_bracers: {
     id: 'ember_bracers', name: 'Ember Bracers', type: 'equipment',
     description: 'A ember bracers, woven by a skilled tailor.',
-    stackable: true, equipSlot: 'bracers', armorType: 'cloth', statBonuses: { INT: 8, STA: 7 }, sellValue: 57,
+    stackable: true, equipSlot: 'bracers', armorType: 'cloth', statBonuses: { INT: 9, STA: 9 }, sellValue: 57, rarity: 'blue',
   },
 
   // ── Capes (zones 1-6) — universal (cloth is already allowed for every
@@ -613,32 +613,32 @@ const STATIC_ITEMS: Record<string, ItemDef> = {
   cape_of_linen: {
     id: 'cape_of_linen', name: 'Cape of Linen', type: 'equipment',
     description: 'A plain linen cape, woven by a skilled tailor.',
-    stackable: true, equipSlot: 'cape', armorType: 'cloth', statBonuses: { INT: 2, STA: 2 }, sellValue: 12,
+    stackable: true, equipSlot: 'cape', armorType: 'cloth', statBonuses: { INT: 1, STA: 1 }, sellValue: 12, rarity: 'gray',
   },
   cape_of_wool: {
     id: 'cape_of_wool', name: 'Cape of Wool', type: 'equipment',
     description: 'A woolen cape, woven by a skilled tailor.',
-    stackable: true, equipSlot: 'cape', armorType: 'cloth', statBonuses: { INT: 4, STA: 3 }, sellValue: 22,
+    stackable: true, equipSlot: 'cape', armorType: 'cloth', statBonuses: { INT: 2, STA: 2 }, sellValue: 22, rarity: 'white',
   },
   cape_of_silk: {
     id: 'cape_of_silk', name: 'Cape of Silk', type: 'equipment',
     description: 'A fine silk cape, woven by a skilled tailor.',
-    stackable: true, equipSlot: 'cape', armorType: 'cloth', statBonuses: { INT: 5, STA: 4 }, sellValue: 31,
+    stackable: true, equipSlot: 'cape', armorType: 'cloth', statBonuses: { INT: 3, STA: 3 }, sellValue: 31, rarity: 'white',
   },
   cape_of_mageweave: {
     id: 'cape_of_mageweave', name: 'Cape of Mageweave', type: 'equipment',
     description: 'A mageweave cape, humming faintly with old magic.',
-    stackable: true, equipSlot: 'cape', armorType: 'cloth', statBonuses: { INT: 6, STA: 5 }, sellValue: 39,
+    stackable: true, equipSlot: 'cape', armorType: 'cloth', statBonuses: { INT: 4, STA: 4 }, sellValue: 39, rarity: 'green',
   },
   cape_of_runecloth: {
     id: 'cape_of_runecloth', name: 'Cape of Runecloth', type: 'equipment',
     description: 'A runecloth cape, its stitched runes still faintly warm.',
-    stackable: true, equipSlot: 'cape', armorType: 'cloth', statBonuses: { INT: 7, STA: 6 }, sellValue: 47,
+    stackable: true, equipSlot: 'cape', armorType: 'cloth', statBonuses: { INT: 6, STA: 6 }, sellValue: 47, rarity: 'green',
   },
   cape_of_ember: {
     id: 'cape_of_ember', name: 'Cape of Ember', type: 'equipment',
     description: "An ember cloth cape, scorched but never burnt through.",
-    stackable: true, equipSlot: 'cape', armorType: 'cloth', statBonuses: { INT: 8, STA: 7 }, sellValue: 57,
+    stackable: true, equipSlot: 'cape', armorType: 'cloth', statBonuses: { INT: 9, STA: 9 }, sellValue: 57, rarity: 'blue',
   },
   // ── Linen tier shirts (zone, requiredSkill 1) ──────────
   linen_shirt_of_mastery: {
@@ -2846,92 +2846,92 @@ const STATIC_ITEMS: Record<string, ItemDef> = {
   rough_wand: {
     id: 'rough_wand', name: 'Rough Wand', type: 'equipment',
     description: 'A plain Rough Wood wand, freshly carved and enchanted.',
-    stackable: true, equipSlot: 'weapon', sellValue: 5,
+    stackable: true, equipSlot: 'weapon', sellValue: 5, rarity: 'gray',
   },
   rough_staff: {
     id: 'rough_staff', name: 'Rough Staff', type: 'equipment',
     description: 'A plain Rough Wood staff, freshly carved and enchanted.',
-    stackable: true, equipSlot: 'weapon', sellValue: 8,
+    stackable: true, equipSlot: 'weapon', sellValue: 8, rarity: 'gray',
   },
   rough_tome: {
     id: 'rough_tome', name: 'Rough Tome', type: 'equipment',
     description: 'A plain Rough Wood-bound tome, its linen cover freshly enchanted.',
-    stackable: true, equipSlot: 'offhand', sellValue: 5,
+    stackable: true, equipSlot: 'offhand', sellValue: 5, rarity: 'gray',
   },
   aged_wand: {
     id: 'aged_wand', name: 'Aged Wand', type: 'equipment',
     description: 'A wand of seasoned Aged Wood, holding its enchantment far better than green timber.',
-    stackable: true, equipSlot: 'weapon', sellValue: 9,
+    stackable: true, equipSlot: 'weapon', sellValue: 9, rarity: 'white',
   },
   aged_staff: {
     id: 'aged_staff', name: 'Aged Staff', type: 'equipment',
     description: 'A staff of seasoned Aged Wood, holding its enchantment far better than green timber.',
-    stackable: true, equipSlot: 'weapon', sellValue: 14,
+    stackable: true, equipSlot: 'weapon', sellValue: 14, rarity: 'white',
   },
   aged_tome: {
     id: 'aged_tome', name: 'Aged Tome', type: 'equipment',
     description: 'An Aged Wood-bound tome, its wool cover enchanted to hold a stronger charge.',
-    stackable: true, equipSlot: 'offhand', sellValue: 9,
+    stackable: true, equipSlot: 'offhand', sellValue: 9, rarity: 'white',
   },
   heartwood_wand: {
     id: 'heartwood_wand', name: 'Heartwood Wand', type: 'equipment',
     description: 'A wand cut from dense Heartwood, humming even before the enchantment takes.',
-    stackable: true, equipSlot: 'weapon', sellValue: 16,
+    stackable: true, equipSlot: 'weapon', sellValue: 16, rarity: 'white',
   },
   heartwood_staff: {
     id: 'heartwood_staff', name: 'Heartwood Staff', type: 'equipment',
     description: 'A staff cut from dense Heartwood, humming even before the enchantment takes.',
-    stackable: true, equipSlot: 'weapon', sellValue: 24,
+    stackable: true, equipSlot: 'weapon', sellValue: 24, rarity: 'white',
   },
   heartwood_tome: {
     id: 'heartwood_tome', name: 'Heartwood Tome', type: 'equipment',
     description: 'A Heartwood-bound tome, its silk cover enchanted to hold a stronger charge.',
-    stackable: true, equipSlot: 'offhand', sellValue: 16,
+    stackable: true, equipSlot: 'offhand', sellValue: 16, rarity: 'white',
   },
   ironwood_wand: {
     id: 'ironwood_wand', name: 'Ironwood Wand', type: 'equipment',
     description: 'A wand of dense Ironwood, able to hold a far stronger enchantment than ordinary timber.',
-    stackable: true, equipSlot: 'weapon', sellValue: 26,
+    stackable: true, equipSlot: 'weapon', sellValue: 26, rarity: 'green',
   },
   ironwood_staff: {
     id: 'ironwood_staff', name: 'Ironwood Staff', type: 'equipment',
     description: 'A staff of dense Ironwood, able to hold a far stronger enchantment than ordinary timber.',
-    stackable: true, equipSlot: 'weapon', sellValue: 38,
+    stackable: true, equipSlot: 'weapon', sellValue: 38, rarity: 'green',
   },
   ironwood_tome: {
     id: 'ironwood_tome', name: 'Ironwood Tome', type: 'equipment',
     description: 'An Ironwood-bound tome, its mageweave cover enchanted to hold a stronger charge.',
-    stackable: true, equipSlot: 'offhand', sellValue: 26,
+    stackable: true, equipSlot: 'offhand', sellValue: 26, rarity: 'green',
   },
   charwood_wand: {
     id: 'charwood_wand', name: 'Charwood Wand', type: 'equipment',
     description: 'A wand of fire-cured Charwood, nearly as hot to the touch as it is magically receptive.',
-    stackable: true, equipSlot: 'weapon', sellValue: 40,
+    stackable: true, equipSlot: 'weapon', sellValue: 40, rarity: 'green',
   },
   charwood_staff: {
     id: 'charwood_staff', name: 'Charwood Staff', type: 'equipment',
     description: 'A staff of fire-cured Charwood, nearly as hot to the touch as it is magically receptive.',
-    stackable: true, equipSlot: 'weapon', sellValue: 58,
+    stackable: true, equipSlot: 'weapon', sellValue: 58, rarity: 'blue',
   },
   charwood_tome: {
     id: 'charwood_tome', name: 'Charwood Tome', type: 'equipment',
     description: 'A Charwood-bound tome, its runecloth cover enchanted to hold a stronger charge.',
-    stackable: true, equipSlot: 'offhand', sellValue: 40,
+    stackable: true, equipSlot: 'offhand', sellValue: 40, rarity: 'green',
   },
   emberwood_wand: {
     id: 'emberwood_wand', name: 'Emberwood Wand', type: 'equipment',
     description: 'A wand of smoldering Emberwood, the finest focus an Enchanter can work with.',
-    stackable: true, equipSlot: 'weapon', sellValue: 58,
+    stackable: true, equipSlot: 'weapon', sellValue: 58, rarity: 'blue',
   },
   emberwood_staff: {
     id: 'emberwood_staff', name: 'Emberwood Staff', type: 'equipment',
     description: 'A staff of smoldering Emberwood, the finest focus an Enchanter can work with.',
-    stackable: true, equipSlot: 'weapon', sellValue: 84,
+    stackable: true, equipSlot: 'weapon', sellValue: 84, rarity: 'purple',
   },
   emberwood_tome: {
     id: 'emberwood_tome', name: 'Emberwood Tome', type: 'equipment',
     description: 'An Emberwood-bound tome, its ember cloth cover enchanted to hold the strongest charge an Enchanter can craft.',
-    stackable: true, equipSlot: 'offhand', sellValue: 58,
+    stackable: true, equipSlot: 'offhand', sellValue: 58, rarity: 'blue',
   },
 
   // ── Enchanting scrolls — see gameData/enchanting.ts's module doc comment
@@ -4007,387 +4007,387 @@ const STATIC_ITEMS: Record<string, ItemDef> = {
   copper_helm: {
     id: 'copper_helm', name: 'Copper Helm', type: 'equipment',
     description: 'An orange helm forged from Copper by a skilled blacksmith.',
-    stackable: true, equipSlot: 'helmet', statBonuses: { STA: 3, STR: 3 }, sellValue: 18,
+    stackable: true, equipSlot: 'helmet', statBonuses: { STA: 2, STR: 2 }, sellValue: 18, rarity: 'gray',
   },
   copper_chestplate: {
     id: 'copper_chestplate', name: 'Copper Chestplate', type: 'equipment',
     description: 'An orange chestplate forged from Copper by a skilled blacksmith.',
-    stackable: true, equipSlot: 'chest', statBonuses: { STA: 4, STR: 4 }, sellValue: 24,
+    stackable: true, equipSlot: 'chest', statBonuses: { STA: 3, STR: 3 }, sellValue: 24, rarity: 'gray',
   },
   copper_gauntlets: {
     id: 'copper_gauntlets', name: 'Copper Gauntlets', type: 'equipment',
     description: 'An orange gauntlets forged from Copper by a skilled blacksmith.',
-    stackable: true, equipSlot: 'gloves', statBonuses: { STA: 2, STR: 2 }, sellValue: 12,
+    stackable: true, equipSlot: 'gloves', statBonuses: { STA: 1, STR: 1 }, sellValue: 12, rarity: 'gray',
   },
   copper_bracers: {
     id: 'copper_bracers', name: 'Copper Bracers', type: 'equipment',
     description: 'An orange bracers forged from Copper by a skilled blacksmith.',
-    stackable: true, equipSlot: 'bracers', statBonuses: { STA: 2, STR: 2 }, sellValue: 12,
+    stackable: true, equipSlot: 'bracers', statBonuses: { STA: 1, STR: 1 }, sellValue: 12, rarity: 'gray',
   },
   copper_legplates: {
     id: 'copper_legplates', name: 'Copper Legplates', type: 'equipment',
     description: 'An orange legplates forged from Copper by a skilled blacksmith.',
-    stackable: true, equipSlot: 'legs', statBonuses: { STA: 4, STR: 3 }, sellValue: 21,
+    stackable: true, equipSlot: 'legs', statBonuses: { STA: 2, STR: 2 }, sellValue: 21, rarity: 'gray',
   },
   copper_greaves: {
     id: 'copper_greaves', name: 'Copper Greaves', type: 'equipment',
     description: 'An orange greaves forged from Copper by a skilled blacksmith.',
-    stackable: true, equipSlot: 'boots', statBonuses: { STA: 3, STR: 2 }, sellValue: 15,
+    stackable: true, equipSlot: 'boots', statBonuses: { STA: 1, STR: 1 }, sellValue: 15, rarity: 'gray',
   },
   copper_shield: {
     id: 'copper_shield', name: 'Copper Shield', type: 'equipment',
     description: 'An orange shield forged from Copper by a skilled blacksmith.',
-    stackable: true, equipSlot: 'offhand', armorType: 'plate', statBonuses: { STA: 3, STR: 3 }, isShield: true, sellValue: 18,
+    stackable: true, equipSlot: 'offhand', armorType: 'plate', statBonuses: { STA: 2, STR: 2 }, isShield: true, sellValue: 18, rarity: 'gray',
   },
   copper_sword: {
     id: 'copper_sword', name: 'Copper Sword', type: 'equipment',
     description: 'An orange sword forged from Copper by a skilled blacksmith.',
-    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 6, STA: 3 }, sellValue: 27,
+    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 6, STA: 3 }, sellValue: 27, rarity: 'gray',
   },
   sacred_copper_sword: {
     id: 'sacred_copper_sword', name: 'Sacred Copper Sword', type: 'equipment',
     description: 'An orange, light-touched sword forged from Copper by a skilled blacksmith.',
-    stackable: true, equipSlot: 'weapon', statBonuses: { INT: 6, SPI: 3 }, sellValue: 27,
+    stackable: true, equipSlot: 'weapon', statBonuses: { INT: 6, SPI: 3 }, sellValue: 27, rarity: 'gray',
   },
   copper_battleaxe: {
     id: 'copper_battleaxe', name: 'Copper Battleaxe', type: 'equipment',
     description: 'An orange battleaxe forged from Copper by a skilled blacksmith.',
-    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 8, STA: 5 }, sellValue: 39,
+    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 8, STA: 5 }, sellValue: 39, rarity: 'gray',
   },
   sacred_copper_battleaxe: {
     id: 'sacred_copper_battleaxe', name: 'Sacred Copper Battleaxe', type: 'equipment',
     description: 'An orange, light-touched battleaxe forged from Copper by a skilled blacksmith.',
-    stackable: true, equipSlot: 'weapon', statBonuses: { INT: 8, SPI: 5 }, sellValue: 39,
+    stackable: true, equipSlot: 'weapon', statBonuses: { INT: 8, SPI: 5 }, sellValue: 39, rarity: 'gray',
   },
   bronze_helm: {
     id: 'bronze_helm', name: 'Bronze Helm', type: 'equipment',
     description: 'A brown helm forged from Bronze by a skilled blacksmith.',
-    stackable: true, equipSlot: 'helmet', statBonuses: { STA: 4, STR: 4 }, sellValue: 26,
+    stackable: true, equipSlot: 'helmet', statBonuses: { STA: 3, STR: 3 }, sellValue: 26, rarity: 'white',
   },
   bronze_chestplate: {
     id: 'bronze_chestplate', name: 'Bronze Chestplate', type: 'equipment',
     description: 'A brown chestplate forged from Bronze by a skilled blacksmith.',
-    stackable: true, equipSlot: 'chest', statBonuses: { STA: 7, STR: 5 }, sellValue: 38,
+    stackable: true, equipSlot: 'chest', statBonuses: { STA: 4, STR: 4 }, sellValue: 38, rarity: 'white',
   },
   bronze_gauntlets: {
     id: 'bronze_gauntlets', name: 'Bronze Gauntlets', type: 'equipment',
     description: 'A brown gauntlets forged from Bronze by a skilled blacksmith.',
-    stackable: true, equipSlot: 'gloves', statBonuses: { STA: 4, STR: 3 }, sellValue: 22,
+    stackable: true, equipSlot: 'gloves', statBonuses: { STA: 2, STR: 2 }, sellValue: 22, rarity: 'white',
   },
   bronze_bracers: {
     id: 'bronze_bracers', name: 'Bronze Bracers', type: 'equipment',
     description: 'A brown bracers forged from Bronze by a skilled blacksmith.',
-    stackable: true, equipSlot: 'bracers', statBonuses: { STA: 4, STR: 3 }, sellValue: 22,
+    stackable: true, equipSlot: 'bracers', statBonuses: { STA: 2, STR: 2 }, sellValue: 22, rarity: 'white',
   },
   bronze_legplates: {
     id: 'bronze_legplates', name: 'Bronze Legplates', type: 'equipment',
     description: 'A brown legplates forged from Bronze by a skilled blacksmith.',
-    stackable: true, equipSlot: 'legs', statBonuses: { STA: 6, STR: 5 }, sellValue: 35,
+    stackable: true, equipSlot: 'legs', statBonuses: { STA: 4, STR: 4 }, sellValue: 35, rarity: 'white',
   },
   bronze_greaves: {
     id: 'bronze_greaves', name: 'Bronze Greaves', type: 'equipment',
     description: 'A brown greaves forged from Bronze by a skilled blacksmith.',
-    stackable: true, equipSlot: 'boots', statBonuses: { STA: 4, STR: 3 }, sellValue: 22,
+    stackable: true, equipSlot: 'boots', statBonuses: { STA: 2, STR: 2 }, sellValue: 22, rarity: 'white',
   },
   bronze_shield: {
     id: 'bronze_shield', name: 'Bronze Shield', type: 'equipment',
     description: 'A brown shield forged from Bronze by a skilled blacksmith.',
-    stackable: true, equipSlot: 'offhand', armorType: 'plate', statBonuses: { STA: 6, STR: 5 }, isShield: true, sellValue: 32,
+    stackable: true, equipSlot: 'offhand', armorType: 'plate', statBonuses: { STA: 4, STR: 4 }, isShield: true, sellValue: 32, rarity: 'white',
   },
   bronze_sword: {
     id: 'bronze_sword', name: 'Bronze Sword', type: 'equipment',
     description: 'A brown sword forged from Bronze by a skilled blacksmith.',
-    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 8, STA: 5 }, sellValue: 42,
+    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 8, STA: 5 }, sellValue: 42, rarity: 'white',
   },
   sacred_bronze_sword: {
     id: 'sacred_bronze_sword', name: 'Sacred Bronze Sword', type: 'equipment',
     description: 'A brown, light-touched sword forged from Bronze by a skilled blacksmith.',
-    stackable: true, equipSlot: 'weapon', statBonuses: { INT: 8, SPI: 5 }, sellValue: 42,
+    stackable: true, equipSlot: 'weapon', statBonuses: { INT: 8, SPI: 5 }, sellValue: 42, rarity: 'white',
   },
   bronze_battleaxe: {
     id: 'bronze_battleaxe', name: 'Bronze Battleaxe', type: 'equipment',
     description: 'A brown battleaxe forged from Bronze by a skilled blacksmith.',
-    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 12, STA: 7 }, sellValue: 61,
+    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 12, STA: 7 }, sellValue: 61, rarity: 'white',
   },
   sacred_bronze_battleaxe: {
     id: 'sacred_bronze_battleaxe', name: 'Sacred Bronze Battleaxe', type: 'equipment',
     description: 'A brown, light-touched battleaxe forged from Bronze by a skilled blacksmith.',
-    stackable: true, equipSlot: 'weapon', statBonuses: { INT: 12, SPI: 7 }, sellValue: 61,
+    stackable: true, equipSlot: 'weapon', statBonuses: { INT: 12, SPI: 7 }, sellValue: 61, rarity: 'white',
   },
   iron_helm: {
     id: 'iron_helm', name: 'Iron Helm', type: 'equipment',
     description: 'A dark gray helm forged from Iron by a skilled blacksmith.',
-    stackable: true, equipSlot: 'helmet', statBonuses: { STA: 6, STR: 5 }, sellValue: 37,
+    stackable: true, equipSlot: 'helmet', statBonuses: { STA: 4, STR: 4 }, sellValue: 37, rarity: 'white',
   },
   iron_chestplate: {
     id: 'iron_chestplate', name: 'Iron Chestplate', type: 'equipment',
     description: 'A dark gray chestplate forged from Iron by a skilled blacksmith.',
-    stackable: true, equipSlot: 'chest', statBonuses: { STA: 9, STR: 7 }, sellValue: 54,
+    stackable: true, equipSlot: 'chest', statBonuses: { STA: 6, STR: 6 }, sellValue: 54, rarity: 'white',
   },
   iron_gauntlets: {
     id: 'iron_gauntlets', name: 'Iron Gauntlets', type: 'equipment',
     description: 'A dark gray gauntlets forged from Iron by a skilled blacksmith.',
-    stackable: true, equipSlot: 'gloves', statBonuses: { STA: 5, STR: 4 }, sellValue: 31,
+    stackable: true, equipSlot: 'gloves', statBonuses: { STA: 3, STR: 3 }, sellValue: 31, rarity: 'white',
   },
   iron_bracers: {
     id: 'iron_bracers', name: 'Iron Bracers', type: 'equipment',
     description: 'A dark gray bracers forged from Iron by a skilled blacksmith.',
-    stackable: true, equipSlot: 'bracers', statBonuses: { STA: 5, STR: 4 }, sellValue: 31,
+    stackable: true, equipSlot: 'bracers', statBonuses: { STA: 3, STR: 3 }, sellValue: 31, rarity: 'white',
   },
   iron_legplates: {
     id: 'iron_legplates', name: 'Iron Legplates', type: 'equipment',
     description: 'A dark gray legplates forged from Iron by a skilled blacksmith.',
-    stackable: true, equipSlot: 'legs', statBonuses: { STA: 8, STR: 6 }, sellValue: 48,
+    stackable: true, equipSlot: 'legs', statBonuses: { STA: 5, STR: 5 }, sellValue: 48, rarity: 'white',
   },
   iron_greaves: {
     id: 'iron_greaves', name: 'Iron Greaves', type: 'equipment',
     description: 'A dark gray greaves forged from Iron by a skilled blacksmith.',
-    stackable: true, equipSlot: 'boots', statBonuses: { STA: 6, STR: 5 }, sellValue: 34,
+    stackable: true, equipSlot: 'boots', statBonuses: { STA: 4, STR: 4 }, sellValue: 34, rarity: 'white',
   },
   iron_shield: {
     id: 'iron_shield', name: 'Iron Shield', type: 'equipment',
     description: 'A dark gray shield forged from Iron by a skilled blacksmith.',
-    stackable: true, equipSlot: 'offhand', armorType: 'plate', statBonuses: { STA: 7, STR: 6 }, isShield: true, sellValue: 44,
+    stackable: true, equipSlot: 'offhand', armorType: 'plate', statBonuses: { STA: 5, STR: 5 }, isShield: true, sellValue: 44, rarity: 'white',
   },
   iron_sword: {
     id: 'iron_sword', name: 'Iron Sword', type: 'equipment',
     description: 'A dark gray sword forged from Iron by a skilled blacksmith.',
-    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 12, STA: 6 }, sellValue: 61,
+    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 12, STA: 6 }, sellValue: 61, rarity: 'white',
   },
   sacred_iron_sword: {
     id: 'sacred_iron_sword', name: 'Sacred Iron Sword', type: 'equipment',
     description: 'A dark gray, light-touched sword forged from Iron by a skilled blacksmith.',
-    stackable: true, equipSlot: 'weapon', statBonuses: { INT: 12, SPI: 6 }, sellValue: 61,
+    stackable: true, equipSlot: 'weapon', statBonuses: { INT: 12, SPI: 6 }, sellValue: 61, rarity: 'white',
   },
   iron_battleaxe: {
     id: 'iron_battleaxe', name: 'Iron Battleaxe', type: 'equipment',
     description: 'A dark gray battleaxe forged from Iron by a skilled blacksmith.',
-    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 17, STA: 9 }, sellValue: 88,
+    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 17, STA: 9 }, sellValue: 88, rarity: 'white',
   },
   sacred_iron_battleaxe: {
     id: 'sacred_iron_battleaxe', name: 'Sacred Iron Battleaxe', type: 'equipment',
     description: 'A dark gray, light-touched battleaxe forged from Iron by a skilled blacksmith.',
-    stackable: true, equipSlot: 'weapon', statBonuses: { INT: 17, SPI: 9 }, sellValue: 88,
+    stackable: true, equipSlot: 'weapon', statBonuses: { INT: 17, SPI: 9 }, sellValue: 88, rarity: 'white',
   },
   steel_helm: {
     id: 'steel_helm', name: 'Steel Helm', type: 'equipment',
     description: 'A light gray helm forged from Steel by a skilled blacksmith.',
-    stackable: true, equipSlot: 'helmet', statBonuses: { STA: 8, STR: 6 }, sellValue: 49,
+    stackable: true, equipSlot: 'helmet', statBonuses: { STA: 5, STR: 5 }, sellValue: 49, rarity: 'green',
   },
   steel_chestplate: {
     id: 'steel_chestplate', name: 'Steel Chestplate', type: 'equipment',
     description: 'A light gray chestplate forged from Steel by a skilled blacksmith.',
-    stackable: true, equipSlot: 'chest', statBonuses: { STA: 11, STR: 9 }, sellValue: 70,
+    stackable: true, equipSlot: 'chest', statBonuses: { STA: 8, STR: 8 }, sellValue: 70, rarity: 'green',
   },
   steel_gauntlets: {
     id: 'steel_gauntlets', name: 'Steel Gauntlets', type: 'equipment',
     description: 'A light gray gauntlets forged from Steel by a skilled blacksmith.',
-    stackable: true, equipSlot: 'gloves', statBonuses: { STA: 6, STR: 5 }, sellValue: 39,
+    stackable: true, equipSlot: 'gloves', statBonuses: { STA: 4, STR: 4 }, sellValue: 39, rarity: 'green',
   },
   steel_bracers: {
     id: 'steel_bracers', name: 'Steel Bracers', type: 'equipment',
     description: 'A light gray bracers forged from Steel by a skilled blacksmith.',
-    stackable: true, equipSlot: 'bracers', statBonuses: { STA: 6, STR: 5 }, sellValue: 39,
+    stackable: true, equipSlot: 'bracers', statBonuses: { STA: 4, STR: 4 }, sellValue: 39, rarity: 'green',
   },
   steel_legplates: {
     id: 'steel_legplates', name: 'Steel Legplates', type: 'equipment',
     description: 'A light gray legplates forged from Steel by a skilled blacksmith.',
-    stackable: true, equipSlot: 'legs', statBonuses: { STA: 10, STR: 8 }, sellValue: 63,
+    stackable: true, equipSlot: 'legs', statBonuses: { STA: 7, STR: 7 }, sellValue: 63, rarity: 'green',
   },
   steel_greaves: {
     id: 'steel_greaves', name: 'Steel Greaves', type: 'equipment',
     description: 'A light gray greaves forged from Steel by a skilled blacksmith.',
-    stackable: true, equipSlot: 'boots', statBonuses: { STA: 7, STR: 5 }, sellValue: 42,
+    stackable: true, equipSlot: 'boots', statBonuses: { STA: 4, STR: 4 }, sellValue: 42, rarity: 'green',
   },
   steel_shield: {
     id: 'steel_shield', name: 'Steel Shield', type: 'equipment',
     description: 'A light gray shield forged from Steel by a skilled blacksmith.',
-    stackable: true, equipSlot: 'offhand', armorType: 'plate', statBonuses: { STA: 9, STR: 7 }, isShield: true, sellValue: 56,
+    stackable: true, equipSlot: 'offhand', armorType: 'plate', statBonuses: { STA: 6, STR: 6 }, isShield: true, sellValue: 56, rarity: 'green',
   },
   steel_sword: {
     id: 'steel_sword', name: 'Steel Sword', type: 'equipment',
     description: 'A light gray sword forged from Steel by a skilled blacksmith.',
-    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 14, STA: 8 }, sellValue: 77,
+    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 14, STA: 8 }, sellValue: 77, rarity: 'green',
   },
   sacred_steel_sword: {
     id: 'sacred_steel_sword', name: 'Sacred Steel Sword', type: 'equipment',
     description: 'A light gray, light-touched sword forged from Steel by a skilled blacksmith.',
-    stackable: true, equipSlot: 'weapon', statBonuses: { INT: 14, SPI: 8 }, sellValue: 77,
+    stackable: true, equipSlot: 'weapon', statBonuses: { INT: 14, SPI: 8 }, sellValue: 77, rarity: 'green',
   },
   steel_battleaxe: {
     id: 'steel_battleaxe', name: 'Steel Battleaxe', type: 'equipment',
     description: 'A light gray battleaxe forged from Steel by a skilled blacksmith.',
-    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 21, STA: 11 }, sellValue: 112,
+    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 21, STA: 11 }, sellValue: 112, rarity: 'green',
   },
   sacred_steel_battleaxe: {
     id: 'sacred_steel_battleaxe', name: 'Sacred Steel Battleaxe', type: 'equipment',
     description: 'A light gray, light-touched battleaxe forged from Steel by a skilled blacksmith.',
-    stackable: true, equipSlot: 'weapon', statBonuses: { INT: 21, SPI: 11 }, sellValue: 112,
+    stackable: true, equipSlot: 'weapon', statBonuses: { INT: 21, SPI: 11 }, sellValue: 112, rarity: 'green',
   },
   mithril_helm: {
     id: 'mithril_helm', name: 'Mithril Helm', type: 'equipment',
     description: 'A dark blue helm forged from Mithril by a skilled blacksmith.',
-    stackable: true, equipSlot: 'helmet', statBonuses: { STA: 9, STR: 8 }, sellValue: 61,
+    stackable: true, equipSlot: 'helmet', statBonuses: { STA: 7, STR: 7 }, sellValue: 61, rarity: 'green',
   },
   mithril_chestplate: {
     id: 'mithril_chestplate', name: 'Mithril Chestplate', type: 'equipment',
     description: 'A dark blue chestplate forged from Mithril by a skilled blacksmith.',
-    stackable: true, equipSlot: 'chest', statBonuses: { STA: 13, STR: 11 }, sellValue: 86,
+    stackable: true, equipSlot: 'chest', statBonuses: { STA: 10, STR: 10 }, sellValue: 86, rarity: 'green',
   },
   mithril_gauntlets: {
     id: 'mithril_gauntlets', name: 'Mithril Gauntlets', type: 'equipment',
     description: 'A dark blue gauntlets forged from Mithril by a skilled blacksmith.',
-    stackable: true, equipSlot: 'gloves', statBonuses: { STA: 7, STR: 6 }, sellValue: 47,
+    stackable: true, equipSlot: 'gloves', statBonuses: { STA: 5, STR: 5 }, sellValue: 47, rarity: 'green',
   },
   mithril_bracers: {
     id: 'mithril_bracers', name: 'Mithril Bracers', type: 'equipment',
     description: 'A dark blue bracers forged from Mithril by a skilled blacksmith.',
-    stackable: true, equipSlot: 'bracers', statBonuses: { STA: 7, STR: 6 }, sellValue: 47,
+    stackable: true, equipSlot: 'bracers', statBonuses: { STA: 5, STR: 5 }, sellValue: 47, rarity: 'green',
   },
   mithril_legplates: {
     id: 'mithril_legplates', name: 'Mithril Legplates', type: 'equipment',
     description: 'A dark blue legplates forged from Mithril by a skilled blacksmith.',
-    stackable: true, equipSlot: 'legs', statBonuses: { STA: 12, STR: 10 }, sellValue: 79,
+    stackable: true, equipSlot: 'legs', statBonuses: { STA: 9, STR: 9 }, sellValue: 79, rarity: 'green',
   },
   mithril_greaves: {
     id: 'mithril_greaves', name: 'Mithril Greaves', type: 'equipment',
     description: 'A dark blue greaves forged from Mithril by a skilled blacksmith.',
-    stackable: true, equipSlot: 'boots', statBonuses: { STA: 8, STR: 6 }, sellValue: 50,
+    stackable: true, equipSlot: 'boots', statBonuses: { STA: 5, STR: 5 }, sellValue: 50, rarity: 'green',
   },
   mithril_shield: {
     id: 'mithril_shield', name: 'Mithril Shield', type: 'equipment',
     description: 'A dark blue shield forged from Mithril by a skilled blacksmith.',
-    stackable: true, equipSlot: 'offhand', armorType: 'plate', statBonuses: { STA: 10, STR: 9 }, isShield: true, sellValue: 68,
+    stackable: true, equipSlot: 'offhand', armorType: 'plate', statBonuses: { STA: 8, STR: 8 }, isShield: true, sellValue: 68, rarity: 'green',
   },
   mithril_sword: {
     id: 'mithril_sword', name: 'Mithril Sword', type: 'equipment',
     description: 'A dark blue sword forged from Mithril by a skilled blacksmith.',
-    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 17, STA: 9 }, sellValue: 94,
+    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 17, STA: 9 }, sellValue: 94, rarity: 'green',
   },
   sacred_mithril_sword: {
     id: 'sacred_mithril_sword', name: 'Sacred Mithril Sword', type: 'equipment',
     description: 'A dark blue, light-touched sword forged from Mithril by a skilled blacksmith.',
-    stackable: true, equipSlot: 'weapon', statBonuses: { INT: 17, SPI: 9 }, sellValue: 94,
+    stackable: true, equipSlot: 'weapon', statBonuses: { INT: 17, SPI: 9 }, sellValue: 94, rarity: 'green',
   },
   mithril_battleaxe: {
     id: 'mithril_battleaxe', name: 'Mithril Battleaxe', type: 'equipment',
     description: 'A dark blue battleaxe forged from Mithril by a skilled blacksmith.',
-    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 25, STA: 13 }, sellValue: 137,
+    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 25, STA: 13 }, sellValue: 137, rarity: 'green',
   },
   sacred_mithril_battleaxe: {
     id: 'sacred_mithril_battleaxe', name: 'Sacred Mithril Battleaxe', type: 'equipment',
     description: 'A dark blue, light-touched battleaxe forged from Mithril by a skilled blacksmith.',
-    stackable: true, equipSlot: 'weapon', statBonuses: { INT: 25, SPI: 13 }, sellValue: 137,
+    stackable: true, equipSlot: 'weapon', statBonuses: { INT: 25, SPI: 13 }, sellValue: 137, rarity: 'green',
   },
   thorium_helm: {
     id: 'thorium_helm', name: 'Thorium Helm', type: 'equipment',
     description: 'A light teal helm forged from Thorium by a skilled blacksmith.',
-    stackable: true, equipSlot: 'helmet', statBonuses: { STA: 11, STR: 9 }, sellValue: 76,
+    stackable: true, equipSlot: 'helmet', statBonuses: { STA: 11, STR: 11 }, sellValue: 76, rarity: 'blue',
   },
   thorium_chestplate: {
     id: 'thorium_chestplate', name: 'Thorium Chestplate', type: 'equipment',
     description: 'A light teal chestplate forged from Thorium by a skilled blacksmith.',
-    stackable: true, equipSlot: 'chest', statBonuses: { STA: 15, STR: 13 }, sellValue: 106,
+    stackable: true, equipSlot: 'chest', statBonuses: { STA: 16, STR: 16 }, sellValue: 106, rarity: 'blue',
   },
   thorium_gauntlets: {
     id: 'thorium_gauntlets', name: 'Thorium Gauntlets', type: 'equipment',
     description: 'A light teal gauntlets forged from Thorium by a skilled blacksmith.',
-    stackable: true, equipSlot: 'gloves', statBonuses: { STA: 8, STR: 7 }, sellValue: 57,
+    stackable: true, equipSlot: 'gloves', statBonuses: { STA: 7, STR: 7 }, sellValue: 57, rarity: 'green',
   },
   thorium_bracers: {
     id: 'thorium_bracers', name: 'Thorium Bracers', type: 'equipment',
     description: 'A light teal bracers forged from Thorium by a skilled blacksmith.',
-    stackable: true, equipSlot: 'bracers', statBonuses: { STA: 8, STR: 7 }, sellValue: 57,
+    stackable: true, equipSlot: 'bracers', statBonuses: { STA: 7, STR: 7 }, sellValue: 57, rarity: 'green',
   },
   thorium_legplates: {
     id: 'thorium_legplates', name: 'Thorium Legplates', type: 'equipment',
     description: 'A light teal legplates forged from Thorium by a skilled blacksmith.',
-    stackable: true, equipSlot: 'legs', statBonuses: { STA: 14, STR: 11 }, sellValue: 95,
+    stackable: true, equipSlot: 'legs', statBonuses: { STA: 14, STR: 14 }, sellValue: 95, rarity: 'blue',
   },
   thorium_greaves: {
     id: 'thorium_greaves', name: 'Thorium Greaves', type: 'equipment',
     description: 'A light teal greaves forged from Thorium by a skilled blacksmith.',
-    stackable: true, equipSlot: 'boots', statBonuses: { STA: 9, STR: 8 }, sellValue: 65,
+    stackable: true, equipSlot: 'boots', statBonuses: { STA: 8, STR: 8 }, sellValue: 65, rarity: 'green',
   },
   thorium_shield: {
     id: 'thorium_shield', name: 'Thorium Shield', type: 'equipment',
     description: 'A light teal shield forged from Thorium by a skilled blacksmith.',
-    stackable: true, equipSlot: 'offhand', armorType: 'plate', statBonuses: { STA: 12, STR: 10 }, isShield: true, sellValue: 84,
+    stackable: true, equipSlot: 'offhand', armorType: 'plate', statBonuses: { STA: 12, STR: 12 }, isShield: true, sellValue: 84, rarity: 'blue',
   },
   thorium_sword: {
     id: 'thorium_sword', name: 'Thorium Sword', type: 'equipment',
     description: 'A light teal sword forged from Thorium by a skilled blacksmith.',
-    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 20, STA: 11 }, sellValue: 118,
+    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 20, STA: 11 }, sellValue: 118, rarity: 'blue',
   },
   sacred_thorium_sword: {
     id: 'sacred_thorium_sword', name: 'Sacred Thorium Sword', type: 'equipment',
     description: 'A light teal, light-touched sword forged from Thorium by a skilled blacksmith.',
-    stackable: true, equipSlot: 'weapon', statBonuses: { INT: 20, SPI: 11 }, sellValue: 118,
+    stackable: true, equipSlot: 'weapon', statBonuses: { INT: 20, SPI: 11 }, sellValue: 118, rarity: 'blue',
   },
   thorium_battleaxe: {
     id: 'thorium_battleaxe', name: 'Thorium Battleaxe', type: 'equipment',
     description: 'A light teal battleaxe forged from Thorium by a skilled blacksmith.',
-    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 29, STA: 16 }, sellValue: 171,
+    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 29, STA: 16 }, sellValue: 171, rarity: 'blue',
   },
   sacred_thorium_battleaxe: {
     id: 'sacred_thorium_battleaxe', name: 'Sacred Thorium Battleaxe', type: 'equipment',
     description: 'A light teal, light-touched battleaxe forged from Thorium by a skilled blacksmith.',
-    stackable: true, equipSlot: 'weapon', statBonuses: { INT: 29, SPI: 16 }, sellValue: 171,
+    stackable: true, equipSlot: 'weapon', statBonuses: { INT: 29, SPI: 16 }, sellValue: 171, rarity: 'blue',
   },
   obsidian_helm: {
     id: 'obsidian_helm', name: 'Obsidian Helm', type: 'equipment',
     description: 'A black helm forged from Obsidian by a skilled blacksmith.',
-    stackable: true, equipSlot: 'helmet', statBonuses: { STA: 12, STR: 10 }, sellValue: 88,
+    stackable: true, equipSlot: 'helmet', statBonuses: { STA: 13, STR: 13 }, sellValue: 88, rarity: 'blue',
   },
   obsidian_chestplate: {
     id: 'obsidian_chestplate', name: 'Obsidian Chestplate', type: 'equipment',
     description: 'A black chestplate forged from Obsidian by a skilled blacksmith.',
-    stackable: true, equipSlot: 'chest', statBonuses: { STA: 18, STR: 14 }, sellValue: 128,
+    stackable: true, equipSlot: 'chest', statBonuses: { STA: 22, STR: 22 }, sellValue: 128, rarity: 'purple',
   },
   obsidian_gauntlets: {
     id: 'obsidian_gauntlets', name: 'Obsidian Gauntlets', type: 'equipment',
     description: 'A black gauntlets forged from Obsidian by a skilled blacksmith.',
-    stackable: true, equipSlot: 'gloves', statBonuses: { STA: 10, STR: 8 }, sellValue: 72,
+    stackable: true, equipSlot: 'gloves', statBonuses: { STA: 10, STR: 10 }, sellValue: 72, rarity: 'blue',
   },
   obsidian_bracers: {
     id: 'obsidian_bracers', name: 'Obsidian Bracers', type: 'equipment',
     description: 'A black bracers forged from Obsidian by a skilled blacksmith.',
-    stackable: true, equipSlot: 'bracers', statBonuses: { STA: 10, STR: 8 }, sellValue: 72,
+    stackable: true, equipSlot: 'bracers', statBonuses: { STA: 10, STR: 10 }, sellValue: 72, rarity: 'blue',
   },
   obsidian_legplates: {
     id: 'obsidian_legplates', name: 'Obsidian Legplates', type: 'equipment',
     description: 'A black legplates forged from Obsidian by a skilled blacksmith.',
-    stackable: true, equipSlot: 'legs', statBonuses: { STA: 16, STR: 13 }, sellValue: 116,
+    stackable: true, equipSlot: 'legs', statBonuses: { STA: 17, STR: 17 }, sellValue: 116, rarity: 'blue',
   },
   obsidian_greaves: {
     id: 'obsidian_greaves', name: 'Obsidian Greaves', type: 'equipment',
     description: 'A black greaves forged from Obsidian by a skilled blacksmith.',
-    stackable: true, equipSlot: 'boots', statBonuses: { STA: 10, STR: 9 }, sellValue: 76,
+    stackable: true, equipSlot: 'boots', statBonuses: { STA: 12, STR: 12 }, sellValue: 76, rarity: 'blue',
   },
   obsidian_shield: {
     id: 'obsidian_shield', name: 'Obsidian Shield', type: 'equipment',
     description: 'A black shield forged from Obsidian by a skilled blacksmith.',
-    stackable: true, equipSlot: 'offhand', armorType: 'plate', statBonuses: { STA: 14, STR: 12 }, isShield: true, sellValue: 104,
+    stackable: true, equipSlot: 'offhand', armorType: 'plate', statBonuses: { STA: 16, STR: 16 }, isShield: true, sellValue: 104, rarity: 'blue',
   },
   obsidian_sword: {
     id: 'obsidian_sword', name: 'Obsidian Sword', type: 'equipment',
     description: 'A black sword forged from Obsidian by a skilled blacksmith.',
-    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 23, STA: 12 }, sellValue: 140,
+    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 23, STA: 12 }, sellValue: 140, rarity: 'purple',
   },
   sacred_obsidian_sword: {
     id: 'sacred_obsidian_sword', name: 'Sacred Obsidian Sword', type: 'equipment',
     description: 'A black, light-touched sword forged from Obsidian by a skilled blacksmith.',
-    stackable: true, equipSlot: 'weapon', statBonuses: { INT: 23, SPI: 12 }, sellValue: 140,
+    stackable: true, equipSlot: 'weapon', statBonuses: { INT: 23, SPI: 12 }, sellValue: 140, rarity: 'purple',
   },
   obsidian_battleaxe: {
     id: 'obsidian_battleaxe', name: 'Obsidian Battleaxe', type: 'equipment',
     description: 'A black battleaxe forged from Obsidian by a skilled blacksmith.',
-    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 33, STA: 18 }, sellValue: 204,
+    stackable: true, equipSlot: 'weapon', statBonuses: { STR: 33, STA: 18 }, sellValue: 204, rarity: 'purple',
   },
   sacred_obsidian_battleaxe: {
     id: 'sacred_obsidian_battleaxe', name: 'Sacred Obsidian Battleaxe', type: 'equipment',
     description: 'A black, light-touched battleaxe forged from Obsidian by a skilled blacksmith.',
-    stackable: true, equipSlot: 'weapon', statBonuses: { INT: 33, SPI: 18 }, sellValue: 204,
+    stackable: true, equipSlot: 'weapon', statBonuses: { INT: 33, SPI: 18 }, sellValue: 204, rarity: 'purple',
   },
 
   // ── Blacksmithing Shoulders (7 tiers) — Equipment overhaul's itemization
@@ -4400,68 +4400,68 @@ const STATIC_ITEMS: Record<string, ItemDef> = {
   copper_shoulders: {
     id: 'copper_shoulders', name: 'Copper Shoulders', type: 'equipment',
     description: 'An orange shoulders forged from Copper by a skilled blacksmith.',
-    stackable: true, equipSlot: 'shoulders', statBonuses: { STA: 2, STR: 2 }, sellValue: 12,
+    stackable: true, equipSlot: 'shoulders', statBonuses: { STA: 1, STR: 1 }, sellValue: 12, rarity: 'gray',
   },
   bronze_shoulders: {
     id: 'bronze_shoulders', name: 'Bronze Shoulders', type: 'equipment',
     description: 'A brown shoulders forged from Bronze by a skilled blacksmith.',
-    stackable: true, equipSlot: 'shoulders', statBonuses: { STA: 4, STR: 3 }, sellValue: 22,
+    stackable: true, equipSlot: 'shoulders', statBonuses: { STA: 2, STR: 2 }, sellValue: 22, rarity: 'white',
   },
   iron_shoulders: {
     id: 'iron_shoulders', name: 'Iron Shoulders', type: 'equipment',
     description: 'A dark gray shoulders forged from Iron by a skilled blacksmith.',
-    stackable: true, equipSlot: 'shoulders', statBonuses: { STA: 5, STR: 4 }, sellValue: 31,
+    stackable: true, equipSlot: 'shoulders', statBonuses: { STA: 3, STR: 3 }, sellValue: 31, rarity: 'white',
   },
   steel_shoulders: {
     id: 'steel_shoulders', name: 'Steel Shoulders', type: 'equipment',
     description: 'A light gray shoulders forged from Steel by a skilled blacksmith.',
-    stackable: true, equipSlot: 'shoulders', statBonuses: { STA: 6, STR: 5 }, sellValue: 39,
+    stackable: true, equipSlot: 'shoulders', statBonuses: { STA: 4, STR: 4 }, sellValue: 39, rarity: 'green',
   },
   mithril_shoulders: {
     id: 'mithril_shoulders', name: 'Mithril Shoulders', type: 'equipment',
     description: 'A dark blue shoulders forged from Mithril by a skilled blacksmith.',
-    stackable: true, equipSlot: 'shoulders', statBonuses: { STA: 7, STR: 6 }, sellValue: 47,
+    stackable: true, equipSlot: 'shoulders', statBonuses: { STA: 5, STR: 5 }, sellValue: 47, rarity: 'green',
   },
   thorium_shoulders: {
     id: 'thorium_shoulders', name: 'Thorium Shoulders', type: 'equipment',
     description: 'A light teal shoulders forged from Thorium by a skilled blacksmith.',
-    stackable: true, equipSlot: 'shoulders', statBonuses: { STA: 8, STR: 7 }, sellValue: 57,
+    stackable: true, equipSlot: 'shoulders', statBonuses: { STA: 7, STR: 7 }, sellValue: 57, rarity: 'green',
   },
   obsidian_shoulders: {
     id: 'obsidian_shoulders', name: 'Obsidian Shoulders', type: 'equipment',
     description: 'A black shoulders forged from Obsidian by a skilled blacksmith.',
-    stackable: true, equipSlot: 'shoulders', statBonuses: { STA: 10, STR: 8 }, sellValue: 72,
+    stackable: true, equipSlot: 'shoulders', statBonuses: { STA: 10, STR: 10 }, sellValue: 72, rarity: 'blue',
   },
 
   silver_necklace: {
     id: 'silver_necklace', name: 'Silver Necklace', type: 'equipment',
     description: 'A silver necklace set with a faintly glowing stone.',
-    stackable: true, equipSlot: 'necklace', statBonuses: { STA: 3, STR: 3 }, sellValue: 25,
+    stackable: true, equipSlot: 'necklace', statBonuses: { STA: 2, STR: 2 }, sellValue: 25, rarity: 'white',
   },
   silver_ring: {
     id: 'silver_ring', name: 'Silver Ring', type: 'equipment',
     description: 'A silver ring set with a faintly glowing stone.',
-    stackable: true, equipSlot: 'ring', statBonuses: { STA: 3, STR: 2 }, sellValue: 21,
+    stackable: true, equipSlot: 'ring', statBonuses: { STA: 1, STR: 1 }, sellValue: 21, rarity: 'white',
   },
   gold_necklace: {
     id: 'gold_necklace', name: 'Gold Necklace', type: 'equipment',
     description: 'A gold necklace set with a faintly glowing stone.',
-    stackable: true, equipSlot: 'necklace', statBonuses: { STA: 7, STR: 5 }, sellValue: 56,
+    stackable: true, equipSlot: 'necklace', statBonuses: { STA: 4, STR: 4 }, sellValue: 56, rarity: 'green',
   },
   gold_ring: {
     id: 'gold_ring', name: 'Gold Ring', type: 'equipment',
     description: 'A gold ring set with a faintly glowing stone.',
-    stackable: true, equipSlot: 'ring', statBonuses: { STA: 6, STR: 5 }, sellValue: 47,
+    stackable: true, equipSlot: 'ring', statBonuses: { STA: 4, STR: 4 }, sellValue: 47, rarity: 'green',
   },
   platinum_necklace: {
     id: 'platinum_necklace', name: 'Platinum Necklace', type: 'equipment',
     description: 'A platinum necklace set with a faintly glowing stone.',
-    stackable: true, equipSlot: 'necklace', statBonuses: { STA: 9, STR: 7 }, sellValue: 83,
+    stackable: true, equipSlot: 'necklace', statBonuses: { STA: 9, STR: 9 }, sellValue: 83, rarity: 'blue',
   },
   platinum_ring: {
     id: 'platinum_ring', name: 'Platinum Ring', type: 'equipment',
     description: 'A platinum ring set with a faintly glowing stone.',
-    stackable: true, equipSlot: 'ring', statBonuses: { STA: 7, STR: 6 }, sellValue: 68,
+    stackable: true, equipSlot: 'ring', statBonuses: { STA: 8, STR: 8 }, sellValue: 68, rarity: 'purple',
   },
 
   // ── Equipment Rarity overhaul — gray/white normal-monster drops ───────
@@ -4532,6 +4532,45 @@ const STATIC_ITEMS: Record<string, ItemDef> = {
     id: 'white_belt_z6', name: 'Emberscale Belt', type: 'equipment',
     description: 'A belt cut from emberscale hide, warm to the touch.',
     stackable: true, equipSlot: 'belt', statBonuses: { STA: 4, STR: 4 }, rarity: 'white', sellValue: 28,
+  },
+
+  // Equipment Rarity overhaul — the green/blue continuation of the
+  // gray/white set above, starting where the design brief's monster-drop
+  // column calls for them (green first appears Zone 3, blue first appears
+  // Zone 5) rather than at every zone — same "ring, no armorType, usable by
+  // any class, deliberately modest" posture, staying well under each
+  // zone's own crafted gear of the same rarity (equipmentRolls.ts's
+  // ARMOR_STAT_VALUES) so these never compete with it, only with the
+  // gray/white drops above.
+  green_ring_z3: {
+    id: 'green_ring_z3', name: 'Emberfall Signet', type: 'equipment',
+    description: 'A heat-tempered ring taken from the ridge’s stronger beasts.',
+    stackable: true, equipSlot: 'ring', statBonuses: { STA: 3, STR: 3 }, rarity: 'green', sellValue: 18,
+  },
+  green_ring_z4: {
+    id: 'green_ring_z4', name: 'Cinderfall Signet', type: 'equipment',
+    description: 'A soot-blackened ring, still warm from the depths.',
+    stackable: true, equipSlot: 'ring', statBonuses: { STA: 4, STR: 4 }, rarity: 'green', sellValue: 26,
+  },
+  green_ring_z5: {
+    id: 'green_ring_z5', name: 'Molten Scar Signet', type: 'equipment',
+    description: 'A ring forged in the Scar’s own heat, never fully cooled.',
+    stackable: true, equipSlot: 'ring', statBonuses: { STA: 5, STR: 5 }, rarity: 'green', sellValue: 34,
+  },
+  green_ring_z6: {
+    id: 'green_ring_z6', name: 'Cinderheart Signet', type: 'equipment',
+    description: 'A ring set with a dull ember that never quite goes out.',
+    stackable: true, equipSlot: 'ring', statBonuses: { STA: 6, STR: 6 }, rarity: 'green', sellValue: 42,
+  },
+  blue_ring_z5: {
+    id: 'blue_ring_z5', name: 'Molten Scar Seal', type: 'equipment',
+    description: 'A rare seal-ring, carried only by the Scar’s toughest raiders.',
+    stackable: true, equipSlot: 'ring', statBonuses: { STA: 6, STR: 6 }, rarity: 'blue', sellValue: 50,
+  },
+  blue_ring_z6: {
+    id: 'blue_ring_z6', name: 'Cinderheart Seal', type: 'equipment',
+    description: 'A seal-ring stamped with a crest from the crater’s cultist war-bands.',
+    stackable: true, equipSlot: 'ring', statBonuses: { STA: 7, STR: 7 }, rarity: 'blue', sellValue: 60,
   },
 
   // ── Recipe-discovery overhaul (RARITY-6) — these 12 recipes were flipped
@@ -4607,6 +4646,13 @@ const STATIC_ITEMS: Record<string, ItemDef> = {
   // Expedition's personal loot roll (functions/src/expeditions.ts) — no
   // vendor, no recipe, no monster drop. Universal (any class may equip),
   // same posture as this game's other jewelry/capes.
+  //
+  // Equipment Rarity overhaul — the "_epic" tier was tagged rarity:'orange'
+  // (Legendary), but drops at a mundane 20% per-expedition rate (functions/
+  // src/expeditions.ts's DROP_CHANCE.epic) — several orders of magnitude
+  // more common than Lightningfury's true 0.01% raid drop (citadelLoot.ts).
+  // 'orange' now means exactly one thing in this game; retiered to 'purple'
+  // so these items' rarity matches their real acquisition difficulty.
   expedition_necklace_common: {
     id: 'expedition_necklace_common', name: 'Necklace of the Novice Expedition', type: 'equipment',
     description: 'A plain pendant given to those who first braved a guild expedition.',
@@ -4625,7 +4671,7 @@ const STATIC_ITEMS: Record<string, ItemDef> = {
   expedition_necklace_epic: {
     id: 'expedition_necklace_epic', name: 'Necklace of the Legendary Expedition', type: 'equipment',
     description: 'Forged from the spoils of the deadliest guild expeditions.',
-    stackable: true, equipSlot: 'necklace', statBonuses: { STR: 15, STA: 22 }, rarity: 'orange', sellValue: 160,
+    stackable: true, equipSlot: 'necklace', statBonuses: { STR: 15, STA: 22 }, rarity: 'purple', sellValue: 160,
   },
   expedition_ring_common: {
     id: 'expedition_ring_common', name: 'Ring of the Novice Expedition', type: 'equipment',
@@ -4645,7 +4691,7 @@ const STATIC_ITEMS: Record<string, ItemDef> = {
   expedition_ring_epic: {
     id: 'expedition_ring_epic', name: 'Ring of the Legendary Expedition', type: 'equipment',
     description: 'Forged from the spoils of the deadliest guild expeditions.',
-    stackable: true, equipSlot: 'ring', statBonuses: { AGI: 15, STA: 22 }, rarity: 'orange', sellValue: 160,
+    stackable: true, equipSlot: 'ring', statBonuses: { AGI: 15, STA: 22 }, rarity: 'purple', sellValue: 160,
   },
   expedition_cape_common: {
     id: 'expedition_cape_common', name: 'Cape of the Novice Expedition', type: 'equipment',
@@ -4665,7 +4711,7 @@ const STATIC_ITEMS: Record<string, ItemDef> = {
   expedition_cape_epic: {
     id: 'expedition_cape_epic', name: 'Cape of the Legendary Expedition', type: 'equipment',
     description: 'Forged from the spoils of the deadliest guild expeditions.',
-    stackable: true, equipSlot: 'cape', statBonuses: { INT: 15, STA: 22 }, rarity: 'orange', sellValue: 160,
+    stackable: true, equipSlot: 'cape', statBonuses: { INT: 15, STA: 22 }, rarity: 'purple', sellValue: 160,
   },
   expedition_tabard_common: {
     id: 'expedition_tabard_common', name: 'Tabard of the Novice Expedition', type: 'equipment',
@@ -4685,7 +4731,7 @@ const STATIC_ITEMS: Record<string, ItemDef> = {
   expedition_tabard_epic: {
     id: 'expedition_tabard_epic', name: 'Tabard of the Legendary Expedition', type: 'equipment',
     description: 'Forged from the spoils of the deadliest guild expeditions.',
-    stackable: true, equipSlot: 'tabard', statBonuses: { SPI: 15, STA: 22 }, rarity: 'orange', sellValue: 160,
+    stackable: true, equipSlot: 'tabard', statBonuses: { SPI: 15, STA: 22 }, rarity: 'purple', sellValue: 160,
   },
 
 };
