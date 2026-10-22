@@ -567,6 +567,21 @@ export async function stopActivity(uid: string): Promise<void> {
   });
 }
 
+// Gathering/crafting/fishing/disenchanting autosaves never persist their
+// local anchorRef's advance to Firestore's currentActivity.startedAt (unlike
+// applyCombatResult, which bumps it itself) — the live screen gets away with
+// this because anchorRef lives on in memory for as long as the tab stays
+// mounted. WelcomeBackScreen's one-shot offline catch-up has no such
+// luxury: it consumes the ENTIRE original startedAt..now window in a single
+// call, so without this, the live screen that mounts right after would read
+// the still-stale original startedAt and redo (and double-grant) that same
+// window on its own first autosave tick.
+export async function touchActivityStartedAt(uid: string): Promise<void> {
+  await updateDoc(doc(db, 'characters', uid), {
+    'currentActivity.startedAt': serverTimestamp(),
+  });
+}
+
 // Continuous Disenchanting Queue overhaul — writes the activity forward to
 // whichever item is now "current" after a resolveDisenchantQueueOffline
 // call (or after the player manually edits the queue — removing an
