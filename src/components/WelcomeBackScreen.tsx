@@ -42,6 +42,7 @@ import { checkAndUnlockNextSlot } from '../firebase/characterSlots';
 import { MAX_CHARACTER_LEVEL } from '../gameData/xpTables';
 import { buildConsumableAutomationState } from '../gameData/consumableAutomation';
 import { shirtBonusForItemId, shirtBonusPct } from '../gameData/shirts';
+import { useGuildMilestoneBonuses } from '../hooks/useGuildMilestones';
 import type { Character, CurrentActivity } from '../types/character';
 
 export function isLongAbsence(activity: CurrentActivity): boolean {
@@ -60,25 +61,28 @@ export function WelcomeBackScreen({
   const { user } = useAuth();
   const { refetch } = useCharacter();
   const [summary, setSummary] = useState<string | null>(null);
+  const guildBonuses = useGuildMilestoneBonuses();
 
-  // Previews only (see each branch's own comment) — built from the same
-  // CurrentActivity.equippedShirtItemId snapshot the real screens use, so
-  // this estimate matches what the real autosave will actually persist.
+  // Built from the same CurrentActivity.equippedShirtItemId snapshot the
+  // real screens use, and folding in the same guild-bonus channels
+  // (level milestones + Headquarters Storehouse/Workshop rooms, see
+  // gameData/guildMilestones.ts) those screens' own closures do, so this
+  // now matches exactly what the actual persisted write below computes.
   function gatheringShirtBonuses(shirtItemId: string | null | undefined): GatheringShirtBonuses {
     const shirtBonus = shirtBonusForItemId(shirtItemId);
     return {
-      gatheringSpeedPct: shirtBonusPct(shirtBonus, 'gathering_speed'),
+      gatheringSpeedPct: shirtBonusPct(shirtBonus, 'gathering_speed') + guildBonuses.gatheringTimePct,
       professionXpPct: shirtBonusPct(shirtBonus, 'profession_xp'),
-      masteryXpPct: shirtBonusPct(shirtBonus, 'mastery_xp'),
+      masteryXpPct: shirtBonusPct(shirtBonus, 'mastery_xp') + guildBonuses.gatheringMasteryPct,
     };
   }
   function craftingShirtBonuses(shirtItemId: string | null | undefined): CraftingShirtBonuses {
     const shirtBonus = shirtBonusForItemId(shirtItemId);
     return {
-      craftingSpeedPct: shirtBonusPct(shirtBonus, 'crafting_speed'),
+      craftingSpeedPct: shirtBonusPct(shirtBonus, 'crafting_speed') + guildBonuses.craftingTimePct,
       professionXpPct: shirtBonusPct(shirtBonus, 'profession_xp'),
-      masteryXpPct: shirtBonusPct(shirtBonus, 'mastery_xp'),
-      materialPreservePct: shirtBonusPct(shirtBonus, 'material_preserve'),
+      masteryXpPct: shirtBonusPct(shirtBonus, 'mastery_xp') + guildBonuses.craftingMasteryPct,
+      materialPreservePct: shirtBonusPct(shirtBonus, 'material_preserve') + guildBonuses.materialPreservePct,
     };
   }
 

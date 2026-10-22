@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { useCharacter } from './useCharacter';
 import { getGuild } from '../firebase/guilds';
-import { guildXpProgress } from '../gameData/guildHeadquarters';
+import { guildXpProgress, roomBonusPct } from '../gameData/guildHeadquarters';
 import { guildMilestoneBonuses, type GuildMilestoneBonuses } from '../gameData/guildMilestones';
 
 const ZERO_BONUSES: GuildMilestoneBonuses = {
@@ -10,6 +10,7 @@ const ZERO_BONUSES: GuildMilestoneBonuses = {
   craftingTimePct: 0,
   gatheringMasteryPct: 0,
   craftingMasteryPct: 0,
+  materialPreservePct: 0,
 };
 
 const GuildMilestoneContext = createContext<GuildMilestoneBonuses>(ZERO_BONUSES);
@@ -35,7 +36,21 @@ export function GuildMilestoneProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     getGuild(guildId).then((guild) => {
       if (cancelled) return;
-      setBonuses(guild ? guildMilestoneBonuses(guildXpProgress(guild.xp).level) : ZERO_BONUSES);
+      if (!guild) {
+        setBonuses(ZERO_BONUSES);
+        return;
+      }
+      // Headquarters' Storehouse/Workshop room bonuses stack additively
+      // into the same gatheringTimePct/craftingTimePct/materialPreservePct
+      // channels a guild's level milestones already use — see
+      // guildMilestones.ts's own comment on why these 3 fields (and only
+      // these 3) double as the room-bonus landing spot.
+      const milestoneBonuses = guildMilestoneBonuses(guildXpProgress(guild.xp).level);
+      setBonuses({
+        ...milestoneBonuses,
+        gatheringTimePct: milestoneBonuses.gatheringTimePct + roomBonusPct('storehouse', guild.rooms.storehouse ?? 0),
+        materialPreservePct: milestoneBonuses.materialPreservePct + roomBonusPct('workshop', guild.rooms.workshop ?? 0),
+      });
     });
     return () => {
       cancelled = true;

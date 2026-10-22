@@ -51,16 +51,17 @@ export const ROOM_LABELS: Record<RoomId, string> = {
 };
 
 // Bonus % granted per upgrade level, capped at ROOM_MAX_LEVEL levels.
-// Storehouse/Workshop are computed and displayed here but NOT YET wired
-// into gatheringEngine.ts/craftingEngine.ts (both are pure, Firestore-free
-// functions today — piping a guild's room levels into them is a real,
-// deliberately deferred follow-up, not an oversight). Barracks/War Room/
-// Library ARE wired in server-side, since functions/src/contracts.ts and
-// expeditions.ts already touch the guild doc in the same transaction that
-// would need to read them.
+// Storehouse/Workshop are computed here and folded into
+// useGuildMilestoneBonuses' gatheringTimePct/materialPreservePct fields
+// (hooks/useGuildMilestones.tsx) — gatheringEngine.ts/craftingEngine.ts
+// stay pure/Firestore-free, the hook is what reads the guild doc and
+// hands the combined (level milestone + room) bonus to every consumer.
+// Barracks/War Room/Library are wired in server-side instead, since
+// functions/src/contracts.ts and expeditions.ts already touch the guild
+// doc in the same transaction that would need to read them.
 export const ROOM_BONUS_PER_LEVEL: Record<RoomId, number> = {
-  storehouse: 0.6, // % gathering speed — NOT YET wired into gathering
-  workshop: 0.4, // % crafting material preservation — NOT YET wired into crafting
+  storehouse: 0.6, // % gathering speed
+  workshop: 0.4, // % crafting material preservation
   barracks: 1, // % companion contribution efficiency — wired into claimCompanionContributions
   warroom: 1, // % expedition Seals/XP reward — wired into claimExpedition
   library: 1, // % guild XP gain from contracts/expeditions — wired into both

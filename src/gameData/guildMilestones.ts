@@ -23,12 +23,21 @@
 //   accelerates how fast a member's own node/material Mastery grows,
 //   rather than inventing a second, parallel "effective Mastery" axis that
 //   would have to be reconciled against the real one's milestone stepping.
+// - materialPreservePct feeds CraftingShirtBonuses' own material_preserve
+//   channel the same way. Unlike the 5 fields above (which only ever come
+//   from level milestones), gatheringTimePct/craftingTimePct/
+//   materialPreservePct are ALSO where Guild Headquarters' Storehouse/
+//   Workshop room bonuses get folded in (useGuildMilestones.tsx adds
+//   roomBonusPct('storehouse'|'workshop', ...) into these same 3 fields
+//   after this function returns) — one guild can stack a level milestone
+//   and its own room upgrades in the same speed/preserve channel.
 export interface GuildMilestoneBonuses {
   mountSpeedPct: number;
   gatheringTimePct: number;
   craftingTimePct: number;
   gatheringMasteryPct: number;
   craftingMasteryPct: number;
+  materialPreservePct: number;
 }
 
 export interface GuildMilestoneDef {
@@ -83,6 +92,7 @@ const ZERO_BONUSES: GuildMilestoneBonuses = {
   craftingTimePct: 0,
   gatheringMasteryPct: 0,
   craftingMasteryPct: 0,
+  materialPreservePct: 0,
 };
 
 // Sums every milestone whose level has been reached — a guild at level 23

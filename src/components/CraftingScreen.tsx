@@ -146,7 +146,9 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
       // Guild Milestone (level 25) stacks onto the same channel Shirt of
       // Mastery already uses — see gameData/guildMilestones.ts.
       masteryXpPct: shirtBonusPct(shirtBonus, 'mastery_xp') + guildBonusesRef.current.craftingMasteryPct,
-      materialPreservePct: shirtBonusPct(shirtBonus, 'material_preserve'),
+      // Guild Headquarters' Workshop room stacks onto this same channel —
+      // see gameData/guildMilestones.ts's comment on materialPreservePct.
+      materialPreservePct: shirtBonusPct(shirtBonus, 'material_preserve') + guildBonusesRef.current.materialPreservePct,
     };
   }
 
