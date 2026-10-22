@@ -403,4 +403,15 @@ export function canonicalInstanceId(itemId: string, rolls: Partial<Record<BaseSt
 // — a new distinct roll beyond this is dropped, same "loot dropped, nothing
 // stops" convention bag-slot overflow already uses, rather than growing the
 // inventory document without bound over a long-played character.
-export const MAX_VARIANTS_PER_BASE_ITEM = 8;
+//
+// Set to 10 — exactly rollArmorStats' own total number of possible rolls
+// (picking 2 of ARMOR_STATS' 5 stats, C(5,2) = 10 unordered pairs) — so this
+// cap can never actually bind for any item that uses rollArmorStats. It used
+// to sit at 8, below that true ceiling: a player who repeatedly recrafts the
+// same cheap/common recipe (the exact loop profession-leveling encourages)
+// would reliably accumulate all 10 distinct rolls well before running out of
+// materials, and every craft past the 8th distinct roll was then silently
+// dropped — materials already spent (grantEquipmentInstances' caller
+// deducts them unconditionally, before this cap is even checked) for an
+// item that never actually arrived.
+export const MAX_VARIANTS_PER_BASE_ITEM = 10;
