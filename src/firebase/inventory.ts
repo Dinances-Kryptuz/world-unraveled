@@ -14,7 +14,7 @@ import {
 import { db } from './config';
 import type { Inventory } from '../types/character';
 import type { BaseStat } from '../gameData/classStats';
-import { MAX_VARIANTS_PER_BASE_ITEM } from '../gameData/equipmentRolls';
+import { MAX_VARIANTS_PER_BASE_ITEM, ARMOR_STAT_VALUES } from '../gameData/equipmentRolls';
 import { chargedInstanceId } from '../gameData/consumableCharges';
 import { ITEMS } from '../gameData/items';
 import { notify } from '../utils/notifications';
@@ -254,6 +254,27 @@ export async function grantEquipmentInstances(
     let baseItemSlotSpent = (inventory.items[itemId] ?? 0) > 0 || existingVariantIds.size > 0;
     let distinctCount = Object.values(inventory.items).filter((q) => q > 0).length + countDistinctBaseItems(inventory);
 
+    // Pre Stat Budget Redesign (equipmentRolls.ts), a roll's 2 stats each
+    // varied within a {min,max} band instead of today's single fixed
+    // ARMOR_STAT_VALUES amount, so a long-played character can already be
+    // holding many more than MAX_VARIANTS_PER_BASE_ITEM legacy buckets for
+    // one popular item (e.g. a dozen distinct old STR/STA value pairs for
+    // copper_helm). Counting those stale buckets against today's 10-combo
+    // cap would permanently block every future craft of that item — today's
+    // roll can never match an old-value instanceId, so it always reads as
+    // "new" while the legacy count sitting above the cap never shrinks.
+    // Only buckets whose rolled value already matches the CURRENT fixed
+    // value for this item count toward the cap; older buckets stay in the
+    // inventory (still equippable) but don't block new rolls.
+    const currentRollValue = ARMOR_STAT_VALUES[itemId];
+    const currentSystemVariantIds = new Set(
+      [...existingVariantIds].filter((id) => {
+        const rolls = existingInstances[id].rolls;
+        const values = Object.values(rolls);
+        return values.length > 0 && values.every((v) => v === currentRollValue);
+      })
+    );
+
     const acceptedInner: { instanceId: string; quantity: number }[] = [];
     droppedForBagFull = 0;
     droppedForVariantCap = 0;
@@ -266,7 +287,7 @@ export async function grantEquipmentInstances(
         // this one base item has simply rolled too many distinct stat
         // combinations already (easy to hit crafting the same armor piece
         // repeatedly hoping for a better roll).
-        if (existingVariantIds.size >= MAX_VARIANTS_PER_BASE_ITEM) {
+        if (currentSystemVariantIds.size >= MAX_VARIANTS_PER_BASE_ITEM) {
           droppedForVariantCap += quantity;
           continue;
         }
@@ -279,6 +300,7 @@ export async function grantEquipmentInstances(
           baseItemSlotSpent = true;
         }
         existingVariantIds.add(instanceId);
+        currentSystemVariantIds.add(instanceId); // a freshly-rolled variant always uses the current value
       }
       acceptedInner.push({ instanceId, quantity });
     }

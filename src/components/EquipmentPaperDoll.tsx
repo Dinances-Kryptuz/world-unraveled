@@ -4,6 +4,8 @@ import { canClassEquip } from '../gameData/classStats';
 import { canEquipInOffhand, isTwoHandedWeapon } from '../gameData/equipmentStats';
 import { isFoodItem, isPotionItem, consumableOwnedQuantities } from '../gameData/consumableClassification';
 import { ItemSlot } from './ItemSlot';
+import { describeEnchantEffect } from '../gameData/enchanting';
+import type { EnchantDef } from '../gameData/enchanting';
 import type { Inventory } from '../types/character';
 import type { EquipmentSlot, ItemDef, EquippedItemRef } from '../gameData/types';
 import type { ClassId } from '../gameData/classStats';
@@ -81,7 +83,7 @@ export function EquipmentPaperDoll({
   onUnequip: (slot: EquipmentSlot) => void;
   enchantments?: Partial<Record<EquipmentSlot, string>>;
   enchantmentCharges?: Partial<Record<EquipmentSlot, number>>;
-  getEnchantInfo?: (enchantId: string) => { name: string; description: string } | undefined;
+  getEnchantInfo?: (enchantId: string) => EnchantDef | undefined;
   showTool?: boolean;
   // The Food/Potion quick-equip pin (Character.equippedConsumables) —
   // rendered as 2 more tiles next to the 3 tool tiles, reusing that same
@@ -113,13 +115,13 @@ export function EquipmentPaperDoll({
             highlight={selectedSlot === slot}
             statOverride={equippedRef?.rolls}
             onClick={() => setSelectedSlot(selectedSlot === slot ? null : slot)}
+            enchant={
+              enchant
+                ? { name: enchant.name, effect: describeEnchantEffect(enchant), charges: enchantCharges }
+                : undefined
+            }
           >
-            {enchant && (
-              <span
-                className="item-slot-enchant-dot"
-                title={`${enchant.name} — ${enchant.description}${enchantCharges !== undefined ? ` (${enchantCharges} charges left)` : ''}`}
-              />
-            )}
+            {enchant && <span className="item-slot-enchant-dot" />}
           </ItemSlot>
         ) : (
           <button
