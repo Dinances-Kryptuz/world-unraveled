@@ -193,6 +193,15 @@ export function EquipmentPaperDoll({
           })),
       ]
     : [];
+  // Object.entries() on a Firestore-synced map isn't guaranteed to return
+  // the same key order on every snapshot — a charge/potion bucket that
+  // empties and later gets re-granted comes back as a freshly-inserted key
+  // (see firebase/consumables.ts's delete-then-recreate pattern), which
+  // silently reshuffled this picker's remaining candidates after every
+  // equip. Sort by a stable key (item id, then instance id) so the list
+  // order never depends on write history — same fix QuestLog.tsx already
+  // applies to its own Firestore map iteration for the identical reason.
+  pickerOptions.sort((a, b) => a.item.id.localeCompare(b.item.id) || (a.instanceId ?? '').localeCompare(b.instanceId ?? ''));
 
   // Consumable (food/potion) picker options — anything in inventory
   // (plain items + charge-bucketed potions, via consumableOwnedQuantities)
@@ -207,6 +216,8 @@ export function EquipmentPaperDoll({
           return pickerSlot === 'food' ? isFoodItem(item) : isPotionItem(item);
         })
         .map(([itemId, quantity]) => ({ item: ITEMS[itemId]!, quantity }))
+        // Same unstable-Firestore-map-order fix as pickerOptions above.
+        .sort((a, b) => a.item.id.localeCompare(b.item.id))
     : [];
 
   return (
