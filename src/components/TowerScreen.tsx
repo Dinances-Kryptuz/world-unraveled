@@ -272,8 +272,8 @@ export function TowerScreen() {
       consumableState.defensiveChargesConsumed > 0 ||
       consumableState.healingUsed > 0 ||
       consumableState.manaUsed > 0;
-    if (hasConsumableUsage && currentCharacterForBuffs.consumableAutomation) {
-      void applyConsumableAutomationUsage(currentUser.uid, currentCharacterForBuffs.consumableAutomation, {
+    if (hasConsumableUsage && currentCharacterForBuffs.equippedConsumables.potion) {
+      void applyConsumableAutomationUsage(currentUser.uid, currentCharacterForBuffs.equippedConsumables.potion, {
         offensiveChargesConsumed: consumableState.offensiveChargesConsumed,
         defensiveChargesConsumed: consumableState.defensiveChargesConsumed,
         healingUsed: consumableState.healingUsed,

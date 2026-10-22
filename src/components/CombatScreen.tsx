@@ -326,7 +326,7 @@ export function CombatScreen({ monsterId }: { monsterId: string }) {
       consumableState.autoEatUsed = 0;
       void applyConsumableAutomationUsage(
         currentUser.uid,
-        currentCharacterForBuffs.consumableAutomation,
+        currentCharacterForBuffs.equippedConsumables.potion,
         usage,
         autoEatUsed > 0 && autoEatItemId ? { used: autoEatUsed, itemId: autoEatItemId } : undefined
       );

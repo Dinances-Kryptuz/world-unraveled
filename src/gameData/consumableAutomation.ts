@@ -1,5 +1,5 @@
-// Herbalism/Alchemy overhaul's Part 8 automation — turns
-// Character.consumableAutomation + current inventory into the flat runtime
+// Turns the single pinned Potion quick-use slot (Character.
+// equippedConsumables.potion) + current inventory into the flat runtime
 // shape combatEngine/engine.ts actually consumes, the same bridging role
 // gameData/buffs.ts's evaluateActiveBuffs already plays for the OLD
 // duration/fixed-charge buff system. Built ONCE per encounter setup (online:
@@ -9,18 +9,25 @@
 // "fixed for the fight" convention buffTotals/talentTotals/equipmentBonuses
 // already follow.
 //
+// Whatever is pinned to the Potion slot always auto-fires — there used to
+// be a separate player-configured settings object (4 independently
+// toggled categories, each with its own item picker and, for the two
+// resource categories, a threshold) but that's gone; a single slot can
+// only ever be one shape at a time, read straight off the pinned item's
+// own consumableEffect, so there's nothing left to configure (see
+// buildConsumableAutomationState below).
+//
 // Deliberately NOT the old activeBuffs.offensive_potion/defensive_potion
 // single-slot mechanism (gameData/buffs.ts/firebase/consumables.ts) — that
 // stays untouched for the old, now-frozen potions that still use it
 // (minor_battle_draught etc., whose charges are fixed on the item itself).
-// This is a second, PARALLEL mechanism scoped to automation-selected items
-// only, because its charge pool is a flat sum across every owned
-// chargedConsumables bucket for that item (mastery-rolled, 1-4 per unit) —
-// matching the design brief's own worked example ("20 potions x 4 charges =
-// 80 charges; 100 attacks -> first 80 buffed, last 20 not") exactly. The two
-// can coexist (they'd simply add), but in practice a player only ever runs
-// one or the other.
-import type { Character, ConsumableAutomationSettings, Inventory } from '../types/character';
+// This is a second, PARALLEL mechanism whose charge pool is a flat sum
+// across every owned chargedConsumables bucket for the pinned item
+// (mastery-rolled, 1-4 per unit) — matching the design brief's own worked
+// example ("20 potions x 4 charges = 80 charges; 100 attacks -> first 80
+// buffed, last 20 not") exactly. The two can coexist (they'd simply add),
+// but in practice a player only ever runs one or the other.
+import type { Character, Inventory } from '../types/character';
 import { ITEMS } from './items';
 import { totalChargesAvailable, type ChargeBucket } from './consumableCharges';
 import { autoEatRankDef } from './cooking';
@@ -128,52 +135,56 @@ function buildResourceState(
   };
 }
 
+// Whatever's pinned to the Potion quick-use slot always auto-fires in
+// combat — no settings toggle, no per-category item picker, no way to turn
+// it off short of unpinning. The old Part 8 design (4 independently
+// toggled categories, each with its own item/threshold) is gone; a single
+// potion slot can only ever BE one of these categories at a time, read
+// straight off the pinned item's own consumableEffect shape, so there's
+// nothing left to configure. Healing/mana potions fire at a fixed 50%-of-
+// max threshold (the old settings' own default) since there's no UI left
+// to set one.
+const POTION_AUTO_THRESHOLD_PCT = 50;
+
 export function buildConsumableAutomationState(
   character: Character,
   inventory: Inventory,
   now: Date
 ): ConsumableAutomationRuntimeState {
-  const automation: ConsumableAutomationSettings | undefined = character.consumableAutomation;
-  if (!automation) return emptyConsumableAutomationState();
-
+  const potionItemId = character.equippedConsumables.potion;
   let offensive: OffensiveAutomationState | undefined;
-  if (automation.autoOffensiveEnabled && automation.offensiveItemId) {
-    const item = ITEMS[automation.offensiveItemId];
-    const buff = item?.consumableEffect?.buff;
-    const chargesRemaining = totalChargesAvailable(bucketsForItem(inventory, automation.offensiveItemId));
-    if (buff && chargesRemaining > 0) {
-      offensive = {
-        itemId: automation.offensiveItemId,
-        damageMultiplierPct: buff.damageMultiplierPct ?? 0,
-        chargesRemaining,
-      };
-    }
-  }
-
   let defensive: DefensiveAutomationState | undefined;
-  if (automation.autoDefensiveEnabled && automation.defensiveItemId) {
-    const item = ITEMS[automation.defensiveItemId];
-    const buff = item?.consumableEffect?.buff;
-    const chargesRemaining = totalChargesAvailable(bucketsForItem(inventory, automation.defensiveItemId));
-    if (buff && chargesRemaining > 0) {
-      defensive = {
-        itemId: automation.defensiveItemId,
-        chargesRemaining,
-        armorBonusPct: buff.armorBonusPct,
-        maxHpBonusPct: buff.maxHpBonusPct,
-        fireResistancePct: buff.fireResistancePct,
-        shadowResistancePct: buff.shadowResistancePct,
-        healOnTriggerPct: buff.healOnTriggerPct,
-      };
+  let healing: ResourceAutomationState | undefined;
+  let mana: ResourceAutomationState | undefined;
+
+  if (potionItemId) {
+    const item = ITEMS[potionItemId];
+    const effect = item?.consumableEffect;
+    const buff = effect?.buff;
+    if (buff?.category === 'offensive_potion') {
+      const chargesRemaining = totalChargesAvailable(bucketsForItem(inventory, potionItemId));
+      if (chargesRemaining > 0) {
+        offensive = { itemId: potionItemId, damageMultiplierPct: buff.damageMultiplierPct ?? 0, chargesRemaining };
+      }
+    } else if (buff?.category === 'defensive_potion') {
+      const chargesRemaining = totalChargesAvailable(bucketsForItem(inventory, potionItemId));
+      if (chargesRemaining > 0) {
+        defensive = {
+          itemId: potionItemId,
+          chargesRemaining,
+          armorBonusPct: buff.armorBonusPct,
+          maxHpBonusPct: buff.maxHpBonusPct,
+          fireResistancePct: buff.fireResistancePct,
+          shadowResistancePct: buff.shadowResistancePct,
+          healOnTriggerPct: buff.healOnTriggerPct,
+        };
+      }
+    } else if (!buff && effect && (effect.healAmount !== undefined || effect.healPctMax !== undefined)) {
+      healing = buildResourceState(character, inventory, potionItemId, POTION_AUTO_THRESHOLD_PCT, now);
+    } else if (!buff && effect && (effect.manaAmount !== undefined || effect.manaPctMax !== undefined)) {
+      mana = buildResourceState(character, inventory, potionItemId, POTION_AUTO_THRESHOLD_PCT, now);
     }
   }
-
-  const healing = automation.autoHealingEnabled
-    ? buildResourceState(character, inventory, automation.healingItemId, automation.healingThresholdPct, now)
-    : undefined;
-  const mana = automation.autoManaEnabled
-    ? buildResourceState(character, inventory, automation.manaItemId, automation.manaThresholdPct, now)
-    : undefined;
 
   return {
     offensive,

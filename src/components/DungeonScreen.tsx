@@ -480,7 +480,7 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
         completedEncounters: kills.length,
       });
     }
-    if (hasConsumableUsage && currentCharacterForBuffs.consumableAutomation) {
+    if (hasConsumableUsage && currentCharacterForBuffs.equippedConsumables.potion) {
       const usage = {
         offensiveChargesConsumed: consumableState.offensiveChargesConsumed,
         defensiveChargesConsumed: consumableState.defensiveChargesConsumed,
@@ -491,7 +491,7 @@ export function DungeonScreen({ dungeonId, onExit }: { dungeonId: string; onExit
       consumableState.defensiveChargesConsumed = 0;
       consumableState.healingUsed = 0;
       consumableState.manaUsed = 0;
-      void applyConsumableAutomationUsage(currentUser.uid, currentCharacterForBuffs.consumableAutomation, usage);
+      void applyConsumableAutomationUsage(currentUser.uid, currentCharacterForBuffs.equippedConsumables.potion, usage);
     }
 
     const xpGained = Math.round(kills.reduce((sum, k) => sum + k.xpGained, 0));

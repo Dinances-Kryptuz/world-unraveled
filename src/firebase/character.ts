@@ -1502,9 +1502,9 @@ export async function setNotificationsEnabled(uid: string, enabled: boolean): Pr
 }
 
 // Equipment Naming/Sorting/Comparison/Locking/Queue overhaul — persists the
-// Inventory screen's sort/filter configuration, same one-shot full-overwrite
-// setter shape as setConsumableAutomation. Presentation-only: never read by
-// anything outside InventoryScreen.tsx.
+// Inventory screen's sort/filter configuration, a one-shot full-overwrite
+// setter. Presentation-only: never read by anything outside
+// InventoryScreen.tsx.
 export async function setInventorySortPrefs(uid: string, prefs: InventorySortPrefs): Promise<void> {
   await updateDoc(doc(db, 'characters', uid), { inventorySortPrefs: prefs });
 }

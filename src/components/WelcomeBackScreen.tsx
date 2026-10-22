@@ -155,7 +155,7 @@ export function WelcomeBackScreen({
               usage.manaUsed > 0 ||
               autoEat
             ) {
-              await applyConsumableAutomationUsage(user.uid, character.consumableAutomation, usage, autoEat);
+              await applyConsumableAutomationUsage(user.uid, character.equippedConsumables.potion, usage, autoEat);
             }
           }
           const { offensiveAction, damageTaken } = result.enchantTriggerCounts;
@@ -271,7 +271,7 @@ export function WelcomeBackScreen({
               manaUsed: fcs.manaUsed,
             };
             if (usage.offensiveChargesConsumed > 0 || usage.defensiveChargesConsumed > 0 || usage.healingUsed > 0 || usage.manaUsed > 0) {
-              await applyConsumableAutomationUsage(user.uid, character.consumableAutomation, usage);
+              await applyConsumableAutomationUsage(user.uid, character.equippedConsumables.potion, usage);
             }
           }
           const { offensiveAction, damageTaken } = result.enchantTriggerCounts;
