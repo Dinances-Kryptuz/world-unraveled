@@ -9,7 +9,7 @@ import { gatheringColorTier, GATHERING_COLOR_XP_PCT, fishingZoneMasteryPercent }
 import { craftingColorTier, CRAFTING_COLOR_XP_PCT } from '../../gameData/craftingEngine';
 import { canUseRecipe } from '../../firebase/professions';
 import { useEnchantScroll, removeEnchant } from '../../firebase/enchanting';
-import { subscribeToInventory, isLocked } from '../../firebase/inventory';
+import { subscribeToInventory, isLocked, distinctItemSlotCount, isItemAlreadyHeld } from '../../firebase/inventory';
 import { ENCHANTS, describeEnchantEffect, isDisenchantable, disenchantRequiredSkill, disenchantYieldRange, type EnchantCategory } from '../../gameData/enchanting';
 import { ITEMS } from '../../gameData/items';
 import { equippedItemId, toolTypeToEquipSlot } from '../../gameData/equipmentStats';
@@ -252,8 +252,24 @@ export function ProfessionScreen({
     }
   }
 
+  // Asks before starting an activity whose result item would be a genuinely
+  // NEW item id (not already held in any bucket) while the bag has no free
+  // slot for it — grantInventoryItems would otherwise silently drop that
+  // loot the instant it's earned. Stacking more of an already-held item is
+  // always free (see inventory.ts's own doc comment), so this only ever
+  // fires for a first-time pickup. Skipped entirely when inventory/character
+  // haven't loaded yet, same as the rest of this screen's gates.
+  function confirmFullBagIfNeeded(resultItemId: string): boolean {
+    if (!inventory || !character) return true;
+    if (isItemAlreadyHeld(inventory, resultItemId)) return true;
+    if (distinctItemSlotCount(inventory) < character.bagSlots) return true;
+    const name = ITEMS[resultItemId]?.name ?? resultItemId;
+    return confirm(`Your bag is full — you won't receive ${name} until you free up a slot. Start anyway?`);
+  }
+
   async function handleGather(nodeId: string) {
     if (!user) return;
+    if (!confirmFullBagIfNeeded(GATHER_NODES[nodeId].itemId)) return;
     onActivityStarted?.();
     await startActivity(user.uid, {
       type: 'gathering',
@@ -266,6 +282,7 @@ export function ProfessionScreen({
 
   async function handleFish(holeId: string) {
     if (!user) return;
+    if (!confirmFullBagIfNeeded(FISHING_HOLES[holeId].itemId)) return;
     onActivityStarted?.();
     await startActivity(user.uid, {
       type: 'fishing',
@@ -278,6 +295,7 @@ export function ProfessionScreen({
 
   async function handleCraft(recipeId: string) {
     if (!user) return;
+    if (!confirmFullBagIfNeeded(RECIPES[recipeId].resultItemId)) return;
     onActivityStarted?.();
     await startActivity(user.uid, {
       type: 'crafting',
@@ -309,6 +327,8 @@ export function ProfessionScreen({
 
   async function handleStartDisenchanting(itemId: string, quantity: number, instanceId?: string) {
     if (!user) return;
+    const item = ITEMS[itemId];
+    if (item && !confirmFullBagIfNeeded(disenchantYieldRange(item).itemId)) return;
     onActivityStarted?.();
     await startActivity(user.uid, {
       type: 'disenchanting',
