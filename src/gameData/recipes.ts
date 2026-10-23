@@ -1175,7 +1175,7 @@ export const RECIPES: Record<string, Recipe> = {
   copper_bar: {
     id: 'copper_bar',
     name: 'Copper Bar',
-    profession: 'mining',
+    profession: 'smithing',
     requiredSkill: 1,
     resultItemId: 'copper_bar',
     resultQuantity: 1,
@@ -1189,7 +1189,7 @@ export const RECIPES: Record<string, Recipe> = {
   tin_bar: {
     id: 'tin_bar',
     name: 'Tin Bar',
-    profession: 'mining',
+    profession: 'smithing',
     requiredSkill: 10,
     resultItemId: 'tin_bar',
     resultQuantity: 1,
@@ -1203,7 +1203,7 @@ export const RECIPES: Record<string, Recipe> = {
   silver_bar: {
     id: 'silver_bar',
     name: 'Silver Bar',
-    profession: 'mining',
+    profession: 'smithing',
     requiredSkill: 10,
     resultItemId: 'silver_bar',
     resultQuantity: 1,
@@ -1217,7 +1217,7 @@ export const RECIPES: Record<string, Recipe> = {
   bronze_bar: {
     id: 'bronze_bar',
     name: 'Bronze Bar',
-    profession: 'mining',
+    profession: 'smithing',
     requiredSkill: 10,
     resultItemId: 'bronze_bar',
     resultQuantity: 1,
@@ -1461,7 +1461,7 @@ export const RECIPES: Record<string, Recipe> = {
   iron_bar: {
     id: 'iron_bar',
     name: 'Iron Bar',
-    profession: 'mining',
+    profession: 'smithing',
     requiredSkill: 25,
     resultItemId: 'iron_bar',
     resultQuantity: 1,
@@ -1475,7 +1475,7 @@ export const RECIPES: Record<string, Recipe> = {
   steel_bar: {
     id: 'steel_bar',
     name: 'Steel Bar',
-    profession: 'mining',
+    profession: 'smithing',
     requiredSkill: 28,
     resultItemId: 'steel_bar',
     resultQuantity: 1,
@@ -1488,7 +1488,7 @@ export const RECIPES: Record<string, Recipe> = {
   },
   // ── Cinderfall Depths ──────────────────────────────────────────────────
   mithril_bar: {
-    id: 'mithril_bar', name: 'Mithril Bar', profession: 'mining', requiredSkill: 30,
+    id: 'mithril_bar', name: 'Mithril Bar', profession: 'smithing', requiredSkill: 30,
     resultItemId: 'mithril_bar', resultQuantity: 1,
     materials: [{ itemId: 'mithril_ore', quantity: 1 }],
     craftSeconds: 11, xpAward: 24,
@@ -1497,7 +1497,7 @@ export const RECIPES: Record<string, Recipe> = {
     learnedAutomatically: true,
   },
   gold_bar: {
-    id: 'gold_bar', name: 'Gold Bar', profession: 'mining', requiredSkill: 30,
+    id: 'gold_bar', name: 'Gold Bar', profession: 'smithing', requiredSkill: 30,
     resultItemId: 'gold_bar', resultQuantity: 1,
     materials: [{ itemId: 'gold_ore', quantity: 1 }],
     craftSeconds: 11, xpAward: 25,
@@ -1507,7 +1507,7 @@ export const RECIPES: Record<string, Recipe> = {
   },
   // ── The Molten Scar ────────────────────────────────────────────────────
   thorium_bar: {
-    id: 'thorium_bar', name: 'Thorium Bar', profession: 'mining', requiredSkill: 40,
+    id: 'thorium_bar', name: 'Thorium Bar', profession: 'smithing', requiredSkill: 40,
     resultItemId: 'thorium_bar', resultQuantity: 1,
     materials: [{ itemId: 'thorium_ore', quantity: 1 }],
     craftSeconds: 13, xpAward: 30,
@@ -1517,7 +1517,7 @@ export const RECIPES: Record<string, Recipe> = {
   },
   // ── Cinderheart Crater ─────────────────────────────────────────────────
   obsidian_bar: {
-    id: 'obsidian_bar', name: 'Obsidian Bar', profession: 'mining', requiredSkill: 48,
+    id: 'obsidian_bar', name: 'Obsidian Bar', profession: 'smithing', requiredSkill: 48,
     resultItemId: 'obsidian_bar', resultQuantity: 1,
     materials: [{ itemId: 'obsidian_ore', quantity: 1 }],
     craftSeconds: 15, xpAward: 36,
@@ -1526,7 +1526,7 @@ export const RECIPES: Record<string, Recipe> = {
     learnedAutomatically: true,
   },
   platinum_bar: {
-    id: 'platinum_bar', name: 'Platinum Bar', profession: 'mining', requiredSkill: 48,
+    id: 'platinum_bar', name: 'Platinum Bar', profession: 'smithing', requiredSkill: 48,
     resultItemId: 'platinum_bar', resultQuantity: 1,
     materials: [{ itemId: 'platinum_ore', quantity: 1 }],
     craftSeconds: 15, xpAward: 38,

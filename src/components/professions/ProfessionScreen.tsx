@@ -426,12 +426,11 @@ export function ProfessionScreen({
           const canCraft = meetsSkill && meetsLevel && meetsGold && meetsMaterials;
           // All 6 crafting professions now share craftingEngine.ts's
           // level-delta color formula — "red" (below requiredSkill) stays
-          // a purely gating display on top of it. Mining's Smelting
-          // recipes land here too (tagged to a gathering-category
-          // profession) and still show a color/XP% for flavor even though
-          // they never actually earn Mining XP (see CraftingScreen's
-          // earnsProfessionXp comment) — harmless since the % is never
-          // read anywhere but this tooltip.
+          // a purely gating display on top of it. Smelting recipes (every
+          // `_bar` recipe, tagged profession: 'smithing') render through
+          // this same list and earn real Blacksmithing XP, same as every
+          // other recipe here (see CraftingScreen's earnsProfessionXp
+          // comment).
           const tier = !meetsSkill ? 'red' : craftingColorTier(professionLevel, recipe.requiredSkill);
           const masteryLevel = getProfessionState(char.professions, professionId).mastery?.[recipe.id]?.level ?? 0;
           // Milestone 4's masterwork recipes are exactly "requiredSkill 100
@@ -494,10 +493,11 @@ export function ProfessionScreen({
 
   // Smithing's full armor buildout (masteryEngine.ts's pilot) is ~130
   // recipes — a single flat list would be unusable, so it's grouped into
-  // one clickable dropdown per metal tier, the same pattern as Mining's own
-  // Smelting section below. A recipe not matching any known tier slug
-  // (the two Blacksmith repair recipes, the quest-taught Emberforged
-  // Gauntlets) falls into a final ungrouped section rather than vanishing.
+  // one clickable dropdown per metal tier, the same pattern Smithing's own
+  // Smelting section above uses for its bar recipes. A recipe not matching
+  // any known tier slug (the two Blacksmith repair recipes, the
+  // quest-taught Emberforged Gauntlets) falls into a final ungrouped
+  // section rather than vanishing.
   // Generalized (tierOrder/tierLabels params) so Leatherworking's own
   // 42-recipe, 6-tier buildout reuses the exact same grouping — see the
   // professionId === 'leatherworking' dispatch below.
@@ -1028,20 +1028,6 @@ export function ProfessionScreen({
         </ul>
       )}
 
-      {/* Smelting lives here rather than under Blacksmithing — turning ore
-          into bars is a Mining skill in its own right (gated on Mining
-          skill, grants Mining XP); Blacksmithing recipes then consume those
-          bars like any other material. Only Mining currently has any
-          recipes tagged to it, so this renders for no other gathering
-          profession. */}
-      {category === 'gathering' && recipesForProfession.length > 0 && (
-        <details>
-          <summary>Smelting</summary>
-          {!known && <p>You don't know {label} yet — learn it at the Professions Trainer.</p>}
-          {known && renderRecipeList()}
-        </details>
-      )}
-
       {category === 'fishing' && (
         <>
           {known && (
@@ -1100,7 +1086,24 @@ export function ProfessionScreen({
           {known &&
             (professionId === 'smithing' ? (
               <>
-                {renderGroupedRecipesByTier(SMITHING_TIER_ORDER, SMITHING_TIER_LABELS)}
+                {/* Smelting lives here, inside Blacksmithing, rather than
+                    under Mining — turning ore into bars now trains
+                    Blacksmithing (grants real Blacksmithing XP, same as
+                    any armor recipe below), since Blacksmithing's own XP
+                    from armor crafting alone climbed far too slowly.
+                    Kept as its own section rather than mixed into the
+                    per-tier armor dropdowns below, even though several
+                    bar ids share a tier's metal prefix (copper_bar would
+                    otherwise land inside the "Copper" armor dropdown). */}
+                <details>
+                  <summary>Smelting</summary>
+                  {renderRecipeList(recipesForProfession.filter((r) => r.id.endsWith('_bar')))}
+                </details>
+                {renderGroupedRecipesByTier(
+                  SMITHING_TIER_ORDER,
+                  SMITHING_TIER_LABELS,
+                  recipesForProfession.filter((r) => !r.id.endsWith('_bar'))
+                )}
                 {renderMaterialMasteryPanel(MATERIALS)}
               </>
             ) : professionId === 'leatherworking' ? (

@@ -847,11 +847,12 @@ function allMaterialsMastered(mastery: MaterialMasteryState | undefined, registr
 // All 6 crafting professions' shared 1-100 XP+Mastery engine
 // (gameData/craftingEngine.ts) writes a continuous profession level+xp and
 // a per-recipe Mastery level+xp — generalizes the old Smithing-only
-// applyMasteryCraftingResult to every crafting profession. `earnsProfessionXp`
-// is false only for Mining's Smelting recipes (tagged to a gathering-
-// category profession whose level/XP/Mastery is owned entirely by
-// gatheringEngine.ts — see CraftingScreen's matching comment), in which case
-// this writes only the inventory/gold side, never the profession fields.
+// applyMasteryCraftingResult to every crafting profession. Smelting
+// (every `_bar` recipe) is tagged profession: 'smithing' — turning ore
+// into bars trains Blacksmithing like any other Blacksmithing recipe, so
+// `earnsProfessionXp` is true for it too; it has no `materialId` of its
+// own, so it only ever writes the plain level/xp fields, never a Mastery
+// bucket (see craftingMasteryInputs.ts's anyZoneOrMaterialMastery).
 //
 // `character` is the SAME fresh snapshot the caller already fetched to
 // compute `result` in the first place (see CraftingScreen.tsx's autosave) —
