@@ -19,19 +19,31 @@ export function TickBar({
   color,
   label,
   onIteration,
+  resetKey,
 }: {
   seconds: number;
   color: string;
   label: string;
   onIteration?: () => void;
+  // Identifies WHAT is looping (a recipe id, gather node id, fishing hole
+  // id, disenchant item id, …) — included in the key alongside `seconds`
+  // so switching to a different target forces a reset even when its
+  // duration happens to be numerically identical to the one just replaced
+  // (e.g. every same-tier Blacksmithing recipe shares one craftSeconds
+  // value — clicking Craft on a sibling recipe mid-loop used to leave the
+  // bar animating from wherever the old recipe's loop already was, since
+  // `seconds` alone hadn't changed). Omit for a bar with no real "target"
+  // identity of its own (e.g. combat's per-character attack rhythm).
+  resetKey?: string;
 }) {
   return (
     <div className="tick-bar">
       <small>{label}</small>
       <div className="tick-bar-track">
         <div
-          // Keyed on `seconds` so a real duration change (a crafting/gathering
-          // screen recomputes it whenever Mastery/tool/shirt speed changes,
+          // Keyed on `seconds` (plus `resetKey`, see its own doc comment)
+          // so a real duration change (a crafting/gathering screen
+          // recomputes it whenever Mastery/tool/shirt speed changes,
           // typically once per ~20s autosave) forces React to mount a BRAND
           // NEW element instead of mutating animation-duration on the one
           // that's already mid-loop. Browsers don't cleanly restart a live,
@@ -42,7 +54,7 @@ export function TickBar({
           // real elapsed-time math the onIteration callback uses. A fresh
           // element always starts its clock at 0, so the bar's pace can
           // never drift ahead of (or behind) what's actually being produced.
-          key={seconds.toFixed(3)}
+          key={`${resetKey ?? ''}:${seconds.toFixed(3)}`}
           className="tick-bar-fill"
           style={{ background: color, animationDuration: `${seconds}s` }}
           onAnimationIteration={onIteration}
