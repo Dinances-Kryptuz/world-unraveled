@@ -48,12 +48,13 @@ import type { Recipe } from '../gameData/types';
 // resolver, even for a single ~20s autosave chunk — same convention as every
 // other activity screen in this game.
 //
-// Mining's Smelting recipes are the one case of a "crafting" recipe tagged
-// to a gathering-category profession (PROFESSION_CATEGORY !== 'production')
-// — Mining's level/XP/Mastery is owned entirely by gatheringEngine.ts (only
-// gathering ore earns it), so Smelting still runs through this screen's
-// materials/gold/time batching but never writes a profession-XP/Mastery
-// update of its own; it's purely a level-gated material conversion.
+// Smelting (every `_bar` recipe) is tagged profession: 'smithing', not
+// 'mining' — turning ore into bars trains Blacksmithing, not Mining, both
+// because that's where the finished bars actually get used and because
+// Blacksmithing's own level/XP climbed far too slowly from armor crafting
+// alone. It runs through this same screen as any other Blacksmithing
+// recipe (earnsProfessionXp is true, same XP/level path), just labeled
+// "Smelting" instead of "Blacksmithing" in toasts for clarity.
 export function CraftingScreen({ recipe }: { recipe: Recipe }) {
   const { user } = useAuth();
   // ZoneScreen never renders CraftingScreen until it has confirmed a loaded
@@ -107,7 +108,7 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
   }, [user]);
 
   const earnsProfessionXp = PROFESSION_CATEGORY[recipe.profession] === 'production';
-  const label = recipe.profession === 'mining' ? 'Smelting' : PROFESSION_LABELS[recipe.profession];
+  const label = recipe.id.endsWith('_bar') ? 'Smelting' : PROFESSION_LABELS[recipe.profession];
 
   useEffect(() => {
     setBankedCrafted(0);

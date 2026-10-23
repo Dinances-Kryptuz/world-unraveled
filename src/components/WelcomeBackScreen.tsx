@@ -371,12 +371,12 @@ export function WelcomeBackScreen({
         setSummary(`While you were away, you gathered ${wholeQuantity} ${itemName}.${levelUpNote}`);
       } else if (activity.type === 'crafting') {
         // All 6 crafting professions now share craftingEngine.ts's 1-100
-        // XP+Mastery engine — Mining's Smelting recipes land here too
-        // (tagged to a gathering-category profession) but never earn
-        // Mining XP/Mastery of their own, per the same earnsProfessionXp
-        // split CraftingScreen uses. Uses the same craftingMasteryInputs.ts
-        // helpers CraftingScreen's own autosave uses, so both call sites
-        // share identical mastery-axis logic.
+        // XP+Mastery engine — Smelting (every `_bar` recipe) is tagged
+        // profession: 'smithing' and earns Blacksmithing XP/level here
+        // exactly like any other Blacksmithing recipe (see CraftingScreen's
+        // matching comment). Uses the same craftingMasteryInputs.ts helpers
+        // CraftingScreen's own autosave uses, so both call sites share
+        // identical mastery-axis logic.
         const recipe = RECIPES[activity.targetId];
         const inventory = user ? await getInventory(user.uid) : { items: {} };
         const prof = getProfessionState(character.professions, recipe.profession);
