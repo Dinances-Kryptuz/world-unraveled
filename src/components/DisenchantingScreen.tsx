@@ -453,7 +453,15 @@ export function DisenchantingScreen({ itemId, instanceId }: { itemId: string; in
         <ItemSlot item={item} statOverride={currentRolls} />
         {yieldItem && <ItemSlot item={yieldItem} />}
       </div>
-      {!done && <TickBar seconds={DISENCHANT_SECONDS} color="var(--class-accent)" label="Disenchanting" onIteration={handleTickIteration} />}
+      {!done && (
+        <TickBar
+          resetKey={`${itemId}:${instanceId ?? ''}`}
+          seconds={DISENCHANT_SECONDS}
+          color="var(--class-accent)"
+          label="Disenchanting"
+          onIteration={handleTickIteration}
+        />
+      )}
       <p>
         This session: {displayDisenchanted} / {requestedQuantity} disenchanted
       </p>

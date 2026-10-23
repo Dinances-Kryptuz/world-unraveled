@@ -425,7 +425,13 @@ export function GatheringScreen({ node }: { node: GatherNode }) {
       <h2>
         {label}: {node.name}
       </h2>
-      <TickBar seconds={node.secondsPerAction / displaySpeedMult} color="var(--class-accent)" label={label} onIteration={handleTickIteration} />
+      <TickBar
+        resetKey={node.id}
+        seconds={node.secondsPerAction / displaySpeedMult}
+        color="var(--class-accent)"
+        label={label}
+        onIteration={handleTickIteration}
+      />
       <p>
         {tier[0].toUpperCase() + tier.slice(1)} — {(xpPct * 100).toFixed(0)}% profession XP
       </p>

@@ -588,6 +588,7 @@ export function CraftingScreen({ recipe }: { recipe: Recipe }) {
       </div>
       {!outOfMaterials && (
         <TickBar
+          resetKey={recipe.id}
           seconds={
             (displayAlchemyZone
               ? recipe.craftSeconds * (1 - alchemyMilestoneInfo!.craftTimeReductionPct / 100)

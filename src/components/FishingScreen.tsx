@@ -349,7 +349,13 @@ export function FishingScreen({ hole }: { hole: FishingHole }) {
   return (
     <div className="fishing-screen">
       <h2>Fishing: {hole.name}</h2>
-      <TickBar seconds={hole.secondsPerAction / displaySpeedMult} color="#2a5a6b" label="Casting" onIteration={handleTickIteration} />
+      <TickBar
+        resetKey={hole.id}
+        seconds={hole.secondsPerAction / displaySpeedMult}
+        color="#2a5a6b"
+        label="Casting"
+        onIteration={handleTickIteration}
+      />
       <p>
         {tier[0].toUpperCase() + tier.slice(1)} — {(xpPct * 100).toFixed(0)}% profession XP, {(hole.catchChance * 100).toFixed(0)}% catch
         chance
